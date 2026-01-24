@@ -1,0 +1,28 @@
+/*
+ * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+use crate::types::dids::did_type::DidType;
+use crate::types::wallet::WalletConfig;
+
+pub trait WaltIdConfigTrait {
+    fn get_raw_wallet_config(&self) -> WalletConfig;
+    fn get_wallet_host(&self) -> String;
+    fn get_host(&self) -> String;
+    fn get_did_type(&self) -> DidType;
+    fn get_did_web_path(&self) -> Option<String>;
+    fn get_did_web_domain(&self) -> String;
+}
