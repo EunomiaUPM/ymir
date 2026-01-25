@@ -15,11 +15,26 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
-pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
+use cred_config::*;
+pub use cred_offer::*;
+pub use cred_req::*;
+pub use did_possession::*;
+pub use iss_token::*;
+pub use issuer_metadata::*;
+pub use oauth_server::*;
+pub use to_issue::*;
+pub use token_req::*;
+pub use vc_issuing::*;
+pub use well_known_jwk::*;
+
+mod cred_config;
+mod cred_offer;
+mod cred_req;
+mod did_possession;
+mod iss_token;
+mod issuer_metadata;
+mod oauth_server;
+mod to_issue;
+mod token_req;
+mod vc_issuing;
+mod well_known_jwk;

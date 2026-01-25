@@ -15,11 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
-pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct IssuingToken {
+    pub access_token: String,
+    pub token_type: String,
+    pub expires_in: u16
+}
+
+impl IssuingToken {
+    pub fn new(token: String) -> IssuingToken {
+        IssuingToken { access_token: token, token_type: "Bearer".to_string(), expires_in: 600 }
+    }
+}

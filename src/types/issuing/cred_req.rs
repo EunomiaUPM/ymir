@@ -15,11 +15,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
-pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CredentialRequest {
+    pub format: String,
+    pub proof: Proof,
+    pub credential_definition: CredentialDefinition
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Proof {
+    pub proof_type: String,
+    pub jwt: String
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CredentialDefinition {
+    pub r#type: Vec<String>
+}

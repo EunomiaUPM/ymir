@@ -15,11 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
-pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
+use crate::types::vcs::W3cDataModelVersion;
+
+pub trait BasicIssuerConfigTrait {
+    fn get_host_without_protocol(&self) -> String;
+    fn get_host(&self) -> String;
+    fn is_local(&self) -> bool;
+    fn get_api_path(&self) -> String;
+    fn get_w3c_data_model(&self) -> Option<W3cDataModelVersion>;
+    fn get_did(&self) -> String;
+}

@@ -15,11 +15,27 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
-pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::Engine;
+use rsa::traits::PublicKeyParts;
+use rsa::RsaPublicKey;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct WellKnownJwks {
+    pub kty: String,
+    pub n: String,
+    pub e: String,
+    pub kid: String
+}
+
+impl WellKnownJwks {
+    pub fn new(key: RsaPublicKey) -> WellKnownJwks {
+        WellKnownJwks {
+            kty: "RSA".to_string(),
+            n: URL_SAFE_NO_PAD.encode(key.n().to_bytes_be()),
+            e: URL_SAFE_NO_PAD.encode(key.e().to_bytes_be()),
+            kid: "0".to_string()
+        }
+    }
+}

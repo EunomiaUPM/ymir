@@ -15,11 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
-pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
+mod config;
+mod config_trait;
+pub use config::BasicIssuerConfig;
+pub use config_trait::BasicIssuerConfigTrait;

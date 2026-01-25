@@ -20,9 +20,11 @@ mod verify_payload;
 mod vpd;
 mod vc_type;
 pub mod vc_specs;
+mod w3c_data_model;
 
 pub use input_descriptor::InputDescriptor;
 pub use verify_payload::VerifyPayload;
 pub use vpd::VPDef;
 pub use vc_type::VcType;
+pub use w3c_data_model::W3cDataModelVersion;
 

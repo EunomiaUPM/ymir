@@ -19,3 +19,4 @@ pub mod vault;
 pub mod wallet;
 pub mod client;
 pub mod verifier;
+pub mod issuer;

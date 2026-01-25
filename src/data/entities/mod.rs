@@ -25,3 +25,6 @@ pub mod req_request;
 pub mod req_vc;
 pub mod req_verification;
 pub mod token_requirements;
+pub mod issuing;
+pub mod minions;
+pub mod vc_request;
