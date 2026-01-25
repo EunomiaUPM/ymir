@@ -15,14 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::capabilities::DidResolver;
 use crate::errors::{ErrorLogTrait, Errors};
+use crate::services::client::ClientTrait;
 use crate::types::errors::BadFormat;
 use anyhow::bail;
+use base64::Engine;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use chrono::Utc;
+use jsonwebtoken::{TokenData, Validation};
+use rand::Rng;
+use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+use std::collections::HashSet;
 use std::path::Path;
+use std::sync::Arc;
 use std::{env, fs};
-use tracing::error;
+use tracing::{error, info};
 
 pub fn read<P>(path: P) -> anyhow::Result<String>
 where
@@ -102,4 +112,105 @@ fn validate_data(node: &Value, field: &str) -> anyhow::Result<String> {
             bail!(error)
         }
     }
+}
+
+pub fn get_from_opt<T>(value: &Option<T>, field_name: &str) -> anyhow::Result<T>
+where
+    T: Clone + Serialize + DeserializeOwned,
+{
+    match value {
+        Some(v) => Ok(v.clone()),
+        None => {
+            let error = Errors::unauthorized_new(&format!("Missing field: {}", field_name));
+            error!("{}", error.log());
+            bail!(error);
+        }
+    }
+}
+
+pub fn is_active(iat: u64) -> anyhow::Result<()> {
+    let now = Utc::now().timestamp() as u64;
+    if now >= iat {
+        Ok(())
+    } else {
+        let error = Errors::forbidden_new("Token is not yet valid");
+        error!("{}", error.log());
+        bail!(error);
+    }
+}
+
+pub fn has_expired(exp: u64) -> anyhow::Result<()> {
+    let now = Utc::now().timestamp() as u64;
+    if now <= exp {
+        Ok(())
+    } else {
+        let error = Errors::forbidden_new("Token has expired");
+        error!("{}", error.log());
+        bail!(error);
+    }
+}
+
+pub async fn validate_token<T>(
+    token: &str,
+    audience: Option<&str>,
+    client: Arc<dyn ClientTrait>,
+) -> anyhow::Result<(TokenData<T>, String)>
+where
+    T: Serialize + DeserializeOwned,
+{
+    info!("Validating token");
+    let header = jsonwebtoken::decode_header(&token)?;
+    info!("{:#?}", header);
+    let kid_str = get_from_opt(&header.kid, "kid")?;
+    let alg = header.alg;
+
+    let key = DidResolver::get_key(&kid_str, client).await?;
+    let (kid, _) = DidResolver::split_did_id(&kid_str);
+
+    let mut val = Validation::new(alg);
+
+    val.required_spec_claims = HashSet::new();
+    val.validate_exp = false;
+    val.validate_nbf = true;
+
+    match audience {
+        Some(data) => {
+            val.validate_aud = true;
+            val.set_audience(&[&(data)]);
+        }
+        None => {
+            val.validate_aud = false;
+        }
+    };
+
+    let token_data = match jsonwebtoken::decode::<T>(&token, &key, &val) {
+        Ok(data) => data,
+        Err(e) => {
+            let error =
+                Errors::security_new(&format!("VPT signature is incorrect -> {}", e.to_string()));
+            error!("{}", error.log());
+            bail!(error);
+        }
+    };
+
+    info!("Token signature is correct");
+    Ok((token_data, kid.to_string()))
+}
+
+pub fn trim_4_base(input: &str) -> String {
+    let slashes: Vec<usize> = input.match_indices('/').map(|(i, _)| i).collect();
+
+    if slashes.len() < 3 {
+        return input.to_string();
+    }
+
+    let cut_index = slashes[2];
+
+    input[..cut_index].to_string()
+}
+
+pub fn create_opaque_token() -> String {
+    let mut bytes = [0u8; 32]; // 256 bits
+    rand::rng().fill(&mut bytes);
+    URL_SAFE_NO_PAD.encode(&bytes)
 }

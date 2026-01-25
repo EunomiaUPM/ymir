@@ -1,0 +1,101 @@
+/*
+ * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+use super::super::IntoActiveSet;
+use crate::utils::create_opaque_token;
+use sea_orm::ActiveValue;
+use sea_orm::entity::prelude::*;
+use uuid::Uuid;
+
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+#[sea_orm(table_name = "issuing")]
+pub struct Model {
+    #[sea_orm(primary_key)]
+    pub id: String,
+    pub name: String,
+    pub pre_auth_code: String,
+    pub tx_code: String,
+    pub step: bool,
+    pub vc_type: String,
+    pub uri: Option<String>,
+    pub token: String,
+    pub aud: String,
+    pub holder_did: Option<String>,
+    pub issuer_did: Option<String>,
+    pub credential_id: String,
+    pub credential: Option<String>,
+    pub credential_data: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct NewModel {
+    pub id: String,
+    pub name: String,
+    pub vc_type: String,
+    pub aud: String,
+}
+
+impl IntoActiveSet<ActiveModel> for NewModel {
+    fn to_active(self) -> ActiveModel {
+        let code = create_opaque_token();
+        let tx_code = create_opaque_token();
+        let token = create_opaque_token();
+        let credential_id = Uuid::new_v4().to_string();
+        ActiveModel {
+            id: ActiveValue::Set(self.id),
+            name: ActiveValue::Set(self.name),
+            pre_auth_code: ActiveValue::Set(code),
+            tx_code: ActiveValue::Set(tx_code),
+            step: ActiveValue::Set(true),
+            vc_type: ActiveValue::Set(self.vc_type),
+            uri: ActiveValue::Set(None),
+            token: ActiveValue::Set(token),
+            aud: ActiveValue::Set(self.aud),
+            holder_did: ActiveValue::Set(None),
+            issuer_did: ActiveValue::Set(None),
+            credential_id: ActiveValue::Set(credential_id),
+            credential: ActiveValue::Set(None),
+            credential_data: ActiveValue::Set(None),
+        }
+    }
+}
+
+impl IntoActiveSet<ActiveModel> for Model {
+    fn to_active(self) -> ActiveModel {
+        ActiveModel {
+            id: ActiveValue::Set(self.id),
+            name: ActiveValue::Set(self.name),
+            pre_auth_code: ActiveValue::Set(self.pre_auth_code),
+            tx_code: ActiveValue::Set(self.tx_code),
+            step: ActiveValue::Set(self.step),
+            vc_type: ActiveValue::Set(self.vc_type),
+            uri: ActiveValue::Set(self.uri),
+            token: ActiveValue::Set(self.token),
+            aud: ActiveValue::Set(self.aud),
+            holder_did: ActiveValue::Set(self.holder_did),
+            issuer_did: ActiveValue::Set(self.issuer_did),
+            credential_id: ActiveValue::Set(self.credential_id),
+            credential: ActiveValue::Set(self.credential),
+            credential_data: ActiveValue::Set(self.credential_data),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
+
+impl ActiveModelBehavior for ActiveModel {}

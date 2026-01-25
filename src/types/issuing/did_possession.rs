@@ -15,11 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
-pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Debug, Deserialize)]
+pub struct DidPossession {
+    pub iss: String,
+    pub sub: String,
+    pub aud: String,
+    pub jti: String,
+    pub iat: u64,
+    pub exp: u64
+}

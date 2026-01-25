@@ -16,7 +16,9 @@
  */
 
 pub mod m20250403_094651_business_mates;
+pub mod m20250403_094651_issuing;
 pub mod m20250403_094651_mates;
+pub mod m20250403_094651_minions;
 pub mod m20250403_094651_recv_interaction;
 pub mod m20250403_094651_recv_request;
 pub mod m20250403_094651_recv_verification;
@@ -25,4 +27,5 @@ pub mod m20250403_094651_req_request;
 pub mod m20250403_094651_req_vc;
 pub mod m20250403_094651_req_verification;
 pub mod m20250403_094651_token_requirements;
+pub mod m20250403_094651_vc_request;
 pub mod migrator;
