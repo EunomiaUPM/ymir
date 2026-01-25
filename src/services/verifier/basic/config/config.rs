@@ -20,10 +20,10 @@ use crate::config::types::HostConfig;
 use crate::types::vcs::VcType;
 
 pub struct BasicVerifierConfig {
-    host: HostConfig,
-    is_local: bool,
-    api_path: String,
-    requested_vcs: Vec<VcType>,
+    pub host: HostConfig,
+    pub is_local: bool,
+    pub api_path: String,
+    pub requested_vcs: Vec<VcType>,
 }
 
 impl BasicVerifierConfigTrait for BasicVerifierConfig {

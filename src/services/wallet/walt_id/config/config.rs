@@ -25,9 +25,9 @@ use crate::types::wallet::WalletConfig;
 use tracing::error;
 
 pub struct WaltIdConfig {
-    host: HostConfig,
-    ssi_wallet_config: WalletConfig,
-    did_config: DidConfig,
+    pub host: HostConfig,
+    pub ssi_wallet_config: WalletConfig,
+    pub did_config: DidConfig,
 }
 
 impl WaltIdConfigTrait for WaltIdConfig {
