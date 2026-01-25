@@ -8,19 +8,13 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod services;
-pub mod config;
-pub mod errors;
-pub mod types;
-pub mod utils;
-pub mod data;
-pub mod capabilities;
-pub mod http;
-pub mod core_traits;
+mod wallet_router;
+
+pub use wallet_router::WalletRouter;
