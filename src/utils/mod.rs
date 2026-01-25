@@ -20,6 +20,7 @@ use crate::errors::{ErrorLogTrait, Errors};
 use crate::services::client::ClientTrait;
 use crate::types::errors::BadFormat;
 use anyhow::bail;
+use axum::http::HeaderMap;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;
@@ -213,4 +214,20 @@ pub fn create_opaque_token() -> String {
     let mut bytes = [0u8; 32]; // 256 bits
     rand::rng().fill(&mut bytes);
     URL_SAFE_NO_PAD.encode(&bytes)
+}
+
+pub fn extract_gnap_token(headers: HeaderMap) -> Option<String> {
+    headers
+        .get("Authorization")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|s| s.strip_prefix("GNAP "))
+        .map(|token| token.to_string())
+}
+
+pub fn extract_bearer_token(headers: HeaderMap) -> Option<String> {
+    headers
+        .get("Authorization")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .map(|token| token.to_string())
 }
