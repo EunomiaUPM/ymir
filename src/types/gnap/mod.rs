@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
-pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
-pub mod gnap;
+mod access_token;
+mod callback;
+mod grant_request;
+mod grant_response;
+mod interact_ref;
+
+pub use access_token::*;
+pub use callback::*;
+pub use grant_request::*;
+pub use grant_response::*;
+pub use interact_ref::*;

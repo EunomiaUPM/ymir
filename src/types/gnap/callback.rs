@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
-pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
-pub mod gnap;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct CallbackBody {
+    pub interact_ref: String,
+    pub hash: String
+}
+#[derive(Serialize)]
+pub struct RejectedCallbackBody {
+    pub rejected: String
+}
