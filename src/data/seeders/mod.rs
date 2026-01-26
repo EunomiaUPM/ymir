@@ -15,9 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod entities;
-mod into_active_trait;
-pub mod migrations;
-pub mod seeders;
+mod mate_seeder;
+mod minion_seeder;
 
-pub use into_active_trait::IntoActiveSet;
+pub use mate_seeder::MateSeeder;
+pub use minion_seeder::MinionSeeder;
