@@ -35,20 +35,20 @@ pub trait VaultTrait: Send + Sync + 'static {
     async fn write<T>(&self, mount: Option<&str>, path: &str, secret: &T) -> anyhow::Result<()>
     where
         T: Serialize + Send + Sync;
-    async fn write_all_secrets(&self) -> anyhow::Result<()>;
+    async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> anyhow::Result<()>;
     fn secrets() -> anyhow::Result<HashMap<String, Value>>;
     fn insert_json<T>(
         mapa: &mut HashMap<String, Value>,
         to_read: T,
         env: &str,
-        required: bool
+        required: bool,
     ) -> anyhow::Result<()>
     where
         T: AsRef<Path>;
     fn insert_pem<T>(
         mapa: &mut HashMap<String, Value>,
         to_read: T,
-        env: &str
+        env: &str,
     ) -> anyhow::Result<()>
     where
         T: AsRef<Path>;
