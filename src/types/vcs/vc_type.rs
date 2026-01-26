@@ -31,6 +31,7 @@ use crate::types::vcs::vc_specs::legal_authority::LegalRegistrationNumberTypes;
 pub enum VcType {
     LegalRegistrationNumber(LegalRegistrationNumberTypes),
     DataspaceParticipant,
+    LegalPerson,
     Unknown,
 }
 
@@ -55,6 +56,7 @@ impl FromStr for VcType {
                 Ok(VcType::LegalRegistrationNumber(LegalRegistrationNumberTypes::LeiCode))
             }
             "DataspaceParticipant" => Ok(VcType::DataspaceParticipant),
+            "LegalPerson" => Ok(VcType::LegalPerson),
             _ => {
                 let error = Errors::format_new(
                     BadFormat::Received,
@@ -80,6 +82,7 @@ impl fmt::Display for VcType {
                 }
             },
             VcType::DataspaceParticipant => "DataspaceParticipant".to_string(),
+            VcType::LegalPerson => "LegalPerson".to_string(),
             _ => "Unknown".to_string(),
         };
 
@@ -92,6 +95,7 @@ impl VcType {
         match self {
             VcType::LegalRegistrationNumber(_) => "LegalRegistrationNumber_jwt_vc_json".to_string(),
             VcType::DataspaceParticipant => "DataspaceParticipant_vc_json".to_string(),
+            VcType::LegalPerson => "LegalPerson_vc_json".to_string(),
             _ => "Unknown".to_string(),
         }
     }
@@ -100,12 +104,14 @@ impl VcType {
         vec![
             VcType::LegalRegistrationNumber(LegalRegistrationNumberTypes::TaxId),
             VcType::DataspaceParticipant,
+            VcType::LegalPerson,
         ]
     }
     pub fn name(&self) -> String {
         match self {
             VcType::LegalRegistrationNumber(_) => "LegalRegistrationNumber".to_string(),
             VcType::DataspaceParticipant => "DataspaceParticipant".to_string(),
+            VcType::LegalPerson => "LegalPerson".to_string(),
             VcType::Unknown => "Unknown".to_string(),
         }
     }

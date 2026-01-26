@@ -15,7 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::data::IntoActiveSet;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use rand::Rng;
@@ -23,6 +22,8 @@ use rand_distr::Alphanumeric;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use sha2::{Digest, Sha256};
+
+use crate::data::IntoActiveSet;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "recv_interaction")]
@@ -41,7 +42,7 @@ pub struct Model {
     pub continue_token: String,    // RESPONSE
     pub as_nonce: String,          // RANDOM
     pub interact_ref: String,      // RANDOM
-    pub hash: String,              // RANDOM
+    pub hash: String               // RANDOM
 }
 
 #[derive(Clone, Debug)]
@@ -55,7 +56,7 @@ pub struct NewModel {
     pub hints: Option<String>,       // REQUEST
     pub grant_endpoint: String,      // REQUEST
     pub continue_endpoint: String,   // RESPONSE
-    pub continue_token: String,      // RESPONSE
+    pub continue_token: String       // RESPONSE
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -94,7 +95,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             continue_token: ActiveValue::Set(self.continue_token),
             as_nonce: ActiveValue::Set(as_nonce),
             interact_ref: ActiveValue::Set(interact_ref),
-            hash: ActiveValue::Set(hash),
+            hash: ActiveValue::Set(hash)
         }
     }
 }
@@ -115,7 +116,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             continue_token: ActiveValue::Set(self.continue_token),
             as_nonce: ActiveValue::Set(self.as_nonce),
             interact_ref: ActiveValue::Set(self.interact_ref),
-            hash: ActiveValue::Set(self.hash),
+            hash: ActiveValue::Set(self.hash)
         }
     }
 }

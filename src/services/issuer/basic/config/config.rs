@@ -14,28 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-
-use crate::config::traits::SingleHostTrait;
-use crate::config::types::HostConfig;
+use crate::config::types::CommonHostsConfig;
 use crate::services::issuer::basic::config::config_trait::BasicIssuerConfigTrait;
 use crate::types::dids::did_config::DidConfig;
-use crate::types::vcs::W3cDataModelVersion;
+use crate::types::present::{Missing, Present};
+use std::marker::PhantomData;
 
 pub struct BasicIssuerConfig {
-    host: HostConfig,
+    hosts: CommonHostsConfig,
     is_local: bool,
     api_path: String,
-    w3c_vc_data_model: Option<W3cDataModelVersion>,
     did_config: DidConfig,
 }
 
 impl BasicIssuerConfigTrait for BasicIssuerConfig {
-    fn get_host_without_protocol(&self) -> String {
-        self.host.get_host_without_protocol()
-    }
-
-    fn get_host(&self) -> String {
-        self.host.get_host()
+    fn hosts(&self) -> &CommonHostsConfig {
+        &self.hosts
     }
 
     fn is_local(&self) -> bool {
@@ -45,10 +39,77 @@ impl BasicIssuerConfigTrait for BasicIssuerConfig {
     fn get_api_path(&self) -> String {
         self.api_path.clone()
     }
-    fn get_w3c_data_model(&self) -> Option<W3cDataModelVersion> {
-        self.w3c_vc_data_model.clone()
-    }
     fn get_did(&self) -> String {
         self.did_config.did.clone()
+    }
+}
+
+pub struct BasicIssuerConfigBuilder<H, L, A, D> {
+    hosts: Option<CommonHostsConfig>,
+    is_local: Option<bool>,
+    api_path: Option<String>,
+    did_config: Option<DidConfig>,
+    _marker: PhantomData<(H, L, A, D)>,
+}
+
+impl BasicIssuerConfigBuilder<Missing, Missing, Missing, Missing> {
+    pub fn new() -> Self {
+        Self { hosts: None, is_local: None, api_path: None, did_config: None, _marker: PhantomData }
+    }
+}
+
+impl<H, L, A, D> BasicIssuerConfigBuilder<H, L, A, D> {
+    pub fn hosts(self, hosts: CommonHostsConfig) -> BasicIssuerConfigBuilder<Present, L, A, D> {
+        BasicIssuerConfigBuilder {
+            hosts: Some(hosts),
+            is_local: self.is_local,
+            api_path: self.api_path,
+            did_config: self.did_config,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn is_local(self, is_local: bool) -> BasicIssuerConfigBuilder<H, Present, A, D> {
+        BasicIssuerConfigBuilder {
+            hosts: self.hosts,
+            is_local: Some(is_local),
+            api_path: self.api_path,
+            did_config: self.did_config,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn api_path(
+        self,
+        api_path: impl Into<String>,
+    ) -> BasicIssuerConfigBuilder<H, L, Present, D> {
+        BasicIssuerConfigBuilder {
+            hosts: self.hosts,
+            is_local: self.is_local,
+            api_path: Some(api_path.into()),
+            did_config: self.did_config,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn did_config(self, did_config: DidConfig) -> BasicIssuerConfigBuilder<H, L, A, Present> {
+        BasicIssuerConfigBuilder {
+            hosts: self.hosts,
+            is_local: self.is_local,
+            api_path: self.api_path,
+            did_config: Some(did_config),
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl BasicIssuerConfigBuilder<Present, Present, Present, Present> {
+    pub fn build(self) -> BasicIssuerConfig {
+        BasicIssuerConfig {
+            hosts: self.hosts.unwrap(),
+            is_local: self.is_local.unwrap(),
+            api_path: self.api_path.unwrap(),
+            did_config: self.did_config.unwrap(),
+        }
     }
 }

@@ -29,6 +29,8 @@ use urlencoding::encode;
 use super::super::VerifierTrait;
 use super::config::{BasicVerifierConfig, BasicVerifierConfigTrait};
 use crate::capabilities::DidResolver;
+use crate::config::traits::HostsConfigTrait;
+use crate::config::types::HostType;
 use crate::data::entities::recv_verification::{Model, NewModel};
 use crate::errors::{ErrorLogTrait, Errors};
 use crate::services::client::ClientTrait;
@@ -38,7 +40,7 @@ use crate::utils::{get_claim, get_opt_claim};
 
 pub struct BasicVerifierService {
     client: Arc<dyn ClientTrait>,
-    config: BasicVerifierConfig,
+    config: BasicVerifierConfig
 }
 
 impl BasicVerifierService {
@@ -51,10 +53,10 @@ impl BasicVerifierService {
 impl VerifierTrait for BasicVerifierService {
     fn start_vp(&self, id: &str) -> anyhow::Result<NewModel> {
         info!("Managing OIDC4VP");
-        let host_url = self.config.get_host();
+        let host_url = self.config.hosts().get_host(HostType::Http);
         let host_url = match self.config.is_local() {
             true => host_url.replace("127.0.0.1", "host.docker.internal"),
-            false => host_url,
+            false => host_url
         };
 
         let client_id = format!("{}/verify", &host_url);
@@ -73,11 +75,11 @@ impl VerifierTrait for BasicVerifierService {
     fn generate_verification_uri(&self, model: Model) -> String {
         info!("Generating verification exchange URI");
 
-        let host_url = self.config.get_host();
+        let host_url = self.config.hosts().get_host(HostType::Http);
         let host_url = format!("{}{}/verifier", host_url, self.config.get_api_path());
         let host_url = match self.config.is_local() {
             true => host_url.replace("127.0.0.1", "host.docker.internal"),
-            false => host_url,
+            false => host_url
         };
 
         let base_url = "openid4vp://authorize";
@@ -130,7 +132,7 @@ impl VerifierTrait for BasicVerifierService {
     async fn verify_vp(
         &self,
         model: &mut Model,
-        vp_token: &str,
+        vp_token: &str
     ) -> anyhow::Result<(Vec<String>, String)> {
         info!("Verifying vp");
 
@@ -143,7 +145,7 @@ impl VerifierTrait for BasicVerifierService {
         // let id = match token.claims["jti"].as_str() {
         //     Some(data) => data,
         //     None => {
-        //         let error = CommonErrors::format_new(
+        //         let error = Errors::format_new(
         //             BadFormat::Received,
         //             Some("VPT does not contain the 'jti' field".to_string()),
         //         );
@@ -184,7 +186,7 @@ impl VerifierTrait for BasicVerifierService {
     async fn validate_token(
         &self,
         vp_token: &str,
-        audience: Option<&str>,
+        audience: Option<&str>
     ) -> anyhow::Result<(TokenData<Value>, String)> {
         info!("Validating token");
         let header = jsonwebtoken::decode_header(&vp_token)?;
@@ -208,13 +210,13 @@ impl VerifierTrait for BasicVerifierService {
             Some(data) => {
                 let audience = format!(
                     "{}{}/verifier/verify/{}",
-                    self.config.get_host(),
+                    self.config.hosts().get_host(HostType::Http),
                     self.config.get_api_path(),
                     data
                 );
                 let audience = match self.config.is_local() {
                     true => audience.replace("127.0.0.1", "host.docker.internal"),
-                    false => audience,
+                    false => audience
                 };
                 val.validate_aud = true;
                 val.set_audience(&[&(audience)]);
@@ -253,7 +255,7 @@ impl VerifierTrait for BasicVerifierService {
         &self,
         model: &mut Model,
         token: &TokenData<Value>,
-        kid: &str,
+        kid: &str
     ) -> anyhow::Result<()> {
         info!("Validating subject");
 
@@ -284,7 +286,7 @@ impl VerifierTrait for BasicVerifierService {
         if let Some(sub) = sub {
             if sub != holder {
                 let error = Errors::security_new(
-                    "VCT token sub, credential subject & VP Holder do not match",
+                    "VCT token sub, credential subject & VP Holder do not match"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -422,7 +424,7 @@ impl VerifierTrait for BasicVerifierService {
     fn retrieve_vcs(&self, token: TokenData<Value>) -> anyhow::Result<Vec<String>> {
         info!("Retrieving VCs");
         let vcs: Vec<String> = serde_json::from_value(
-            token.claims["vp"]["verifiableCredential"].clone(),
+            token.claims["vp"]["verifiableCredential"].clone()
         )
         .map_err(|e| {
             let error = Errors::format_new(
@@ -430,7 +432,7 @@ impl VerifierTrait for BasicVerifierService {
                 &format!(
                     "VPT does not contain the 'verifiableCredential' field -> {}",
                     e.to_string()
-                ),
+                )
             );
             error!("{}", error.log());
             error

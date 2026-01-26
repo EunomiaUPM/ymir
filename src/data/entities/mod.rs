@@ -16,7 +16,9 @@
  */
 
 pub mod business_mates;
+pub mod issuing;
 pub mod mates;
+pub mod minions;
 pub mod recv_interaction;
 pub mod recv_request;
 pub mod recv_verification;
@@ -25,6 +27,4 @@ pub mod req_request;
 pub mod req_vc;
 pub mod req_verification;
 pub mod token_requirements;
-pub mod issuing;
-pub mod minions;
 pub mod vc_request;

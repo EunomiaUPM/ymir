@@ -15,12 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod services;
+pub mod capabilities;
 pub mod config;
+pub mod core_traits;
+pub mod data;
 pub mod errors;
+pub mod http;
+pub mod services;
 pub mod types;
 pub mod utils;
-pub mod data;
-pub mod capabilities;
-pub mod http;
-pub mod core_traits;

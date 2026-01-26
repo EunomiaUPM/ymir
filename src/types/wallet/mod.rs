@@ -21,21 +21,22 @@ mod matching_vcs;
 mod oidc_uri;
 mod other;
 mod vpd;
+mod wallet_config;
 mod wallet_info;
 mod wallet_info_response;
 mod wallet_login_response;
 mod wallet_session;
-mod wallet_config;
 
 pub use cred_offer_resp::*;
-pub use crate::types::dids::dids_info::DidsInfo;
 pub use key_definition::KeyDefinition;
 pub use matching_vcs::*;
 pub use oidc_uri::OidcUri;
 pub use other::*;
 pub use vpd::Vpd;
+pub use wallet_config::WalletConfig;
 pub use wallet_info::WalletInfo;
 pub use wallet_info_response::WalletInfoResponse;
 pub use wallet_login_response::WalletLoginResponse;
 pub use wallet_session::WalletSession;
-pub use wallet_config::WalletConfig;
+
+pub use crate::types::dids::dids_info::DidsInfo;

@@ -17,5 +17,5 @@
 
 mod config;
 mod config_trait;
-pub use config::WaltIdConfig;
+pub use config::*;
 pub use config_trait::WaltIdConfigTrait;

@@ -16,6 +16,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+
 use crate::types::dids::did_type::DidType;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

@@ -14,24 +14,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
 use super::BasicVerifierConfigTrait;
-use crate::config::traits::SingleHostTrait;
-use crate::config::types::HostConfig;
+use crate::config::types::CommonHostsConfig;
+use crate::types::present::{Missing, Present};
 use crate::types::vcs::VcType;
+use std::marker::PhantomData;
 
 pub struct BasicVerifierConfig {
-    pub host: HostConfig,
-    pub is_local: bool,
-    pub api_path: String,
-    pub requested_vcs: Vec<VcType>,
+    hosts: CommonHostsConfig,
+    is_local: bool,
+    api_path: String,
+    requested_vcs: Vec<VcType>,
 }
 
 impl BasicVerifierConfigTrait for BasicVerifierConfig {
-    fn get_host(&self) -> String {
-        self.host.get_host()
-    }
-    fn get_host_without_protocol(&self) -> String {
-        self.host.get_host_without_protocol()
+    fn hosts(&self) -> &CommonHostsConfig {
+        &self.hosts
     }
     fn is_local(&self) -> bool {
         self.is_local
@@ -41,5 +40,81 @@ impl BasicVerifierConfigTrait for BasicVerifierConfig {
     }
     fn get_api_path(&self) -> String {
         self.api_path.clone()
+    }
+}
+
+pub struct BasicVerifierConfigBuilder<H, L, A, V> {
+    hosts: Option<CommonHostsConfig>,
+    is_local: Option<bool>,
+    api_path: Option<String>,
+    requested_vcs: Option<Vec<VcType>>,
+    _marker: PhantomData<(H, L, A, V)>,
+}
+
+impl BasicVerifierConfigBuilder<Missing, Missing, Missing, Missing> {
+    pub fn new() -> Self {
+        Self {
+            hosts: None,
+            is_local: None,
+            api_path: None,
+            requested_vcs: None,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<H, L, A, V> BasicVerifierConfigBuilder<H, L, A, V> {
+    pub fn hosts(self, hosts: CommonHostsConfig) -> BasicVerifierConfigBuilder<Present, L, A, V> {
+        BasicVerifierConfigBuilder {
+            hosts: Some(hosts),
+            is_local: self.is_local,
+            api_path: self.api_path,
+            requested_vcs: self.requested_vcs,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn is_local(self, is_local: bool) -> BasicVerifierConfigBuilder<H, Present, A, V> {
+        BasicVerifierConfigBuilder {
+            hosts: self.hosts,
+            is_local: Some(is_local),
+            api_path: self.api_path,
+            requested_vcs: self.requested_vcs,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn api_path(
+        self,
+        api_path: impl Into<String>,
+    ) -> BasicVerifierConfigBuilder<H, L, Present, V> {
+        BasicVerifierConfigBuilder {
+            hosts: self.hosts,
+            is_local: self.is_local,
+            api_path: Some(api_path.into()),
+            requested_vcs: self.requested_vcs,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn requested_vcs(self, vcs: Vec<VcType>) -> BasicVerifierConfigBuilder<H, L, A, Present> {
+        BasicVerifierConfigBuilder {
+            hosts: self.hosts,
+            is_local: self.is_local,
+            api_path: self.api_path,
+            requested_vcs: Some(vcs),
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl BasicVerifierConfigBuilder<Present, Present, Present, Present> {
+    pub fn build(self) -> BasicVerifierConfig {
+        BasicVerifierConfig {
+            hosts: self.hosts.unwrap(),
+            is_local: self.is_local.unwrap(),
+            api_path: self.api_path.unwrap(),
+            requested_vcs: self.requested_vcs.unwrap(),
+        }
     }
 }

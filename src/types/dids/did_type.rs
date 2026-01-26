@@ -16,6 +16,7 @@
  */
 
 use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -28,11 +29,10 @@ pub enum DidType {
 impl fmt::Display for DidType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            DidType::Web => {"did:web"}
-            DidType::Jwk => {"did:jwk"}
-            DidType::Other => {"other"}
+            DidType::Web => "did:web",
+            DidType::Jwk => "did:jwk",
+            DidType::Other => "other"
         };
         write!(f, "{}", s)
     }
 }
-

@@ -15,13 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::types::vcs::W3cDataModelVersion;
+use crate::config::types::CommonHostsConfig;
 
 pub trait BasicIssuerConfigTrait {
-    fn get_host_without_protocol(&self) -> String;
-    fn get_host(&self) -> String;
+    fn hosts(&self) -> &CommonHostsConfig;
     fn is_local(&self) -> bool;
     fn get_api_path(&self) -> String;
-    fn get_w3c_data_model(&self) -> Option<W3cDataModelVersion>;
     fn get_did(&self) -> String;
 }

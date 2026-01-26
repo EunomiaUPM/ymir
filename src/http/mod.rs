@@ -16,5 +16,7 @@
  */
 
 mod wallet_router;
+mod openapi_router;
 
 pub use wallet_router::WalletRouter;
+pub use openapi_router::OpenapiRouter;

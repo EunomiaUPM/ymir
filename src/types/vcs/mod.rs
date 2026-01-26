@@ -15,16 +15,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+pub mod claims_v1;
+pub mod claims_v2;
 mod input_descriptor;
-mod verify_payload;
-mod vpd;
-mod vc_type;
+pub mod vc_decision_approval;
+pub mod vc_issuer;
 pub mod vc_specs;
+mod vc_type;
+mod vpd;
 mod w3c_data_model;
 
 pub use input_descriptor::InputDescriptor;
-pub use verify_payload::VerifyPayload;
-pub use vpd::VPDef;
 pub use vc_type::VcType;
+pub use vpd::VPDef;
 pub use w3c_data_model::W3cDataModelVersion;
-

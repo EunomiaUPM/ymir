@@ -14,11 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
+use crate::config::types::CommonHostsConfig;
 use crate::types::vcs::VcType;
 
 pub trait BasicVerifierConfigTrait {
-    fn get_host(&self) -> String;
-    fn get_host_without_protocol(&self) -> String;
+    fn hosts(&self) -> &CommonHostsConfig;
     fn is_local(&self) -> bool;
     fn get_requested_vcs(&self) -> Vec<VcType>;
     fn get_api_path(&self) -> String;

@@ -15,8 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod vault;
-pub mod wallet;
 pub mod client;
-pub mod verifier;
 pub mod issuer;
+pub mod repo;
+pub mod vault;
+pub mod verifier;
+pub mod wallet;

@@ -19,6 +19,7 @@ use chrono;
 use sea_orm::entity::prelude::*;
 use sea_orm::{ActiveValue, DeriveEntityModel};
 use serde::{Deserialize, Serialize};
+
 use crate::data::IntoActiveSet;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]

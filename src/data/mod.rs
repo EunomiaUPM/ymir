@@ -16,7 +16,7 @@
  */
 
 pub mod entities;
-pub mod migrations;
 mod into_active_trait;
+pub mod migrations;
 
 pub use into_active_trait::IntoActiveSet;

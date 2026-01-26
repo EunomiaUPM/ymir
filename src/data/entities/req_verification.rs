@@ -15,9 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::data::IntoActiveSet;
-use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue;
+use sea_orm::entity::prelude::*;
+
+use crate::data::IntoActiveSet;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "req_verification")]

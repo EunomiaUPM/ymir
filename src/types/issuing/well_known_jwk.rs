@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
-use rsa::traits::PublicKeyParts;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use rsa::RsaPublicKey;
+use rsa::traits::PublicKeyParts;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]

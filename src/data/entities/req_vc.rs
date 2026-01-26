@@ -16,10 +16,11 @@
  */
 
 use chrono;
-use crate::data::IntoActiveSet;
-use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue;
+use sea_orm::entity::prelude::*;
 use serde::Serialize;
+
+use crate::data::IntoActiveSet;
 
 #[derive(Serialize, Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "req_vc")]

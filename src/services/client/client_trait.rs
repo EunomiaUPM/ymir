@@ -28,18 +28,18 @@ pub trait ClientTrait: Send + Sync {
         &self,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body,
+        body: Body
     ) -> anyhow::Result<Response>;
     async fn put(
         &self,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body,
+        body: Body
     ) -> anyhow::Result<Response>;
     async fn delete(
         &self,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body,
+        body: Body
     ) -> anyhow::Result<Response>;
 }
