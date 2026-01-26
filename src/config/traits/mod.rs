@@ -23,4 +23,4 @@ mod hosts_trait;
 
 pub use api_trait::ApiConfigTrait;
 pub use db_trait::DatabaseConfigTrait;
-pub use hosts_trait::{HostsTrait, SingleHostTrait};
+pub use hosts_trait::{HostsConfigTrait, SingleHostTrait};

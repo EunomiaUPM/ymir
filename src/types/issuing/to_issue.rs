@@ -30,20 +30,20 @@ pub struct StuffToIssue {
     pub vc_model: VcModel,
     pub w3c_data_model: Option<W3cDataModelVersion>,
     pub dataspace_id: Option<String>,
-    pub federated_catalog_uri: Option<String>,
+    pub federated_catalog_uri: Option<String>
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum VcModel {
     JwtVc,
-    SdJwtVc,
+    SdJwtVc
 }
 
 impl Display for VcModel {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let s = match self {
             VcModel::JwtVc => "jwt_vc".to_string(),
-            VcModel::SdJwtVc => "sd_jwt_vc".to_string(),
+            VcModel::SdJwtVc => "sd_jwt_vc".to_string()
         };
 
         write!(f, "{}", s)

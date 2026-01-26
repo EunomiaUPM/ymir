@@ -15,11 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::super::IntoActiveSet;
-use crate::utils::create_opaque_token;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use uuid::Uuid;
+
+use super::super::IntoActiveSet;
+use crate::utils::create_opaque_token;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "issuing")]
@@ -38,7 +39,7 @@ pub struct Model {
     pub issuer_did: Option<String>,
     pub credential_id: String,
     pub credential: Option<String>,
-    pub credential_data: Option<String>,
+    pub credential_data: Option<String>
 }
 
 #[derive(Clone, Debug)]
@@ -46,7 +47,7 @@ pub struct NewModel {
     pub id: String,
     pub name: String,
     pub vc_type: String,
-    pub aud: String,
+    pub aud: String
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -69,7 +70,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             issuer_did: ActiveValue::Set(None),
             credential_id: ActiveValue::Set(credential_id),
             credential: ActiveValue::Set(None),
-            credential_data: ActiveValue::Set(None),
+            credential_data: ActiveValue::Set(None)
         }
     }
 }
@@ -90,7 +91,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             issuer_did: ActiveValue::Set(self.issuer_did),
             credential_id: ActiveValue::Set(self.credential_id),
             credential: ActiveValue::Set(self.credential),
-            credential_data: ActiveValue::Set(self.credential_data),
+            credential_data: ActiveValue::Set(self.credential_data)
         }
     }
 }

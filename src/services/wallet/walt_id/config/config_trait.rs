@@ -21,7 +21,6 @@ use crate::types::wallet::WalletConfig;
 pub trait WaltIdConfigTrait {
     fn get_raw_wallet_config(&self) -> WalletConfig;
     fn get_wallet_host(&self) -> String;
-    fn get_host(&self) -> String;
     fn get_did_type(&self) -> DidType;
     fn get_did_web_path(&self) -> Option<String>;
     fn get_did_web_domain(&self) -> String;

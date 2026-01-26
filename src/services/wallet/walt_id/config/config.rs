@@ -15,19 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::marker::PhantomData;
+use tracing::error;
+
 use super::WaltIdConfigTrait;
 use crate::config::traits::SingleHostTrait;
-use crate::config::types::HostConfig;
 use crate::errors::{ErrorLogTrait, Errors};
 use crate::types::dids::did_config::DidConfig;
 use crate::types::dids::did_type::DidType;
+use crate::types::present::{Missing, Present};
 use crate::types::wallet::WalletConfig;
-use tracing::error;
 
 pub struct WaltIdConfig {
-    pub host: HostConfig,
-    pub ssi_wallet_config: WalletConfig,
-    pub did_config: DidConfig,
+    ssi_wallet_config: WalletConfig,
+    did_config: DidConfig,
 }
 
 impl WaltIdConfigTrait for WaltIdConfig {
@@ -36,9 +37,6 @@ impl WaltIdConfigTrait for WaltIdConfig {
     }
     fn get_wallet_host(&self) -> String {
         self.ssi_wallet_config.api.get_host()
-    }
-    fn get_host(&self) -> String {
-        self.host.get_host()
     }
     fn get_did_type(&self) -> DidType {
         self.did_config.r#type.clone()
@@ -66,5 +64,44 @@ impl WaltIdConfigTrait for WaltIdConfig {
         };
 
         domain.expect("didweb")
+    }
+}
+
+pub struct WaltIdConfigBuilder<W, D> {
+    ssi_wallet_config: Option<WalletConfig>,
+    did_config: Option<DidConfig>,
+    _marker: PhantomData<(W, D)>,
+}
+
+impl WaltIdConfigBuilder<Missing, Missing> {
+    pub fn new() -> Self {
+        Self { ssi_wallet_config: None, did_config: None, _marker: PhantomData }
+    }
+}
+
+impl<W, D> WaltIdConfigBuilder<W, D> {
+    pub fn ssi_wallet_config(self, cfg: WalletConfig) -> WaltIdConfigBuilder<Present, D> {
+        WaltIdConfigBuilder {
+            ssi_wallet_config: Some(cfg),
+            did_config: self.did_config,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn did_config(self, cfg: DidConfig) -> WaltIdConfigBuilder<W, Present> {
+        WaltIdConfigBuilder {
+            ssi_wallet_config: self.ssi_wallet_config,
+            did_config: Some(cfg),
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl WaltIdConfigBuilder<Present, Present> {
+    pub fn build(self) -> WaltIdConfig {
+        WaltIdConfig {
+            ssi_wallet_config: self.ssi_wallet_config.unwrap(),
+            did_config: self.did_config.unwrap(),
+        }
     }
 }

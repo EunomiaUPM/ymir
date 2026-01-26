@@ -16,12 +16,14 @@
  *  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
-use crate::config::types::{HostConfig, HostType};
-use crate::errors::{ErrorLogTrait, Errors};
+
 use anyhow::bail;
 use tracing::error;
 
-pub trait HostsTrait {
+use crate::config::types::{HostConfig, HostType};
+use crate::errors::{ErrorLogTrait, Errors};
+
+pub trait HostsConfigTrait {
     fn http(&self) -> &HostConfig;
     fn grpc(&self) -> Option<&HostConfig>;
     fn graphql(&self) -> Option<&HostConfig>;
@@ -34,7 +36,7 @@ pub trait HostsTrait {
         host.expect("Failed to get host")
     }
 
-    fn get_host_without_protocol(&self, host_type: &HostType) -> String {
+    fn get_host_without_protocol(&self, host_type: HostType) -> String {
         let host = match host_type {
             HostType::Http => self.http(),
             HostType::Grpc => self.grpc().expect("Failed to get grpc host"),
@@ -42,6 +44,16 @@ pub trait HostsTrait {
         };
         host.get_host_without_protocol()
     }
+
+    fn get_weird_port(&self, host_type: HostType) -> String {
+        let host = match host_type {
+            HostType::Http => self.http(),
+            HostType::Grpc => self.grpc().expect("Failed to get grpc host"),
+            HostType::Graphql => self.graphql().expect("Failed to get graphql host"),
+        };
+        host.get_weird_port()
+    }
+
     fn get_host_helper(host: Option<&HostConfig>, module: &str) -> anyhow::Result<String> {
         match host {
             Some(host) => Ok(host.get_host()),
@@ -68,6 +80,12 @@ pub trait SingleHostTrait {
                 format!("{}:{}", self.host().url, port)
             }
             None => self.host().url.clone(),
+        }
+    }
+    fn get_weird_port(&self) -> String {
+        match self.host().port.as_ref() {
+            Some(port) => format!(":{}", port),
+            None => "".to_string(),
         }
     }
 }

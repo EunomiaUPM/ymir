@@ -15,11 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::data::IntoActiveSet;
 use chrono;
 use sea_orm::entity::prelude::*;
 use sea_orm::{ActiveValue, DeriveEntityModel};
 use serde::{Deserialize, Serialize};
+
+use crate::data::IntoActiveSet;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "business_mates")]
@@ -29,14 +30,14 @@ pub struct Model {
     pub participant_id: String,
     pub token: Option<String>,
     pub saved_at: chrono::NaiveDateTime,
-    pub last_interaction: chrono::NaiveDateTime,
+    pub last_interaction: chrono::NaiveDateTime
 }
 
 #[derive(Clone, Debug)]
 pub struct NewModel {
     pub id: String,
     pub participant_id: String,
-    pub token: Option<String>,
+    pub token: Option<String>
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -46,7 +47,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             participant_id: ActiveValue::Set(self.participant_id),
             token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc())
         }
     }
 }
@@ -58,7 +59,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             participant_id: ActiveValue::Set(self.participant_id),
             token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(self.saved_at),
-            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc())
         }
     }
 }

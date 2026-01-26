@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod errors;
-pub mod secrets;
-pub mod wallet;
-pub mod http;
 pub mod dids;
-pub mod jwt;
-pub mod vcs;
-pub mod issuing;
+pub mod errors;
 pub mod gnap;
+pub mod http;
+pub mod issuing;
+pub mod jwt;
+pub mod secrets;
+pub mod vcs;
+pub mod verifying;
+pub mod wallet;
+pub mod present;

@@ -16,9 +16,10 @@
  */
 
 use chrono;
-use crate::data::IntoActiveSet;
-use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue;
+use sea_orm::entity::prelude::*;
+
+use crate::data::IntoActiveSet;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "req_request")]

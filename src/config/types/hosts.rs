@@ -17,49 +17,43 @@
  *
  */
 
-use crate::config::traits::{HostsTrait, SingleHostTrait};
-use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+
+use serde::{Deserialize, Serialize};
+
+use crate::config::traits::{HostsConfigTrait, SingleHostTrait};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HostConfig {
     pub protocol: String,
     pub url: String,
-    pub port: Option<String>,
+    pub port: Option<String>
 }
 
 impl SingleHostTrait for HostConfig {
-    fn host(&self) -> &HostConfig {
-        self
-    }
+    fn host(&self) -> &HostConfig { self }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CommonHostsConfig {
     pub http: HostConfig,
     pub grpc: Option<HostConfig>,
-    pub graphql: Option<HostConfig>,
+    pub graphql: Option<HostConfig>
 }
 
-impl HostsTrait for CommonHostsConfig {
-    fn http(&self) -> &HostConfig {
-        &self.http
-    }
+impl HostsConfigTrait for CommonHostsConfig {
+    fn http(&self) -> &HostConfig { &self.http }
 
-    fn grpc(&self) -> Option<&HostConfig> {
-        self.grpc.as_ref()
-    }
+    fn grpc(&self) -> Option<&HostConfig> { self.grpc.as_ref() }
 
-    fn graphql(&self) -> Option<&HostConfig> {
-        self.graphql.as_ref()
-    }
+    fn graphql(&self) -> Option<&HostConfig> { self.graphql.as_ref() }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum HostType {
     Http,
     Grpc,
-    Graphql,
+    Graphql
 }
 
 impl Display for HostType {
@@ -67,7 +61,7 @@ impl Display for HostType {
         let str = match self {
             HostType::Http => "http".to_string(),
             HostType::Grpc => "grpc".to_string(),
-            HostType::Graphql => "graphql".to_string(),
+            HostType::Graphql => "graphql".to_string()
         };
         write!(f, "{}", str)
     }

@@ -15,10 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::capabilities::DidResolver;
-use crate::errors::{ErrorLogTrait, Errors};
-use crate::services::client::ClientTrait;
-use crate::types::errors::BadFormat;
+use std::collections::HashSet;
+use std::path::Path;
+use std::sync::Arc;
+use std::{env, fs};
+
 use anyhow::bail;
 use axum::http::HeaderMap;
 use base64::Engine;
@@ -29,15 +30,16 @@ use rand::Rng;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use std::collections::HashSet;
-use std::path::Path;
-use std::sync::Arc;
-use std::{env, fs};
 use tracing::{error, info};
+
+use crate::capabilities::DidResolver;
+use crate::errors::{ErrorLogTrait, Errors};
+use crate::services::client::ClientTrait;
+use crate::types::errors::BadFormat;
 
 pub fn read<P>(path: P) -> anyhow::Result<String>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let path_ref = path.as_ref();
     match fs::read_to_string(path_ref) {
@@ -53,7 +55,7 @@ where
 pub fn read_json<T, P>(path: P) -> anyhow::Result<T>
 where
     T: DeserializeOwned,
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let data = read(path)?;
     let json = serde_json::from_str(&data)?;
@@ -96,7 +98,7 @@ pub fn get_opt_claim(claims: &Value, path: Vec<&str>) -> anyhow::Result<Option<S
     for key in path.iter() {
         node = match node.get(key) {
             Some(data) => data,
-            None => return Ok(None),
+            None => return Ok(None)
         };
     }
     let data = validate_data(node, field)?;
@@ -117,7 +119,7 @@ fn validate_data(node: &Value, field: &str) -> anyhow::Result<String> {
 
 pub fn get_from_opt<T>(value: &Option<T>, field_name: &str) -> anyhow::Result<T>
 where
-    T: Clone + Serialize + DeserializeOwned,
+    T: Clone + Serialize + DeserializeOwned
 {
     match value {
         Some(v) => Ok(v.clone()),
@@ -154,10 +156,10 @@ pub fn has_expired(exp: u64) -> anyhow::Result<()> {
 pub async fn validate_token<T>(
     token: &str,
     audience: Option<&str>,
-    client: Arc<dyn ClientTrait>,
+    client: Arc<dyn ClientTrait>
 ) -> anyhow::Result<(TokenData<T>, String)>
 where
-    T: Serialize + DeserializeOwned,
+    T: Serialize + DeserializeOwned
 {
     info!("Validating token");
     let header = jsonwebtoken::decode_header(&token)?;

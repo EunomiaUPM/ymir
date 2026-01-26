@@ -15,11 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::types::HostConfig;
 use serde::{Deserialize, Serialize};
+
+use crate::config::types::HostConfig;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct WalletConfig {
     pub api: HostConfig,
-    pub id: Option<String>,
+    pub id: Option<String>
 }

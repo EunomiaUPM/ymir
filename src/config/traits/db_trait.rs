@@ -28,8 +28,13 @@ pub trait DatabaseConfigTrait {
             DbType::Memory => ":memory:".to_string(),
             _ => format!(
                 "{}://{}:{}@{}:{}/{}",
-                db_config.db_type, db_secrets.user, db_secrets.password, db_config.url, db_config.port, db_secrets.name
-            ),
+                db_config.db_type,
+                db_secrets.user,
+                db_secrets.password,
+                db_config.url,
+                db_config.port,
+                db_secrets.name
+            )
         }
     }
 }

@@ -16,15 +16,12 @@
  *  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+
 use crate::config::types::ApiConfig;
 use crate::utils::read;
 
 pub trait ApiConfigTrait {
     fn api(&self) -> &ApiConfig;
-    fn get_openapi(&self) -> anyhow::Result<String> {
-        read(&self.api().openapi_path)
-    }
-    fn get_api_version(&self) -> String {
-        format!("/api/{}", self.api().version)
-    }
+    fn get_openapi(&self) -> anyhow::Result<String> { read(&self.api().openapi_path) }
+    fn get_api_version(&self) -> String { format!("/api/{}", self.api().version) }
 }

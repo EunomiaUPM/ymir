@@ -16,6 +16,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+
 use crate::types::vcs::VcType;
 
 #[derive(Debug, Serialize, Deserialize)]

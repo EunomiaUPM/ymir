@@ -40,7 +40,7 @@ use crate::types::http::Body;
 use crate::types::jwt::AuthJwtClaims;
 use crate::types::secrets::{SemiWalletSecrets, StringHelper};
 use crate::types::wallet::{
-    DidsInfo, KeyDefinition, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession,
+    DidsInfo, KeyDefinition, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession
 };
 use crate::utils::expect_from_env;
 
@@ -49,26 +49,26 @@ pub struct WaltIdService {
     key_data: Arc<Mutex<Vec<KeyDefinition>>>,
     client: Arc<dyn ClientTrait>,
     vault: Arc<VaultService>,
-    config: WaltIdConfig,
+    config: WaltIdConfig
 }
 
 impl WaltIdService {
     pub fn new(
         config: WaltIdConfig,
         client: Arc<dyn ClientTrait>,
-        vault: Arc<VaultService>,
+        vault: Arc<VaultService>
     ) -> WaltIdService {
         WaltIdService {
             wallet_session: Arc::new(Mutex::new(WalletSession {
                 account_id: None,
                 token: None,
                 token_exp: None,
-                wallets: vec![],
+                wallets: vec![]
             })),
             key_data: Arc::new(Mutex::new(Vec::new())),
             config,
             client,
-            vault,
+            vault
         }
     }
 }
@@ -100,7 +100,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "POST",
                     res.status().as_u16(),
-                    "Petition to register Wallet failed",
+                    "Petition to register Wallet failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -137,7 +137,7 @@ impl WalletTrait for WaltIdService {
                 if jwt_parts.len() != 3 {
                     let error = Errors::format_new(
                         BadFormat::Sent,
-                        "The jwt does not have the correct format",
+                        "The jwt does not have the correct format"
                     );
                     error!("{}", error.log());
                     bail!(error);
@@ -155,7 +155,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "POST",
                     res.status().as_u16(),
-                    "Petition to login into Wallet failed",
+                    "Petition to login into Wallet failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -184,7 +184,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "POST",
                     res.status().as_u16(),
-                    "Petition to logout from Wallet failed",
+                    "Petition to logout from Wallet failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -222,7 +222,7 @@ impl WalletTrait for WaltIdService {
         self.retrieve_wallet_info().await?;
         self.retrieve_wallet_dids().await?;
         self.set_default_did().await?;
-        
+
         Ok(())
     }
 
@@ -248,7 +248,7 @@ impl WalletTrait for WaltIdService {
             None => {
                 let error = Errors::missing_action_new(
                     MissingAction::Wallet,
-                    "There is no wallet to retrieve dids from",
+                    "There is no wallet to retrieve dids from"
                 );
                 error!("{}", error.log());
                 bail!(error)
@@ -292,7 +292,7 @@ impl WalletTrait for WaltIdService {
             None => {
                 let error = Errors::missing_action_new(
                     MissingAction::Token,
-                    "There is no token available for use",
+                    "There is no token available for use"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -327,7 +327,7 @@ impl WalletTrait for WaltIdService {
             None => {
                 let error = Errors::missing_action_new(
                     MissingAction::Key,
-                    "Retrieve keys from wallet first",
+                    "Retrieve keys from wallet first"
                 );
                 error!("{}", error.log());
                 bail!(error)
@@ -373,7 +373,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "GET",
                     res.status().as_u16(),
-                    "Petition to retrieve Wallet information failed",
+                    "Petition to retrieve Wallet information failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -418,7 +418,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "POST",
                     res.status().as_u16(),
-                    "Petition to retrieve keys failed",
+                    "Petition to retrieve keys failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -466,7 +466,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "GET",
                     res.status().as_u16(),
-                    "Petition to retrieve Wallet DIDs failed",
+                    "Petition to retrieve Wallet DIDs failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -510,7 +510,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "POST",
                     res.status().as_u16(),
-                    "Petition to register key failed",
+                    "Petition to register key failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -528,7 +528,7 @@ impl WalletTrait for WaltIdService {
             DidType::Other => {
                 let error = Errors::not_impl_new(
                     "Other did type",
-                    "Trying to use other did type that is not registered",
+                    "Trying to use other did type that is not registered"
                 );
                 error!("{}", error.log());
                 bail!(error)
@@ -549,7 +549,7 @@ impl WalletTrait for WaltIdService {
                     "http://register_did_in_wallet",
                     "POST",
                     res.status().as_u16(),
-                    "Petition to register key failed",
+                    "Petition to register key failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -588,7 +588,7 @@ impl WalletTrait for WaltIdService {
             Some(path) => {
                 format!("&path={}", path)
             }
-            None => "".to_string(),
+            None => "".to_string()
         };
 
         let domain = self.config.get_did_web_domain();
@@ -640,7 +640,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "POST",
                     res.status().as_u16(),
-                    "Petition to set did as default failed",
+                    "Petition to set did as default failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -685,7 +685,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "DELETE",
                     res.status().as_u16(),
-                    "Petition to delete key failed",
+                    "Petition to delete key failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -728,7 +728,7 @@ impl WalletTrait for WaltIdService {
                     &url,
                     "DELETE",
                     res.status().as_u16(),
-                    "Petition to delete key failed",
+                    "Petition to delete key failed"
                 );
                 error!("{}", error.log());
                 bail!(error);
