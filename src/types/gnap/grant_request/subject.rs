@@ -15,14 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod access_token;
-mod callback;
-pub mod grant_request;
-pub mod grant_response;
-mod interact_ref;
-mod gr_use;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
-pub use access_token::*;
-pub use callback::*;
-pub use interact_ref::*;
-pub use gr_use::*;
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Subject4GR {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sub_id_formats: Option<Vec<String>>, // REQUIRED if Subject Identifiers are requested
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub assertion_formats: Option<Vec<String>>, // REQUIRED if assertions are requested
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sub_ids: Option<Value>, // If omitted assume that subject information requests are about the current user
+}

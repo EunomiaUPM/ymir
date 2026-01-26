@@ -18,7 +18,7 @@
 use async_trait::async_trait;
 use jsonwebtoken::TokenData;
 use serde_json::Value;
-
+use crate::data::entities::recv_interaction;
 use crate::data::entities::recv_verification::{Model, NewModel};
 use crate::types::vcs::VPDef;
 
@@ -54,4 +54,8 @@ pub trait VerifierTrait: Send + Sync + 'static {
     fn validate_valid_from(&self, token: &TokenData<Value>) -> anyhow::Result<()>;
     fn validate_valid_until(&self, token: &TokenData<Value>) -> anyhow::Result<()>;
     fn retrieve_vcs(&self, token: TokenData<Value>) -> anyhow::Result<Vec<String>>;
+    async fn end_verification(
+        &self,
+        model: &recv_interaction::Model
+    ) -> anyhow::Result<Option<String>>;
 }

@@ -17,12 +17,6 @@
  *
  */
 
-mod api_trait;
-mod db_trait;
-mod hosts_trait;
-mod is_local;
-
-pub use api_trait::ApiConfigTrait;
-pub use db_trait::DatabaseConfigTrait;
-pub use hosts_trait::{HostsConfigTrait, SingleHostTrait};
-pub use is_local::IsLocalConfigTrait;
+pub trait IsLocalConfigTrait {
+    fn is_local(&self) -> bool;
+}

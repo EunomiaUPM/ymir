@@ -23,11 +23,11 @@ use axum::http::HeaderMap;
 use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use reqwest::Response;
+use reqwest::{Response, Url};
 use serde_json::Value;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
-
+use urlencoding::decode;
 use super::super::WalletTrait;
 use super::config::{WaltIdConfig, WaltIdConfigTrait};
 use crate::errors::{ErrorLogTrait, Errors};
@@ -39,10 +39,8 @@ use crate::types::errors::{BadFormat, MissingAction};
 use crate::types::http::Body;
 use crate::types::jwt::AuthJwtClaims;
 use crate::types::secrets::{SemiWalletSecrets, StringHelper};
-use crate::types::wallet::{
-    DidsInfo, KeyDefinition, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession
-};
-use crate::utils::expect_from_env;
+use crate::types::wallet::{CredentialOfferResponse, DidsInfo, KeyDefinition, MatchVCsRequest, MatchingVCs, OidcUri, RedirectResponse, Vpd, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession};
+use crate::utils::{expect_from_env, get_query_param};
 
 pub struct WaltIdService {
     wallet_session: Arc<Mutex<WalletSession>>,
@@ -78,7 +76,7 @@ impl WalletTrait for WaltIdService {
     // BASIC -------------------------------------------------------------------------------------->
     async fn register(&self) -> anyhow::Result<()> {
         info!("Registering in web wallet");
-        let url = format!("{}/wallet-api/auth/register", self.config.get_wallet_host());
+        let url = format!("{}/wallet-api/auth/register", self.config.get_wallet_api_url());
         let db_path = expect_from_env("VAULT_APP_WALLET");
         let body = self.vault.read(None, &db_path).await?;
 
@@ -111,7 +109,7 @@ impl WalletTrait for WaltIdService {
 
     async fn login(&self) -> anyhow::Result<()> {
         info!("Login into web wallet");
-        let url = format!("{}/wallet-api/auth/login", self.config.get_wallet_host());
+        let url = format!("{}/wallet-api/auth/login", self.config.get_wallet_api_url());
 
         let db_path = expect_from_env("VAULT_APP_WALLET");
         let body: SemiWalletSecrets = self.vault.read(None, &db_path).await?;
@@ -165,7 +163,7 @@ impl WalletTrait for WaltIdService {
 
     async fn logout(&self) -> anyhow::Result<()> {
         info!("Login out of web wallet");
-        let url = format!("{}/wallet-api/auth/logout", self.config.get_wallet_host());
+        let url = format!("{}/wallet-api/auth/logout", self.config.get_wallet_api_url());
 
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, "application/json".parse()?);
@@ -339,7 +337,7 @@ impl WalletTrait for WaltIdService {
     // ------------------------------------------------------------------------------->
     async fn retrieve_wallet_info(&self) -> anyhow::Result<()> {
         info!("Retrieving wallet info from web wallet");
-        let url = format!("{}/wallet-api/wallet/accounts/wallets", self.config.get_wallet_host());
+        let url = format!("{}/wallet-api/wallet/accounts/wallets", self.config.get_wallet_api_url());
 
         let token = self.get_token().await?;
 
@@ -390,7 +388,7 @@ impl WalletTrait for WaltIdService {
 
         let url = format!(
             "{}/wallet-api/wallet/{}/keys",
-            self.config.get_wallet_host(),
+            self.config.get_wallet_api_url(),
             &wallet.id
         );
 
@@ -435,7 +433,7 @@ impl WalletTrait for WaltIdService {
 
         let url = format!(
             "{}/wallet-api/wallet/{}/dids",
-            self.config.get_wallet_host(),
+            self.config.get_wallet_api_url(),
             &wallet.id
         );
 
@@ -488,7 +486,7 @@ impl WalletTrait for WaltIdService {
 
         let url = format!(
             "{}/wallet-api/wallet/{}/keys/import",
-            self.config.get_wallet_host(),
+            self.config.get_wallet_api_url(),
             &wallet.id
         );
 
@@ -566,7 +564,7 @@ impl WalletTrait for WaltIdService {
 
         let url = format!(
             "{}/wallet-api/wallet/{}/dids/create/jwk?keyId={}&alias=jwk",
-            self.config.get_wallet_host(),
+            self.config.get_wallet_api_url(),
             &wallet.id,
             key_data.key_id.id
         );
@@ -595,7 +593,7 @@ impl WalletTrait for WaltIdService {
 
         let url = format!(
             "{}/wallet-api/wallet/{}/dids/create/web?keyId={}&alias=web&domain={}{}",
-            self.config.get_wallet_host(),
+            self.config.get_wallet_api_url(),
             &wallet.id,
             &key_data.key_id.id,
             domain,
@@ -619,7 +617,7 @@ impl WalletTrait for WaltIdService {
 
         let url = format!(
             "{}/wallet-api/wallet/{}/dids/default?did={}",
-            self.config.get_wallet_host(),
+            self.config.get_wallet_api_url(),
             &wallet.id,
             did
         );
@@ -660,7 +658,7 @@ impl WalletTrait for WaltIdService {
 
         let url = format!(
             "{}/wallet-api/wallet/{}/keys/{}",
-            self.config.get_wallet_host(),
+            self.config.get_wallet_api_url(),
             &wallet.id,
             key_id.key_id.id
         );
@@ -701,7 +699,7 @@ impl WalletTrait for WaltIdService {
 
         let url = format!(
             "{}/wallet-api/wallet/{}/dids/{}",
-            self.config.get_wallet_host(),
+            self.config.get_wallet_api_url(),
             &wallet.id,
             did_info.did
         );
@@ -729,6 +727,305 @@ impl WalletTrait for WaltIdService {
                     "DELETE",
                     res.status().as_u16(),
                     "Petition to delete key failed"
+                );
+                error!("{}", error.log());
+                bail!(error);
+            }
+        }
+    }
+    async fn resolve_credential_offer(
+        &self,
+        payload: &OidcUri
+    ) -> anyhow::Result<CredentialOfferResponse> {
+        info!("Resolving credential offer");
+
+        let wallet = self.get_wallet().await?;
+        let token = self.get_token().await?;
+
+        let url = format!(
+            "{}/wallet-api/wallet/{}/exchange/resolveCredentialOffer",
+            self.config.get_wallet_api_url(),
+            &wallet.id
+        );
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, "text/plain;charset=UTF-8".parse()?);
+        headers.insert(ACCEPT, "application/json".parse()?);
+        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse()?);
+
+        let res = self.client.post(&url, Some(headers), Body::Raw(payload.uri.clone())).await?;
+
+        match res.status().as_u16() {
+            200 => {
+                let data: CredentialOfferResponse = res.json().await?;
+                info!("Credential offer resolved successfully");
+                Ok(data)
+            }
+            _ => {
+                let error = Errors::wallet_new(
+                    &url,
+                    "POST",
+                    res.status().as_u16(),
+                    "Petition to resolve credential offer failed"
+                );
+                error!("{}", error.log());
+                bail!(error);
+            }
+        }
+    }
+
+    async fn resolve_credential_issuer(
+        &self,
+        cred_offer: &CredentialOfferResponse
+    ) -> anyhow::Result<Value> {
+        info!("Resolving credential issuer metadata");
+
+        let wallet = self.get_wallet().await?;
+        let token = self.get_token().await?;
+
+        let url = format!(
+            "{}/wallet-api/wallet/{}/exchange/resolveIssuerOpenIDMetadata?issuer={}",
+            self.config.get_wallet_api_url(),
+            &wallet.id,
+            cred_offer.credential_issuer
+        );
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, "application/json".parse()?);
+        headers.insert(ACCEPT, "application/json".parse()?);
+        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse()?);
+
+        let res = self.client.get(&url, Some(headers)).await?;
+
+        match res.status().as_u16() {
+            200 => {
+                let data: Value = res.json().await?;
+                info!("Credential issuer resolved successfully");
+                // debug!("{:#?}", data);
+                Ok(data)
+            }
+            _ => {
+                let error = Errors::wallet_new(
+                    &url,
+                    "GET",
+                    res.status().as_u16(),
+                    "Petition resolve credential issuer failed"
+                );
+                error!("{}", error.log());
+                bail!(error);
+            }
+        }
+    }
+
+    async fn use_offer_req(
+        &self,
+        payload: &OidcUri,
+        cred_offer: &CredentialOfferResponse
+    ) -> anyhow::Result<()> {
+        info!("Accepting credential");
+
+        let wallet = self.get_wallet().await?;
+        let token = self.get_token().await?;
+        let did = self.get_did().await?;
+
+        let url = format!(
+            "{}/wallet-api/wallet/{}/exchange/useOfferRequest?did={}&requireUserInput=false&pinOrTxCode={}",
+            self.config.get_wallet_api_url(),
+            &wallet.id,
+            did,
+            cred_offer.grants.pre_authorized_code.pre_authorized_code
+        );
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, "application/json".parse()?);
+        headers.insert(ACCEPT, "application/json".parse()?);
+        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse()?);
+
+        let res = self.client.post(&url, Some(headers), Body::Raw(payload.uri.clone())).await?;
+
+        match res.status().as_u16() {
+            200 => {
+                let data: Value = res.json().await?;
+                info!("Credential accepted successfully");
+                debug!("{:#?}", data);
+                Ok(())
+            }
+            _ => {
+                let error = Errors::wallet_new(
+                    &url,
+                    "POST",
+                    res.status().as_u16(),
+                    "Petition accept credential issuer failed"
+                );
+                error!("{}", error.log());
+                bail!(error);
+            }
+        }
+    }
+
+    async fn get_vpd(&self, payload: &OidcUri) -> anyhow::Result<Vpd> {
+        info!("Joining exchange");
+
+        let wallet = self.get_wallet().await?;
+        let token = self.get_token().await?;
+
+        let url = format!(
+            "{}/wallet-api/wallet/{}/exchange/resolvePresentationRequest",
+            self.config.get_wallet_api_url(),
+            &wallet.id
+        );
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, "text/plain".parse()?);
+        headers.insert(ACCEPT, "text/plain".parse()?);
+        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse()?);
+
+        let res = self.client.post(&url, Some(headers), Body::Raw(payload.uri.clone())).await?;
+
+        match res.status().as_u16() {
+            200 => {
+                info!("Joined the exchange successful");
+                let vpd = res.text().await?;
+                let vpd = self.parse_vpd(&vpd)?;
+                Ok(vpd)
+            }
+            _ => {
+                let error = Errors::wallet_new(
+                    &url,
+                    "POST",
+                    res.status().as_u16(),
+                    "Error joining the exchange"
+                );
+                error!("{}", error.log());
+                bail!(error);
+            }
+        }
+    }
+
+    fn parse_vpd(&self, vpd_as_string: &str) -> anyhow::Result<Vpd> {
+        info!("Parsing Vpd");
+
+        let url = Url::parse(decode(&vpd_as_string)?.as_ref())?;
+
+        let vpd_json = get_query_param(&url, "presentation_definition")?;
+
+        let vpd: Vpd = match serde_json::from_str(&vpd_json) {
+            Ok(data) => data,
+            Err(err) => {
+                let error = Errors::format_new(
+                    BadFormat::Received,
+                    &format!("Error parsing the credential -> {}", err)
+                );
+                error!("{}", error.log());
+                bail!(error)
+            }
+        };
+
+        debug!("{:#?}", vpd);
+        Ok(vpd)
+    }
+
+    async fn get_matching_vcs(&self, vpd: &Vpd) -> anyhow::Result<Vec<String>> {
+        info!("Matching Verifiable Credentials for OIDC4VP");
+        let mut vcs_id = Vec::new();
+        for descriptor in vpd.input_descriptors.clone() {
+            let n_vpd = Vpd { id: "temporal_id".to_string(), input_descriptors: vec![descriptor] };
+            let vcs = self.match_vc4vp(serde_json::to_value(n_vpd)?).await?;
+            let vc_id = match vcs.first() {
+                Some(vc) => vc.id.clone(),
+                None => {
+                    let error = Errors::forbidden_new(
+                        "There are no VCs that match the specified input descriptor"
+                    );
+                    error!("{}", error.log());
+                    bail!(error)
+                }
+            };
+            vcs_id.push(vc_id);
+        }
+        Ok(vcs_id)
+    }
+
+    async fn match_vc4vp(&self, vp_def: Value) -> anyhow::Result<Vec<MatchingVCs>> {
+        info!("Matching vcs for a specific descriptor");
+        let wallet = self.get_wallet().await?;
+        let token = self.get_token().await?;
+
+        let url = format!(
+            "{}/wallet-api/wallet/{}/exchange/matchCredentialsForPresentationDefinition",
+            self.config.get_wallet_api_url(),
+            wallet.id
+        );
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, "application/json".parse()?);
+        headers.insert(ACCEPT, "application/json".parse()?);
+        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse()?);
+
+        let res = self.client.post(&url, Some(headers), Body::Json(vp_def)).await?;
+        match res.status().as_u16() {
+            200 => {
+                info!("Credentials matched successfully");
+                let vc_json: Vec<MatchingVCs> = res.json().await?;
+                Ok(vc_json)
+            }
+            _ => {
+                let error = Errors::wallet_new(
+                    &url,
+                    "POST",
+                    res.status().as_u16(),
+                    "Petition to match credentials failed"
+                );
+                error!("{}", error.log());
+                bail!(error);
+            }
+        }
+    }
+
+    async fn present_vp(
+        &self,
+        payload: &OidcUri,
+        vcs_id: Vec<String>
+    ) -> anyhow::Result<Option<String>> {
+        info!("Presenting Verifiable Presentation");
+        let wallet = self.get_wallet().await?;
+        let token = self.get_token().await?;
+        let did = self.get_did().await?;
+
+        let url = format!(
+            "{}/wallet-api/wallet/{}/exchange/usePresentationRequest",
+            self.config.get_wallet_api_url(),
+            wallet.id
+        );
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, "application/json".parse()?);
+        headers.insert(ACCEPT, "application/json".parse()?);
+        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse()?);
+
+        let body = MatchVCsRequest {
+            did,
+            presentation_request: payload.uri.clone(),
+            selected_credentials: vcs_id
+        };
+
+        let res =
+            self.client.post(&url, Some(headers), Body::Json(serde_json::to_value(body)?)).await?;
+        match res.status().as_u16() {
+            200 => {
+                info!("Credentials presented successfully");
+                // let data: RedirectResponse = res.json().await?;
+                match res.json::<Option<RedirectResponse>>().await {
+                    Ok(Some(data)) => Ok(Some(data.redirect_uri)),
+                    _ => Ok(None)
+                }
+            }
+            _ => {
+                let error = Errors::wallet_new(
+                    &url,
+                    "POST",
+                    res.status().as_u16(),
+                    "Petition to present credentials failed"
                 );
                 error!("{}", error.log());
                 bail!(error);

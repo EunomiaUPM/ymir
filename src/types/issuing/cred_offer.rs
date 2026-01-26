@@ -18,6 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::types::vcs::VcType;
+use crate::utils::create_opaque_token;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VCCredOffer {
@@ -46,6 +47,20 @@ impl VCCredOffer {
                 urn_pre_authorized_code: UrnPreAuthorizedCode { pre_authorized_code: token }
             },
             credential_configuration_ids: vec![vc_type.to_conf()]
+        }
+    }
+
+    pub fn new_gaia(issuer: &str) -> VCCredOffer {
+        let token = create_opaque_token();
+        VCCredOffer {
+            credential_issuer: issuer.to_string(),
+            grants: CredOfferGrants {
+                urn_pre_authorized_code: UrnPreAuthorizedCode { pre_authorized_code: token }
+            },
+            credential_configuration_ids: vec![
+                VcType::LegalPerson.to_conf(),
+                VcType::TermsAndConditions.to_conf(),
+            ]
         }
     }
 }

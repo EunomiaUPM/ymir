@@ -21,7 +21,7 @@ use async_trait::async_trait;
 use serde_json::Value;
 
 use crate::services::wallet::WalletTrait;
-use crate::types::wallet::{DidsInfo, KeyDefinition};
+use crate::types::wallet::{DidsInfo, KeyDefinition, OidcUri};
 
 #[async_trait]
 pub trait CoreWalletTrait: Send + Sync + 'static {
@@ -39,5 +39,15 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
     }
     async fn delete_did(&self, did_info: DidsInfo) -> anyhow::Result<()> {
         self.wallet().delete_did(did_info).await
+    }
+    async fn process_oidc4vci(&self, payload: OidcUri) -> anyhow::Result<()> {
+        let cred_offer = self.wallet().resolve_credential_offer(&payload).await?;
+        let _issuer_metadata = self.wallet().resolve_credential_issuer(&cred_offer).await?;
+        self.wallet().use_offer_req(&payload, &cred_offer).await
+    }
+    async fn process_oidc4vp(&self, payload: OidcUri) -> anyhow::Result<Option<String>> {
+        let vpd = self.wallet().get_vpd(&payload).await?;
+        let vcs_id = self.wallet().get_matching_vcs(&vpd).await?;
+        self.wallet().present_vp(&payload, vcs_id).await
     }
 }

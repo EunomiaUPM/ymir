@@ -189,7 +189,7 @@ impl VaultTrait for VaultService {
         mapa.insert(vault_path, data);
         Ok(())
     }
-    async fn get_db_connection<T>(&self, config: T) -> DatabaseConnection
+    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
     where
         T: DatabaseConfigTrait + Send + Sync
     {

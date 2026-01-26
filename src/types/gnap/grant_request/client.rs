@@ -15,14 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod access_token;
-mod callback;
-pub mod grant_request;
-pub mod grant_response;
-mod interact_ref;
-mod gr_use;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
-pub use access_token::*;
-pub use callback::*;
-pub use interact_ref::*;
-pub use gr_use::*;
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Client4GR {
+    pub key: Key4GR,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub class_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display: Option<Value>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Key4GR {
+    pub proof: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub jwk: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cert: Option<String>,
+}

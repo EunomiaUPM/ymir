@@ -15,17 +15,25 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::utils::create_opaque_token;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct IssuingToken {
     pub access_token: String,
     pub token_type: String,
-    pub expires_in: u16
+    pub expires_in: u16,
 }
 
 impl IssuingToken {
     pub fn new(token: String) -> IssuingToken {
         IssuingToken { access_token: token, token_type: "Bearer".to_string(), expires_in: 600 }
+    }
+}
+
+impl Default for IssuingToken {
+    fn default() -> IssuingToken {
+        let access_token = create_opaque_token();
+        IssuingToken { access_token, token_type: "Bearer".to_string(), expires_in: 0 }
     }
 }
