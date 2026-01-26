@@ -53,7 +53,7 @@ pub trait VaultTrait: Send + Sync + 'static {
     where
         T: AsRef<Path>;
 
-    async fn get_db_connection<T>(&self, config: T) -> DatabaseConnection
+    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
     where
         T: DatabaseConfigTrait + Send + Sync;
 }

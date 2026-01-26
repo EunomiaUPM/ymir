@@ -15,14 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct CallbackBody {
     pub interact_ref: String,
     pub hash: String
 }
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct RejectedCallbackBody {
     pub rejected: String
 }

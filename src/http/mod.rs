@@ -17,6 +17,8 @@
 
 mod wallet_router;
 mod openapi_router;
+mod health_router;
 
 pub use wallet_router::WalletRouter;
 pub use openapi_router::OpenapiRouter;
+pub use health_router::HealthRouter;

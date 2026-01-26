@@ -35,7 +35,7 @@ impl WaltIdConfigTrait for WaltIdConfig {
     fn get_raw_wallet_config(&self) -> WalletConfig {
         self.ssi_wallet_config.clone()
     }
-    fn get_wallet_host(&self) -> String {
+    fn get_wallet_api_url(&self) -> String {
         self.ssi_wallet_config.api.get_host()
     }
     fn get_did_type(&self) -> DidType {

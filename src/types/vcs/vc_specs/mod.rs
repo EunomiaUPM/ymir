@@ -17,3 +17,5 @@
 
 pub mod dataspace;
 pub mod legal_authority;
+pub mod legal_person;
+pub mod terms_and_conds;
