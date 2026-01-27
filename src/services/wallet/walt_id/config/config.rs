@@ -16,6 +16,7 @@
  */
 
 use std::marker::PhantomData;
+
 use tracing::error;
 
 use super::WaltIdConfigTrait;
@@ -28,19 +29,13 @@ use crate::types::wallet::WalletConfig;
 
 pub struct WaltIdConfig {
     ssi_wallet_config: WalletConfig,
-    did_config: DidConfig,
+    did_config: DidConfig
 }
 
 impl WaltIdConfigTrait for WaltIdConfig {
-    fn get_raw_wallet_config(&self) -> WalletConfig {
-        self.ssi_wallet_config.clone()
-    }
-    fn get_wallet_api_url(&self) -> String {
-        self.ssi_wallet_config.api.get_host()
-    }
-    fn get_did_type(&self) -> DidType {
-        self.did_config.r#type.clone()
-    }
+    fn get_raw_wallet_config(&self) -> WalletConfig { self.ssi_wallet_config.clone() }
+    fn get_wallet_api_url(&self) -> String { self.ssi_wallet_config.api.get_host() }
+    fn get_did_type(&self) -> DidType { self.did_config.r#type.clone() }
     fn get_did_web_path(&self) -> Option<String> {
         match self.did_config.r#type {
             DidType::Web => self.did_config.did_web_options.as_ref()?.path.clone(),
@@ -70,7 +65,7 @@ impl WaltIdConfigTrait for WaltIdConfig {
 pub struct WaltIdConfigBuilder<W, D> {
     ssi_wallet_config: Option<WalletConfig>,
     did_config: Option<DidConfig>,
-    _marker: PhantomData<(W, D)>,
+    _marker: PhantomData<(W, D)>
 }
 
 impl WaltIdConfigBuilder<Missing, Missing> {
@@ -84,7 +79,7 @@ impl<W, D> WaltIdConfigBuilder<W, D> {
         WaltIdConfigBuilder {
             ssi_wallet_config: Some(cfg),
             did_config: self.did_config,
-            _marker: PhantomData,
+            _marker: PhantomData
         }
     }
 
@@ -92,7 +87,7 @@ impl<W, D> WaltIdConfigBuilder<W, D> {
         WaltIdConfigBuilder {
             ssi_wallet_config: self.ssi_wallet_config,
             did_config: Some(cfg),
-            _marker: PhantomData,
+            _marker: PhantomData
         }
     }
 }
@@ -101,7 +96,7 @@ impl WaltIdConfigBuilder<Present, Present> {
     pub fn build(self) -> WaltIdConfig {
         WaltIdConfig {
             ssi_wallet_config: self.ssi_wallet_config.unwrap(),
-            did_config: self.did_config.unwrap(),
+            did_config: self.did_config.unwrap()
         }
     }
 }

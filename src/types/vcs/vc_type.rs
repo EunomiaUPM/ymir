@@ -33,7 +33,7 @@ pub enum VcType {
     DataspaceParticipant,
     LegalPerson,
     TermsAndConditions,
-    Unknown,
+    Unknown
 }
 
 impl FromStr for VcType {
@@ -62,7 +62,7 @@ impl FromStr for VcType {
             _ => {
                 let error = Errors::format_new(
                     BadFormat::Received,
-                    &format!("Unknown credential format: {}", s),
+                    &format!("Unknown credential format: {}", s)
                 );
                 error!("{}", error.log());
                 bail!(error)
@@ -86,7 +86,7 @@ impl fmt::Display for VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant".to_string(),
             VcType::LegalPerson => "LegalPerson".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions".to_string(),
-            _ => "Unknown".to_string(),
+            _ => "Unknown".to_string()
         };
 
         write!(f, "{s}")
@@ -100,7 +100,7 @@ impl VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant_vc_json".to_string(),
             VcType::LegalPerson => "LegalPerson_jwt_vc_json".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions_jwt_vc_json".to_string(),
-            _ => "Unknown".to_string(),
+            _ => "Unknown".to_string()
         }
     }
 
@@ -118,7 +118,7 @@ impl VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant".to_string(),
             VcType::LegalPerson => "LegalPerson".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions".to_string(),
-            VcType::Unknown => "Unknown".to_string(),
+            VcType::Unknown => "Unknown".to_string()
         }
     }
 }

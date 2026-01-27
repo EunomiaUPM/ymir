@@ -25,5 +25,5 @@ pub struct Subject4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub assertion_formats: Option<Vec<String>>, // REQUIRED if assertions are requested
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sub_ids: Option<Value>, // If omitted assume that subject information requests are about the current user
+    pub sub_ids: Option<Value> // If omitted assume that subject information requests are about the current user
 }

@@ -17,11 +17,5 @@
 
 pub enum GRUse {
     Talk,
-    VcReq,
+    VcReq
 }
-
-pub enum GRMethod {
-    Oidc,
-    CrossUser
-}
-

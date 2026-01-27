@@ -15,13 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use serde::{Deserialize, Serialize};
+
 use super::Client4GR;
 use super::Interact4GR;
 use super::{AccessTokenRequirements4GR, TokenReqTypeGR};
 use crate::data::entities::req_interaction;
 use crate::types::gnap::GRUse;
 use crate::types::gnap::grant_request::subject::Subject4GR;
-use serde::{Deserialize, Serialize};
+use crate::types::vcs::VcType;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GrantRequest {
@@ -31,17 +33,26 @@ pub struct GrantRequest {
     pub client: Client4GR,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
-    pub interact: Option<Interact4GR>,
+    pub interact: Option<Interact4GR>
 }
 
 impl GrantRequest {
-    pub fn new(option: GRUse, client: Client4GR, model: &req_interaction::Model) -> Self {
+    pub fn new(
+        option: GRUse,
+        client: Client4GR,
+        vc_type: Option<VcType>,
+        model: &req_interaction::Model
+    ) -> Self {
         Self {
-            access_token: AccessTokenRequirements4GR::new(option, Some(TokenReqTypeGR::Bearer)),
+            access_token: AccessTokenRequirements4GR::new(
+                option,
+                vc_type,
+                Some(TokenReqTypeGR::Bearer)
+            ),
             subject: None,
             client,
             user: None,
-            interact: Some(Interact4GR::new(model)),
+            interact: Some(Interact4GR::new(model))
         }
     }
 }

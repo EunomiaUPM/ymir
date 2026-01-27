@@ -28,6 +28,7 @@ use serde_json::Value;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use urlencoding::decode;
+
 use super::super::WalletTrait;
 use super::config::{WaltIdConfig, WaltIdConfigTrait};
 use crate::errors::{ErrorLogTrait, Errors};
@@ -39,7 +40,10 @@ use crate::types::errors::{BadFormat, MissingAction};
 use crate::types::http::Body;
 use crate::types::jwt::AuthJwtClaims;
 use crate::types::secrets::{SemiWalletSecrets, StringHelper};
-use crate::types::wallet::{CredentialOfferResponse, DidsInfo, KeyDefinition, MatchVCsRequest, MatchingVCs, OidcUri, RedirectResponse, Vpd, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession};
+use crate::types::wallet::{
+    CredentialOfferResponse, DidsInfo, KeyDefinition, MatchVCsRequest, MatchingVCs, OidcUri,
+    RedirectResponse, Vpd, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession
+};
 use crate::utils::{expect_from_env, get_query_param};
 
 pub struct WaltIdService {
@@ -337,7 +341,10 @@ impl WalletTrait for WaltIdService {
     // ------------------------------------------------------------------------------->
     async fn retrieve_wallet_info(&self) -> anyhow::Result<()> {
         info!("Retrieving wallet info from web wallet");
-        let url = format!("{}/wallet-api/wallet/accounts/wallets", self.config.get_wallet_api_url());
+        let url = format!(
+            "{}/wallet-api/wallet/accounts/wallets",
+            self.config.get_wallet_api_url()
+        );
 
         let token = self.get_token().await?;
 

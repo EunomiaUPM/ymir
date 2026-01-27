@@ -17,12 +17,12 @@
 
 mod access_token;
 mod callback;
+mod gr_use;
 pub mod grant_request;
 pub mod grant_response;
 mod interact_ref;
-mod gr_use;
 
 pub use access_token::*;
 pub use callback::*;
-pub use interact_ref::*;
 pub use gr_use::*;
+pub use interact_ref::*;

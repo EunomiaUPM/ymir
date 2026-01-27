@@ -14,16 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+use std::fmt::{Display, Formatter};
+
+use serde::{Deserialize, Serialize};
 
 use crate::data::entities::req_interaction;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Interact4GR {
     pub start: Vec<String>,
     pub finish: Finish4Interact, // REQUIRED because DataSpace Protocol is based on redirects
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hints: Option<String>,
+    pub hints: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -33,10 +35,22 @@ pub struct Finish4Interact {
     pub uri: Option<String>, // REQUIRED for redirect and push methods
     pub nonce: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hash_method: Option<String>,
+    pub hash_method: Option<String>
 }
 
+pub enum InteractStart {
+    Oidc4VP,
+    CrossUser
+}
 
+impl Display for InteractStart {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InteractStart::Oidc4VP => write!(f, "oidc4vp"),
+            InteractStart::CrossUser => write!(f, "cross-user")
+        }
+    }
+}
 
 impl Interact4GR {
     pub fn new(model: &req_interaction::Model) -> Interact4GR {
@@ -46,9 +60,9 @@ impl Interact4GR {
                 method: model.method.clone(),
                 uri: Some(model.uri.clone()),
                 nonce: model.client_nonce.clone(),
-                hash_method: model.hash.clone(),
+                hash_method: model.hash.clone()
             },
-            hints: None,
+            hints: None
         }
     }
 }

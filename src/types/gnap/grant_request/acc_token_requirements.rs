@@ -14,9 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
+use tracing::error;
+
 use crate::types::gnap::gr_use::GRUse;
+use crate::types::vcs::VcType;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccessTokenRequirements4GR {
@@ -24,8 +28,8 @@ pub struct AccessTokenRequirements4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>, // REQUIRED if used as part of a request for multiple access tokens
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub flags: Option<Vec<String>>, /* A set of flags that indicate desired attributes or behavior to be attached
-                                     * to the access token by the AS */
+    pub flags: Option<Vec<String>> /* A set of flags that indicate desired attributes or behavior to be attached
+                                    * to the access token by the AS */
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -40,23 +44,49 @@ pub struct Access4AT {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identifier: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub privileges: Option<Vec<String>>,
+    pub privileges: Option<Vec<String>>
 }
 
 pub enum TokenReqTypeGR {
     Key,
-    Bearer,
+    Bearer
+}
+
+pub enum InteractActions {
+    Talk,
+    RequestVc
+}
+
+impl Display for InteractActions {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            InteractActions::Talk => write!(f, "talk"),
+            InteractActions::RequestVc => write!(f, "request-vc")
+        }
+    }
 }
 
 impl AccessTokenRequirements4GR {
-    pub fn new(option: GRUse, token: Option<TokenReqTypeGR>) -> Self {
+    pub fn new(option: GRUse, vc_type: Option<VcType>, token: Option<TokenReqTypeGR>) -> Self {
         let mut data = AccessTokenRequirements4GR::default();
 
-        data.access.r#type = match option {
-            GRUse::Talk => "api-access",
-            GRUse::VcReq => "vc-exchange",
+        match option {
+            GRUse::Talk => {
+                data.access.r#type = "api-access".to_string();
+                data.access.actions = Some(vec![InteractActions::Talk.to_string()]);
+            }
+            GRUse::VcReq => {
+                let vc_type = vc_type
+                    .or_else(|| {
+                        error!("You are requesting a VC but have not declared its type");
+                        None
+                    })
+                    .expect("You are requesting a VC but have not declared its type");
+                data.access.r#type = "vc-exchange".to_string();
+                data.access.actions = Some(vec![InteractActions::RequestVc.to_string()]);
+                data.access.datatypes = Some(vec![vc_type.to_string()]);
+            }
         }
-        .to_string();
 
         if let Some(TokenReqTypeGR::Bearer) = token {
             data.flags = Some(vec!["Bearer".to_string()]);
@@ -71,14 +101,14 @@ impl Default for AccessTokenRequirements4GR {
         Self {
             access: Access4AT {
                 r#type: "".to_string(),
-                actions: Some(vec!["talk".to_string()]),
+                actions: Some(vec![]),
                 locations: None,
                 datatypes: None,
                 identifier: None,
-                privileges: None,
+                privileges: None
             },
             label: None,
-            flags: None,
+            flags: None
         }
     }
 }

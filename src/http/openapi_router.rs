@@ -22,13 +22,11 @@ use axum::response::{Html, IntoResponse};
 use axum::routing::get;
 
 pub struct OpenapiRouter {
-    openapi: String,
+    openapi: String
 }
 
 impl OpenapiRouter {
-    pub fn new(openapi: String) -> OpenapiRouter {
-        OpenapiRouter { openapi }
-    }
+    pub fn new(openapi: String) -> OpenapiRouter { OpenapiRouter { openapi } }
 
     pub fn router(self) -> Router {
         Router::new()
@@ -41,7 +39,7 @@ impl OpenapiRouter {
         (
             StatusCode::OK,
             [("Content-Type", "application/json")],
-            openapi.as_bytes().to_owned(),
+            openapi.as_bytes().to_owned()
         )
     }
 
