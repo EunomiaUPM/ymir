@@ -15,8 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::data::entities::mates;
 use sea_orm::{ActiveModelTrait, ActiveValue, DatabaseConnection, EntityTrait};
+
+use crate::data::entities::mates;
 
 pub struct MateSeeder;
 
@@ -36,7 +37,7 @@ impl MateSeeder {
             token: ActiveValue::Set(None),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
             last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            is_me: ActiveValue::Set(true),
+            is_me: ActiveValue::Set(true)
         }
         .insert(db)
         .await?;

@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod wallet_router;
-mod openapi_router;
 mod health_router;
+mod openapi_router;
+mod wallet_router;
 
-pub use wallet_router::WalletRouter;
-pub use openapi_router::OpenapiRouter;
 pub use health_router::HealthRouter;
+pub use openapi_router::OpenapiRouter;
+pub use wallet_router::WalletRouter;

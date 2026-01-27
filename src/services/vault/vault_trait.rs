@@ -16,13 +16,14 @@
  */
 
 use std::collections::HashMap;
-use std::path::{Path};
+use std::path::Path;
 
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+
 use crate::config::traits::DatabaseConfigTrait;
 
 #[async_trait]
@@ -43,14 +44,14 @@ pub trait VaultTrait: Send + Sync + 'static {
         mapa: &mut HashMap<String, Value>,
         to_read: T,
         env: &str,
-        required: bool,
+        required: bool
     ) -> anyhow::Result<()>
     where
         T: AsRef<Path>;
     fn insert_pem<T>(
         mapa: &mut HashMap<String, Value>,
         to_read: T,
-        env: &str,
+        env: &str
     ) -> anyhow::Result<()>
     where
         T: AsRef<Path>;

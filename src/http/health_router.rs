@@ -17,16 +17,14 @@
  *
  */
 
+use axum::Router;
 use axum::response::IntoResponse;
 use axum::routing::get;
-use axum::Router;
 use reqwest::StatusCode;
 
 pub struct HealthRouter;
 impl HealthRouter {
-    pub fn new() -> Self {
-        Self {}
-    }
+    pub fn new() -> Self { Self {} }
     pub fn router(self) -> Router {
         Router::new()
             .route("/health", get(Self::get_ok))
@@ -34,8 +32,5 @@ impl HealthRouter {
             .route("/liveness", get(Self::get_ok))
             .route("/readiness", get(Self::get_ok))
     }
-    async fn get_ok() -> impl IntoResponse {
-        (StatusCode::OK, "OK").into_response()
-    }
+    async fn get_ok() -> impl IntoResponse { (StatusCode::OK, "OK").into_response() }
 }
-

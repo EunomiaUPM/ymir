@@ -18,11 +18,17 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
-pub struct CallbackBody {
+pub struct ApprovedCallbackBody {
     pub interact_ref: String,
     pub hash: String
 }
 #[derive(Deserialize, Serialize)]
 pub struct RejectedCallbackBody {
     pub rejected: String
+}
+
+#[derive(Deserialize, Serialize)]
+pub enum CallbackBody {
+    TypeA(ApprovedCallbackBody),
+    TypeB(RejectedCallbackBody)
 }

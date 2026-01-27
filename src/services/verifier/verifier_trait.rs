@@ -18,6 +18,7 @@
 use async_trait::async_trait;
 use jsonwebtoken::TokenData;
 use serde_json::Value;
+
 use crate::data::entities::recv_interaction;
 use crate::data::entities::recv_verification::{Model, NewModel};
 use crate::types::vcs::VPDef;

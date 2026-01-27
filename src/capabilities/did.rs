@@ -44,29 +44,17 @@ impl DidResolver {
 
     pub async fn get_key(did: &str, client: Arc<dyn ClientTrait>) -> anyhow::Result<DecodingKey> {
         info!("Retrieving key from did");
+        let (did_base, kid_opt) = DidResolver::split_did_id(did);
+
         let key = match Self::parse_did(did) {
             DidType::Jwk => {
-                let (did_base, _) = DidResolver::split_did_id(did);
-
                 let vec = URL_SAFE_NO_PAD.decode(&(did_base.replace("did:jwk:", "")))?;
                 let jwk: Jwk = serde_json::from_slice(&vec)?;
-
                 DecodingKey::from_jwk(&jwk)?
             }
+
             DidType::Web => {
-                let (did_base, kid) = DidResolver::split_did_id(did);
-
-                let kid = kid.ok_or_else(|| {
-                    let error = Errors::format_new(
-                        BadFormat::Received,
-                        "did:web requires a key id fragment (#...)"
-                    );
-                    error!("{}", error.log());
-                    error
-                })?;
-
                 let domain = did_base.replace("did:web:", "");
-
                 let url = Self::parse_domain(&domain);
 
                 info!("Resolving DID Document: {}", url);
@@ -79,12 +67,12 @@ impl DidResolver {
 
                 let doc: Value = match res.status().as_u16() {
                     200 => {
-                        info!("Did Document retrieved successfully retrieved");
+                        info!("DID Document retrieved successfully");
                         res.json().await?
                     }
                     _ => {
                         let error =
-                            Errors::format_new(BadFormat::Received, "Did Document not retrieved");
+                            Errors::format_new(BadFormat::Received, "DID Document not retrieved");
                         error!("{}", error.log());
                         bail!(error)
                     }
@@ -92,21 +80,31 @@ impl DidResolver {
 
                 let methods = doc["verificationMethod"].as_array().ok_or_else(|| {
                     let error =
-                        Errors::format_new(BadFormat::Received, "Missing verification method");
+                        Errors::format_new(BadFormat::Received, "Missing verificationMethod");
                     error!("{}", error.log());
                     error
                 })?;
 
-                let full_kid = format!("{}#{}", did_base, kid);
-
-                let method = methods.iter().find(|m| m["id"] == full_kid).ok_or_else(|| {
-                    let error = Errors::format_new(
-                        BadFormat::Received,
-                        &format!("Key not found: {}", full_kid)
-                    );
-                    error!("{}", error.log());
-                    error
-                })?;
+                let method = if let Some(kid) = kid_opt {
+                    let full_kid = format!("{}#{}", did_base, kid);
+                    methods.iter().find(|m| m["id"] == full_kid).ok_or_else(|| {
+                        let error = Errors::format_new(
+                            BadFormat::Received,
+                            &format!("Key not found: {}", full_kid)
+                        );
+                        error!("{}", error.log());
+                        error
+                    })?
+                } else {
+                    methods.first().ok_or_else(|| {
+                        let error = Errors::format_new(
+                            BadFormat::Received,
+                            "No verification methods in DID Document"
+                        );
+                        error!("{}", error.log());
+                        error
+                    })?
+                };
 
                 let jwk_value = method["publicKeyJwk"].as_object().ok_or_else(|| {
                     let error = Errors::format_new(BadFormat::Received, "Missing publicKeyJwk");
@@ -115,15 +113,16 @@ impl DidResolver {
                 })?;
 
                 let jwk: Jwk = serde_json::from_value(jwk_value.clone().into())?;
-
                 DecodingKey::from_jwk(&jwk)?
             }
+
             DidType::Other => {
                 let error = Errors::not_impl_new("did method", &did.to_string());
                 error!("{}", error.log());
                 bail!(error);
             }
         };
+
         Ok(key)
     }
 

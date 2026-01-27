@@ -40,7 +40,7 @@ use crate::types::errors::BadFormat;
 
 pub fn read<P>(path: P) -> anyhow::Result<String>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let path_ref = path.as_ref();
     match fs::read_to_string(path_ref) {
@@ -56,7 +56,7 @@ where
 pub fn read_json<T, P>(path: P) -> anyhow::Result<T>
 where
     T: DeserializeOwned,
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let data = read(path)?;
     let json = serde_json::from_str(&data)?;
@@ -99,7 +99,7 @@ pub fn get_opt_claim(claims: &Value, path: Vec<&str>) -> anyhow::Result<Option<S
     for key in path.iter() {
         node = match node.get(key) {
             Some(data) => data,
-            None => return Ok(None),
+            None => return Ok(None)
         };
     }
     let data = validate_data(node, field)?;
@@ -120,7 +120,7 @@ fn validate_data(node: &Value, field: &str) -> anyhow::Result<String> {
 
 pub fn get_from_opt<T>(value: &Option<T>, field_name: &str) -> anyhow::Result<T>
 where
-    T: Clone + Serialize + DeserializeOwned,
+    T: Clone + Serialize + DeserializeOwned
 {
     match value {
         Some(v) => Ok(v.clone()),
@@ -157,10 +157,10 @@ pub fn has_expired(exp: u64) -> anyhow::Result<()> {
 pub async fn validate_token<T>(
     token: &str,
     audience: Option<&str>,
-    client: Arc<dyn ClientTrait>,
+    client: Arc<dyn ClientTrait>
 ) -> anyhow::Result<(TokenData<T>, String)>
 where
-    T: Serialize + DeserializeOwned,
+    T: Serialize + DeserializeOwned
 {
     info!("Validating token");
     let header = jsonwebtoken::decode_header(&token)?;
@@ -243,7 +243,7 @@ pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> anyhow::Result<Str
     } else {
         let error = Errors::format_new(
             BadFormat::Received,
-            &format!("The expected '{}' field was missing in the oidc4vp uri", param_name),
+            &format!("The expected '{}' field was missing in the oidc4vp uri", param_name)
         );
         error!("{}", error.log());
         bail!(error);

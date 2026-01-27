@@ -15,8 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::types::gnap::GRMethod;
 use serde::{Deserialize, Serialize};
+
+use crate::types::gnap::grant_request::InteractStart;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Interact4GResponse {
@@ -26,17 +27,17 @@ pub struct Interact4GResponse {
     pub user_code: Option<String>,
     pub user_code_uri: Option<UserCodeUri4Int>,
     pub finish: Option<String>,
-    pub expires_in: Option<u64>,
+    pub expires_in: Option<u64>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserCodeUri4Int {
     pub code: String,
-    pub uri: String,
+    pub uri: String
 }
 
 impl Interact4GResponse {
-    pub fn new(option: GRMethod, nonce: &str, uri: Option<String>) -> Self {
+    pub fn new(option: InteractStart, nonce: &str, uri: Option<String>) -> Self {
         let mut data = Self {
             oidc4vp: None,
             redirect: None,
@@ -44,10 +45,10 @@ impl Interact4GResponse {
             user_code: None,
             user_code_uri: None,
             finish: Some(nonce.to_string()),
-            expires_in: None,
+            expires_in: None
         };
 
-        if let GRMethod::Oidc = option {
+        if let InteractStart::Oidc4VP = option {
             data.oidc4vp = uri;
         }
 

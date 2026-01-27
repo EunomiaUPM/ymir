@@ -24,7 +24,7 @@ pub struct Client4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub class_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<Value>,
+    pub display: Option<Value>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -33,5 +33,5 @@ pub struct Key4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub jwk: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cert: Option<String>,
+    pub cert: Option<String>
 }
