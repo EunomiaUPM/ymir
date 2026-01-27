@@ -179,8 +179,9 @@ impl VaultTrait for VaultService {
         let mount_name = expect_from_env("VAULT_MOUNT");
 
         let existing_mounts = mount::list(&*self.client).await.map_err(|e| {
-            error!("Error listing mounts: {}", e);
-            Errors::vault_new(e.to_string())
+            let error = Errors::vault_new(e.to_string());
+            error!("{}", error.log());
+            error
         })?;
 
         let mount_path = format!("{}/", mount_name);
