@@ -16,14 +16,13 @@
  */
 
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path};
 
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-
 use crate::config::traits::DatabaseConfigTrait;
 
 #[async_trait]
@@ -37,6 +36,9 @@ pub trait VaultTrait: Send + Sync + 'static {
         T: Serialize + Send + Sync;
     async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> anyhow::Result<()>;
     fn secrets() -> anyhow::Result<HashMap<String, Value>>;
+    async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> anyhow::Result<()>;
+    fn local_secrets() -> anyhow::Result<HashMap<String, Value>>;
+    async fn check_mount(&self) -> anyhow::Result<()>;
     fn insert_json<T>(
         mapa: &mut HashMap<String, Value>,
         to_read: T,

@@ -101,31 +101,9 @@ impl VaultTrait for VaultService {
     }
 
     async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> anyhow::Result<()> {
+        self.check_mount().await?;
+
         let mount_name = expect_from_env("VAULT_MOUNT");
-
-        let existing_mounts = mount::list(&*self.client).await.map_err(|e| {
-            error!("Error listing mounts: {}", e);
-            Errors::vault_new(e.to_string())
-        })?;
-
-        let mount_path = format!("{}/", mount_name);
-        if !existing_mounts.contains_key(&mount_path) {
-            let mut opts = HashMap::new();
-            opts.insert("version".to_string(), "2".to_string());
-            let mut data = EnableEngineRequestBuilder::default();
-            let data = data.options(opts);
-
-            mount::enable(&*self.client, &mount_name, "kv", Some(data)).await.map_err(|e| {
-                let error = Errors::vault_new(e.to_string());
-                error!("{}", error.log());
-                error
-            })?;
-
-            info!("Mount '{}' created successfully", mount_name);
-        } else {
-            info!("Mount '{}' already exists, omitting step", mount_name);
-        }
-
         match map {
             Some(map) => {
                 for (path, secret) in map {
@@ -163,6 +141,66 @@ impl VaultTrait for VaultService {
         )?;
 
         Ok(map)
+    }
+    async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> anyhow::Result<()> {
+        self.check_mount().await?;
+
+        let mount_name = expect_from_env("VAULT_MOUNT");
+        match map {
+            Some(map) => {
+                for (path, secret) in map {
+                    self.write(Some(&mount_name), &path, &secret).await?
+                }
+            }
+            None => {
+                for (path, secret) in Self::local_secrets()? {
+                    self.write(Some(&mount_name), &path, &secret).await?
+                }
+            }
+        }
+
+        Ok(())
+    }
+    fn local_secrets() -> anyhow::Result<HashMap<String, Value>> {
+        let mut map: HashMap<String, Value> = HashMap::new();
+
+        let secret_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("secrets");
+
+        Self::insert_json(&mut map, secret_path.join("db.json"), "VAULT_APP_DB", true)?;
+        Self::insert_json(&mut map, secret_path.join("wallet.json"), "VAULT_APP_WALLET", false)?;
+
+        Self::insert_pem(&mut map, secret_path.join("private_key.pem"), "VAULT_APP_PRIV_KEY")?;
+        Self::insert_pem(&mut map, secret_path.join("public_key.pem"), "VAULT_APP_PUB_PKEY")?;
+        Self::insert_pem(&mut map, secret_path.join("cert.pem"), "VAULT_APP_CERT")?;
+
+        Ok(map)
+    }
+    async fn check_mount(&self) -> anyhow::Result<()> {
+        let mount_name = expect_from_env("VAULT_MOUNT");
+
+        let existing_mounts = mount::list(&*self.client).await.map_err(|e| {
+            error!("Error listing mounts: {}", e);
+            Errors::vault_new(e.to_string())
+        })?;
+
+        let mount_path = format!("{}/", mount_name);
+        if !existing_mounts.contains_key(&mount_path) {
+            let mut opts = HashMap::new();
+            opts.insert("version".to_string(), "2".to_string());
+            let mut data = EnableEngineRequestBuilder::default();
+            let data = data.options(opts);
+
+            mount::enable(&*self.client, &mount_name, "kv", Some(data)).await.map_err(|e| {
+                let error = Errors::vault_new(e.to_string());
+                error!("{}", error.log());
+                error
+            })?;
+
+            info!("Mount '{}' created successfully", mount_name);
+        } else {
+            info!("Mount '{}' already exists, omitting step", mount_name);
+        }
+        Ok(())
     }
 
     fn insert_json<T>(
