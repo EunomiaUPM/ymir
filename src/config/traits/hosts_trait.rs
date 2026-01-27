@@ -17,7 +17,6 @@
  *
  */
 
-use anyhow::bail;
 use tracing::error;
 
 use crate::config::types::{HostConfig, HostType};
@@ -28,41 +27,33 @@ pub trait HostsConfigTrait {
     fn grpc(&self) -> Option<&HostConfig>;
     fn graphql(&self) -> Option<&HostConfig>;
     fn get_host(&self, host_type: HostType) -> String {
-        let host = match host_type {
-            HostType::Http => Self::get_host_helper(Some(self.http()), &host_type.to_string()),
-            HostType::Grpc => Self::get_host_helper(self.grpc(), &host_type.to_string()),
-            HostType::Graphql => Self::get_host_helper(self.graphql(), &host_type.to_string()),
-        };
-        host.expect("Failed to get host")
+        self.get_helper(host_type).get_host()
     }
 
     fn get_host_without_protocol(&self, host_type: HostType) -> String {
-        let host = match host_type {
-            HostType::Http => self.http(),
-            HostType::Grpc => self.grpc().expect("Failed to get grpc host"),
-            HostType::Graphql => self.graphql().expect("Failed to get graphql host"),
-        };
-        host.get_host_without_protocol()
+        self.get_helper(host_type).get_host_without_protocol()
     }
 
     fn get_weird_port(&self, host_type: HostType) -> String {
-        let host = match host_type {
-            HostType::Http => self.http(),
-            HostType::Grpc => self.grpc().expect("Failed to get grpc host"),
-            HostType::Graphql => self.graphql().expect("Failed to get graphql host"),
-        };
-        host.get_weird_port()
+        self.get_helper(host_type).get_weird_port()
+    }
+    fn get_tls_port(&self, host_type: HostType) -> String {
+        self.get_helper(host_type).get_tls_port()
     }
 
-    fn get_host_helper(host: Option<&HostConfig>, module: &str) -> anyhow::Result<String> {
-        match host {
-            Some(host) => Ok(host.get_host()),
-            None => {
-                let error = Errors::module_new(module);
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+    fn get_helper(&self, host_type: HostType) -> &HostConfig {
+        let host = match host_type {
+            HostType::Http => Some(self.http()),
+            HostType::Grpc => self.grpc(),
+            HostType::Graphql => self.graphql(),
+        };
+
+        let host = host.ok_or_else(|| {
+            let error = Errors::module_new(&format!("{} host is not defined", host_type));
+            error!("{}", error.log());
+            error
+        });
+        host.expect(&format!("{} host is not defined", host_type))
     }
 }
 
