@@ -88,4 +88,7 @@ pub trait SingleHostTrait {
             None => "".to_string(),
         }
     }
+    fn get_tls_port(&self) -> String {
+        self.host().port.clone().unwrap_or_else(|| "443".to_string())
+    }
 }
