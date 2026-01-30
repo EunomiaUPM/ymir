@@ -32,7 +32,7 @@ impl MateSeeder {
         mates::ActiveModel {
             participant_id: ActiveValue::Set(did),
             participant_slug: ActiveValue::Set("Myself".to_string()),
-            participant_type: ActiveValue::Set("Authority".to_string()),
+            participant_type: ActiveValue::Set("Agent".to_string()),
             base_url: ActiveValue::Set(url),
             token: ActiveValue::Set(None),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
