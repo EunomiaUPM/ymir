@@ -36,13 +36,15 @@ use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
 use crate::services::vault::vault_rs::VaultService;
 use crate::types::dids::did_type::DidType;
+use crate::types::dids::dids_info::DidsInfo;
 use crate::types::errors::{BadFormat, MissingAction};
 use crate::types::http::Body;
 use crate::types::jwt::AuthJwtClaims;
 use crate::types::secrets::{SemiWalletSecrets, StringHelper};
 use crate::types::wallet::{
-    CredentialOfferResponse, DidsInfo, KeyDefinition, MatchVCsRequest, MatchingVCs, OidcUri,
-    RedirectResponse, Vpd, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession
+    CredentialOfferResponse, KeyDefinition, MatchVCsRequest, MatchingVCs, OidcUri,
+    RedirectResponse, Vpd, WalletCredentials, WalletInfo, WalletInfoResponse, WalletLoginResponse,
+    WalletSession
 };
 use crate::utils::{expect_from_env, get_query_param};
 
@@ -201,7 +203,7 @@ impl WalletTrait for WaltIdService {
         self.register().await?;
         self.login().await?;
         self.retrieve_wallet_info().await?;
-        self.retrieve_keys().await?;
+        self.retrieve_wallet_keys().await?;
         self.retrieve_wallet_dids().await?;
 
         let wallet = self.get_wallet().await?;
@@ -217,7 +219,7 @@ impl WalletTrait for WaltIdService {
         self.delete_key(key_data).await?;
 
         self.register_key().await?;
-        self.retrieve_keys().await?;
+        self.retrieve_wallet_keys().await?;
 
         self.register_did().await?;
 
@@ -233,7 +235,7 @@ impl WalletTrait for WaltIdService {
 
         self.login().await?;
         self.retrieve_wallet_info().await?;
-        self.retrieve_keys().await?;
+        self.retrieve_wallet_keys().await?;
         self.retrieve_wallet_dids().await?;
 
         info!("Initialization successful");
@@ -387,7 +389,7 @@ impl WalletTrait for WaltIdService {
         Ok(())
     }
 
-    async fn retrieve_keys(&self) -> anyhow::Result<()> {
+    async fn retrieve_wallet_keys(&self) -> anyhow::Result<()> {
         info!("Retrieving keys from web wallet");
 
         let wallet = self.get_wallet().await?;
@@ -478,6 +480,44 @@ impl WalletTrait for WaltIdService {
             }
         }
         Ok(())
+    }
+
+    async fn retrieve_wallet_credentials(&self) -> anyhow::Result<Vec<WalletCredentials>> {
+        info!("Retrieving credentials from web wallet");
+
+        let wallet = self.get_wallet().await?;
+        let token = self.get_token().await?;
+
+        let url = format!(
+            "{}/wallet-api/wallet/{}/credentials",
+            self.config.get_wallet_api_url(),
+            &wallet.id
+        );
+
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, "application/json".parse()?);
+        headers.insert(ACCEPT, "application/json".parse()?);
+        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse()?);
+
+        let res = self.client.get(&url, Some(headers)).await?;
+
+        match res.status().as_u16() {
+            200 => {
+                let res: Vec<WalletCredentials> = res.json().await?;
+                info!("Wallet Credentials data loaded successfully");
+                Ok(res)
+            }
+            _ => {
+                let error = Errors::wallet_new(
+                    &url,
+                    "GET",
+                    res.status().as_u16(),
+                    "Petition to retrieve Wallet Credentials failed"
+                );
+                error!("{}", error.log());
+                bail!(error);
+            }
+        }
     }
 
     // REGISTER STUFF IN WALLET

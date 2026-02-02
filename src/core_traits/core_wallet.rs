@@ -21,7 +21,8 @@ use async_trait::async_trait;
 use serde_json::Value;
 
 use crate::services::wallet::WalletTrait;
-use crate::types::wallet::{DidsInfo, KeyDefinition, OidcUri};
+use crate::types::dids::dids_info::DidsInfo;
+use crate::types::wallet::{KeyDefinition, OidcUri};
 
 #[async_trait]
 pub trait CoreWalletTrait: Send + Sync + 'static {

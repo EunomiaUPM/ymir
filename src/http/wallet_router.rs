@@ -26,7 +26,8 @@ use axum::{Json, Router};
 
 use crate::core_traits::CoreWalletTrait;
 use crate::errors::CustomToResponse;
-use crate::types::wallet::{DidsInfo, KeyDefinition, OidcUri};
+use crate::types::dids::dids_info::DidsInfo;
+use crate::types::wallet::{KeyDefinition, OidcUri};
 
 pub struct WalletRouter {
     holder: Arc<dyn CoreWalletTrait>

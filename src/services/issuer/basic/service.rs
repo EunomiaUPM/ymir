@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use anyhow::bail;
 use async_trait::async_trait;
-use jsonwebtoken::{Algorithm, EncodingKey, Header, TokenData, encode};
+use jsonwebtoken::{Algorithm, Header, TokenData};
 use rsa::RsaPublicKey;
 use rsa::pkcs1::DecodeRsaPublicKey;
 use serde_json::Value;
@@ -44,7 +44,8 @@ use crate::types::issuing::{
 use crate::types::secrets::StringHelper;
 use crate::types::vcs::VcType;
 use crate::utils::{
-    expect_from_env, get_from_opt, has_expired, is_active, trim_4_base, validate_token
+    expect_from_env, get_from_opt, get_rsa_key, has_expired, is_active, sign_token, trim_4_base,
+    validate_token
 };
 
 pub struct BasicIssuerService {
@@ -204,23 +205,9 @@ impl IssuerTrait for BasicIssuerService {
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
         let priv_key: StringHelper = self.vault.read(None, &priv_key).await?;
 
-        let key = EncodingKey::from_rsa_pem(priv_key.data().as_bytes()).map_err(|e| {
-            let error = Errors::format_new(
-                BadFormat::Unknown,
-                &format!("Error parsing private key: {}", e.to_string())
-            );
-            error!("{}", error.log());
-            error
-        })?;
+        let key = get_rsa_key(priv_key.data())?;
 
-        let vc_jwt = encode(&header, &claims, &key).map_err(|e| {
-            let error = Errors::format_new(
-                BadFormat::Unknown,
-                &format!("Error signing token: {}", e.to_string())
-            );
-            error!("{}", error.log());
-            error
-        })?;
+        let vc_jwt = sign_token(&header, &claims, &key)?;
 
         Ok(GiveVC { format: "jwt_vc_json".to_string(), credential: vc_jwt })
     }

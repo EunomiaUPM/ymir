@@ -19,9 +19,10 @@ use async_trait::async_trait;
 use reqwest::Response;
 use serde_json::Value;
 
+use crate::types::dids::dids_info::DidsInfo;
 use crate::types::wallet::{
-    CredentialOfferResponse, DidsInfo, KeyDefinition, MatchingVCs, OidcUri, Vpd, WalletInfo,
-    WalletSession
+    CredentialOfferResponse, KeyDefinition, MatchingVCs, OidcUri, Vpd, WalletCredentials,
+    WalletInfo, WalletSession
 };
 
 #[async_trait]
@@ -41,8 +42,9 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn get_key(&self) -> anyhow::Result<KeyDefinition>;
     // RETRIEVE FROM WALLET
     async fn retrieve_wallet_info(&self) -> anyhow::Result<()>;
-    async fn retrieve_keys(&self) -> anyhow::Result<()>;
+    async fn retrieve_wallet_keys(&self) -> anyhow::Result<()>;
     async fn retrieve_wallet_dids(&self) -> anyhow::Result<()>;
+    async fn retrieve_wallet_credentials(&self) -> anyhow::Result<Vec<WalletCredentials>>;
     // REGISTER STUFF IN WALLET
     async fn register_key(&self) -> anyhow::Result<()>;
     async fn register_did(&self) -> anyhow::Result<()>;

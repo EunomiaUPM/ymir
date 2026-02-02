@@ -71,7 +71,14 @@ impl VerifierTrait for BasicVerifierService {
             error!("{}", error.log());
             bail!(error)
         }
-        let vc_type = serde_json::to_string(&requested_vcs)?;
+
+        let mut vcs = vec![];
+
+        for vc in requested_vcs {
+            vcs.push(vc.name())
+        }
+
+        let vc_type = serde_json::to_string(&vcs)?;
         let new_verification_model = NewModel { id: id.to_string(), audience: client_id, vc_type };
 
         Ok(new_verification_model)

@@ -25,7 +25,7 @@ use axum::http::HeaderMap;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;
-use jsonwebtoken::{TokenData, Validation};
+use jsonwebtoken::{EncodingKey, Header, TokenData, Validation, encode};
 use rand::Rng;
 use reqwest::Url;
 use serde::Serialize;
@@ -248,4 +248,32 @@ pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> anyhow::Result<Str
         error!("{}", error.log());
         bail!(error);
     }
+}
+
+pub fn sign_token<T: Serialize>(
+    header: &Header,
+    claims: &T,
+    key: &EncodingKey
+) -> anyhow::Result<String> {
+    let data = encode(&header, &claims, &key).map_err(|e| {
+        let error = Errors::format_new(
+            BadFormat::Unknown,
+            &format!("Error signing token: {}", e.to_string())
+        );
+        error!("{}", error.log());
+        error
+    })?;
+    Ok(data)
+}
+
+pub fn get_rsa_key(key: String) -> anyhow::Result<EncodingKey> {
+    let data = EncodingKey::from_rsa_pem(key.as_bytes()).map_err(|e| {
+        let error = Errors::format_new(
+            BadFormat::Unknown,
+            &format!("Error parsing private key: {}", e.to_string())
+        );
+        error!("{}", error.log());
+        error
+    })?;
+    Ok(data)
 }

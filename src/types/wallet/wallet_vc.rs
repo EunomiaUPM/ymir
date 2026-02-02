@@ -8,26 +8,26 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod claims_v1;
-pub mod claims_v2;
-mod gaia_vc;
-mod input_descriptor;
-pub mod vc_decision_approval;
-pub mod vc_issuer;
-pub mod vc_specs;
-mod vc_type;
-mod vpd;
-mod w3c_data_model;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
-pub use gaia_vc::*;
-pub use input_descriptor::InputDescriptor;
-pub use vc_type::VcType;
-pub use vpd::VPDef;
-pub use w3c_data_model::W3cDataModelVersion;
+#[derive(Deserialize, Serialize)]
+pub struct WalletCredentials {
+    pub id: String,
+    pub format: String,
+    pub pending: bool,
+    pub wallet: String,
+    #[serde(rename = "addedOn")]
+    pub added_on: String,
+    pub disclosures: String,
+    pub document: String,
+    #[serde(rename = "parsedDocument")]
+    pub parsed_document: Value
+}
