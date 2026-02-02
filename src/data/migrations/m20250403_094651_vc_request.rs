@@ -28,29 +28,29 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Request::Table)
-                    .col(ColumnDef::new(Request::Id).string().not_null().primary_key())
-                    .col(ColumnDef::new(Request::ParticipantSlug).string().not_null())
-                    .col(ColumnDef::new(Request::VcType).string().not_null())
-                    .col(ColumnDef::new(Request::Cert).string())
-                    .col(ColumnDef::new(Request::VcUri).string())
-                    .col(ColumnDef::new(Request::VcIssuing).string())
-                    .col(ColumnDef::new(Request::IsVcIssued).boolean())
-                    .col(ColumnDef::new(Request::Status).string().not_null())
-                    .col(ColumnDef::new(Request::CreatedAt).date_time().not_null())
-                    .col(ColumnDef::new(Request::EndedAt).date_time())
+                    .table(VcRequest::Table)
+                    .col(ColumnDef::new(VcRequest::Id).string().not_null().primary_key())
+                    .col(ColumnDef::new(VcRequest::ParticipantSlug).string().not_null())
+                    .col(ColumnDef::new(VcRequest::VcType).string().not_null())
+                    .col(ColumnDef::new(VcRequest::Cert).string())
+                    .col(ColumnDef::new(VcRequest::VcUri).string())
+                    .col(ColumnDef::new(VcRequest::VcIssuing).string())
+                    .col(ColumnDef::new(VcRequest::IsVcIssued).boolean())
+                    .col(ColumnDef::new(VcRequest::Status).string().not_null())
+                    .col(ColumnDef::new(VcRequest::CreatedAt).date_time().not_null())
+                    .col(ColumnDef::new(VcRequest::EndedAt).date_time())
                     .to_owned()
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(Request::Table).to_owned()).await
+        manager.drop_table(Table::drop().table(VcRequest::Table).to_owned()).await
     }
 }
 
 #[derive(Iden)]
-pub enum Request {
+pub enum VcRequest {
     Table,
     Id,
     ParticipantSlug,
