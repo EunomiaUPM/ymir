@@ -24,8 +24,10 @@ pub mod vc_specs;
 mod vc_type;
 mod vpd;
 mod w3c_data_model;
+mod gaia_vc;
 
 pub use input_descriptor::InputDescriptor;
 pub use vc_type::VcType;
 pub use vpd::VPDef;
 pub use w3c_data_model::W3cDataModelVersion;
+pub use gaia_vc::*;
