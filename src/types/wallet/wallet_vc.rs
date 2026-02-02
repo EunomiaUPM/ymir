@@ -29,5 +29,5 @@ pub struct WalletCredentials {
     pub disclosures: String,
     pub document: String,
     #[serde(rename = "parsedDocument")]
-    pub parsed_document: Value,
+    pub parsed_document: Value
 }
