@@ -501,8 +501,9 @@ impl WalletTrait for WaltIdService {
 
         match res.status().as_u16() {
             200 => {
-                debug!("{:#?}",res);
 
+                let res: Value = res.json().await?;
+                debug!("{:#?}", res);
                 info!("Wallet Dids data loaded successfully");
             }
             _ => {
