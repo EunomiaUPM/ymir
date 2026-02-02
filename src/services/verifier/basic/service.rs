@@ -116,7 +116,7 @@ impl VerifierTrait for BasicVerifierService {
             response_mode,
             encoded_presentation_definition_uri,
             client_id_scheme,
-            mod el.nonce,
+            model.nonce,
             encoded_response_uri
         );
         info!("Uri generated successfully: {}", uri);
