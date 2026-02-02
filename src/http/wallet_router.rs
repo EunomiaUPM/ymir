@@ -26,7 +26,8 @@ use axum::{Json, Router};
 
 use crate::core_traits::CoreWalletTrait;
 use crate::errors::CustomToResponse;
-use crate::types::wallet::{DidsInfo, KeyDefinition, OidcUri};
+use crate::types::dids::dids_info::DidsInfo;
+use crate::types::wallet::{KeyDefinition, OidcUri};
 
 pub struct WalletRouter {
     holder: Arc<dyn CoreWalletTrait>,
@@ -51,7 +52,6 @@ impl WalletRouter {
             .route("/did.json", get(Self::did_json))
             .route("/oidc4vci", post(Self::process_oidc4vci))
             .route("/oidc4vp", post(Self::process_oidc4vp))
-            .route("/test", post(Self::testeo))
             .with_state(self.holder)
     }
 
@@ -168,13 +168,6 @@ impl WalletRouter {
         match holder.process_oidc4vp(payload).await {
             Ok(Some(data)) => Redirect::to(&data).into_response(),
             Ok(None) => StatusCode::OK.into_response(),
-            Err(e) => e.to_response(),
-        }
-    }
-
-    async fn testeo(State(holder): State<Arc<dyn CoreWalletTrait>>) -> impl IntoResponse {
-        match holder.test().await {
-            Ok(_) => StatusCode::OK.into_response(),
             Err(e) => e.to_response(),
         }
     }

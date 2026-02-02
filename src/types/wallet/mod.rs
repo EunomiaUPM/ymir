@@ -26,6 +26,7 @@ mod wallet_info;
 mod wallet_info_response;
 mod wallet_login_response;
 mod wallet_session;
+mod wallet_vc;
 
 pub use cred_offer_resp::*;
 pub use key_definition::KeyDefinition;
@@ -38,5 +39,4 @@ pub use wallet_info::WalletInfo;
 pub use wallet_info_response::WalletInfoResponse;
 pub use wallet_login_response::WalletLoginResponse;
 pub use wallet_session::WalletSession;
-
-pub use crate::types::dids::dids_info::DidsInfo;
+pub use wallet_vc::*;
