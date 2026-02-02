@@ -41,8 +41,9 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn get_key(&self) -> anyhow::Result<KeyDefinition>;
     // RETRIEVE FROM WALLET
     async fn retrieve_wallet_info(&self) -> anyhow::Result<()>;
-    async fn retrieve_keys(&self) -> anyhow::Result<()>;
+    async fn retrieve_wallet_keys(&self) -> anyhow::Result<()>;
     async fn retrieve_wallet_dids(&self) -> anyhow::Result<()>;
+    async fn retrieve_wallet_credentials(&self) -> anyhow::Result<()>;
     // REGISTER STUFF IN WALLET
     async fn register_key(&self) -> anyhow::Result<()>;
     async fn register_did(&self) -> anyhow::Result<()>;

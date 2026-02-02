@@ -26,14 +26,30 @@ use crate::types::wallet::{DidsInfo, KeyDefinition, OidcUri};
 #[async_trait]
 pub trait CoreWalletTrait: Send + Sync + 'static {
     fn wallet(&self) -> Arc<dyn WalletTrait>;
-    async fn register(&self) -> anyhow::Result<()> { self.wallet().register().await }
-    async fn login(&self) -> anyhow::Result<()> { self.wallet().login().await }
-    async fn logout(&self) -> anyhow::Result<()> { self.wallet().logout().await }
-    async fn onboard(&self) -> anyhow::Result<()> { self.wallet().onboard().await }
-    async fn partial_onboard(&self) -> anyhow::Result<()> { self.wallet().partial_onboard().await }
-    async fn get_did_doc(&self) -> anyhow::Result<Value> { self.wallet().get_did_doc().await }
-    async fn register_key(&self) -> anyhow::Result<()> { self.wallet().register_key().await }
-    async fn register_did(&self) -> anyhow::Result<()> { self.wallet().register_did().await }
+    async fn register(&self) -> anyhow::Result<()> {
+        self.wallet().register().await
+    }
+    async fn login(&self) -> anyhow::Result<()> {
+        self.wallet().login().await
+    }
+    async fn logout(&self) -> anyhow::Result<()> {
+        self.wallet().logout().await
+    }
+    async fn onboard(&self) -> anyhow::Result<()> {
+        self.wallet().onboard().await
+    }
+    async fn partial_onboard(&self) -> anyhow::Result<()> {
+        self.wallet().partial_onboard().await
+    }
+    async fn get_did_doc(&self) -> anyhow::Result<Value> {
+        self.wallet().get_did_doc().await
+    }
+    async fn register_key(&self) -> anyhow::Result<()> {
+        self.wallet().register_key().await
+    }
+    async fn register_did(&self) -> anyhow::Result<()> {
+        self.wallet().register_did().await
+    }
     async fn delete_key(&self, key: KeyDefinition) -> anyhow::Result<()> {
         self.wallet().delete_key(key).await
     }
@@ -49,5 +65,8 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
         let vpd = self.wallet().get_vpd(&payload).await?;
         let vcs_id = self.wallet().get_matching_vcs(&vpd).await?;
         self.wallet().present_vp(&payload, vcs_id).await
+    }
+    async fn test(&self) -> anyhow::Result<()> {
+        self.wallet().retrieve_wallet_credentials().await
     }
 }
