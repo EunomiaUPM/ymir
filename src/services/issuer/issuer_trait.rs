@@ -30,8 +30,8 @@ pub trait IssuerTrait: Send + Sync + 'static {
     fn start_vci(&self, req_model: &vc_request::Model) -> issuing::NewModel;
     fn generate_issuing_uri(&self, id: &str) -> String;
     fn get_cred_offer_data(&self, model: &issuing::Model) -> anyhow::Result<VCCredOffer>;
-    fn get_issuer_data(&self) -> IssuerMetadata;
-    fn get_oauth_server_data(&self) -> AuthServerMetadata;
+    fn get_issuer_data(&self, path: Option<&str>) -> IssuerMetadata;
+    fn get_oauth_server_data(&self, path: Option<&str>) -> AuthServerMetadata;
     fn get_token(&self, model: &issuing::Model) -> IssuingToken;
     fn validate_token_req(
         &self,

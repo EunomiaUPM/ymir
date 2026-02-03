@@ -15,10 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 
 use crate::types::vcs::VcType;
-use crate::utils::create_opaque_token;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VCCredOffer {
@@ -40,27 +41,22 @@ pub struct UrnPreAuthorizedCode {
 }
 
 impl VCCredOffer {
-    pub fn new(issuer: String, token: String, vc_type: VcType) -> Self {
-        VCCredOffer {
+    pub fn new(issuer: String, token: String, vc_type: String) -> anyhow::Result<VCCredOffer> {
+        let mut types: Vec<VcType> = Vec::new();
+
+        for s in vc_type.split('&').map(|s| s.trim()) {
+            let data = VcType::from_str(s)?;
+            types.push(data);
+        }
+
+        let configuration_ids = types.iter().map(|t| t.to_conf()).collect();
+
+        Ok(VCCredOffer {
             credential_issuer: issuer,
             grants: CredOfferGrants {
                 urn_pre_authorized_code: UrnPreAuthorizedCode { pre_authorized_code: token }
             },
-            credential_configuration_ids: vec![vc_type.to_conf()]
-        }
-    }
-
-    pub fn new_gaia(issuer: &str) -> VCCredOffer {
-        let token = create_opaque_token();
-        VCCredOffer {
-            credential_issuer: issuer.to_string(),
-            grants: CredOfferGrants {
-                urn_pre_authorized_code: UrnPreAuthorizedCode { pre_authorized_code: token }
-            },
-            credential_configuration_ids: vec![
-                VcType::LegalPerson.to_conf(),
-                VcType::TermsAndConditions.to_conf(),
-            ]
-        }
+            credential_configuration_ids: configuration_ids
+        })
     }
 }

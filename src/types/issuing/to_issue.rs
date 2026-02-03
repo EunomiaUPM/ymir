@@ -27,10 +27,20 @@ use crate::types::vcs::W3cDataModelVersion;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct StuffToIssue {
-    pub vc_model: VcModel,
-    pub w3c_data_model: Option<W3cDataModelVersion>,
+    pub vc_config: VcConfig,
     pub dataspace_id: Option<String>,
     pub federated_catalog_uri: Option<String>
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct VcConfig {
+    pub vc_model: VcModel,
+    pub w3c_data_model: Option<W3cDataModelVersion>
+}
+
+impl VcConfig {
+    pub fn get_vc_model(&self) -> &VcModel { &self.vc_model }
+    pub fn get_w3c_data_model(&self) -> &Option<W3cDataModelVersion> { &self.w3c_data_model }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

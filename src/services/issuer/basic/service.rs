@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::bail;
@@ -42,7 +41,6 @@ use crate::types::issuing::{
     TokenRequest, VCCredOffer, WellKnownJwks
 };
 use crate::types::secrets::StringHelper;
-use crate::types::vcs::VcType;
 use crate::utils::{
     expect_from_env, get_from_opt, get_rsa_key, has_expired, is_active, sign_token, trim_4_base,
     validate_token
@@ -128,22 +126,19 @@ impl IssuerTrait for BasicIssuerService {
             false => issuer
         };
 
-        let vc_type = VcType::from_str(&model.vc_type)?;
-
-        let offer = match model.step {
-            true => VCCredOffer::new(issuer, model.tx_code.clone(), vc_type),
-            false => VCCredOffer::new(issuer, model.pre_auth_code.clone(), vc_type)
-        };
-
-        Ok(offer)
+        match model.step {
+            true => VCCredOffer::new(issuer, model.tx_code.clone(), model.vc_type.clone()),
+            false => VCCredOffer::new(issuer, model.pre_auth_code.clone(), model.vc_type.clone())
+        }
     }
 
-    fn get_issuer_data(&self) -> IssuerMetadata {
+    fn get_issuer_data(&self, path: Option<&str>) -> IssuerMetadata {
         info!("Retrieving issuer data");
         let host = format!(
-            "{}{}/issuer",
+            "{}{}/{}",
             self.config.hosts().get_host(HostType::Http),
-            self.config.get_api_path()
+            self.config.get_api_path(),
+            path.unwrap_or("issuer")
         );
         let host = match self.config.is_local() {
             true => host.replace("127.0.0.1", "host.docker.internal"),
@@ -152,13 +147,14 @@ impl IssuerTrait for BasicIssuerService {
         IssuerMetadata::new(&host)
     }
 
-    fn get_oauth_server_data(&self) -> AuthServerMetadata {
+    fn get_oauth_server_data(&self, path: Option<&str>) -> AuthServerMetadata {
         info!("Retrieving oauth server data");
 
         let host = format!(
-            "{}{}/issuer",
+            "{}{}/{}",
             self.config.hosts().get_host(HostType::Http),
-            self.config.get_api_path()
+            self.config.get_api_path(),
+            path.unwrap_or("issuer")
         );
         let host = match self.config.is_local() {
             true => host.replace("127.0.0.1", "host.docker.internal"),

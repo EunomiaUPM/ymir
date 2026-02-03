@@ -18,5 +18,5 @@
 mod requirements;
 mod verify_payload;
 
-pub use requirements::RequirementsToVerify;
+pub use requirements::VerifyReqConfig;
 pub use verify_payload::VerifyPayload;
