@@ -192,10 +192,10 @@ impl IssuerTrait for BasicIssuerService {
         Ok(())
     }
 
-    async fn issue_cred(&self, claims: Value) -> anyhow::Result<GiveVC> {
+    async fn issue_cred(&self, claims: Value, did: Option<String>) -> anyhow::Result<GiveVC> {
         info!("Issuing cred");
 
-        let did = self.config.get_did();
+        let did = did.unwrap_or(self.config.get_did());
         let mut header = Header::new(Algorithm::RS256);
         header.kid = Some(did.to_string());
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
