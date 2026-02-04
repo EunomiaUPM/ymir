@@ -19,14 +19,23 @@
 
 use tracing::error;
 
-use crate::config::types::{HostConfig, HostType};
+use crate::config::types::{CommonHostsConfig, HostConfig, HostType};
 use crate::errors::{ErrorLogTrait, Errors};
 
 pub trait HostsConfigTrait {
-    fn http(&self) -> &HostConfig;
-    fn grpc(&self) -> Option<&HostConfig>;
-    fn graphql(&self) -> Option<&HostConfig>;
-    fn get_host(&self, host_type: HostType) -> String { self.get_helper(host_type).get_host() }
+    fn hosts(&self) -> &CommonHostsConfig;
+    fn http(&self) -> &HostConfig {
+        &self.hosts().http
+    }
+    fn grpc(&self) -> Option<&HostConfig> {
+        self.hosts().grpc.as_ref()
+    }
+    fn graphql(&self) -> Option<&HostConfig> {
+        self.hosts().graphql.as_ref()
+    }
+    fn get_host(&self, host_type: HostType) -> String {
+        self.get_helper(host_type).get_host()
+    }
 
     fn get_host_without_protocol(&self, host_type: HostType) -> String {
         self.get_helper(host_type).get_host_without_protocol()
@@ -43,7 +52,7 @@ pub trait HostsConfigTrait {
         let host = match host_type {
             HostType::Http => Some(self.http()),
             HostType::Grpc => self.grpc(),
-            HostType::Graphql => self.graphql()
+            HostType::Graphql => self.graphql(),
         };
 
         let host = host.ok_or_else(|| {
@@ -60,7 +69,7 @@ pub trait SingleHostTrait {
     fn get_host(&self) -> String {
         match self.host().port.as_ref() {
             Some(port) => format!("{}://{}:{}", self.host().protocol, self.host().url, port),
-            None => format!("{}://{}", self.host().protocol, self.host().url)
+            None => format!("{}://{}", self.host().protocol, self.host().url),
         }
     }
     fn get_host_without_protocol(&self) -> String {
@@ -68,13 +77,13 @@ pub trait SingleHostTrait {
             Some(port) => {
                 format!("{}:{}", self.host().url, port)
             }
-            None => self.host().url.clone()
+            None => self.host().url.clone(),
         }
     }
     fn get_weird_port(&self) -> String {
         match self.host().port.as_ref() {
             Some(port) => format!(":{}", port),
-            None => "".to_string()
+            None => "".to_string(),
         }
     }
     fn get_tls_port(&self) -> String {

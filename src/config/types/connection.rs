@@ -17,12 +17,10 @@
  *
  */
 
-mod api_trait;
-mod db_trait;
-mod hosts_trait;
-mod connection_trait;
+use serde::{Deserialize, Serialize};
 
-pub use api_trait::ApiConfigTrait;
-pub use db_trait::DatabaseConfigTrait;
-pub use hosts_trait::{HostsConfigTrait, SingleHostTrait};
-pub use connection_trait::ConnectionConfigTrait;
+#[derive( Deserialize, Serialize, Clone, Debug)]
+pub struct ConnectionConfig {
+    pub is_local: bool,
+    pub is_tls_enabled: bool,
+}

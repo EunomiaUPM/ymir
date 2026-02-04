@@ -19,7 +19,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive( Deserialize, Serialize, Clone, Debug)]
 pub struct ApiConfig {
     pub version: String,
     pub openapi_path: String

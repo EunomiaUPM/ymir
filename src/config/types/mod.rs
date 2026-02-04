@@ -18,7 +18,9 @@
 mod api;
 mod db;
 mod hosts;
+mod connection;
 
 pub use api::*;
 pub use db::*;
 pub use hosts::*;
+pub use connection::*;

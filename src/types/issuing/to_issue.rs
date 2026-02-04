@@ -26,7 +26,7 @@ use crate::errors::{ErrorLogTrait, Errors};
 use crate::types::vcs::W3cDataModelVersion;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct StuffToIssue {
+pub struct IssueConfig {
     pub vc_config: VcConfig,
     pub dataspace_id: Option<String>,
     pub federated_catalog_uri: Option<String>
