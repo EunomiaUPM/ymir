@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-
+use crate::config::types::CommonHostsConfig;
 use crate::types::dids::did_type::DidType;
 use crate::types::wallet::WalletConfig;
 
@@ -24,4 +24,5 @@ pub trait WaltIdConfigTrait {
     fn get_did_type(&self) -> DidType;
     fn get_did_web_path(&self) -> Option<String>;
     fn get_did_web_domain(&self) -> String;
+    fn hosts(&self) -> &CommonHostsConfig;
 }

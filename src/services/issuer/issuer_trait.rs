@@ -22,7 +22,7 @@ use serde_json::Value;
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
-    TokenRequest, VCCredOffer, WellKnownJwks
+    TokenRequest, VCCredOffer, WellKnownJwks,
 };
 
 #[async_trait]
@@ -36,25 +36,26 @@ pub trait IssuerTrait: Send + Sync + 'static {
     fn validate_token_req(
         &self,
         model: &issuing::Model,
-        payload: &TokenRequest
+        payload: &TokenRequest,
     ) -> anyhow::Result<()>;
     async fn issue_cred(&self, claims: Value, did: Option<String>) -> anyhow::Result<GiveVC>;
     async fn validate_cred_req(
         &self,
         model: &mut issuing::Model,
         cred_req: &CredentialRequest,
-        token: &str
+        token: &str,
+        did: Option<String>,
     ) -> anyhow::Result<()>;
     fn validate_did_possession(
         &self,
         token: &TokenData<DidPossession>,
-        kid: &str
+        kid: &str,
     ) -> anyhow::Result<()>;
     fn end(
         &self,
         req_model: &vc_request::Model,
         int_model: &recv_interaction::Model,
-        iss_model: &issuing::Model
+        iss_model: &issuing::Model,
     ) -> anyhow::Result<minions::NewModel>;
     async fn get_jwks_data(&self) -> anyhow::Result<WellKnownJwks>;
 }

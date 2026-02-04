@@ -28,7 +28,9 @@ use serde_json::Value;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use urlencoding::decode;
-
+use crate::config::traits::HostsConfigTrait;
+use crate::config::types::HostType;
+use crate::data::entities::{mates, minions};
 use super::super::WalletTrait;
 use super::config::{WaltIdConfig, WaltIdConfigTrait};
 use crate::errors::{ErrorLogTrait, Errors};
@@ -197,7 +199,7 @@ impl WalletTrait for WaltIdService {
         Ok(())
     }
 
-    async fn onboard(&self) -> anyhow::Result<()> {
+    async fn onboard(&self) -> anyhow::Result<(mates::NewModel, minions::NewModel)> {
         info!("Onboarding into web wallet");
 
         self.register().await?;
@@ -227,7 +229,26 @@ impl WalletTrait for WaltIdService {
         self.retrieve_wallet_dids().await?;
         self.set_default_did().await?;
 
-        Ok(())
+        let did = self.get_did().await?;
+        let mate = mates::NewModel {
+            participant_id: did.clone(),
+            participant_slug: "Myself".to_string(),
+            participant_type: "Agent".to_string(),
+            base_url: self.config.hosts().get_host(HostType::Http),
+            token: None,
+            is_me: true,
+        };
+        let minion = minions::NewModel {
+            participant_id: did,
+            participant_slug: "Myself".to_string(),
+            participant_type: "Authority".to_string(),
+            base_url: Some(self.config.hosts().get_host(HostType::Http)),
+            vc_uri: None,
+            is_vc_issued: false,
+            is_me: true,
+        };
+
+        Ok((mate, minion))
     }
 
     async fn partial_onboard(&self) -> anyhow::Result<()> {

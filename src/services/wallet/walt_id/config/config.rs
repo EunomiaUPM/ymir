@@ -21,6 +21,7 @@ use tracing::error;
 
 use super::WaltIdConfigTrait;
 use crate::config::traits::SingleHostTrait;
+use crate::config::types::CommonHostsConfig;
 use crate::errors::{ErrorLogTrait, Errors};
 use crate::types::dids::did_config::DidConfig;
 use crate::types::dids::did_type::DidType;
@@ -28,14 +29,24 @@ use crate::types::present::{Missing, Present};
 use crate::types::wallet::WalletConfig;
 
 pub struct WaltIdConfig {
+    hosts: CommonHostsConfig,
     ssi_wallet_config: WalletConfig,
-    did_config: DidConfig
+    did_config: DidConfig,
 }
 
 impl WaltIdConfigTrait for WaltIdConfig {
-    fn get_raw_wallet_config(&self) -> WalletConfig { self.ssi_wallet_config.clone() }
-    fn get_wallet_api_url(&self) -> String { self.ssi_wallet_config.api.get_host() }
-    fn get_did_type(&self) -> DidType { self.did_config.r#type.clone() }
+    fn hosts(&self) -> &CommonHostsConfig {
+        &self.hosts
+    }
+    fn get_raw_wallet_config(&self) -> WalletConfig {
+        self.ssi_wallet_config.clone()
+    }
+    fn get_wallet_api_url(&self) -> String {
+        self.ssi_wallet_config.api.get_host()
+    }
+    fn get_did_type(&self) -> DidType {
+        self.did_config.r#type.clone()
+    }
     fn get_did_web_path(&self) -> Option<String> {
         match self.did_config.r#type {
             DidType::Web => self.did_config.did_web_options.as_ref()?.path.clone(),
@@ -62,41 +73,53 @@ impl WaltIdConfigTrait for WaltIdConfig {
     }
 }
 
-pub struct WaltIdConfigBuilder<W, D> {
+pub struct WaltIdConfigBuilder<H, W, D> {
+    hosts: Option<CommonHostsConfig>,
     ssi_wallet_config: Option<WalletConfig>,
     did_config: Option<DidConfig>,
-    _marker: PhantomData<(W, D)>
+    _marker: PhantomData<(H, W, D)>,
 }
 
-impl WaltIdConfigBuilder<Missing, Missing> {
+impl WaltIdConfigBuilder<Missing, Missing, Missing> {
     pub fn new() -> Self {
-        Self { ssi_wallet_config: None, did_config: None, _marker: PhantomData }
+        Self { hosts: None, ssi_wallet_config: None, did_config: None, _marker: PhantomData }
     }
 }
 
-impl<W, D> WaltIdConfigBuilder<W, D> {
-    pub fn ssi_wallet_config(self, cfg: WalletConfig) -> WaltIdConfigBuilder<Present, D> {
+impl<H, W, D> WaltIdConfigBuilder<H, W, D> {
+    pub fn hosts(self, hosts: CommonHostsConfig) -> WaltIdConfigBuilder<Present, W, D> {
         WaltIdConfigBuilder {
+            hosts: Some(hosts),
+            ssi_wallet_config: self.ssi_wallet_config,
+            did_config: self.did_config,
+            _marker: PhantomData,
+        }
+    }
+    pub fn ssi_wallet_config(self, cfg: WalletConfig) -> WaltIdConfigBuilder<H, Present, D> {
+        WaltIdConfigBuilder {
+            hosts: self.hosts,
             ssi_wallet_config: Some(cfg),
             did_config: self.did_config,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 
-    pub fn did_config(self, cfg: DidConfig) -> WaltIdConfigBuilder<W, Present> {
+    pub fn did_config(self, cfg: DidConfig) -> WaltIdConfigBuilder<H, W, Present> {
         WaltIdConfigBuilder {
+            hosts: self.hosts,
             ssi_wallet_config: self.ssi_wallet_config,
             did_config: Some(cfg),
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 }
 
-impl WaltIdConfigBuilder<Present, Present> {
+impl WaltIdConfigBuilder<Present, Present, Present> {
     pub fn build(self) -> WaltIdConfig {
         WaltIdConfig {
+            hosts: self.hosts.unwrap(),
             ssi_wallet_config: self.ssi_wallet_config.unwrap(),
-            did_config: self.did_config.unwrap()
+            did_config: self.did_config.unwrap(),
         }
     }
 }

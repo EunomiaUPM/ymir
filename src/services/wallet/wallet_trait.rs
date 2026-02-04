@@ -18,7 +18,7 @@
 use async_trait::async_trait;
 use reqwest::Response;
 use serde_json::Value;
-
+use crate::data::entities::{mates, minions};
 use crate::types::dids::dids_info::DidsInfo;
 use crate::types::wallet::{
     CredentialOfferResponse, KeyDefinition, MatchingVCs, OidcUri, Vpd, WalletCredentials,
@@ -31,7 +31,7 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn register(&self) -> anyhow::Result<()>;
     async fn login(&self) -> anyhow::Result<()>;
     async fn logout(&self) -> anyhow::Result<()>;
-    async fn onboard(&self) -> anyhow::Result<()>;
+    async fn onboard(&self) -> anyhow::Result<(mates::NewModel, minions::NewModel)>;
     async fn partial_onboard(&self) -> anyhow::Result<()>;
     // GET FROM MANAGER (It gives a cloned Value, not a reference)
     async fn get_wallet(&self) -> anyhow::Result<WalletInfo>;
