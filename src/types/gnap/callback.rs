@@ -28,7 +28,8 @@ pub struct RejectedCallbackBody {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(untagged)]
 pub enum CallbackBody {
-    TypeA(ApprovedCallbackBody),
-    TypeB(RejectedCallbackBody)
+    Approved(ApprovedCallbackBody),
+    Rejected(RejectedCallbackBody),
 }

@@ -64,7 +64,11 @@ impl VerifierTrait for BasicVerifierService {
             false => host_url
         };
 
-        let client_id = format!("{}/verify", &host_url);
+        let client_id = format!(
+            "{}{}/verifier/verify",
+            host_url,
+            self.config.get_api_path(),
+        );
         let requested_vcs = self.config.get_requested_vcs();
         if requested_vcs.is_empty() {
             let error = Errors::unauthorized_new("Unable to verify following oidc4vp");
@@ -207,6 +211,7 @@ impl VerifierTrait for BasicVerifierService {
             error!("{}", error.log());
             error
         })?;
+        println!("{}",did);
 
         let key = DidResolver::get_key(did, self.client.clone()).await?;
         let (base_did, _) = DidResolver::split_did_id(did);
