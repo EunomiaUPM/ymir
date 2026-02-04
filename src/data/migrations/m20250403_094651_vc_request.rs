@@ -32,6 +32,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(VcRequest::Id).string().not_null().primary_key())
                     .col(ColumnDef::new(VcRequest::ParticipantSlug).string().not_null())
                     .col(ColumnDef::new(VcRequest::VcType).string().not_null())
+                    .col(ColumnDef::new(VcRequest::InteractMethod).array(ColumnType::Text).not_null())
                     .col(ColumnDef::new(VcRequest::Cert).string())
                     .col(ColumnDef::new(VcRequest::VcUri).string())
                     .col(ColumnDef::new(VcRequest::VcIssuing).string())
@@ -56,6 +57,7 @@ pub enum VcRequest {
     ParticipantSlug,
     VcType,
     Cert,
+    InteractMethod,
     VcUri,
     VcIssuing,
     IsVcIssued,
