@@ -20,7 +20,7 @@ use std::sync::Arc;
 use crate::services::repo::subtraits::{MatesTrait, MinionsTrait};
 use crate::services::wallet::WalletTrait;
 use crate::types::dids::dids_info::DidsInfo;
-use crate::types::wallet::{KeyDefinition, OidcUri};
+use crate::types::wallet::{KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
 use async_trait::async_trait;
 use serde_json::Value;
 
@@ -77,5 +77,14 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
         let vpd = self.wallet().get_vpd(&payload).await?;
         let vcs_id = self.wallet().get_matching_vcs(&vpd).await?;
         self.wallet().present_vp(&payload, vcs_id).await
+    }
+    async fn get_wallet_info(&self) -> anyhow::Result<WalletInfo> {
+        self.wallet().get_wallet().await
+    }
+    async fn get_wallet_did(&self) -> anyhow::Result<String> {
+        self.wallet().get_did().await
+    }
+    async fn get_wallet_credentials(&self) -> anyhow::Result<Vec<WalletCredentials>> {
+        self.wallet().retrieve_wallet_credentials().await
     }
 }

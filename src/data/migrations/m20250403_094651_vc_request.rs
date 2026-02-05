@@ -35,7 +35,6 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(VcRequest::InteractMethod).array(ColumnType::Text).not_null())
                     .col(ColumnDef::new(VcRequest::Cert).string())
                     .col(ColumnDef::new(VcRequest::VcUri).string())
-                    .col(ColumnDef::new(VcRequest::VcIssuing).string())
                     .col(ColumnDef::new(VcRequest::IsVcIssued).boolean())
                     .col(ColumnDef::new(VcRequest::Status).string().not_null())
                     .col(ColumnDef::new(VcRequest::CreatedAt).date_time().not_null())
@@ -59,7 +58,6 @@ pub enum VcRequest {
     Cert,
     InteractMethod,
     VcUri,
-    VcIssuing,
     IsVcIssued,
     Status,
     CreatedAt,

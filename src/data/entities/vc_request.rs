@@ -32,7 +32,6 @@ pub struct Model {
     pub cert: Option<String>,                    // REQUEST
     pub interact_method: Vec<String>,            // REQUEST
     pub vc_uri: Option<String>,                  // RESPONSE
-    pub vc_issuing: Option<String>,              // RESPONSE
     pub status: String,                          // DEFAULT
     pub is_vc_issued: bool,                      // COMPLETION
     pub created_at: chrono::NaiveDateTime,       // DEFAULT
@@ -57,7 +56,6 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             cert: ActiveValue::Set(self.cert),
             interact_method: ActiveValue::Set(self.interact_method),
             vc_uri: ActiveValue::Set(None),
-            vc_issuing: ActiveValue::Set(None),
             status: ActiveValue::Set("Pending".to_string()),
             is_vc_issued: ActiveValue::Set(false),
             created_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
@@ -75,7 +73,6 @@ impl IntoActiveSet<ActiveModel> for Model {
             cert: ActiveValue::Set(self.cert),
             interact_method: ActiveValue::Set(self.interact_method),
             vc_uri: ActiveValue::Set(self.vc_uri),
-            vc_issuing: ActiveValue::Set(self.vc_issuing),
             status: ActiveValue::Set(self.status),
             is_vc_issued: ActiveValue::Set(self.is_vc_issued),
             created_at: ActiveValue::Set(self.created_at),

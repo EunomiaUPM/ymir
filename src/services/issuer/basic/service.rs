@@ -42,7 +42,7 @@ use crate::types::issuing::{
 };
 use crate::types::secrets::StringHelper;
 use crate::utils::{
-    expect_from_env, get_from_opt, get_rsa_key, has_expired, is_active, sign_token, trim_4_base,
+    expect_from_env, get_from_opt, get_rsa_key, has_expired, sign_token, trim_4_base,
     validate_token,
 };
 
@@ -251,7 +251,7 @@ impl IssuerTrait for BasicIssuerService {
         self.validate_did_possession(&token, &kid)?;
         model.holder_did = Some(kid);
         model.issuer_did = Some(did);
-        is_active(token.claims.iat)?;
+        // is_active(token.claims.iat)?;
         has_expired(token.claims.exp)?;
         Ok(())
     }
@@ -283,7 +283,7 @@ impl IssuerTrait for BasicIssuerService {
             vc_uri: req_model.vc_uri.clone(),
             participant_type: "Minion".to_string(),
             base_url: Some(base_url),
-            is_vc_issued: false,
+            is_vc_issued: true,
             is_me: false,
         })
     }
