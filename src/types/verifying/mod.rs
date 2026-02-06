@@ -15,8 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod requirements;
 mod verify_payload;
 
-pub use requirements::VerifyReqConfig;
 pub use verify_payload::VerifyPayload;

@@ -21,7 +21,7 @@ use serde_json::Value;
 
 use crate::data::entities::recv_interaction;
 use crate::data::entities::recv_verification::{Model, NewModel};
-use crate::types::vcs::VPDef;
+use crate::types::vcs::{VPDef, W3cDataModelVersion};
 
 #[async_trait]
 pub trait VerifierTrait: Send + Sync + 'static {
@@ -32,31 +32,45 @@ pub trait VerifierTrait: Send + Sync + 'static {
     async fn verify_vp(
         &self,
         model: &mut Model,
-        vp_token: &str
+        vp_token: &str,
     ) -> anyhow::Result<(Vec<String>, String)>;
     async fn verify_vc(&self, vc_token: &str, holder: &str) -> anyhow::Result<()>;
     async fn validate_token(
         &self,
         vp_token: &str,
-        audience: Option<&str>
+        audience: Option<&str>,
     ) -> anyhow::Result<(TokenData<Value>, String)>;
     fn validate_nonce(&self, model: &Model, token: &TokenData<Value>) -> anyhow::Result<()>;
     fn validate_vp_subject(
         &self,
         model: &mut Model,
         token: &TokenData<Value>,
-        kid: &str
+        kid: &str,
     ) -> anyhow::Result<()>;
-    fn validate_vc_sub(&self, token: &TokenData<Value>, holder: &str) -> anyhow::Result<()>;
+    fn validate_vc_sub(
+        &self,
+        token: &TokenData<Value>,
+        holder: &str,
+        model: &W3cDataModelVersion,
+    ) -> anyhow::Result<()>;
     fn validate_vp_id(&self, model: &Model, token: &TokenData<Value>) -> anyhow::Result<()>;
     fn validate_holder(&self, model: &Model, token: &TokenData<Value>) -> anyhow::Result<()>;
-    fn validate_issuer(&self, token: &TokenData<Value>, kid: &str) -> anyhow::Result<()>;
-    fn validate_vc_id(&self, token: &TokenData<Value>) -> anyhow::Result<()>;
-    fn validate_valid_from(&self, token: &TokenData<Value>) -> anyhow::Result<()>;
-    fn validate_valid_until(&self, token: &TokenData<Value>) -> anyhow::Result<()>;
+    fn validate_issuer(
+        &self,
+        token: &TokenData<Value>,
+        kid: &str,
+        model: &W3cDataModelVersion,
+    ) -> anyhow::Result<()>;
+    fn validate_vc_id(
+        &self,
+        token: &TokenData<Value>,
+        model: &W3cDataModelVersion,
+    ) -> anyhow::Result<()>;
+    fn validate_valid_from(&self, token: &TokenData<Value>, model: &W3cDataModelVersion,) -> anyhow::Result<()>;
+    fn validate_valid_until(&self, token: &TokenData<Value>, model: &W3cDataModelVersion,) -> anyhow::Result<()>;
     fn retrieve_vcs(&self, token: TokenData<Value>) -> anyhow::Result<Vec<String>>;
     async fn end_verification(
         &self,
-        model: &recv_interaction::Model
+        model: &recv_interaction::Model,
     ) -> anyhow::Result<Option<String>>;
 }

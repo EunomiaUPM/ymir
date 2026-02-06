@@ -8,26 +8,24 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod claims_v1;
-pub mod claims_v2;
-mod gaia_vc;
-mod input_descriptor;
-pub mod vc_decision_approval;
-pub mod vc_issuer;
-pub mod vc_specs;
-mod vc_type;
-mod vpd;
-mod w3c_data_model;
+use crate::config::traits::IssueConfigTrait;
+use serde::{Deserialize, Serialize};
 
-pub use gaia_vc::*;
-pub use input_descriptor::InputDescriptor;
-pub use vc_type::VcType;
-pub use vpd::VPDef;
-pub use w3c_data_model::*;
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct IssueConfig {
+    pub dataspace_id: Option<String>,
+    pub federated_catalog_uri: Option<String>,
+}
+
+impl IssueConfigTrait for IssueConfig {
+    fn issue_config(&self) -> &IssueConfig {
+        self
+    }
+}

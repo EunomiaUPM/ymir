@@ -40,12 +40,12 @@ use crate::services::client::ClientTrait;
 use crate::types::errors::BadFormat;
 use crate::types::gnap::ApprovedCallbackBody;
 use crate::types::http::Body;
-use crate::types::vcs::VPDef;
+use crate::types::vcs::{VPDef, W3cDataModelVersion};
 use crate::utils::{get_claim, get_opt_claim};
 
 pub struct BasicVerifierService {
     client: Arc<dyn ClientTrait>,
-    config: BasicVerifierConfig
+    config: BasicVerifierConfig,
 }
 
 impl BasicVerifierService {
@@ -61,14 +61,10 @@ impl VerifierTrait for BasicVerifierService {
         let host_url = self.config.hosts().get_host(HostType::Http);
         let host_url = match self.config.is_local() {
             true => host_url.replace("127.0.0.1", "host.docker.internal"),
-            false => host_url
+            false => host_url,
         };
 
-        let client_id = format!(
-            "{}{}/verifier/verify",
-            host_url,
-            self.config.get_api_path(),
-        );
+        let client_id = format!("{}{}/verifier/verify", host_url, self.config.get_api_path(),);
         let requested_vcs = self.config.get_requested_vcs();
         if requested_vcs.is_empty() {
             let error = Errors::unauthorized_new("Unable to verify following oidc4vp");
@@ -95,7 +91,7 @@ impl VerifierTrait for BasicVerifierService {
         let host_url = format!("{}{}/verifier", host_url, self.config.get_api_path());
         let host_url = match self.config.is_local() {
             true => host_url.replace("127.0.0.1", "host.docker.internal"),
-            false => host_url
+            false => host_url,
         };
 
         let base_url = "openid4vp://authorize";
@@ -130,7 +126,7 @@ impl VerifierTrait for BasicVerifierService {
 
     fn generate_vpd(&self, ver_model: Model) -> VPDef {
         info!("Generating an vp definition");
-        VPDef::new(ver_model.id, ver_model.vc_type)
+        VPDef::new(ver_model.id, ver_model.vc_type, self.config.get_data_model())
     }
 
     async fn verify_all(&self, ver_model: &mut Model, vp_token: String) -> anyhow::Result<()> {
@@ -148,7 +144,7 @@ impl VerifierTrait for BasicVerifierService {
     async fn verify_vp(
         &self,
         model: &mut Model,
-        vp_token: &str
+        vp_token: &str,
     ) -> anyhow::Result<(Vec<String>, String)> {
         info!("Verifying vp");
 
@@ -180,9 +176,10 @@ impl VerifierTrait for BasicVerifierService {
         info!("Verifying vc");
 
         let (token, kid) = self.validate_token(vc_token, None).await?;
-        self.validate_issuer(&token, &kid)?;
-        self.validate_vc_id(&token)?;
-        self.validate_vc_sub(&token, holder)?;
+        let model = self.config.get_data_model();
+        self.validate_issuer(&token, &kid, &model)?;
+        self.validate_vc_id(&token, &model)?;
+        self.validate_vc_sub(&token, holder, &model)?;
 
         // if issuers_list.contains(kid) {
         //     // TODO
@@ -191,8 +188,8 @@ impl VerifierTrait for BasicVerifierService {
         // }
         // info!("VCT issuer is on the trusted issuers list");
 
-        self.validate_valid_from(&token)?;
-        self.validate_valid_until(&token)?;
+        self.validate_valid_from(&token, &model)?;
+        self.validate_valid_until(&token, &model)?;
 
         info!("VC Verification successful");
 
@@ -202,7 +199,7 @@ impl VerifierTrait for BasicVerifierService {
     async fn validate_token(
         &self,
         vp_token: &str,
-        audience: Option<&str>
+        audience: Option<&str>,
     ) -> anyhow::Result<(TokenData<Value>, String)> {
         info!("Validating token");
         let header = jsonwebtoken::decode_header(&vp_token)?;
@@ -211,7 +208,7 @@ impl VerifierTrait for BasicVerifierService {
             error!("{}", error.log());
             error
         })?;
-        println!("{}",did);
+        println!("{}", did);
 
         let key = DidResolver::get_key(did, self.client.clone()).await?;
         let (base_did, _) = DidResolver::split_did_id(did);
@@ -233,7 +230,7 @@ impl VerifierTrait for BasicVerifierService {
                 );
                 let audience = match self.config.is_local() {
                     true => audience.replace("127.0.0.1", "host.docker.internal"),
-                    false => audience
+                    false => audience,
                 };
                 val.validate_aud = true;
                 val.set_audience(&[&(audience)]);
@@ -272,7 +269,7 @@ impl VerifierTrait for BasicVerifierService {
         &self,
         model: &mut Model,
         token: &TokenData<Value>,
-        kid: &str
+        kid: &str,
     ) -> anyhow::Result<()> {
         info!("Validating subject");
 
@@ -294,16 +291,27 @@ impl VerifierTrait for BasicVerifierService {
         Ok(())
     }
 
-    fn validate_vc_sub(&self, token: &TokenData<Value>, holder: &str) -> anyhow::Result<()> {
+    fn validate_vc_sub(
+        &self,
+        token: &TokenData<Value>,
+        holder: &str,
+        model: &W3cDataModelVersion,
+    ) -> anyhow::Result<()> {
         info!("Validating VC subject");
 
+        let cred_sub_id = match model {
+            W3cDataModelVersion::V1 => {
+                get_claim(&token.claims, vec!["vc", "CredentialSubject", "id"])?
+            }
+            W3cDataModelVersion::V2 => get_claim(&token.claims, vec!["CredentialSubject", "id"])?,
+        };
+
         let sub = get_opt_claim(&token.claims, vec!["sub"])?;
-        let cred_sub_id = get_claim(&token.claims, vec!["vc", "CredentialSubject", "id"])?;
 
         if let Some(sub) = sub {
             if sub != holder {
                 let error = Errors::security_new(
-                    "VCT token sub, credential subject & VP Holder do not match"
+                    "VCT token sub, credential subject & VP Holder do not match",
                 );
                 error!("{}", error.log());
                 bail!(error);
@@ -351,11 +359,19 @@ impl VerifierTrait for BasicVerifierService {
         Ok(())
     }
 
-    fn validate_issuer(&self, token: &TokenData<Value>, kid: &str) -> anyhow::Result<()> {
+    fn validate_issuer(
+        &self,
+        token: &TokenData<Value>,
+        kid: &str,
+        model: &W3cDataModelVersion,
+    ) -> anyhow::Result<()> {
         info!("Validating issuer");
 
+        let vc_iss_id = match model {
+            W3cDataModelVersion::V1 => get_claim(&token.claims, vec!["vc", "issuer", "id"])?,
+            W3cDataModelVersion::V2 => get_claim(&token.claims, vec!["issuer", "id"])?,
+        };
         let iss = get_opt_claim(&token.claims, vec!["iss"])?;
-        let vc_iss_id = get_claim(&token.claims, vec!["vc", "issuer", "id"])?;
 
         check_iss(iss, kid)?;
 
@@ -369,10 +385,17 @@ impl VerifierTrait for BasicVerifierService {
         Ok(())
     }
 
-    fn validate_vc_id(&self, token: &TokenData<Value>) -> anyhow::Result<()> {
+    fn validate_vc_id(
+        &self,
+        token: &TokenData<Value>,
+        model: &W3cDataModelVersion,
+    ) -> anyhow::Result<()> {
         info!("Validating VC id & JTI");
 
-        let vc_id = get_claim(&token.claims, vec!["vc", "id"])?;
+        let vc_id = match model {
+            W3cDataModelVersion::V1 => get_claim(&token.claims, vec!["vc", "id"])?,
+            W3cDataModelVersion::V2 => get_claim(&token.claims, vec!["id"])?,
+        };
         let jti = get_opt_claim(&token.claims, vec!["jti"])?;
 
         if let Some(jti) = jti {
@@ -388,10 +411,17 @@ impl VerifierTrait for BasicVerifierService {
         Ok(())
     }
 
-    fn validate_valid_from(&self, token: &TokenData<Value>) -> anyhow::Result<()> {
+    fn validate_valid_from(
+        &self,
+        token: &TokenData<Value>,
+        model: &W3cDataModelVersion,
+    ) -> anyhow::Result<()> {
         info!("Validating issuance date");
 
-        let valid_from = get_opt_claim(&token.claims, vec!["vc", "validFrom"])?;
+        let valid_from = match model {
+            W3cDataModelVersion::V1 => get_opt_claim(&token.claims, vec!["vc", "validFrom"])?,
+            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, vec!["validFrom"])?,
+        };
 
         if let Some(valid_from) = valid_from {
             let date = DateTime::parse_from_rfc3339(&valid_from).map_err(|e| {
@@ -413,10 +443,17 @@ impl VerifierTrait for BasicVerifierService {
         Ok(())
     }
 
-    fn validate_valid_until(&self, token: &TokenData<Value>) -> anyhow::Result<()> {
+    fn validate_valid_until(
+        &self,
+        token: &TokenData<Value>,
+        model: &W3cDataModelVersion,
+    ) -> anyhow::Result<()> {
         info!("Validating expiration date");
 
-        let valid_until = get_opt_claim(&token.claims, vec!["vc", "validUntil"])?;
+        let valid_until = match model {
+            W3cDataModelVersion::V1 => get_opt_claim(&token.claims, vec!["vc", "validUntil"])?,
+            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, vec!["validUntil"])?,
+        };
 
         if let Some(valid_until) = valid_until {
             let date = DateTime::parse_from_rfc3339(&valid_until).map_err(|e| {
@@ -441,7 +478,7 @@ impl VerifierTrait for BasicVerifierService {
     fn retrieve_vcs(&self, token: TokenData<Value>) -> anyhow::Result<Vec<String>> {
         info!("Retrieving VCs");
         let vcs: Vec<String> = serde_json::from_value(
-            token.claims["vp"]["verifiableCredential"].clone()
+            token.claims["vp"]["verifiableCredential"].clone(),
         )
         .map_err(|e| {
             let error = Errors::format_new(
@@ -449,7 +486,7 @@ impl VerifierTrait for BasicVerifierService {
                 &format!(
                     "VPT does not contain the 'verifiableCredential' field -> {}",
                     e.to_string()
-                )
+                ),
             );
             error!("{}", error.log());
             error
@@ -459,7 +496,7 @@ impl VerifierTrait for BasicVerifierService {
     }
     async fn end_verification(
         &self,
-        model: &recv_interaction::Model
+        model: &recv_interaction::Model,
     ) -> anyhow::Result<Option<String>> {
         info!("Ending verification");
 
@@ -478,7 +515,7 @@ impl VerifierTrait for BasicVerifierService {
 
             let body = ApprovedCallbackBody {
                 interact_ref: model.interact_ref.clone(),
-                hash: model.hash.clone()
+                hash: model.hash.clone(),
             };
             let body = serde_json::to_value(body)?;
             self.client.post(&url, Some(headers), Body::Json(body)).await?;
@@ -487,7 +524,7 @@ impl VerifierTrait for BasicVerifierService {
         } else {
             let error = Errors::not_impl_new(
                 "Interact method not supported",
-                &format!("Interact method {} not supported", model.method)
+                &format!("Interact method {} not supported", model.method),
             );
             error!("{}", error.log());
             bail!(error);

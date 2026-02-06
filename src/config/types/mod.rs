@@ -16,11 +16,21 @@
  */
 
 mod api;
-mod db;
-mod hosts;
 mod connection;
+mod db;
+mod dids;
+mod hosts;
+mod issue;
+mod vc_pattern;
+mod verify_req;
+mod wallet;
 
 pub use api::*;
-pub use db::*;
-pub use hosts::*;
 pub use connection::*;
+pub use db::*;
+pub use dids::*;
+pub use hosts::*;
+pub use issue::*;
+pub use vc_pattern::*;
+pub use verify_req::*;
+pub use wallet::*;

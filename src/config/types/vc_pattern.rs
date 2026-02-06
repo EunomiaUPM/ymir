@@ -15,12 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::config::traits::VcConfigTrait;
+use crate::types::vcs::{VcModel, W3cDataModelVersion};
 use serde::{Deserialize, Serialize};
 
-use crate::config::types::HostConfig;
-
 #[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct WalletConfig {
-    pub api: HostConfig,
-    pub id: Option<String>
+pub struct VcConfig {
+    pub vc_model: VcModel,
+    pub w3c_data_model: Option<W3cDataModelVersion>,
+}
+
+impl VcConfigTrait for VcConfig {
+    fn vc_config(&self) -> &VcConfig {
+        self
+    }
 }

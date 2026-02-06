@@ -21,12 +21,11 @@ use tracing::error;
 
 use super::WaltIdConfigTrait;
 use crate::config::traits::SingleHostTrait;
-use crate::config::types::CommonHostsConfig;
+use crate::config::types::DidConfig;
+use crate::config::types::{CommonHostsConfig, WalletConfig};
 use crate::errors::{ErrorLogTrait, Errors};
-use crate::types::dids::did_config::DidConfig;
 use crate::types::dids::did_type::DidType;
 use crate::types::present::{Missing, Present};
-use crate::types::wallet::WalletConfig;
 
 pub struct WaltIdConfig {
     hosts: CommonHostsConfig,

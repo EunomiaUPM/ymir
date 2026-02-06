@@ -15,21 +15,27 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::config::traits::VerifyReqConfigTrait;
+use crate::types::vcs::VcType;
 use serde::de::{self, Deserializer};
 use serde::{Deserialize, Serialize};
-
-use crate::types::vcs::VcType;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct VerifyReqConfig {
     pub is_cert_allowed: bool,
     #[serde(deserialize_with = "deserialize_vc_type_vec")]
-    pub vcs_requested: Vec<VcType>
+    pub vcs_requested: Vec<VcType>,
+}
+
+impl VerifyReqConfigTrait for VerifyReqConfig {
+    fn verify_req_config(&self) -> &VerifyReqConfig {
+        self
+    }
 }
 
 fn deserialize_vc_type_vec<'de, D>(deserializer: D) -> Result<Vec<VcType>, D::Error>
 where
-    D: Deserializer<'de>
+    D: Deserializer<'de>,
 {
     let strings: Vec<String> = Vec::deserialize(deserializer)?;
     strings.into_iter().map(|s| s.parse::<VcType>().map_err(de::Error::custom)).collect()

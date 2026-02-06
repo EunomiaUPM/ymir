@@ -58,9 +58,9 @@ pub enum HostType {
 impl Display for HostType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            HostType::Http => "http".to_string(),
-            HostType::Grpc => "grpc".to_string(),
-            HostType::Graphql => "graphql".to_string(),
+            HostType::Http => "http",
+            HostType::Grpc => "grpc",
+            HostType::Graphql => "graphql",
         };
         write!(f, "{}", str)
     }

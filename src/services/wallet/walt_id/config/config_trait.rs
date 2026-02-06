@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-use crate::config::types::CommonHostsConfig;
+
+use crate::config::types::{CommonHostsConfig, WalletConfig};
 use crate::types::dids::did_type::DidType;
-use crate::types::wallet::WalletConfig;
 
 pub trait WaltIdConfigTrait {
     fn get_raw_wallet_config(&self) -> WalletConfig;
