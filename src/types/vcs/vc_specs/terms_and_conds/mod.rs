@@ -15,26 +15,28 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::types::vcs::vc_specs::BaseCredentialSubject;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TermsAndConditionsCredSub {
-    #[serde(rename = "id")]
-    pub id: Option<String>,
-    pub r#type: String,
+    #[serde(flatten)]
+    pub base: BaseCredentialSubject,
     #[serde(rename = "gx:url")]
     pub url: String,
     #[serde(rename = "gx:hash")]
-    pub hash: String
+    pub hash: String,
 }
 
 impl TermsAndConditionsCredSub {
     pub fn new_gaia(kid: &str) -> TermsAndConditionsCredSub {
         Self {
-            id: Some(kid.to_string()),
-            r#type: "gx:TermsAndConditions".to_string(),
+            base: BaseCredentialSubject {
+                id: kid.to_string(),
+                r#type: "gx:TermsAndConditions".to_string(),
+            },
             url: "test_url".to_string(),
-            hash: "test_hash".to_string()
+            hash: "test_hash".to_string(),
         }
     }
 }

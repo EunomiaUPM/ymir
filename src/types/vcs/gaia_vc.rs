@@ -65,7 +65,7 @@ impl Default for VcInsideGaiaVPBuilder<Missing, Missing> {
         Self {
             context: vec![],
             id: None,
-            r#type: "VerifiablePresentation".to_string(),
+            r#type: "EnvelopedVerifiableCredential".to_string(),
             _marker: PhantomData
         }
     }
@@ -76,6 +76,7 @@ impl<T, R> VcInsideGaiaVPBuilder<T, R> {
         VcInsideGaiaVPBuilder { context, id: self.id, r#type: self.r#type, _marker: PhantomData }
     }
     pub fn id(self, id: String) -> VcInsideGaiaVPBuilder<T, Present> {
+        let id = format!("application/vc+ld+json+jw, {}", id);
         VcInsideGaiaVPBuilder {
             context: self.context,
             id: Some(id),

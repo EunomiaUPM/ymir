@@ -15,12 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::types::vcs::vc_specs::BaseCredentialSubject;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LegalRegistrationNumberCredSubj {
-    pub id: String,
-    pub r#type: String,
+    #[serde(flatten)]
+    pub base: BaseCredentialSubject,
     #[serde(rename = "gx:taxID", skip_serializing_if = "Option::is_none")]
     pub tax_id: Option<String>,
     #[serde(rename = "gx:EUID", skip_serializing_if = "Option::is_none")]
@@ -30,19 +31,52 @@ pub struct LegalRegistrationNumberCredSubj {
     #[serde(rename = "gx:vatID", skip_serializing_if = "Option::is_none")]
     pub vat_id: Option<String>,
     #[serde(rename = "gx:leiCode", skip_serializing_if = "Option::is_none")]
-    pub lei_code: Option<String>
+    pub lei_code: Option<String>,
 }
 
-impl Default for LegalRegistrationNumberCredSubj {
-    fn default() -> LegalRegistrationNumberCredSubj {
+impl LegalRegistrationNumberCredSubj {
+    pub fn new(
+        model: LegalRegistrationNumberTypes,
+        id: &str,
+        data: &str,
+    ) -> LegalRegistrationNumberCredSubj {
+        let mut tax_id: Option<String> = None;
+        let mut euid: Option<String> = None;
+        let mut eori: Option<String> = None;
+        let mut vat_id: Option<String> = None;
+        let mut lei_code: Option<String> = None;
+
+        let r#type = match model {
+            LegalRegistrationNumberTypes::TaxId => {
+                tax_id = Some(data.to_string());
+                "gx:taxID"
+            }
+            LegalRegistrationNumberTypes::Euid => {
+                euid = Some(data.to_string());
+                "gx:EUID"
+            }
+            LegalRegistrationNumberTypes::Eori => {
+                eori = Some(data.to_string());
+                "gx:EORI"
+            }
+            LegalRegistrationNumberTypes::VatId => {
+                vat_id = Some(data.to_string());
+                "gx:vatID"
+            }
+            LegalRegistrationNumberTypes::LeiCode => {
+                lei_code = Some(data.to_string());
+                "gx:leiCode"
+            }
+        }
+        .to_string();
+
         LegalRegistrationNumberCredSubj {
-            id: "".to_string(),
-            r#type: "".to_string(),
-            tax_id: None,
-            euid: None,
-            eori: None,
-            vat_id: None,
-            lei_code: None
+            base: BaseCredentialSubject { id: id.to_string(), r#type },
+            tax_id,
+            euid,
+            eori,
+            vat_id,
+            lei_code,
         }
     }
 }
@@ -53,5 +87,5 @@ pub enum LegalRegistrationNumberTypes {
     Euid,
     Eori,
     VatId,
-    LeiCode
+    LeiCode,
 }

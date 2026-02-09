@@ -113,7 +113,7 @@ impl WalletRouter {
     ) -> impl IntoResponse {
         let payload = match payload {
             Ok(Json(data)) => data,
-            Err(e) => return e.into_response(),
+            Err(e) => return e.to_response(),
         };
 
         match holder.delete_key(payload).await {
@@ -128,7 +128,7 @@ impl WalletRouter {
     ) -> impl IntoResponse {
         let payload = match payload {
             Ok(Json(data)) => data,
-            Err(e) => return e.into_response(),
+            Err(e) => return e.to_response(),
         };
 
         match holder.delete_did(payload).await {
@@ -150,7 +150,7 @@ impl WalletRouter {
     ) -> impl IntoResponse {
         let payload = match payload {
             Ok(Json(data)) => data,
-            Err(e) => return e.into_response(),
+            Err(e) => return e.to_response(),
         };
 
         match holder.process_oidc4vci(payload).await {
@@ -165,7 +165,7 @@ impl WalletRouter {
     ) -> impl IntoResponse {
         let payload = match payload {
             Ok(Json(data)) => data,
-            Err(e) => return e.into_response(),
+            Err(e) => return e.to_response(),
         };
 
         match holder.process_oidc4vp(payload).await {

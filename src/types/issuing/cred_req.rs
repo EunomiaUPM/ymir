@@ -18,6 +18,11 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct CredentialRequestsss {
+    pub credential_requests: Vec<CredentialRequest>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CredentialRequest {
     pub format: String,
     pub proof: Proof,

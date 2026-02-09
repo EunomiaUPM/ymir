@@ -84,16 +84,19 @@ impl IssuerTrait for BasicIssuerService {
         }
     }
 
-    fn generate_issuing_uri(&self, id: &str) -> String {
+    fn generate_issuing_uri(&self, id: &str, path: Option<&str>) -> String {
+        let path = path.unwrap_or("issuer");
         let semi_host = format!(
-            "{}{}/issuer",
+            "{}{}/{}",
             self.config.hosts().get_host_without_protocol(HostType::Http),
-            self.config.get_api_path()
+            self.config.get_api_path(),
+            path
         );
         let host = format!(
-            "{}{}/issuer",
+            "{}{}/{}",
             self.config.hosts().get_host(HostType::Http),
-            self.config.get_api_path()
+            self.config.get_api_path(),
+            path
         );
         let (semi_host, host) = match self.config.is_local() {
             true => {
@@ -113,13 +116,18 @@ impl IssuerTrait for BasicIssuerService {
         uri
     }
 
-    fn get_cred_offer_data(&self, model: &issuing::Model) -> anyhow::Result<VCCredOffer> {
+    fn get_cred_offer_data(
+        &self,
+        model: &issuing::Model,
+        path: Option<&str>,
+    ) -> anyhow::Result<VCCredOffer> {
         info!("Retrieving credential offer data");
 
         let issuer = format!(
-            "{}{}/issuer",
+            "{}{}/{}",
             self.config.hosts().get_host(HostType::Http),
-            self.config.get_api_path()
+            self.config.get_api_path(),
+            path.unwrap_or("issuer")
         );
         let issuer = match self.config.is_local() {
             true => issuer.replace("127.0.0.1", "host.docker.internal"),
@@ -196,8 +204,10 @@ impl IssuerTrait for BasicIssuerService {
         info!("Issuing cred");
 
         let did = did.unwrap_or(self.config.get_did());
-        let mut header = Header::new(Algorithm::RS256);
+        let mut header = Header::new(Algorithm::PS256);
         header.kid = Some(did.to_string());
+        header.typ = Some("vc+ld+json+jwt".to_string());
+        header.cty = Some("vc+ld+json".to_string());
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
         let priv_key: StringHelper = self.vault.read(None, &priv_key).await?;
 

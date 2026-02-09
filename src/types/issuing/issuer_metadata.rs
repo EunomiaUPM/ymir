@@ -26,6 +26,7 @@ pub struct IssuerMetadata {
     pub issuer: String,
     pub credential_issuer: String,
     pub credential_endpoint: String,
+    pub batch_credential_endpoint: String,
     pub jwks_uri: String,
     pub credential_configurations_supported: HashMap<String, CredentialConfiguration>,
     pub authorization_servers: Vec<String>
@@ -39,6 +40,7 @@ impl IssuerMetadata {
             issuer: host.to_string(),
             credential_issuer: host.to_string(),
             credential_endpoint: format!("{}/credential", host),
+            batch_credential_endpoint: format!("{}/credential-batch", host),
             jwks_uri: format!("{}/jwks", host),
             credential_configurations_supported,
             authorization_servers: vec![host.to_string()]

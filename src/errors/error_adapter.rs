@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use axum::extract::rejection::JsonRejection;
 use axum::response::{IntoResponse, Response};
 use axum::{Json, http::StatusCode};
 use serde_json::json;
@@ -23,11 +24,11 @@ use tracing::error;
 use super::Errors;
 
 pub trait CustomToResponse {
-    fn to_response(&self) -> Response;
+    fn to_response(self) -> Response;
 }
 
 impl CustomToResponse for anyhow::Error {
-    fn to_response(&self) -> Response {
+    fn to_response(self) -> Response {
         if let Some(e) = self.downcast_ref::<Errors>() {
             return e.into_response();
         }
@@ -42,8 +43,16 @@ impl CustomToResponse for anyhow::Error {
             Json(json!({
                 "message": "Internal Server Error",
                 "error_code": 5000
-            }))
+            })),
         )
             .into_response()
+    }
+}
+
+impl CustomToResponse for JsonRejection {
+    fn to_response(self) -> Response {
+        error!("Error deserializing payload");
+        error!("{:?}", self);
+        self.into_response()
     }
 }

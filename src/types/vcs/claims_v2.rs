@@ -26,6 +26,8 @@ pub struct VCClaimsV2 {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exp: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub jti: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub iat: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub iss: Option<String>,
