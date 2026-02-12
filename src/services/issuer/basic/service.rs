@@ -41,6 +41,7 @@ use crate::types::issuing::{
     TokenRequest, VCCredOffer, WellKnownJwks,
 };
 use crate::types::secrets::StringHelper;
+use crate::types::vcs::VcType;
 use crate::utils::{
     expect_from_env, get_from_opt, get_rsa_key, has_expired, sign_token, trim_4_base,
     validate_token,
@@ -140,7 +141,7 @@ impl IssuerTrait for BasicIssuerService {
         }
     }
 
-    fn get_issuer_data(&self, path: Option<&str>) -> IssuerMetadata {
+    fn get_issuer_data(&self, path: Option<&str>, vcs: Option<Vec<VcType>>) -> IssuerMetadata {
         info!("Retrieving issuer data");
         let host = format!(
             "{}{}/{}",
@@ -152,10 +153,14 @@ impl IssuerTrait for BasicIssuerService {
             true => host.replace("127.0.0.1", "host.docker.internal"),
             false => host,
         };
-        IssuerMetadata::new(&host)
+        IssuerMetadata::new(&host, vcs)
     }
 
-    fn get_oauth_server_data(&self, path: Option<&str>) -> AuthServerMetadata {
+    fn get_oauth_server_data(
+        &self,
+        path: Option<&str>,
+        vcs: Option<Vec<VcType>>,
+    ) -> AuthServerMetadata {
         info!("Retrieving oauth server data");
 
         let host = format!(
@@ -169,7 +174,7 @@ impl IssuerTrait for BasicIssuerService {
             false => host,
         };
 
-        AuthServerMetadata::new(&host)
+        AuthServerMetadata::new(&host, vcs)
     }
 
     fn get_token(&self, model: &issuing::Model) -> IssuingToken {

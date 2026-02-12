@@ -24,14 +24,23 @@ use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
     TokenRequest, VCCredOffer, WellKnownJwks,
 };
+use crate::types::vcs::VcType;
 
 #[async_trait]
 pub trait IssuerTrait: Send + Sync + 'static {
     fn start_vci(&self, req_model: &vc_request::Model) -> issuing::NewModel;
     fn generate_issuing_uri(&self, id: &str, path: Option<&str>) -> String;
-    fn get_cred_offer_data(&self, model: &issuing::Model, path: Option<&str>) -> anyhow::Result<VCCredOffer>;
-    fn get_issuer_data(&self, path: Option<&str>) -> IssuerMetadata;
-    fn get_oauth_server_data(&self, path: Option<&str>) -> AuthServerMetadata;
+    fn get_cred_offer_data(
+        &self,
+        model: &issuing::Model,
+        path: Option<&str>,
+    ) -> anyhow::Result<VCCredOffer>;
+    fn get_issuer_data(&self, path: Option<&str>, vcs: Option<Vec<VcType>>) -> IssuerMetadata;
+    fn get_oauth_server_data(
+        &self,
+        path: Option<&str>,
+        vcs: Option<Vec<VcType>>,
+    ) -> AuthServerMetadata;
     fn get_token(&self, model: &issuing::Model) -> IssuingToken;
     fn validate_token_req(
         &self,

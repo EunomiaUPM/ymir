@@ -18,7 +18,7 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-
+use crate::types::vcs::VcType;
 use super::CredentialConfiguration;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,8 +44,8 @@ pub struct AuthServerMetadata {
 }
 
 impl AuthServerMetadata {
-    pub fn new(host: &str) -> Self {
-        let credential_configurations_supported = CredentialConfiguration::basic();
+    pub fn new(host: &str, vcs: Option<Vec<VcType>>) -> Self {
+        let credential_configurations_supported = CredentialConfiguration::basic(vcs);
 
         AuthServerMetadata {
             issuer: host.to_string(),

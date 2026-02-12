@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use cred_config::*;
+pub use cred_config::*;
 pub use cred_offer::*;
 pub use cred_req::*;
 pub use did_possession::*;
