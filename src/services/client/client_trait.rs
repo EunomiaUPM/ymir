@@ -15,11 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::Outcome;
-use crate::types::http::Body;
 use async_trait::async_trait;
 use axum::http::HeaderMap;
 use reqwest::Response;
+
+use crate::errors::Outcome;
+use crate::types::http::Body;
 
 #[async_trait]
 pub trait ClientTrait: Send + Sync {

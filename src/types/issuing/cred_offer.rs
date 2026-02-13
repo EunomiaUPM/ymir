@@ -17,34 +17,35 @@
 
 use std::str::FromStr;
 
+use serde::{Deserialize, Serialize};
+
 use crate::errors::Outcome;
 use crate::types::vcs::VcType;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VCCredOffer {
     pub credential_issuer: String,
     pub grants: CredOfferGrants,
-    pub credential_configuration_ids: Vec<String>,
+    pub credential_configuration_ids: Vec<String>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CredOfferGrants {
     #[serde(rename = "urn:ietf:params:oauth:grant-type:pre-authorized_code")]
-    pub urn_pre_authorized_code: UrnPreAuthorizedCode,
+    pub urn_pre_authorized_code: UrnPreAuthorizedCode
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UrnPreAuthorizedCode {
     #[serde(rename = "pre-authorized_code")]
-    pub pre_authorized_code: String,
+    pub pre_authorized_code: String
 }
 
 impl VCCredOffer {
     pub fn new<S: Into<String>, T: Into<String>>(
         issuer: S,
         token: T,
-        vc_type: &str,
+        vc_type: &str
     ) -> Outcome<VCCredOffer> {
         let mut types: Vec<VcType> = Vec::new();
 
@@ -58,9 +59,9 @@ impl VCCredOffer {
         Ok(VCCredOffer {
             credential_issuer: issuer.into(),
             grants: CredOfferGrants {
-                urn_pre_authorized_code: UrnPreAuthorizedCode { pre_authorized_code: token.into() },
+                urn_pre_authorized_code: UrnPreAuthorizedCode { pre_authorized_code: token.into() }
             },
-            credential_configuration_ids: configuration_ids,
+            credential_configuration_ids: configuration_ids
         })
     }
 }

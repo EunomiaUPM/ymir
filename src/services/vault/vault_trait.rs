@@ -45,7 +45,7 @@ pub trait VaultTrait: Send + Sync + 'static {
         mapa: &mut HashMap<String, Value>,
         to_read: T,
         env: &str,
-        required: bool,
+        required: bool
     ) -> Outcome<()>
     where
         T: AsRef<Path>;

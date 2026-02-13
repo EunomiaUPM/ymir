@@ -39,7 +39,7 @@ impl MateSeeder {
             token: ActiveValue::Set(None),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
             last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            is_me: ActiveValue::Set(true),
+            is_me: ActiveValue::Set(true)
         }
         .insert(db)
         .await

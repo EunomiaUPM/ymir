@@ -15,8 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::types::vcs::vc_specs::BaseCredentialSubject;
 use serde::{Deserialize, Serialize};
+
+use crate::types::vcs::vc_specs::BaseCredentialSubject;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TermsAndConditionsCredSub {
@@ -25,7 +26,7 @@ pub struct TermsAndConditionsCredSub {
     #[serde(rename = "gx:url")]
     pub url: String,
     #[serde(rename = "gx:hash")]
-    pub hash: String,
+    pub hash: String
 }
 
 impl TermsAndConditionsCredSub {
@@ -33,10 +34,10 @@ impl TermsAndConditionsCredSub {
         Self {
             base: BaseCredentialSubject {
                 id: kid.into(),
-                r#type: "gx:TermsAndConditions".to_string(),
+                r#type: "gx:TermsAndConditions".to_string()
             },
             url: "test_url".to_string(),
-            hash: "test_hash".to_string(),
+            hash: "test_hash".to_string()
         }
     }
 }

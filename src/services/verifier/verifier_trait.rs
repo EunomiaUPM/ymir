@@ -37,13 +37,13 @@ pub trait VerifierTrait: Send + Sync + 'static {
         &self,
         model: &mut Model,
         token: &TokenData<Value>,
-        kid: &str,
+        kid: &str
     ) -> Outcome<()>;
     fn validate_vc_sub(
         &self,
         token: &TokenData<Value>,
         holder: &str,
-        model: &W3cDataModelVersion,
+        model: &W3cDataModelVersion
     ) -> Outcome<()>;
     fn validate_vp_id(&self, model: &Model, token: &TokenData<Value>) -> Outcome<()>;
     fn validate_holder(&self, model: &Model, token: &TokenData<Value>) -> Outcome<()>;
@@ -51,18 +51,18 @@ pub trait VerifierTrait: Send + Sync + 'static {
         &self,
         token: &TokenData<Value>,
         kid: &str,
-        model: &W3cDataModelVersion,
+        model: &W3cDataModelVersion
     ) -> Outcome<()>;
     fn validate_vc_id(&self, token: &TokenData<Value>, model: &W3cDataModelVersion) -> Outcome<()>;
     fn validate_valid_from(
         &self,
         token: &TokenData<Value>,
-        model: &W3cDataModelVersion,
+        model: &W3cDataModelVersion
     ) -> Outcome<()>;
     fn validate_valid_until(
         &self,
         token: &TokenData<Value>,
-        model: &W3cDataModelVersion,
+        model: &W3cDataModelVersion
     ) -> Outcome<()>;
     fn retrieve_vcs(&self, token: TokenData<Value>) -> Outcome<Vec<String>>;
     async fn end_verification(&self, model: &recv_interaction::Model) -> Outcome<Option<String>>;

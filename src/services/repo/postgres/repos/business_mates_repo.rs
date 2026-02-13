@@ -27,19 +27,15 @@ use crate::services::repo::subtraits::BusinessMatesRepoTrait;
 
 #[derive(Clone)]
 pub struct BusinessMatesRepo {
-    db_connection: DatabaseConnection,
+    db_connection: DatabaseConnection
 }
 
 impl BusinessMatesRepo {
-    pub fn new(db_connection: DatabaseConnection) -> Self {
-        Self { db_connection }
-    }
+    pub fn new(db_connection: DatabaseConnection) -> Self { Self { db_connection } }
 }
 
 impl BasicRepoTrait<Entity, NewModel> for BusinessMatesRepo {
-    fn db(&self) -> &DatabaseConnection {
-        &self.db_connection
-    }
+    fn db(&self) -> &DatabaseConnection { &self.db_connection }
 }
 
 #[async_trait]
@@ -55,7 +51,7 @@ impl BusinessMatesRepoTrait for BusinessMatesRepo {
             .on_conflict(
                 OnConflict::column(Column::ParticipantId)
                     .update_columns([Column::Token, Column::LastInteraction])
-                    .to_owned(),
+                    .to_owned()
             )
             .exec_with_returning(self.db())
             .await

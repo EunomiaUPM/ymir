@@ -15,8 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::types::vcs::vc_specs::BaseCredentialSubject;
 use serde::{Deserialize, Serialize};
+
+use crate::types::vcs::vc_specs::BaseCredentialSubject;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LegalRegistrationNumberCredSubj {
@@ -31,14 +32,14 @@ pub struct LegalRegistrationNumberCredSubj {
     #[serde(rename = "gx:vatID", skip_serializing_if = "Option::is_none")]
     pub vat_id: Option<String>,
     #[serde(rename = "gx:leiCode", skip_serializing_if = "Option::is_none")]
-    pub lei_code: Option<String>,
+    pub lei_code: Option<String>
 }
 
 impl LegalRegistrationNumberCredSubj {
     pub fn new<S: Into<String>, T: Into<String>>(
         model: LegalRegistrationNumberTypes,
         id: S,
-        data: T,
+        data: T
     ) -> LegalRegistrationNumberCredSubj {
         let mut tax_id: Option<String> = None;
         let mut euid: Option<String> = None;
@@ -76,7 +77,7 @@ impl LegalRegistrationNumberCredSubj {
             euid,
             eori,
             vat_id,
-            lei_code,
+            lei_code
         }
     }
 }
@@ -87,5 +88,5 @@ pub enum LegalRegistrationNumberTypes {
     Euid,
     Eori,
     VatId,
-    LeiCode,
+    LeiCode
 }

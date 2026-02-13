@@ -24,19 +24,15 @@ use crate::errors::Outcome;
 
 #[derive(Clone)]
 pub struct IssuingRepo {
-    db_connection: DatabaseConnection,
+    db_connection: DatabaseConnection
 }
 
 impl IssuingRepo {
-    pub fn new(db_connection: DatabaseConnection) -> Self {
-        Self { db_connection }
-    }
+    pub fn new(db_connection: DatabaseConnection) -> Self { Self { db_connection } }
 }
 
 impl BasicRepoTrait<Entity, NewModel> for IssuingRepo {
-    fn db(&self) -> &DatabaseConnection {
-        &self.db_connection
-    }
+    fn db(&self) -> &DatabaseConnection { &self.db_connection }
 }
 
 #[async_trait]

@@ -23,10 +23,6 @@ use crate::utils::read;
 
 pub trait ApiConfigTrait {
     fn api(&self) -> &ApiConfig;
-    fn get_openapi(&self) -> Outcome<String> {
-        read(&self.api().openapi_path)
-    }
-    fn get_api_version(&self) -> String {
-        format!("/api/{}", self.api().version)
-    }
+    fn get_openapi(&self) -> Outcome<String> { read(&self.api().openapi_path) }
+    fn get_api_version(&self) -> String { format!("/api/{}", self.api().version) }
 }

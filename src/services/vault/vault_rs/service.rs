@@ -37,7 +37,7 @@ use crate::types::secrets::{DbSecrets, StringHelper};
 use crate::utils::{expect_from_env, parse_from_value, parse_to_value, read, read_json};
 
 pub struct VaultService {
-    client: Arc<VaultClient>,
+    client: Arc<VaultClient>
 }
 
 impl VaultService {
@@ -66,7 +66,7 @@ impl VaultService {
 impl VaultTrait for VaultService {
     async fn read<T>(&self, mount: Option<&str>, path: &str) -> Outcome<T>
     where
-        T: DeserializeOwned,
+        T: DeserializeOwned
     {
         let basic_mount = expect_from_env("VAULT_MOUNT");
         let mount = mount.unwrap_or(&basic_mount);
@@ -82,7 +82,7 @@ impl VaultTrait for VaultService {
     }
     async fn write<T>(&self, mount: Option<&str>, path: &str, secret: &T) -> Outcome<()>
     where
-        T: Serialize + Send + Sync,
+        T: Serialize + Send + Sync
     {
         let basic_mount = expect_from_env("VAULT_MOUNT");
         let mount = mount.unwrap_or(&basic_mount);
@@ -130,7 +130,7 @@ impl VaultTrait for VaultService {
         Self::insert_pem(
             &mut map,
             config_path.join("vault-ca.pem"),
-            "VAULT_APP_ROOT_CLIENT_KEY",
+            "VAULT_APP_ROOT_CLIENT_KEY"
         )?;
 
         Ok(map)
@@ -197,15 +197,15 @@ impl VaultTrait for VaultService {
         mapa: &mut HashMap<String, Value>,
         to_read: T,
         env: &str,
-        required: bool,
+        required: bool
     ) -> Outcome<()>
     where
-        T: AsRef<Path>,
+        T: AsRef<Path>
     {
         let vault_path = expect_from_env(env);
         let db_json = match read_json(to_read) {
             Ok(db_json) => db_json,
-            Err(e) => return if required { Err(e) } else { Ok(()) },
+            Err(e) => return if required { Err(e) } else { Ok(()) }
         };
         mapa.insert(vault_path, db_json);
         Ok(())
@@ -213,7 +213,7 @@ impl VaultTrait for VaultService {
 
     fn insert_pem<T>(mapa: &mut HashMap<String, Value>, to_read: T, env: &str) -> Outcome<()>
     where
-        T: AsRef<Path>,
+        T: AsRef<Path>
     {
         let vault_path = expect_from_env(env);
         let data = read(to_read)?;
@@ -223,7 +223,7 @@ impl VaultTrait for VaultService {
     }
     async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
     where
-        T: DatabaseConfigTrait + Send + Sync,
+        T: DatabaseConfigTrait + Send + Sync
     {
         let db_path = expect_from_env("VAULT_APP_DB");
 

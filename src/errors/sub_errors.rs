@@ -24,12 +24,12 @@ pub struct ErrorInfo {
     pub error_code: u16,
     #[serde(skip)]
     pub status_code: StatusCode,
-    pub details: Option<String>,
+    pub details: Option<String>
 }
 
 #[derive(Debug, Clone)]
 pub struct HttpContext {
     pub http_code: Option<u16>,
     pub url: String,
-    pub method: String,
+    pub method: String
 }

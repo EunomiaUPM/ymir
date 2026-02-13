@@ -15,18 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use serde::{Deserialize, Serialize};
+
 use crate::config::traits::VcConfigTrait;
 use crate::types::vcs::{VcModel, W3cDataModelVersion};
-use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct VcConfig {
     pub vc_model: VcModel,
-    pub w3c_data_model: Option<W3cDataModelVersion>,
+    pub w3c_data_model: Option<W3cDataModelVersion>
 }
 
 impl VcConfigTrait for VcConfig {
-    fn vc_config(&self) -> &VcConfig {
-        self
-    }
+    fn vc_config(&self) -> &VcConfig { self }
 }

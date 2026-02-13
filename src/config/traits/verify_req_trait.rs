@@ -20,10 +20,6 @@ use crate::types::vcs::VcType;
 
 pub trait VerifyReqConfigTrait {
     fn verify_req_config(&self) -> &VerifyReqConfig;
-    fn is_cert_allowed(&self) -> bool {
-        self.verify_req_config().is_cert_allowed
-    }
-    fn get_requested_vcs(&self) -> &[VcType] {
-        &self.verify_req_config().vcs_requested
-    }
+    fn is_cert_allowed(&self) -> bool { self.verify_req_config().is_cert_allowed }
+    fn get_requested_vcs(&self) -> &[VcType] { &self.verify_req_config().vcs_requested }
 }

@@ -24,19 +24,15 @@ use crate::services::repo::subtraits::BasicRepoTrait;
 use crate::services::repo::subtraits::RecvInteractionTrait;
 
 pub struct RecvInteractionRepo {
-    db_connection: DatabaseConnection,
+    db_connection: DatabaseConnection
 }
 
 impl RecvInteractionRepo {
-    pub fn new(db_connection: DatabaseConnection) -> Self {
-        Self { db_connection }
-    }
+    pub fn new(db_connection: DatabaseConnection) -> Self { Self { db_connection } }
 }
 
 impl BasicRepoTrait<Entity, NewModel> for RecvInteractionRepo {
-    fn db(&self) -> &DatabaseConnection {
-        &self.db_connection
-    }
+    fn db(&self) -> &DatabaseConnection { &self.db_connection }
 }
 
 #[async_trait]

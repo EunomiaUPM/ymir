@@ -15,14 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::types::vcs::vc_specs::BaseCredentialSubject;
 use serde::{Deserialize, Serialize};
+
+use crate::types::vcs::vc_specs::BaseCredentialSubject;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DataSpaceParticipant {
     #[serde(flatten)]
     pub base: BaseCredentialSubject,
-    pub dataspace_id: String,
+    pub dataspace_id: String
 }
 
 impl DataSpaceParticipant {
@@ -30,9 +31,9 @@ impl DataSpaceParticipant {
         DataSpaceParticipant {
             base: BaseCredentialSubject {
                 id: id.into(),
-                r#type: "DataspaceParticipant".to_string(),
+                r#type: "DataspaceParticipant".to_string()
             },
-            dataspace_id: dataspace_id.into(),
+            dataspace_id: dataspace_id.into()
         }
     }
 }

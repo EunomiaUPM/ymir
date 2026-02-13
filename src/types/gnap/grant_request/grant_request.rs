@@ -33,7 +33,7 @@ pub struct GrantRequest {
     pub client: Client4GR,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
-    pub interact: Option<Interact4GR>,
+    pub interact: Option<Interact4GR>
 }
 
 impl GrantRequest {
@@ -41,18 +41,18 @@ impl GrantRequest {
         option: &GRUse,
         client: &Client4GR,
         vc_type: Option<&VcType>,
-        model: &req_interaction::Model,
+        model: &req_interaction::Model
     ) -> Self {
         Self {
             access_token: AccessTokenRequirements4GR::new(
                 option,
                 vc_type,
-                Some(&TokenReqTypeGR::Bearer),
+                Some(&TokenReqTypeGR::Bearer)
             ),
             subject: None,
             client: client.clone(),
             user: None,
-            interact: Some(Interact4GR::new(model)),
+            interact: Some(Interact4GR::new(model))
         }
     }
 }

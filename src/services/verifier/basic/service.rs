@@ -42,7 +42,7 @@ use crate::utils::{get_claim, get_opt_claim, parse_to_string, parse_to_value, va
 
 pub struct BasicVerifierService {
     client: Arc<dyn ClientTrait>,
-    config: BasicVerifierConfig,
+    config: BasicVerifierConfig
 }
 
 impl BasicVerifierService {
@@ -58,7 +58,7 @@ impl VerifierTrait for BasicVerifierService {
         let host_url = self.config.get_host(HostType::Http);
         let host_url = match self.config.is_local() {
             true => host_url.replace("127.0.0.1", "host.docker.internal"),
-            false => host_url,
+            false => host_url
         };
 
         let client_id = format!("{}{}/verifier/verify", host_url, self.config.get_api_path(),);
@@ -86,7 +86,7 @@ impl VerifierTrait for BasicVerifierService {
         let host_url = format!("{}{}/verifier", host_url, self.config.get_api_path());
         let host_url = match self.config.is_local() {
             true => host_url.replace("127.0.0.1", "host.docker.internal"),
-            false => host_url,
+            false => host_url
         };
 
         let base_url = "openid4vp://authorize";
@@ -211,7 +211,7 @@ impl VerifierTrait for BasicVerifierService {
         &self,
         model: &mut Model,
         token: &TokenData<Value>,
-        kid: &str,
+        kid: &str
     ) -> Outcome<()> {
         info!("Validating subject");
 
@@ -235,7 +235,7 @@ impl VerifierTrait for BasicVerifierService {
         &self,
         token: &TokenData<Value>,
         holder: &str,
-        model: &W3cDataModelVersion,
+        model: &W3cDataModelVersion
     ) -> Outcome<()> {
         info!("Validating VC subject");
 
@@ -243,7 +243,7 @@ impl VerifierTrait for BasicVerifierService {
             W3cDataModelVersion::V1 => {
                 get_claim(&token.claims, &["vc", "CredentialSubject", "id"])?
             }
-            W3cDataModelVersion::V2 => get_claim(&token.claims, &["CredentialSubject", "id"])?,
+            W3cDataModelVersion::V2 => get_claim(&token.claims, &["CredentialSubject", "id"])?
         };
 
         let sub = get_opt_claim(&token.claims, &["sub"])?;
@@ -252,7 +252,7 @@ impl VerifierTrait for BasicVerifierService {
             if sub != holder {
                 return Err(Errors::security(
                     "VCT token sub, credential subject & VP Holder do not match",
-                    None,
+                    None
                 ));
             }
             info!("Sub & Holder match");
@@ -261,7 +261,7 @@ impl VerifierTrait for BasicVerifierService {
         if holder != cred_sub_id {
             return Err(Errors::security(
                 "VCT token sub, credential subject & VP Holder do not match",
-                None,
+                None
             ));
         }
         info!("Vc Holder & Holder match");
@@ -298,13 +298,13 @@ impl VerifierTrait for BasicVerifierService {
         &self,
         token: &TokenData<Value>,
         kid: &str,
-        model: &W3cDataModelVersion,
+        model: &W3cDataModelVersion
     ) -> Outcome<()> {
         info!("Validating issuer");
 
         let vc_iss_id = match model {
             W3cDataModelVersion::V1 => get_claim(&token.claims, &["vc", "issuer", "id"])?,
-            W3cDataModelVersion::V2 => get_claim(&token.claims, &["issuer", "id"])?,
+            W3cDataModelVersion::V2 => get_claim(&token.claims, &["issuer", "id"])?
         };
         let iss = get_opt_claim(&token.claims, &["iss"])?;
 
@@ -323,7 +323,7 @@ impl VerifierTrait for BasicVerifierService {
 
         let vc_id = match model {
             W3cDataModelVersion::V1 => get_claim(&token.claims, &["vc", "id"])?,
-            W3cDataModelVersion::V2 => get_claim(&token.claims, &["id"])?,
+            W3cDataModelVersion::V2 => get_claim(&token.claims, &["id"])?
         };
         let jti = get_opt_claim(&token.claims, &["jti"])?;
 
@@ -341,13 +341,13 @@ impl VerifierTrait for BasicVerifierService {
     fn validate_valid_from(
         &self,
         token: &TokenData<Value>,
-        model: &W3cDataModelVersion,
+        model: &W3cDataModelVersion
     ) -> Outcome<()> {
         info!("Validating issuance date");
 
         let valid_from = match model {
             W3cDataModelVersion::V1 => get_opt_claim(&token.claims, &["vc", "validFrom"])?,
-            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, &["validFrom"])?,
+            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, &["validFrom"])?
         };
 
         if let Some(valid_from) = valid_from {
@@ -366,13 +366,13 @@ impl VerifierTrait for BasicVerifierService {
     fn validate_valid_until(
         &self,
         token: &TokenData<Value>,
-        model: &W3cDataModelVersion,
+        model: &W3cDataModelVersion
     ) -> Outcome<()> {
         info!("Validating expiration date");
 
         let valid_until = match model {
             W3cDataModelVersion::V1 => get_opt_claim(&token.claims, &["vc", "validUntil"])?,
-            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, &["validUntil"])?,
+            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, &["validUntil"])?
         };
 
         if let Some(valid_until) = valid_until {
@@ -391,13 +391,13 @@ impl VerifierTrait for BasicVerifierService {
     fn retrieve_vcs(&self, token: TokenData<Value>) -> Outcome<Vec<String>> {
         info!("Retrieving VCs");
         let vcs: Vec<String> = serde_json::from_value(
-            token.claims["vp"]["verifiableCredential"].clone(),
+            token.claims["vp"]["verifiableCredential"].clone()
         )
         .map_err(|e| {
             Errors::format(
                 BadFormat::Received,
                 "VPT does not contain de vc field",
-                Some(anyhow::Error::from(e)),
+                Some(anyhow::Error::from(e))
             )
         })?;
 
@@ -421,7 +421,7 @@ impl VerifierTrait for BasicVerifierService {
 
             let body = ApprovedCallbackBody {
                 interact_ref: model.interact_ref.clone(),
-                hash: model.hash.clone(),
+                hash: model.hash.clone()
             };
             let body = parse_to_value(&body)?;
             self.client.post(&url, Some(headers), Body::Json(body)).await?;

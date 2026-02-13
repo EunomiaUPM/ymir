@@ -19,14 +19,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct StringHelper {
-    inner: String,
+    inner: String
 }
 
 impl StringHelper {
-    pub fn new<T: Into<String>>(inner: T) -> StringHelper {
-        StringHelper { inner: inner.into() }
-    }
-    pub fn data(&self) -> &str {
-        &self.inner
-    }
+    pub fn new<T: Into<String>>(inner: T) -> StringHelper { StringHelper { inner: inner.into() } }
+    pub fn data(&self) -> &str { &self.inner }
 }

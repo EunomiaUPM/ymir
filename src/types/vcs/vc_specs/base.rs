@@ -20,5 +20,5 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BaseCredentialSubject {
     pub id: String,
-    pub r#type: String,
+    pub r#type: String
 }

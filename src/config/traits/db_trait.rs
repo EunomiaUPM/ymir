@@ -34,7 +34,7 @@ pub trait DatabaseConfigTrait {
                 db_config.url,
                 db_config.port,
                 db_secrets.name
-            ),
+            )
         }
     }
 }

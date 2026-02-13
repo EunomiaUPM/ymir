@@ -21,7 +21,7 @@ use crate::data::entities::recv_interaction;
 use crate::types::gnap::AccessToken;
 use crate::types::gnap::grant_request::InteractStart;
 use crate::types::gnap::grant_response::{
-    Continue4GResponse, Interact4GResponse, Subject4GResponse,
+    Continue4GResponse, Interact4GResponse, Subject4GResponse
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -38,7 +38,7 @@ pub struct GrantResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>, // TODO
+    pub error: Option<String> // TODO
 }
 
 impl GrantResponse {
@@ -47,13 +47,13 @@ impl GrantResponse {
             r#continue: Some(Continue4GResponse {
                 uri: model.continue_endpoint.clone(),
                 wait: None, // TODO Manage wait time
-                access_token: AccessToken::new(model.continue_token.clone()),
+                access_token: AccessToken::new(model.continue_token.clone())
             }),
             access_token: None,
             interact: Some(Interact4GResponse::new(option, &model.as_nonce, uri)),
             subject: None,
             instance_id: Some(model.id.clone()),
-            error: None,
+            error: None
         }
     }
     pub fn error(error: String) -> Self {
@@ -63,7 +63,7 @@ impl GrantResponse {
             interact: None,
             subject: None,
             instance_id: None,
-            error: Some(error),
+            error: Some(error)
         }
     }
 }

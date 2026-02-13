@@ -19,8 +19,8 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive( Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ConnectionConfig {
     pub is_local: bool,
-    pub is_tls_enabled: bool,
+    pub is_tls_enabled: bool
 }

@@ -26,7 +26,7 @@ use crate::errors::{Errors, Outcome};
 use crate::types::http::Body;
 
 pub struct BasicClientService {
-    client: Client,
+    client: Client
 }
 
 impl BasicClientService {
@@ -35,14 +35,14 @@ impl BasicClientService {
             client: Client::builder()
                 .timeout(Duration::from_secs(10))
                 .build()
-                .expect("Failed to build request client"),
+                .expect("Failed to build request client")
         }
     }
     async fn send_request(
         &self,
         req: RequestBuilder,
         method: &str,
-        url: &str,
+        url: &str
     ) -> Outcome<Response> {
         req.send().await.map_err(|e| {
             Errors::petition(
@@ -50,7 +50,7 @@ impl BasicClientService {
                 method,
                 e.status().map(|s| s.as_u16()),
                 "Error sending petition",
-                Some(anyhow::Error::from(e)),
+                Some(anyhow::Error::from(e))
             )
         })
     }
@@ -58,7 +58,7 @@ impl BasicClientService {
         match body {
             Body::Json(value) => req.json(&value),
             Body::Raw(s) => req.body(s),
-            Body::None => req,
+            Body::None => req
         }
     }
 }

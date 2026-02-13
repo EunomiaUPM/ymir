@@ -26,19 +26,15 @@ use crate::services::repo::subtraits::RecvVerificationTrait;
 
 #[derive(Clone)]
 pub struct RecvVerificationRepo {
-    db_connection: DatabaseConnection,
+    db_connection: DatabaseConnection
 }
 
 impl RecvVerificationRepo {
-    pub fn new(db_connection: DatabaseConnection) -> Self {
-        Self { db_connection }
-    }
+    pub fn new(db_connection: DatabaseConnection) -> Self { Self { db_connection } }
 }
 
 impl BasicRepoTrait<Entity, NewModel> for RecvVerificationRepo {
-    fn db(&self) -> &DatabaseConnection {
-        &self.db_connection
-    }
+    fn db(&self) -> &DatabaseConnection { &self.db_connection }
 }
 
 #[async_trait]

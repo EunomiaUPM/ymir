@@ -18,21 +18,21 @@
  */
 
 mod api_trait;
-mod db_trait;
-mod hosts_trait;
 mod connection_trait;
-mod verify_req_trait;
+mod db_trait;
 mod did_trait;
-mod wallet_trait;
-mod vc_pattern_trait;
+mod hosts_trait;
 mod issue_trait;
+mod vc_pattern_trait;
+mod verify_req_trait;
+mod wallet_trait;
 
 pub use api_trait::ApiConfigTrait;
-pub use db_trait::DatabaseConfigTrait;
-pub use hosts_trait::{HostsConfigTrait, SingleHostTrait};
 pub use connection_trait::ConnectionConfigTrait;
-pub use verify_req_trait::VerifyReqConfigTrait;
+pub use db_trait::DatabaseConfigTrait;
 pub use did_trait::DidConfigTrait;
-pub use wallet_trait::WalletConfigTrait;
-pub use vc_pattern_trait::VcConfigTrait;
+pub use hosts_trait::{HostsConfigTrait, SingleHostTrait};
 pub use issue_trait::IssueConfigTrait;
+pub use vc_pattern_trait::VcConfigTrait;
+pub use verify_req_trait::VerifyReqConfigTrait;
+pub use wallet_trait::WalletConfigTrait;

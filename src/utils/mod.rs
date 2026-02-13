@@ -17,8 +17,6 @@
 
 mod parse;
 
-pub use parse::*;
-
 use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
@@ -29,6 +27,7 @@ use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;
 use jsonwebtoken::{EncodingKey, Header, TokenData, Validation, encode};
+pub use parse::*;
 use rand::Rng;
 use reqwest::Url;
 use serde::Serialize;
@@ -43,7 +42,7 @@ use crate::types::errors::BadFormat;
 
 pub fn read<P>(path: P) -> Outcome<String>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let path_ref = path.as_ref();
 
@@ -51,7 +50,7 @@ where
         Errors::read(
             path_ref.display().to_string(),
             format!("Unable to read file: {}", path_ref.display()),
-            Some(anyhow::Error::from(e)),
+            Some(anyhow::Error::from(e))
         )
     })
 }
@@ -62,7 +61,7 @@ fn validate_data(node: &Value, field: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Field '{}' is not a string", field),
-                None,
+                None
             )
         })
         .map(|s| s.to_string())
@@ -70,7 +69,7 @@ fn validate_data(node: &Value, field: &str) -> Outcome<String> {
 
 pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
 where
-    T: Clone + Serialize + DeserializeOwned,
+    T: Clone + Serialize + DeserializeOwned
 {
     value
         .ok_or_else(|| {
@@ -92,17 +91,17 @@ pub fn has_expired(exp: u64) -> Outcome<()> {
 pub async fn validate_token<T>(
     token: &str,
     audience: Option<&str>,
-    client: Arc<dyn ClientTrait>,
+    client: Arc<dyn ClientTrait>
 ) -> Outcome<(TokenData<T>, String)>
 where
-    T: Serialize + DeserializeOwned,
+    T: Serialize + DeserializeOwned
 {
     info!("Validating token");
     let header = jsonwebtoken::decode_header(&token).map_err(|e| {
         Errors::format(
             BadFormat::Received,
             format!("Unable to decode token header: {}", token),
-            Some(anyhow::Error::from(e)),
+            Some(anyhow::Error::from(e))
         )
     })?;
     let kid_str = get_from_opt(header.kid.as_ref(), "kid")?;
@@ -175,9 +174,9 @@ pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Missing query parameter '{}'", param_name),
-                None,
+                None
             )
-        },
+        }
     )
 }
 
@@ -186,7 +185,7 @@ pub fn sign_token<T: Serialize>(header: &Header, claims: &T, key: &EncodingKey) 
         Errors::format(
             BadFormat::Received,
             "Unable to sign token",
-            Some(anyhow::Error::from(e)),
+            Some(anyhow::Error::from(e))
         )
     })
 }

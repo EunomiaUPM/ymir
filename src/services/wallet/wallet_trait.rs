@@ -15,16 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use async_trait::async_trait;
+use reqwest::Response;
+use serde_json::Value;
+
 use crate::data::entities::{mates, minions};
 use crate::errors::Outcome;
 use crate::types::dids::dids_info::DidsInfo;
 use crate::types::wallet::{
     CredentialOfferResponse, KeyDefinition, MatchingVCs, OidcUri, Vpd, WalletCredentials,
-    WalletInfo, WalletSession,
+    WalletInfo, WalletSession
 };
-use async_trait::async_trait;
-use reqwest::Response;
-use serde_json::Value;
 
 #[async_trait]
 pub trait WalletTrait: Send + Sync + 'static {
@@ -59,12 +60,12 @@ pub trait WalletTrait: Send + Sync + 'static {
     -> Outcome<CredentialOfferResponse>;
     async fn resolve_credential_issuer(
         &self,
-        cred_offer: &CredentialOfferResponse,
+        cred_offer: &CredentialOfferResponse
     ) -> Outcome<Value>;
     async fn use_offer_req(
         &self,
         payload: &OidcUri,
-        cred_offer: &CredentialOfferResponse,
+        cred_offer: &CredentialOfferResponse
     ) -> Outcome<()>;
     async fn get_vpd(&self, payload: &OidcUri) -> Outcome<Vpd>;
     fn parse_vpd(&self, vpd_as_string: &str) -> Outcome<Vpd>;

@@ -14,9 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-use crate::errors::{Errors, Outcome};
-use crate::types::errors::BadFormat;
-use crate::utils::{read, validate_data};
+
+use std::env;
+use std::path::Path;
+
 use axum::http::HeaderValue;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -25,8 +26,10 @@ use reqwest::Response;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use std::env;
-use std::path::Path;
+
+use crate::errors::{Errors, Outcome};
+use crate::types::errors::BadFormat;
+use crate::utils::{read, validate_data};
 
 pub trait ParseHeaderExt {
     fn parse_header(&self) -> Outcome<HeaderValue>;

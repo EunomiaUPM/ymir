@@ -17,9 +17,10 @@
 
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
 use super::CredentialConfiguration;
 use crate::types::vcs::VcType;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthServerMetadata {
@@ -40,7 +41,7 @@ pub struct AuthServerMetadata {
     pub id_token_signing_alg_values_supported: Vec<String>,
     pub code_challenge_methods_supported: Vec<String>,
     pub credential_configurations_supported: HashMap<String, CredentialConfiguration>,
-    pub authorization_servers: Vec<String>,
+    pub authorization_servers: Vec<String>
 }
 
 impl AuthServerMetadata {
@@ -72,7 +73,7 @@ impl AuthServerMetadata {
             id_token_signing_alg_values_supported: vec!["RSA".to_string()],
             code_challenge_methods_supported: vec!["S256".to_string()],
             credential_configurations_supported,
-            authorization_servers: vec![host.to_string()],
+            authorization_servers: vec![host.to_string()]
         }
     }
 }

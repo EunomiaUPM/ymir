@@ -26,25 +26,19 @@ use crate::types::present::{Missing, Present};
 pub struct WaltIdConfig {
     hosts: CommonHostsConfig,
     ssi_wallet_config: WalletConfig,
-    did_config: DidConfig,
+    did_config: DidConfig
 }
 
 impl HostsConfigTrait for WaltIdConfig {
-    fn hosts(&self) -> &CommonHostsConfig {
-        &self.hosts
-    }
+    fn hosts(&self) -> &CommonHostsConfig { &self.hosts }
 }
 
 impl WalletConfigTrait for WaltIdConfig {
-    fn wallet_config(&self) -> &WalletConfig {
-        &self.ssi_wallet_config
-    }
+    fn wallet_config(&self) -> &WalletConfig { &self.ssi_wallet_config }
 }
 
 impl DidConfigTrait for WaltIdConfig {
-    fn did_config(&self) -> &DidConfig {
-        &self.did_config
-    }
+    fn did_config(&self) -> &DidConfig { &self.did_config }
 }
 
 impl WaltIdConfigTrait for WaltIdConfig {}
@@ -53,7 +47,7 @@ pub struct WaltIdConfigBuilder<H, W, D> {
     hosts: Option<CommonHostsConfig>,
     ssi_wallet_config: Option<WalletConfig>,
     did_config: Option<DidConfig>,
-    _marker: PhantomData<(H, W, D)>,
+    _marker: PhantomData<(H, W, D)>
 }
 
 impl WaltIdConfigBuilder<Missing, Missing, Missing> {
@@ -68,7 +62,7 @@ impl<H, W, D> WaltIdConfigBuilder<H, W, D> {
             hosts: Some(hosts),
             ssi_wallet_config: self.ssi_wallet_config,
             did_config: self.did_config,
-            _marker: PhantomData,
+            _marker: PhantomData
         }
     }
     pub fn ssi_wallet_config(self, cfg: WalletConfig) -> WaltIdConfigBuilder<H, Present, D> {
@@ -76,7 +70,7 @@ impl<H, W, D> WaltIdConfigBuilder<H, W, D> {
             hosts: self.hosts,
             ssi_wallet_config: Some(cfg),
             did_config: self.did_config,
-            _marker: PhantomData,
+            _marker: PhantomData
         }
     }
 
@@ -85,7 +79,7 @@ impl<H, W, D> WaltIdConfigBuilder<H, W, D> {
             hosts: self.hosts,
             ssi_wallet_config: self.ssi_wallet_config,
             did_config: Some(cfg),
-            _marker: PhantomData,
+            _marker: PhantomData
         }
     }
 }
@@ -95,7 +89,7 @@ impl WaltIdConfigBuilder<Present, Present, Present> {
         WaltIdConfig {
             hosts: self.hosts.unwrap(),
             ssi_wallet_config: self.ssi_wallet_config.unwrap(),
-            did_config: self.did_config.unwrap(),
+            did_config: self.did_config.unwrap()
         }
     }
 }

@@ -23,7 +23,7 @@ use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
 use crate::errors::Outcome;
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
-    TokenRequest, VCCredOffer, WellKnownJwks,
+    TokenRequest, VCCredOffer, WellKnownJwks
 };
 use crate::types::vcs::VcType;
 
@@ -34,13 +34,13 @@ pub trait IssuerTrait: Send + Sync + 'static {
     fn get_cred_offer_data(
         &self,
         model: &issuing::Model,
-        path: Option<&str>,
+        path: Option<&str>
     ) -> Outcome<VCCredOffer>;
     fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata;
     fn get_oauth_server_data(
         &self,
         path: Option<&str>,
-        vcs: Option<&[VcType]>,
+        vcs: Option<&[VcType]>
     ) -> AuthServerMetadata;
     fn get_token(&self, model: &issuing::Model) -> IssuingToken;
     fn validate_token_req(&self, model: &issuing::Model, payload: &TokenRequest) -> Outcome<()>;
@@ -50,14 +50,14 @@ pub trait IssuerTrait: Send + Sync + 'static {
         model: &mut issuing::Model,
         cred_req: &CredentialRequest,
         token: &str,
-        did: Option<&str>,
+        did: Option<&str>
     ) -> Outcome<()>;
     fn validate_did_possession(&self, token: &TokenData<DidPossession>, kid: &str) -> Outcome<()>;
     fn end(
         &self,
         req_model: &vc_request::Model,
         int_model: &recv_interaction::Model,
-        iss_model: &issuing::Model,
+        iss_model: &issuing::Model
     ) -> Outcome<minions::NewModel>;
     async fn get_jwks_data(&self) -> Outcome<WellKnownJwks>;
 }

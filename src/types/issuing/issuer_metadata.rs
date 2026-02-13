@@ -17,9 +17,10 @@
 
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
 use super::CredentialConfiguration;
 use crate::types::vcs::VcType;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct IssuerMetadata {
@@ -29,7 +30,7 @@ pub struct IssuerMetadata {
     pub batch_credential_endpoint: String,
     pub jwks_uri: String,
     pub credential_configurations_supported: HashMap<String, CredentialConfiguration>,
-    pub authorization_servers: Vec<String>,
+    pub authorization_servers: Vec<String>
 }
 
 impl IssuerMetadata {
@@ -43,7 +44,7 @@ impl IssuerMetadata {
             batch_credential_endpoint: format!("{}/credential-batch", host),
             jwks_uri: format!("{}/jwks", host),
             credential_configurations_supported,
-            authorization_servers: vec![host.to_string()],
+            authorization_servers: vec![host.to_string()]
         }
     }
 }

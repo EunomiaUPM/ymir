@@ -26,7 +26,7 @@ use crate::errors::Errors;
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum W3cDataModelVersion {
     V1,
-    V2,
+    V2
 }
 
 impl FromStr for W3cDataModelVersion {
@@ -38,8 +38,8 @@ impl FromStr for W3cDataModelVersion {
             "V2" => Ok(W3cDataModelVersion::V2),
             format => Err(Errors::parse(
                 format!("Invalid W3cDataModelVersion '{}'", format),
-                None,
-            )),
+                None
+            ))
         }
     }
 }
@@ -48,7 +48,7 @@ impl Display for W3cDataModelVersion {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
             W3cDataModelVersion::V1 => "V1",
-            W3cDataModelVersion::V2 => "V2",
+            W3cDataModelVersion::V2 => "V2"
         };
 
         write!(f, "{s}")
@@ -58,14 +58,14 @@ impl Display for W3cDataModelVersion {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum VcModel {
     JwtVc,
-    SdJwtVc,
+    SdJwtVc
 }
 
 impl Display for VcModel {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
             VcModel::JwtVc => "jwt_vc".to_string(),
-            VcModel::SdJwtVc => "sd_jwt_vc".to_string(),
+            VcModel::SdJwtVc => "sd_jwt_vc".to_string()
         };
 
         write!(f, "{}", s)
@@ -79,7 +79,7 @@ impl FromStr for VcModel {
         match s {
             "jwt_vc" => Ok(VcModel::JwtVc),
             "sd_jwt_vc" => Ok(VcModel::SdJwtVc),
-            format => Err(Errors::parse(format!("Invalid VC format role '{}'", format), None)),
+            format => Err(Errors::parse(format!("Invalid VC format role '{}'", format), None))
         }
     }
 }

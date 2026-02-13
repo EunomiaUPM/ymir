@@ -24,7 +24,8 @@ pub struct MinionSeeder;
 
 impl MinionSeeder {
     pub async fn seed(db: &DatabaseConnection, did: String, url: String) -> Outcome<()> {
-        let exists = minions::Entity::find_by_id(&did).one(db).await.expect("Unable to seed").is_some();
+        let exists =
+            minions::Entity::find_by_id(&did).one(db).await.expect("Unable to seed").is_some();
 
         if exists {
             return Ok(());
@@ -39,10 +40,11 @@ impl MinionSeeder {
             is_vc_issued: ActiveValue::Set(false),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
             last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            is_me: ActiveValue::Set(true),
+            is_me: ActiveValue::Set(true)
         }
         .insert(db)
-        .await.expect("Unable to seed insert");
+        .await
+        .expect("Unable to seed insert");
         Ok(())
     }
 }

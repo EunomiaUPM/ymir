@@ -26,19 +26,15 @@ use crate::errors::{Errors, Outcome};
 
 #[derive(Clone)]
 pub struct MinionsRepo {
-    db_connection: DatabaseConnection,
+    db_connection: DatabaseConnection
 }
 
 impl MinionsRepo {
-    pub fn new(db_connection: DatabaseConnection) -> Self {
-        Self { db_connection }
-    }
+    pub fn new(db_connection: DatabaseConnection) -> Self { Self { db_connection } }
 }
 
 impl BasicRepoTrait<Entity, NewModel> for MinionsRepo {
-    fn db(&self) -> &DatabaseConnection {
-        &self.db_connection
-    }
+    fn db(&self) -> &DatabaseConnection { &self.db_connection }
 }
 
 #[async_trait]
@@ -57,9 +53,9 @@ impl MinionsTrait for MinionsRepo {
                         Column::BaseUrl,
                         Column::LastInteraction,
                         Column::VcUri,
-                        Column::ParticipantSlug,
+                        Column::ParticipantSlug
                     ])
-                    .to_owned(),
+                    .to_owned()
             )
             .exec_with_returning(self.db())
             .await

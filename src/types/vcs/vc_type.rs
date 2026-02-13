@@ -30,7 +30,7 @@ pub enum VcType {
     DataspaceParticipant,
     LegalPerson,
     TermsAndConditions,
-    Unknown,
+    Unknown
 }
 
 impl FromStr for VcType {
@@ -56,7 +56,7 @@ impl FromStr for VcType {
             "DataspaceParticipant" => Ok(VcType::DataspaceParticipant),
             "LegalPerson" => Ok(VcType::LegalPerson),
             "TermsAndConditions" => Ok(VcType::TermsAndConditions),
-            format => Err(Errors::parse(format!("Unknown credential format: {}", format), None)),
+            format => Err(Errors::parse(format!("Unknown credential format: {}", format), None))
         }
     }
 }
@@ -76,7 +76,7 @@ impl fmt::Display for VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant".to_string(),
             VcType::LegalPerson => "LegalPerson".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions".to_string(),
-            _ => "Unknown".to_string(),
+            _ => "Unknown".to_string()
         };
 
         write!(f, "{s}")
@@ -90,7 +90,7 @@ impl VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant_vc_json".to_string(),
             VcType::LegalPerson => "LegalPerson_jwt_vc_json".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions_jwt_vc_json".to_string(),
-            _ => "Unknown".to_string(),
+            _ => "Unknown".to_string()
         }
     }
 
@@ -99,7 +99,7 @@ impl VcType {
             VcType::LegalRegistrationNumber(LegalRegistrationNumberTypes::TaxId),
             VcType::DataspaceParticipant,
             VcType::LegalPerson,
-            VcType::TermsAndConditions,
+            VcType::TermsAndConditions
         ]
     }
     pub fn name(&self) -> String {
@@ -108,7 +108,7 @@ impl VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant".to_string(),
             VcType::LegalPerson => "LegalPerson".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions".to_string(),
-            VcType::Unknown => "Unknown".to_string(),
+            VcType::Unknown => "Unknown".to_string()
         }
     }
 }
