@@ -18,10 +18,11 @@
 use async_trait::async_trait;
 
 use crate::data::entities::recv_verification::{Entity, Model, NewModel};
+use crate::errors::Outcome;
 use crate::services::repo::subtraits::BasicRepoTrait;
 
 #[async_trait]
 pub trait RecvVerificationTrait: BasicRepoTrait<Entity, NewModel> + Send + Sync {
-    async fn get_by_state(&self, state: &str) -> anyhow::Result<Model>;
-    async fn create_from_basic(&self, model: Model) -> anyhow::Result<Model>;
+    async fn get_by_state(&self, state: &str) -> Outcome<Model>;
+    async fn create_from_basic(&self, model: Model) -> Outcome<Model>;
 }

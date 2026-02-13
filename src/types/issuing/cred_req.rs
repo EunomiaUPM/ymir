@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::types::issuing::CredentialDefinition;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -26,16 +27,11 @@ pub struct CredentialRequestsss {
 pub struct CredentialRequest {
     pub format: String,
     pub proof: Proof,
-    pub credential_definition: CredentialDefinition
+    pub credential_definition: CredentialDefinition,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Proof {
     pub proof_type: String,
-    pub jwt: String
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CredentialDefinition {
-    pub r#type: Vec<String>
+    pub jwt: String,
 }

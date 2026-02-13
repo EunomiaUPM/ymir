@@ -18,12 +18,14 @@
 use sea_orm::{ActiveModelTrait, ActiveValue, DatabaseConnection, EntityTrait};
 
 use crate::data::entities::mates;
+use crate::errors::Outcome;
 
 pub struct MateSeeder;
 
 impl MateSeeder {
-    pub async fn seed(db: &DatabaseConnection, did: String, url: String) -> anyhow::Result<()> {
-        let exists = mates::Entity::find_by_id(&did).one(db).await?.is_some();
+    pub async fn seed(db: &DatabaseConnection, did: String, url: String) -> Outcome<()> {
+        let exists =
+            mates::Entity::find_by_id(&did).one(db).await.expect("Unable to seed").is_some();
 
         if exists {
             return Ok(());
@@ -37,10 +39,12 @@ impl MateSeeder {
             token: ActiveValue::Set(None),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
             last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            is_me: ActiveValue::Set(true)
+            is_me: ActiveValue::Set(true),
         }
         .insert(db)
-        .await?;
+        .await
+        .expect("Unable to seed insert");
+
         Ok(())
     }
 }

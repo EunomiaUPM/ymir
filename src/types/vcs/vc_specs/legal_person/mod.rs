@@ -64,14 +64,14 @@ pub struct LegalPersonCredentialSubject {
 }
 
 impl LegalPersonCredentialSubject {
-    pub fn default4gaia(kid: &str) -> LegalPersonCredentialSubject {
+    pub fn default4gaia<T: Into<String>>(kid: T) -> LegalPersonCredentialSubject {
         let uid = uuid::Uuid::new_v4();
         LegalPersonCredentialSubject {
             id: uid.to_string(),
             r#type: VcType::LegalPerson.to_string(),
             gx_registration_number: RegistrationNumber {
                 base: BaseCredentialSubject {
-                    id: kid.to_string(),
+                    id: kid.into(),
                     r#type: "gx:RegistrationNumber".to_string(),
                 },
                 gx_registration_number_type: "gx:taxID".to_string(),

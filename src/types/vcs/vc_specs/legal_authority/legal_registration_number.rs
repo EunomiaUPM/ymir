@@ -35,10 +35,10 @@ pub struct LegalRegistrationNumberCredSubj {
 }
 
 impl LegalRegistrationNumberCredSubj {
-    pub fn new(
+    pub fn new<S: Into<String>, T: Into<String>>(
         model: LegalRegistrationNumberTypes,
-        id: &str,
-        data: &str,
+        id: S,
+        data: T,
     ) -> LegalRegistrationNumberCredSubj {
         let mut tax_id: Option<String> = None;
         let mut euid: Option<String> = None;
@@ -48,30 +48,30 @@ impl LegalRegistrationNumberCredSubj {
 
         let r#type = match model {
             LegalRegistrationNumberTypes::TaxId => {
-                tax_id = Some(data.to_string());
+                tax_id = Some(data.into());
                 "gx:taxID"
             }
             LegalRegistrationNumberTypes::Euid => {
-                euid = Some(data.to_string());
+                euid = Some(data.into());
                 "gx:EUID"
             }
             LegalRegistrationNumberTypes::Eori => {
-                eori = Some(data.to_string());
+                eori = Some(data.into());
                 "gx:EORI"
             }
             LegalRegistrationNumberTypes::VatId => {
-                vat_id = Some(data.to_string());
+                vat_id = Some(data.into());
                 "gx:vatID"
             }
             LegalRegistrationNumberTypes::LeiCode => {
-                lei_code = Some(data.to_string());
+                lei_code = Some(data.into());
                 "gx:leiCode"
             }
         }
         .to_string();
 
         LegalRegistrationNumberCredSubj {
-            base: BaseCredentialSubject { id: id.to_string(), r#type },
+            base: BaseCredentialSubject { id: id.into(), r#type },
             tax_id,
             euid,
             eori,

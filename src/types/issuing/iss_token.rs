@@ -23,12 +23,16 @@ use crate::utils::create_opaque_token;
 pub struct IssuingToken {
     pub access_token: String,
     pub token_type: String,
-    pub expires_in: u16
+    pub expires_in: u16,
 }
 
 impl IssuingToken {
-    pub fn new(token: String) -> IssuingToken {
-        IssuingToken { access_token: token, token_type: "Bearer".to_string(), expires_in: 600 }
+    pub fn new<T: Into<String>>(token: T) -> IssuingToken {
+        IssuingToken {
+            access_token: token.into(),
+            token_type: "Bearer".to_string(),
+            expires_in: 600,
+        }
     }
 }
 

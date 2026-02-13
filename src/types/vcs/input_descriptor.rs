@@ -53,13 +53,13 @@ pub struct InputDescriptorConstraintsFieldsFilter {
 }
 
 impl InputDescriptor {
-    pub fn new(vc_type: String, model: W3cDataModelVersion) -> Self {
+    pub fn new(vc_type: &str, model: &W3cDataModelVersion) -> Self {
         let path = match model {
             W3cDataModelVersion::V1 => vec!["$.vc.type".to_string()],
             W3cDataModelVersion::V2 => vec!["$.type".to_string()],
         };
         InputDescriptor {
-            id: vc_type.clone(),
+            id: vc_type.to_string(),
             format: InputDescriptorFormat {
                 jwt_vc_json: InputDescriptorFormatJWTJson { alg: vec!["RSA".to_string()] },
             },
@@ -68,7 +68,7 @@ impl InputDescriptor {
                     path,
                     filter: InputDescriptorConstraintsFieldsFilter {
                         r#type: "string".to_string(),
-                        pattern: vc_type,
+                        pattern: vc_type.to_string(),
                     },
                 }],
             },

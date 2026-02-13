@@ -15,11 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::marker::PhantomData;
-
+use crate::config::traits::{DidConfigTrait, HostsConfigTrait};
 use crate::config::types::{CommonHostsConfig, DidConfig};
 use crate::services::issuer::basic::config::config_trait::BasicIssuerConfigTrait;
 use crate::types::present::{Missing, Present};
+use std::marker::PhantomData;
 
 pub struct BasicIssuerConfig {
     hosts: CommonHostsConfig,
@@ -28,20 +28,25 @@ pub struct BasicIssuerConfig {
     did_config: DidConfig,
 }
 
-impl BasicIssuerConfigTrait for BasicIssuerConfig {
+impl HostsConfigTrait for BasicIssuerConfig {
     fn hosts(&self) -> &CommonHostsConfig {
         &self.hosts
     }
+}
 
+impl DidConfigTrait for BasicIssuerConfig {
+    fn did_config(&self) -> &DidConfig {
+        &self.did_config
+    }
+}
+
+impl BasicIssuerConfigTrait for BasicIssuerConfig {
     fn is_local(&self) -> bool {
         self.is_local
     }
 
     fn get_api_path(&self) -> String {
         self.api_path.clone()
-    }
-    fn get_did(&self) -> String {
-        self.did_config.did.clone()
     }
 }
 
@@ -70,7 +75,7 @@ impl<H, L, A, D> BasicIssuerConfigBuilder<H, L, A, D> {
         }
     }
 
-    pub fn is_local(self, is_local: bool) -> BasicIssuerConfigBuilder<H, Present, A, D> {
+    pub fn local(self, is_local: bool) -> BasicIssuerConfigBuilder<H, Present, A, D> {
         BasicIssuerConfigBuilder {
             hosts: self.hosts,
             is_local: Some(is_local),

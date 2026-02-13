@@ -19,12 +19,9 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::str::FromStr;
 
-use anyhow::bail;
 use serde::{Deserialize, Serialize};
-use tracing::error;
 
-use crate::errors::{ErrorLogTrait, Errors};
-use crate::types::errors::BadFormat;
+use crate::errors::Errors;
 use crate::types::vcs::vc_specs::legal_authority::LegalRegistrationNumberTypes;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,11 +30,11 @@ pub enum VcType {
     DataspaceParticipant,
     LegalPerson,
     TermsAndConditions,
-    Unknown
+    Unknown,
 }
 
 impl FromStr for VcType {
-    type Err = anyhow::Error;
+    type Err = Errors;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -59,14 +56,7 @@ impl FromStr for VcType {
             "DataspaceParticipant" => Ok(VcType::DataspaceParticipant),
             "LegalPerson" => Ok(VcType::LegalPerson),
             "TermsAndConditions" => Ok(VcType::TermsAndConditions),
-            _ => {
-                let error = Errors::format_new(
-                    BadFormat::Received,
-                    &format!("Unknown credential format: {}", s)
-                );
-                error!("{}", error.log());
-                bail!(error)
-            }
+            format => Err(Errors::parse(format!("Unknown credential format: {}", format), None)),
         }
     }
 }
@@ -86,7 +76,7 @@ impl fmt::Display for VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant".to_string(),
             VcType::LegalPerson => "LegalPerson".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions".to_string(),
-            _ => "Unknown".to_string()
+            _ => "Unknown".to_string(),
         };
 
         write!(f, "{s}")
@@ -100,12 +90,12 @@ impl VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant_vc_json".to_string(),
             VcType::LegalPerson => "LegalPerson_jwt_vc_json".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions_jwt_vc_json".to_string(),
-            _ => "Unknown".to_string()
+            _ => "Unknown".to_string(),
         }
     }
 
-    pub fn variants() -> Vec<VcType> {
-        vec![
+    pub fn variants() -> &'static [VcType] {
+        &[
             VcType::LegalRegistrationNumber(LegalRegistrationNumberTypes::TaxId),
             VcType::DataspaceParticipant,
             VcType::LegalPerson,
@@ -118,7 +108,7 @@ impl VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant".to_string(),
             VcType::LegalPerson => "LegalPerson".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions".to_string(),
-            VcType::Unknown => "Unknown".to_string()
+            VcType::Unknown => "Unknown".to_string(),
         }
     }
 }

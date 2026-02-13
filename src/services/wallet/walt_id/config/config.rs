@@ -17,14 +17,10 @@
 
 use std::marker::PhantomData;
 
-use tracing::error;
-
 use super::WaltIdConfigTrait;
-use crate::config::traits::SingleHostTrait;
+use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::DidConfig;
 use crate::config::types::{CommonHostsConfig, WalletConfig};
-use crate::errors::{ErrorLogTrait, Errors};
-use crate::types::dids::did_type::DidType;
 use crate::types::present::{Missing, Present};
 
 pub struct WaltIdConfig {
@@ -33,44 +29,25 @@ pub struct WaltIdConfig {
     did_config: DidConfig,
 }
 
-impl WaltIdConfigTrait for WaltIdConfig {
+impl HostsConfigTrait for WaltIdConfig {
     fn hosts(&self) -> &CommonHostsConfig {
         &self.hosts
     }
-    fn get_raw_wallet_config(&self) -> WalletConfig {
-        self.ssi_wallet_config.clone()
-    }
-    fn get_wallet_api_url(&self) -> String {
-        self.ssi_wallet_config.api.get_host()
-    }
-    fn get_did_type(&self) -> DidType {
-        self.did_config.r#type.clone()
-    }
-    fn get_did_web_path(&self) -> Option<String> {
-        match self.did_config.r#type {
-            DidType::Web => self.did_config.did_web_options.as_ref()?.path.clone(),
-            _ => {
-                let error = Errors::module_new("didweb");
-                error!("{}", error.log());
-                None
-            }
-        }
-    }
-    fn get_did_web_domain(&self) -> String {
-        let domain = match self.did_config.r#type {
-            DidType::Web => {
-                Some(self.did_config.did_web_options.as_ref().expect("didweb").domain.clone())
-            }
-            _ => {
-                let error = Errors::module_new("didweb");
-                error!("{}", error.log());
-                None
-            }
-        };
+}
 
-        domain.expect("didweb")
+impl WalletConfigTrait for WaltIdConfig {
+    fn wallet_config(&self) -> &WalletConfig {
+        &self.ssi_wallet_config
     }
 }
+
+impl DidConfigTrait for WaltIdConfig {
+    fn did_config(&self) -> &DidConfig {
+        &self.did_config
+    }
+}
+
+impl WaltIdConfigTrait for WaltIdConfig {}
 
 pub struct WaltIdConfigBuilder<H, W, D> {
     hosts: Option<CommonHostsConfig>,

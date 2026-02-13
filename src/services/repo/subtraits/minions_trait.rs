@@ -19,9 +19,10 @@ use async_trait::async_trait;
 
 use super::BasicRepoTrait;
 use crate::data::entities::minions::{Entity, Model, NewModel};
+use crate::errors::Outcome;
 
 #[async_trait]
 pub trait MinionsTrait: BasicRepoTrait<Entity, NewModel> + Send + Sync {
-    async fn get_me(&self) -> anyhow::Result<Model>;
-    async fn force_create(&self, mate: NewModel) -> anyhow::Result<Model>;
+    async fn get_me(&self) -> Outcome<Model>;
+    async fn force_create(&self, mate: NewModel) -> Outcome<Model>;
 }

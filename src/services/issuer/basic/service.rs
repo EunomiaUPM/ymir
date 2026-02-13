@@ -17,21 +17,20 @@
 
 use std::sync::Arc;
 
-use anyhow::bail;
 use async_trait::async_trait;
 use jsonwebtoken::{Algorithm, Header, TokenData};
 use rsa::RsaPublicKey;
 use rsa::pkcs1::DecodeRsaPublicKey;
 use serde_json::Value;
-use tracing::{error, info};
+use tracing::info;
 use urlencoding;
 
 use super::super::IssuerTrait;
 use super::config::{BasicIssuerConfig, BasicIssuerConfigTrait};
-use crate::config::traits::HostsConfigTrait;
+use crate::config::traits::{DidConfigTrait, HostsConfigTrait};
 use crate::config::types::HostType;
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::{Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
 use crate::services::vault::vault_rs::VaultService;
@@ -69,7 +68,7 @@ impl IssuerTrait for BasicIssuerService {
         info!("Starting OIDC4VCI");
         let host = format!(
             "{}{}/issuer",
-            self.config.hosts().get_host(HostType::Http),
+            self.config.get_host(HostType::Http),
             self.config.get_api_path()
         );
         let aud = match self.config.is_local() {
@@ -89,24 +88,24 @@ impl IssuerTrait for BasicIssuerService {
         let path = path.unwrap_or("issuer");
         let semi_host = format!(
             "{}{}/{}",
-            self.config.hosts().get_host_without_protocol(HostType::Http),
+            self.config.get_host_without_protocol(HostType::Http),
             self.config.get_api_path(),
             path
         );
         let host = format!(
             "{}{}/{}",
-            self.config.hosts().get_host(HostType::Http),
+            self.config.get_host(HostType::Http),
             self.config.get_api_path(),
             path
         );
-        let (semi_host, host) = match self.config.is_local() {
-            true => {
-                let a = semi_host.replace("127.0.0.1", "host.docker.internal");
-                let b = host.replace("127.0.0.1", "host.docker.internal");
-                (a, b)
-            }
-            false => (semi_host, host),
+        let (semi_host, host) = if self.config.is_local() {
+            let a = semi_host.replace("127.0.0.1", "host.docker.internal");
+            let b = host.replace("127.0.0.1", "host.docker.internal");
+            (a, b)
+        } else {
+            (semi_host, host)
         };
+
         let h_host = format!("{}/credentialOffer?id={}", host, &id);
         let encoded_host = urlencoding::encode(h_host.as_str());
         let uri = format!(
@@ -121,12 +120,12 @@ impl IssuerTrait for BasicIssuerService {
         &self,
         model: &issuing::Model,
         path: Option<&str>,
-    ) -> anyhow::Result<VCCredOffer> {
+    ) -> Outcome<VCCredOffer> {
         info!("Retrieving credential offer data");
 
         let issuer = format!(
             "{}{}/{}",
-            self.config.hosts().get_host(HostType::Http),
+            self.config.get_host(HostType::Http),
             self.config.get_api_path(),
             path.unwrap_or("issuer")
         );
@@ -136,16 +135,16 @@ impl IssuerTrait for BasicIssuerService {
         };
 
         match model.step {
-            true => VCCredOffer::new(issuer, model.tx_code.clone(), model.vc_type.clone()),
-            false => VCCredOffer::new(issuer, model.pre_auth_code.clone(), model.vc_type.clone()),
+            true => VCCredOffer::new(issuer, &model.tx_code, &model.vc_type),
+            false => VCCredOffer::new(issuer, &model.pre_auth_code, &model.vc_type),
         }
     }
 
-    fn get_issuer_data(&self, path: Option<&str>, vcs: Option<Vec<VcType>>) -> IssuerMetadata {
+    fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata {
         info!("Retrieving issuer data");
         let host = format!(
             "{}{}/{}",
-            self.config.hosts().get_host(HostType::Http),
+            self.config.get_host(HostType::Http),
             self.config.get_api_path(),
             path.unwrap_or("issuer")
         );
@@ -159,13 +158,13 @@ impl IssuerTrait for BasicIssuerService {
     fn get_oauth_server_data(
         &self,
         path: Option<&str>,
-        vcs: Option<Vec<VcType>>,
+        vcs: Option<&[VcType]>,
     ) -> AuthServerMetadata {
         info!("Retrieving oauth server data");
 
         let host = format!(
             "{}{}/{}",
-            self.config.hosts().get_host(HostType::Http),
+            self.config.get_host(HostType::Http),
             self.config.get_api_path(),
             path.unwrap_or("issuer")
         );
@@ -181,31 +180,23 @@ impl IssuerTrait for BasicIssuerService {
         info!("Giving token");
         IssuingToken::new(model.token.clone())
     }
-    fn validate_token_req(
-        &self,
-        model: &issuing::Model,
-        payload: &TokenRequest,
-    ) -> anyhow::Result<()> {
+    fn validate_token_req(&self, model: &issuing::Model, payload: &TokenRequest) -> Outcome<()> {
         info!("Validating token vc_request");
 
         if let Some(tx_code) = &payload.tx_code {
             if model.tx_code != *tx_code {
-                let error = Errors::forbidden_new("tx_code does not match");
-                error!("{}", error.log());
-                bail!(error)
+                return Err(Errors::forbidden("tx_code does not match", None));
             }
         }
 
         if model.pre_auth_code != payload.pre_authorized_code {
-            let error = Errors::forbidden_new("pre_auth_code does not match");
-            error!("{}", error.log());
-            bail!(error)
+            return Err(Errors::forbidden("pre_auth_code does not match", None));
         }
 
         Ok(())
     }
 
-    async fn issue_cred(&self, claims: Value, did: Option<String>) -> anyhow::Result<GiveVC> {
+    async fn issue_cred(&self, claims: &Value, did: Option<&str>) -> Outcome<GiveVC> {
         info!("Issuing cred");
 
         let did = did.unwrap_or(self.config.get_did());
@@ -216,9 +207,9 @@ impl IssuerTrait for BasicIssuerService {
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
         let priv_key: StringHelper = self.vault.read(None, &priv_key).await?;
 
-        let key = get_rsa_key(priv_key.data())?;
+        let key = get_rsa_key(priv_key.data().to_string())?;
 
-        let vc_jwt = sign_token(&header, &claims, &key)?;
+        let vc_jwt = sign_token(&header, claims, &key)?;
 
         Ok(GiveVC { format: "jwt_vc_json".to_string(), credential: vc_jwt })
     }
@@ -228,32 +219,28 @@ impl IssuerTrait for BasicIssuerService {
         model: &mut issuing::Model,
         cred_req: &CredentialRequest,
         token: &str,
-        did: Option<String>,
-    ) -> anyhow::Result<()> {
+        did: Option<&str>,
+    ) -> Outcome<()> {
         info!("Validating credential vc_request");
 
         if model.token != token {
-            let error = Errors::forbidden_new("tx_code does not match");
-            error!("{}", error.log());
-            bail!(error)
+            return Err(Errors::forbidden("tx_code does not match", None));
         }
 
         if cred_req.format != "jwt_vc_json" {
-            let error = Errors::format_new(
+            return Err(Errors::format(
                 BadFormat::Received,
-                &format!("Cannot issue a credentia with format: {}", cred_req.format),
-            );
-            error!("{}", error.log());
-            bail!(error)
+                format!("Cannot issue a credentia with format: {}", cred_req.format),
+                None,
+            ));
         }
 
         if cred_req.proof.proof_type != "jwt" {
-            let error = Errors::format_new(
+            return Err(Errors::format(
                 BadFormat::Received,
-                &format!("Cannot validate proof with type: {}", cred_req.proof.proof_type),
-            );
-            error!("{}", error.log());
-            bail!(error)
+                format!("Cannot validate proof with type: {}", cred_req.proof.proof_type),
+                None,
+            ));
         }
 
         let did = did.unwrap_or(self.config.get_did());
@@ -265,22 +252,16 @@ impl IssuerTrait for BasicIssuerService {
         .await?;
         self.validate_did_possession(&token, &kid)?;
         model.holder_did = Some(kid);
-        model.issuer_did = Some(did);
+        model.issuer_did = Some(did.to_string());
         // is_active(token.claims.iat)?;
         has_expired(token.claims.exp)?;
         Ok(())
     }
 
-    fn validate_did_possession(
-        &self,
-        token: &TokenData<DidPossession>,
-        kid: &str,
-    ) -> anyhow::Result<()> {
+    fn validate_did_possession(&self, token: &TokenData<DidPossession>, kid: &str) -> Outcome<()> {
         info!("Validating did possession");
         if token.claims.iss != token.claims.sub && token.claims.sub != kid {
-            let error = Errors::forbidden_new("Invalid proof of did possession");
-            error!("{}", error.log());
-            bail!(error)
+            return Err(Errors::forbidden("Invalid proof of did possession", None));
         }
         Ok(())
     }
@@ -289,8 +270,8 @@ impl IssuerTrait for BasicIssuerService {
         req_model: &vc_request::Model,
         int_model: &recv_interaction::Model,
         iss_model: &issuing::Model,
-    ) -> anyhow::Result<minions::NewModel> {
-        let did = get_from_opt(&iss_model.holder_did, "did")?;
+    ) -> Outcome<minions::NewModel> {
+        let did = get_from_opt(iss_model.holder_did.as_ref(), "did")?;
         let base_url = trim_4_base(&int_model.uri);
         Ok(minions::NewModel {
             participant_id: did,
@@ -303,20 +284,15 @@ impl IssuerTrait for BasicIssuerService {
         })
     }
 
-    async fn get_jwks_data(&self) -> anyhow::Result<WellKnownJwks> {
+    async fn get_jwks_data(&self) -> Outcome<WellKnownJwks> {
         info!("Retrieving jwks data");
 
         let pub_key = expect_from_env("VAULT_APP_PUB_PKEY");
         let pub_key: StringHelper = self.vault.read(None, &pub_key).await?;
 
         let key = RsaPublicKey::from_pkcs1_pem(&pub_key.data()).map_err(|e| {
-            let error = Errors::format_new(
-                BadFormat::Unknown,
-                &format!("Error parsing public key: {}", e.to_string()),
-            );
-            error!("{}", error.log());
-            error
+            return Errors::forbidden("Could not parse public key", Some(anyhow::Error::from(e)));
         })?;
-        Ok(WellKnownJwks::new(key))
+        Ok(WellKnownJwks::new(&key))
     }
 }

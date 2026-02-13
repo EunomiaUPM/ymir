@@ -19,11 +19,9 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-use anyhow::bail;
 use serde::{Deserialize, Serialize};
-use tracing::error;
 
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::Errors;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum W3cDataModelVersion {
@@ -32,23 +30,22 @@ pub enum W3cDataModelVersion {
 }
 
 impl FromStr for W3cDataModelVersion {
-    type Err = anyhow::Error;
+    type Err = Errors;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "V1" => Ok(W3cDataModelVersion::V1),
             "V2" => Ok(W3cDataModelVersion::V2),
-            _ => {
-                let error = Errors::parse_new("Invalid data model version");
-                error!("{}", error.log());
-                bail!(error)
-            }
+            format => Err(Errors::parse(
+                format!("Invalid W3cDataModelVersion '{}'", format),
+                None,
+            )),
         }
     }
 }
 
-impl fmt::Display for W3cDataModelVersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for W3cDataModelVersion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
             W3cDataModelVersion::V1 => "V1",
             W3cDataModelVersion::V2 => "V2",
@@ -65,7 +62,7 @@ pub enum VcModel {
 }
 
 impl Display for VcModel {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
             VcModel::JwtVc => "jwt_vc".to_string(),
             VcModel::SdJwtVc => "sd_jwt_vc".to_string(),
@@ -76,17 +73,13 @@ impl Display for VcModel {
 }
 
 impl FromStr for VcModel {
-    type Err = anyhow::Error;
+    type Err = Errors;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "jwt_vc" => Ok(VcModel::JwtVc),
             "sd_jwt_vc" => Ok(VcModel::SdJwtVc),
-            _ => {
-                let error = Errors::parse_new("Invalid VC format role");
-                error!("{}", error.log());
-                bail!(error)
-            }
+            format => Err(Errors::parse(format!("Invalid VC format role '{}'", format), None)),
         }
     }
 }

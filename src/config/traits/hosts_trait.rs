@@ -17,10 +17,8 @@
  *
  */
 
-use tracing::error;
-
 use crate::config::types::{CommonHostsConfig, HostConfig, HostType};
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::Errors;
 
 pub trait HostsConfigTrait {
     fn hosts(&self) -> &CommonHostsConfig;
@@ -55,12 +53,8 @@ pub trait HostsConfigTrait {
             HostType::Graphql => self.graphql(),
         };
 
-        let host = host.ok_or_else(|| {
-            let error = Errors::module_new(&format!("{} host is not defined", host_type));
-            error!("{}", error.log());
-            error
-        });
-        host.expect(&format!("{} host is not defined", host_type))
+        host.ok_or_else(|| Errors::not_active(&format!("{} host is not defined", host_type), None))
+            .expect(&format!("{} host is not defined", host_type))
     }
 }
 

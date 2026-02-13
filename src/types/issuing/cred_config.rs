@@ -26,18 +26,17 @@ pub struct CredentialConfiguration {
     pub format: String,
     pub cryptographic_binding_methods_supported: Vec<String>,
     pub credential_signing_alg_values_supported: Vec<String>,
-    pub credential_definition: CredentialDefinition
+    pub credential_definition: CredentialDefinition,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CredentialDefinition {
-    pub r#type: Vec<String>
+    pub r#type: Vec<String>,
 }
 
 impl CredentialConfiguration {
-    pub fn basic(vcs: Option<Vec<VcType>>) -> HashMap<String, CredentialConfiguration> {
+    pub fn basic(vcs: Option<&[VcType]>) -> HashMap<String, CredentialConfiguration> {
         let mut credential_configurations_supported = HashMap::new();
-
         let vcs = vcs.unwrap_or(VcType::variants());
         for vc_type in vcs {
             credential_configurations_supported.insert(
@@ -47,9 +46,9 @@ impl CredentialConfiguration {
                     cryptographic_binding_methods_supported: vec!["did".to_string()],
                     credential_signing_alg_values_supported: vec!["RSA".to_string()],
                     credential_definition: CredentialDefinition {
-                        r#type: vec!["VerifiableCredential".to_string(), vc_type.name()]
-                    }
-                }
+                        r#type: vec!["VerifiableCredential".to_string(), vc_type.name()],
+                    },
+                },
             );
         }
 

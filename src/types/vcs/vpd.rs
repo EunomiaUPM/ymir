@@ -22,11 +22,11 @@ use super::{InputDescriptor, W3cDataModelVersion};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VPDef {
     pub id: String,
-    pub input_descriptors: Vec<InputDescriptor>
+    pub input_descriptors: Vec<InputDescriptor>,
 }
 
 impl VPDef {
-    pub fn new(id: String, vc_type: String, model: W3cDataModelVersion) -> Self {
-        VPDef { id, input_descriptors: vec![InputDescriptor::new(vc_type, model)] }
+    pub fn new<T: Into<String>>(id: T, vc_type: &str, model: &W3cDataModelVersion) -> Self {
+        VPDef { id: id.into(), input_descriptors: vec![InputDescriptor::new(vc_type, model)] }
     }
 }

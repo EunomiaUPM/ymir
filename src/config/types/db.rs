@@ -20,20 +20,22 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 
 use crate::config::traits::DatabaseConfigTrait;
+use crate::errors::Errors;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DatabaseConfig {
     pub db_type: DbType,
     pub url: String,
-    pub port: String
+    pub port: String,
 }
 
 impl DatabaseConfigTrait for DatabaseConfig {
-    fn db(&self) -> &DatabaseConfig { self }
+    fn db(&self) -> &DatabaseConfig {
+        self
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -42,7 +44,7 @@ pub enum DbType {
     Mysql,
     Sqlite,
     Mongo,
-    Memory
+    Memory,
 }
 
 impl Display for DbType {
@@ -52,35 +54,21 @@ impl Display for DbType {
             DbType::Mysql => write!(f, "mysql"),
             DbType::Sqlite => write!(f, "sqlite"),
             DbType::Mongo => write!(f, "mongodb"),
-            DbType::Memory => write!(f, "memory")
+            DbType::Memory => write!(f, "memory"),
         }
     }
 }
 
 impl FromStr for DbType {
-    type Err = anyhow::Error;
-    fn from_str(s: &str) -> anyhow::Result<Self, Self::Err> {
+    type Err = Errors;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "postgres" => Ok(DbType::Postgres),
             "mysql" => Ok(DbType::Postgres),
             "sqlite" => Ok(DbType::Postgres),
             "mongodb" => Ok(DbType::Postgres),
             "memory" => Ok(DbType::Postgres),
-            _ => Err(anyhow!("error"))
-        }
-    }
-}
-
-impl FromStr for &DbType {
-    type Err = anyhow::Error;
-    fn from_str(s: &str) -> anyhow::Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "postgres" => Ok(&DbType::Postgres),
-            "mysql" => Ok(&DbType::Postgres),
-            "sqlite" => Ok(&DbType::Postgres),
-            "mongodb" => Ok(&DbType::Postgres),
-            "memory" => Ok(&DbType::Postgres),
-            e => Err(anyhow!("error: {}", e))
+            _ => Err(Errors::parse("unknown database type", None)),
         }
     }
 }

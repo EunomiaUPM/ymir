@@ -15,6 +15,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub trait ErrorLogTrait {
-    fn log(&self) -> String;
+use axum::http::StatusCode;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ErrorInfo {
+    pub message: String,
+    pub error_code: u16,
+    #[serde(skip)]
+    pub status_code: StatusCode,
+    pub details: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct HttpContext {
+    pub http_code: Option<u16>,
+    pub url: String,
+    pub method: String,
 }

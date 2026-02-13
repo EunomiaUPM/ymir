@@ -16,13 +16,11 @@
  */
 
 use super::BasicVerifierConfigTrait;
-use crate::config::traits::VcConfigTrait;
+use crate::config::traits::{HostsConfigTrait, VcConfigTrait};
 use crate::config::types::{CommonHostsConfig, VcConfig};
-use crate::errors::{ErrorLogTrait, Errors};
 use crate::types::present::{Missing, Present};
-use crate::types::vcs::{VcType, W3cDataModelVersion};
+use crate::types::vcs::VcType;
 use std::marker::PhantomData;
-use tracing::error;
 
 pub struct BasicVerifierConfig {
     hosts: CommonHostsConfig,
@@ -32,10 +30,19 @@ pub struct BasicVerifierConfig {
     vc_config: VcConfig,
 }
 
-impl BasicVerifierConfigTrait for BasicVerifierConfig {
+impl HostsConfigTrait for BasicVerifierConfig {
     fn hosts(&self) -> &CommonHostsConfig {
         &self.hosts
     }
+}
+
+impl VcConfigTrait for BasicVerifierConfig {
+    fn vc_config(&self) -> &VcConfig {
+        &self.vc_config
+    }
+}
+
+impl BasicVerifierConfigTrait for BasicVerifierConfig {
     fn is_local(&self) -> bool {
         self.is_local
     }
@@ -44,14 +51,6 @@ impl BasicVerifierConfigTrait for BasicVerifierConfig {
     }
     fn get_api_path(&self) -> String {
         self.api_path.clone()
-    }
-    fn get_data_model(&self) -> W3cDataModelVersion {
-        let model = self.vc_config.get_w3c_data_model().or_else(|| {
-            let error = Errors::module_new("w3c data model");
-            error!("{}", error.log());
-            None
-        });
-        model.expect("w3c data model config is not active").clone()
     }
 }
 
@@ -92,7 +91,7 @@ impl<H, L, A, V, C> BasicVerifierConfigBuilder<H, L, A, V, C> {
         }
     }
 
-    pub fn is_local(self, is_local: bool) -> BasicVerifierConfigBuilder<H, Present, A, V, C> {
+    pub fn local(self, is_local: bool) -> BasicVerifierConfigBuilder<H, Present, A, V, C> {
         BasicVerifierConfigBuilder {
             hosts: self.hosts,
             is_local: Some(is_local),

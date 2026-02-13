@@ -15,9 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::{DidConfigTrait, HostsConfigTrait};
+use super::errors::Errors;
 
-pub trait BasicIssuerConfigTrait: HostsConfigTrait + DidConfigTrait {
-    fn is_local(&self) -> bool;
-    fn get_api_path(&self) -> String;
-}
+pub type Outcome<T> = Result<T, Errors>;

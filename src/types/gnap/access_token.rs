@@ -32,19 +32,19 @@ pub struct AccessToken {
     pub expires_in: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key: Option<Value>,
-    pub flags: Option<Vec<String>>
+    pub flags: Option<Vec<String>>,
 }
 
 impl AccessToken {
-    pub fn default(value: String) -> Self {
+    pub fn new<T: Into<String>>(value: T) -> Self {
         Self {
-            value,
+            value: value.into(),
             label: None,
             manage: None,
             access: vec!["talk".to_string()],
             expires_in: None,
             key: None,
-            flags: None
+            flags: None,
         }
     }
 }

@@ -22,7 +22,7 @@ use crate::types::secrets::DbSecrets;
 
 pub trait DatabaseConfigTrait {
     fn db(&self) -> &DatabaseConfig;
-    fn get_full_db_url(&self, db_secrets: DbSecrets) -> String {
+    fn get_full_db_url(&self, db_secrets: &DbSecrets) -> String {
         let db_config = self.db();
         match db_config.db_type {
             DbType::Memory => ":memory:".to_string(),

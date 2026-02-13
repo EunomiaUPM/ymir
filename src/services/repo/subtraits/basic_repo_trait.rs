@@ -17,11 +17,11 @@
 use async_trait::async_trait;
 use sea_orm::{
     ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, PrimaryKeyTrait,
-    QuerySelect, Select
+    QuerySelect, Select,
 };
 
 use crate::data::IntoActiveSet;
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::{Errors, Outcome};
 
 #[async_trait]
 pub trait BasicRepoTrait<T, U>
@@ -35,73 +35,84 @@ where
         + 'static,
     T::ActiveModel: ActiveModelTrait<Entity = T> + Send + Sync + 'static,
     U: IntoActiveSet<T::ActiveModel> + Send + Sync + 'static,
-    <T as EntityTrait>::PrimaryKey: PrimaryKeyTrait<ValueType = String>
+    <T as EntityTrait>::PrimaryKey: PrimaryKeyTrait<ValueType = String>,
 {
     fn db(&self) -> &DatabaseConnection;
 
-    async fn get_all(
-        &self,
-        limit: Option<u64>,
-        offset: Option<u64>
-    ) -> anyhow::Result<Vec<T::Model>> {
+    async fn get_all(&self, limit: Option<u64>, offset: Option<u64>) -> Outcome<Vec<T::Model>> {
         let models = T::find()
             .limit(limit.unwrap_or(100000))
             .offset(offset.unwrap_or(0))
             .all(self.db())
             .await;
-        let models = models.map_err(|e| Errors::db_tap(e.to_string()))?;
+        let models = models
+            .map_err(|e| Errors::db("Unable to get all models", Some(anyhow::Error::from(e))))?;
 
         Ok(models)
     }
 
-    async fn get_by_id(&self, id: &str) -> anyhow::Result<T::Model> {
+    async fn get_by_id(&self, id: &str) -> Outcome<T::Model> {
         let model = T::find_by_id(id).one(self.db()).await;
 
         let model = model
-            .map_err(|e| Errors::db_tap(e.to_string()))?
-            .ok_or_else(|| Errors::miss_tap(id))?;
+            .map_err(|e| {
+                Errors::db(
+                    format!("Unable to get model with id: {}", id),
+                    Some(anyhow::Error::from(e)),
+                )
+            })?
+            .ok_or_else(|| {
+                Errors::missing_resource(id, format!("Unable to get model with id: {}", id), None)
+            })?;
         Ok(model)
     }
 
-    async fn create(&self, model: U) -> anyhow::Result<T::Model> {
+    async fn create(&self, model: U) -> Outcome<T::Model> {
         let active_model: T::ActiveModel = model.to_active();
-        let model: T::Model =
-            active_model.insert(self.db()).await.map_err(|e| Errors::db_tap(e.to_string()))?;
+        let model: T::Model = active_model
+            .insert(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to create model", Some(anyhow::Error::from(e))))?;
         Ok(model)
     }
 
-    async fn update(&self, model: T::Model) -> anyhow::Result<T::Model> {
+    async fn update(&self, model: T::Model) -> Outcome<T::Model> {
         let active_model: T::ActiveModel = model.to_active();
-        let new_model: T::Model =
-            active_model.update(self.db()).await.map_err(|e| Errors::db_tap(e.to_string()))?;
+        let new_model: T::Model = active_model
+            .update(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to update model", Some(anyhow::Error::from(e))))?;
         Ok(new_model)
     }
 
-    async fn delete(&self, id: &str) -> anyhow::Result<()> {
+    async fn delete(&self, id: &str) -> Outcome<()> {
         let model = self.get_by_id(id).await?;
         let active_model: T::ActiveModel = model.to_active();
 
-        active_model.delete(self.db()).await.map_err(|e| Errors::db_tap(e.to_string()))?;
+        active_model
+            .delete(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to delete model", Some(anyhow::Error::from(e))))?;
         Ok(())
     }
 
-    async fn help_find(
-        &self,
-        to_find: Select<T>,
-        resource: &str,
-        id: &str
-    ) -> anyhow::Result<T::Model> {
-        let model =
-            to_find.one(self.db()).await.map_err(|e| Errors::db_tap(e.to_string()))?.ok_or_else(
-                || {
-                    let error = Errors::missing_resource_new(
-                        id,
-                        &format!("Missing resource {} with id: {}", resource, id)
-                    );
-                    tracing::error!("{}", error.log());
-                    error
-                }
-            )?;
+    async fn help_find(&self, to_find: Select<T>, resource: &str, id: &str) -> Outcome<T::Model> {
+        let model = to_find
+            .one(self.db())
+            .await
+            .map_err(|e| {
+                Errors::db(
+                    format!("Unable to find model with column '{}' with value {}", resource, id),
+                    Some(anyhow::Error::from(e)),
+                )
+            })?
+            .ok_or_else(|| {
+                Errors::missing_resource(
+                    id,
+                    format!("Unable to find model with column '{}' with value {}", resource, id),
+                    None,
+                )
+            })?;
         Ok(model)
     }
 }

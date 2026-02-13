@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod error_adapter;
-mod error_log_trait;
 mod errors;
+mod outcome;
+mod sub_errors;
 
-pub use error_adapter::*;
-pub use error_log_trait::ErrorLogTrait;
 pub use errors::*;
+pub use outcome::*;
+pub use sub_errors::*;

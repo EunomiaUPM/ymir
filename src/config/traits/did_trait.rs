@@ -20,13 +20,13 @@ use crate::types::dids::did_type::DidType;
 
 pub trait DidConfigTrait {
     fn did_config(&self) -> &DidConfig;
-    fn get_did(&self) -> String {
-        self.did_config().did.clone()
+    fn get_did(&self) -> &str {
+        &self.did_config().did
     }
-    fn get_did_type(&self) -> DidType {
-        self.did_config().r#type.clone()
+    fn get_did_type(&self) -> &DidType {
+        &self.did_config().r#type
     }
-    fn get_did_web_options(&self) -> Option<DidWebOptions> {
-        self.did_config().did_web_options.clone()
+    fn get_did_web_options(&self) -> Option<&DidWebOptions> {
+        self.did_config().did_web_options.as_ref()
     }
 }

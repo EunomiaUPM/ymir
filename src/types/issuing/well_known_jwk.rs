@@ -26,16 +26,16 @@ pub struct WellKnownJwks {
     pub kty: String,
     pub n: String,
     pub e: String,
-    pub kid: String
+    pub kid: String,
 }
 
 impl WellKnownJwks {
-    pub fn new(key: RsaPublicKey) -> WellKnownJwks {
+    pub fn new(key: &RsaPublicKey) -> WellKnownJwks {
         WellKnownJwks {
             kty: "RSA".to_string(),
             n: URL_SAFE_NO_PAD.encode(key.n().to_bytes_be()),
             e: URL_SAFE_NO_PAD.encode(key.e().to_bytes_be()),
-            kid: "0".to_string()
+            kid: "0".to_string(),
         }
     }
 }

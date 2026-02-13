@@ -15,58 +15,44 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use anyhow::bail;
 use async_trait::async_trait;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use tracing::error;
 
 use crate::data::IntoActiveSet;
 use crate::data::entities::recv_verification::{Column, Entity, Model, NewModel};
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::{Errors, Outcome};
 use crate::services::repo::subtraits::BasicRepoTrait;
 use crate::services::repo::subtraits::RecvVerificationTrait;
 
 #[derive(Clone)]
 pub struct RecvVerificationRepo {
-    db_connection: DatabaseConnection
+    db_connection: DatabaseConnection,
 }
 
 impl RecvVerificationRepo {
-    pub fn new(db_connection: DatabaseConnection) -> Self { Self { db_connection } }
+    pub fn new(db_connection: DatabaseConnection) -> Self {
+        Self { db_connection }
+    }
 }
 
 impl BasicRepoTrait<Entity, NewModel> for RecvVerificationRepo {
-    fn db(&self) -> &DatabaseConnection { &self.db_connection }
+    fn db(&self) -> &DatabaseConnection {
+        &self.db_connection
+    }
 }
 
 #[async_trait]
 impl RecvVerificationTrait for RecvVerificationRepo {
-    async fn get_by_state(&self, state: &str) -> anyhow::Result<Model> {
-        match Entity::find().filter(Column::State.eq(state)).one(self.db()).await {
-            Ok(Some(data)) => Ok(data),
-            Ok(None) => {
-                let error =
-                    Errors::missing_resource_new(state, &format!("missing state: {}", state));
-                error!("{}", error.log());
-                bail!(error)
-            }
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+    async fn get_by_state(&self, state: &str) -> Outcome<Model> {
+        let to_find = Entity::find().filter(Column::State.eq(state));
+        self.help_find(to_find, "state", state).await
     }
 
-    async fn create_from_basic(&self, model: Model) -> anyhow::Result<Model> {
+    async fn create_from_basic(&self, model: Model) -> Outcome<Model> {
         let active_model = model.to_active();
-        match active_model.insert(self.db()).await {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+        active_model
+            .insert(self.db())
+            .await
+            .map_err(|e| Errors::db("Error creating from basic", Some(anyhow::Error::from(e))))
     }
 }

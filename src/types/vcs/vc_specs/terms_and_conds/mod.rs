@@ -29,10 +29,10 @@ pub struct TermsAndConditionsCredSub {
 }
 
 impl TermsAndConditionsCredSub {
-    pub fn new_gaia(kid: &str) -> TermsAndConditionsCredSub {
+    pub fn new_gaia<T: Into<String>>(kid: T) -> TermsAndConditionsCredSub {
         Self {
             base: BaseCredentialSubject {
-                id: kid.to_string(),
+                id: kid.into(),
                 r#type: "gx:TermsAndConditions".to_string(),
             },
             url: "test_url".to_string(),
