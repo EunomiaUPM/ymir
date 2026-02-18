@@ -95,7 +95,7 @@ impl WalletRouter {
     }
 
     async fn link(State(holder): State<Arc<dyn CoreWalletTrait>>) -> impl IntoResponse {
-        match holder.onboard().await {
+        match holder.link().await {
             Ok(_) => StatusCode::CREATED.into_response(),
             Err(e) => e.to_response(),
         }
