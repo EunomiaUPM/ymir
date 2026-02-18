@@ -55,8 +55,8 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
     }
     async fn link(&self) -> anyhow::Result<()> {
         match self.wallet().has_onboarded().await {
-            true => self.onboard().await,
-            false => self.partial_onboard().await,
+            true => self.partial_onboard().await,
+            false => self.onboard().await,
         }
     }
     async fn get_did_doc(&self) -> anyhow::Result<Value> {
