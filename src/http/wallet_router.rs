@@ -45,6 +45,7 @@ impl WalletRouter {
             .route("/logout", post(Self::logout))
             .route("/onboard", post(Self::onboard))
             .route("/partial-onboard", post(Self::partial_onboard))
+            .route("/link", post(Self::link))
             .route("/key", post(Self::register_key))
             .route("/did", post(Self::register_did))
             .route("/key", delete(Self::delete_key))
@@ -88,6 +89,13 @@ impl WalletRouter {
 
     async fn partial_onboard(State(holder): State<Arc<dyn CoreWalletTrait>>) -> impl IntoResponse {
         match holder.partial_onboard().await {
+            Ok(_) => StatusCode::CREATED.into_response(),
+            Err(e) => e.to_response(),
+        }
+    }
+
+    async fn link(State(holder): State<Arc<dyn CoreWalletTrait>>) -> impl IntoResponse {
+        match holder.onboard().await {
             Ok(_) => StatusCode::CREATED.into_response(),
             Err(e) => e.to_response(),
         }

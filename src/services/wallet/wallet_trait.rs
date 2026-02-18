@@ -33,6 +33,7 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn logout(&self) -> anyhow::Result<()>;
     async fn onboard(&self) -> anyhow::Result<(mates::NewModel, minions::NewModel)>;
     async fn partial_onboard(&self) -> anyhow::Result<()>;
+    async fn has_onboarded(&self) -> bool;
     // GET FROM MANAGER (It gives a cloned Value, not a reference)
     async fn get_wallet(&self) -> anyhow::Result<WalletInfo>;
     async fn first_wallet_mut(&self) -> anyhow::Result<tokio::sync::MutexGuard<'_, WalletSession>>;
