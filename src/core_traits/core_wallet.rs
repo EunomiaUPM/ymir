@@ -39,26 +39,23 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
         self.wallet().logout().await
     }
     async fn onboard(&self) -> anyhow::Result<()> {
-        match self.wallet().has_onboarded().await {
-            true => {
-                self.wallet().partial_onboard().await?;
-            }
-            false => {
-                let (mate, minion) = self.wallet().onboard().await?;
-                if let Some(mater) = self.mate() {
-                    mater.force_create(mate).await?;
-                }
+        let (mate, minion) = match self.wallet().has_onboarded().await {
+            true => self.wallet().partial_onboard().await?,
+            false => self.wallet().onboard().await?,
+        };
+        if let Some(mater) = self.mate() {
+            mater.force_create(mate).await?;
+        }
 
-                if let Some(gru) = self.minion() {
-                    gru.force_create(minion).await?;
-                }
-            }
+        if let Some(gru) = self.minion() {
+            gru.force_create(minion).await?;
         }
 
         Ok(())
     }
     async fn partial_onboard(&self) -> anyhow::Result<()> {
-        self.wallet().partial_onboard().await
+        self.wallet().partial_onboard().await?;
+        Ok(())
     }
     async fn link(&self) -> anyhow::Result<()> {
         match self.wallet().has_onboarded().await {

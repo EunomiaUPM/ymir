@@ -251,16 +251,34 @@ impl WalletTrait for WaltIdService {
         Ok((mate, minion))
     }
 
-    async fn partial_onboard(&self) -> anyhow::Result<()> {
+    async fn partial_onboard(&self) -> anyhow::Result<(mates::NewModel, minions::NewModel)> {
         info!("Initializing partial onboarding");
 
         self.login().await?;
         self.retrieve_wallet_info().await?;
         self.retrieve_wallet_keys().await?;
         self.retrieve_wallet_dids().await?;
+        let did = self.get_did().await?;
 
         info!("Initialization successful");
-        Ok(())
+        let mate = mates::NewModel {
+            participant_id: did.clone(),
+            participant_slug: "Myself".to_string(),
+            participant_type: "Agent".to_string(),
+            base_url: self.config.hosts().get_host(HostType::Http),
+            token: None,
+            is_me: true,
+        };
+        let minion = minions::NewModel {
+            participant_id: did,
+            participant_slug: "Myself".to_string(),
+            participant_type: "Authority".to_string(),
+            base_url: Some(self.config.hosts().get_host(HostType::Http)),
+            vc_uri: None,
+            is_vc_issued: false,
+            is_me: true,
+        };
+        Ok((mate, minion))
     }
 
     async fn has_onboarded(&self) -> bool {

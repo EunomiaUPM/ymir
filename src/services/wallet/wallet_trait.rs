@@ -32,7 +32,7 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn login(&self) -> anyhow::Result<()>;
     async fn logout(&self) -> anyhow::Result<()>;
     async fn onboard(&self) -> anyhow::Result<(mates::NewModel, minions::NewModel)>;
-    async fn partial_onboard(&self) -> anyhow::Result<()>;
+    async fn partial_onboard(&self) -> anyhow::Result<(mates::NewModel, minions::NewModel)>;
     async fn has_onboarded(&self) -> bool;
     // GET FROM MANAGER (It gives a cloned Value, not a reference)
     async fn get_wallet(&self) -> anyhow::Result<WalletInfo>;
