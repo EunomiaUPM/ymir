@@ -66,7 +66,8 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
         self.wallet().register_key().await
     }
     async fn register_did(&self) -> anyhow::Result<()> {
-        self.wallet().register_did().await
+        self.wallet().register_did().await?;
+        Ok(())
     }
     async fn delete_key(&self, key: KeyDefinition) -> anyhow::Result<()> {
         self.wallet().delete_key(key).await

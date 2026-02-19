@@ -45,7 +45,7 @@ use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use reqwest::{Response, Url};
-use serde_json::Value;
+use serde_json::{Value, to_string};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use urlencoding::decode;
@@ -223,11 +223,11 @@ impl WalletTrait for WaltIdService {
         self.register_key().await?;
         self.retrieve_wallet_keys().await?;
 
-        self.register_did().await?;
+        let did = self.register_did().await?;
+        self.set_default_did(did.as_deref()).await?;
 
         self.retrieve_wallet_info().await?;
         self.retrieve_wallet_dids().await?;
-        self.set_default_did().await?;
 
         let did = self.get_did().await?;
         let mate = mates::NewModel {
@@ -592,7 +592,7 @@ impl WalletTrait for WaltIdService {
         Ok(())
     }
 
-    async fn register_did(&self) -> anyhow::Result<()> {
+    async fn register_did(&self) -> anyhow::Result<Option<String>> {
         info!("Registering did in web wallet");
 
         let res = match self.config.get_did_type() {
@@ -612,10 +612,12 @@ impl WalletTrait for WaltIdService {
             200 => {
                 info!("Did registered successfully");
                 let res = res.text().await?;
-                debug!("{:#?}", res);
+                info!("{:#?}", res);
+                Ok(Some(res))
             }
             409 => {
                 warn!("Did already exists");
+                Ok(None)
             }
             _ => {
                 let error = Errors::wallet_new(
@@ -628,8 +630,6 @@ impl WalletTrait for WaltIdService {
                 bail!(error);
             }
         }
-
-        Ok(())
     }
 
     async fn reg_did_jwk(&self) -> anyhow::Result<Response> {
@@ -683,12 +683,13 @@ impl WalletTrait for WaltIdService {
         self.client.post(&url, Some(headers), Body::None).await
     }
 
-    async fn set_default_did(&self) -> anyhow::Result<()> {
+    async fn set_default_did(&self, did: Option<&str>) -> anyhow::Result<()> {
         info!("Setting default did in web wallet");
 
         let wallet = self.get_wallet().await?;
         let token = self.get_token().await?;
-        let did = self.get_did().await?;
+        let did_base = self.get_did().await?;
+        let did = did.unwrap_or(&did_base);
 
         let url = format!(
             "{}/wallet-api/wallet/{}/dids/default?did={}",
