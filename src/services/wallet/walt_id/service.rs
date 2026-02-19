@@ -706,8 +706,10 @@ impl WalletTrait for WaltIdService {
 
         let wallet = self.get_wallet().await?;
         let token = self.get_token().await?;
-        let did_base = self.get_did().await?;
-        let did = did.unwrap_or(&did_base);
+        let did = match did {
+            Some(did) => did.to_string(),
+            None => self.get_did().await?,
+        };
 
         let url = format!(
             "{}/wallet-api/wallet/{}/dids/default?did={}",
