@@ -693,6 +693,8 @@ impl WalletTrait for WaltIdService {
             path
         );
 
+        debug!("{}", url);
+
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, "application/json".parse()?);
         headers.insert(ACCEPT, "application/json".parse()?);
