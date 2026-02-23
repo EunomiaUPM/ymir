@@ -45,7 +45,7 @@ use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use reqwest::{Response, Url};
-use serde_json::{Value, to_string};
+use serde_json::Value;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 use urlencoding::decode;
