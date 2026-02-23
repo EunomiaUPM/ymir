@@ -49,6 +49,7 @@ impl WalletRouter {
             .route("/key", post(Self::register_key))
             .route("/did", post(Self::register_did))
             .route("/key", delete(Self::delete_key))
+            .route("/did.json", get(Self::did_json))
             .route("/did", delete(Self::delete_did))
             .route("/did", get(Self::get_wallet_did))
             .route("/info", get(Self::get_wallet_info))
@@ -59,7 +60,9 @@ impl WalletRouter {
     }
 
     pub fn well_known(&self) -> Router {
-        Router::new().route("/.well-known/did.json", post(Self::did_json)).with_state(self.holder.clone())
+        Router::new()
+            .route("/.well-known/did.json", get(Self::did_json))
+            .with_state(self.holder.clone())
     }
 
     async fn register(State(holder): State<Arc<dyn CoreWalletTrait>>) -> impl IntoResponse {
