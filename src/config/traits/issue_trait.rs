@@ -20,7 +20,5 @@ use crate::config::types::IssueConfig;
 pub trait IssueConfigTrait {
     fn issue_config(&self) -> &IssueConfig;
     fn get_dataspace_id(&self) -> Option<&str> { self.issue_config().dataspace_id.as_deref() }
-    fn get_fed_catalog_uri(&self) -> Option<&str> {
-        self.issue_config().federated_catalog_uri.as_deref()
-    }
+
 }

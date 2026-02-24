@@ -150,17 +150,6 @@ impl VerifierTrait for BasicVerifierService {
         self.validate_vp_subject(model, &token, &kid)?;
         self.validate_vp_id(model, &token)?;
         self.validate_holder(model, &token)?;
-        // let id = match token.claims["jti"].as_str() {
-        //     Some(data) => data,
-        //     None => {
-        //         let error = Errors::format_new(
-        //             BadFormat::Received,
-        //             Some("VPT does not contain the 'jti' field".to_string()),
-        //         );
-        //         error!("{}", error.log());
-        //         bail!(error);
-        //     }
-        // };
 
         info!("VP Verification successful");
         let vcs = self.retrieve_vcs(token)?;

@@ -26,7 +26,7 @@ use crate::types::errors::BadFormat;
 
 pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
 where
-    T: Clone + Serialize + DeserializeOwned
+    T: Clone + Serialize + DeserializeOwned,
 {
     value
         .ok_or_else(|| {
@@ -53,9 +53,9 @@ pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Missing query parameter '{}'", param_name),
-                None
+                None,
             )
-        }
+        },
     )
 }
 
