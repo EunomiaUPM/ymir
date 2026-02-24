@@ -29,9 +29,6 @@ pub trait HostsConfigTrait {
         self.get_helper(host_type).get_host_without_protocol()
     }
 
-    fn get_weird_port(&self, host_type: HostType) -> String {
-        self.get_helper(host_type).get_weird_port()
-    }
     fn get_tls_port(&self, host_type: HostType) -> String {
         self.get_helper(host_type).get_tls_port()
     }
@@ -62,12 +59,6 @@ pub trait SingleHostTrait {
                 format!("{}:{}", self.host().url, port)
             }
             None => self.host().url.clone()
-        }
-    }
-    fn get_weird_port(&self) -> String {
-        match self.host().port.as_ref() {
-            Some(port) => format!(":{}", port),
-            None => "".to_string()
         }
     }
     fn get_tls_port(&self) -> String {
