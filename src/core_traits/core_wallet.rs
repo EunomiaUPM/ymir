@@ -31,16 +31,14 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
     fn wallet(&self) -> Arc<dyn WalletTrait>;
     fn mate(&self) -> Option<Arc<dyn MatesTrait>>;
     fn minion(&self) -> Option<Arc<dyn MinionsTrait>>;
-    async fn onboard(&self) -> anyhow::Result<()> {
-        let (mate, minion) = match self.wallet().has_onboarded().await {
-            true => self.wallet().partial_onboard().await?,
-            false => self.wallet().onboard().await?,
-        };
     async fn register(&self) -> Outcome<()> { self.wallet().register().await }
     async fn login(&self) -> Outcome<()> { self.wallet().login().await }
     async fn logout(&self) -> Outcome<()> { self.wallet().logout().await }
     async fn onboard(&self) -> Outcome<()> {
-        let (mate, minion) = self.wallet().onboard().await?;
+        let (mate, minion) = match self.wallet().has_onboarded().await {
+            true => self.wallet().partial_onboard().await?,
+            false => self.wallet().onboard().await?
+        };
         if let Some(mater) = self.mate() {
             mater.force_create(mate).await?;
         }
@@ -51,32 +49,22 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
 
         Ok(())
     }
-    async fn partial_onboard(&self) -> anyhow::Result<()> {
+    async fn partial_onboard(&self) -> Outcome<()> {
         self.wallet().partial_onboard().await?;
         Ok(())
     }
-    async fn link(&self) -> anyhow::Result<()> {
+    async fn link(&self) -> Outcome<()> {
         match self.wallet().has_onboarded().await {
             true => self.partial_onboard().await,
-            false => self.onboard().await,
+            false => self.onboard().await
         }
     }
-    async fn get_did_doc(&self) -> anyhow::Result<Value> {
-        self.wallet().get_did_doc().await
-    }
-    async fn register_key(&self) -> anyhow::Result<()> {
-        self.wallet().register_key().await
-    }
-    async fn register_did(&self) -> anyhow::Result<()> {
+    async fn get_did_doc(&self) -> Outcome<Value> { self.wallet().get_did_doc().await }
+    async fn register_key(&self) -> Outcome<()> { self.wallet().register_key().await }
+    async fn register_did(&self) -> Outcome<()> {
         self.wallet().register_did().await?;
         Ok(())
     }
-    async fn delete_key(&self, key: KeyDefinition) -> anyhow::Result<()> {
-        
-    async fn partial_onboard(&self) -> Outcome<()> { self.wallet().partial_onboard().await }
-    async fn get_did_doc(&self) -> Outcome<Value> { self.wallet().get_did_doc().await }
-    async fn register_key(&self) -> Outcome<()> { self.wallet().register_key().await }
-    async fn register_did(&self) -> Outcome<()> { self.wallet().register_did().await }
     async fn delete_key(&self, key: KeyDefinition) -> Outcome<()> {
         self.wallet().delete_key(key).await
     }

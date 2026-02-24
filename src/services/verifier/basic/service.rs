@@ -18,8 +18,6 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use axum::http::header::{ACCEPT, CONTENT_TYPE};
-use axum::http::{HeaderMap, HeaderValue};
 use chrono::{DateTime, Utc};
 use jsonwebtoken::TokenData;
 use serde_json::Value;
