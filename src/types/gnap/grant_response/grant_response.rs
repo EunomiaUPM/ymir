@@ -42,16 +42,12 @@ pub struct GrantResponse {
 }
 
 impl GrantResponse {
-    pub fn new(
-        option: InteractStart,
-        model: &recv_interaction::Model,
-        uri: Option<String>
-    ) -> Self {
+    pub fn new(option: &InteractStart, model: &recv_interaction::Model, uri: Option<&str>) -> Self {
         Self {
             r#continue: Some(Continue4GResponse {
                 uri: model.continue_endpoint.clone(),
                 wait: None, // TODO Manage wait time
-                access_token: AccessToken::default(model.continue_token.clone())
+                access_token: AccessToken::new(model.continue_token.clone())
             }),
             access_token: None,
             interact: Some(Interact4GResponse::new(option, &model.as_nonce, uri)),

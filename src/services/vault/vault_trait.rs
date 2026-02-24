@@ -16,7 +16,6 @@
  */
 
 use std::collections::HashMap;
-use std::path::Path;
 
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
@@ -25,36 +24,20 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use crate::config::traits::DatabaseConfigTrait;
+use crate::errors::Outcome;
 
 #[async_trait]
 pub trait VaultTrait: Send + Sync + 'static {
-    async fn read<T>(&self, mount: Option<&str>, path: &str) -> anyhow::Result<T>
+    async fn read<T>(&self, mount: Option<&str>, path: &str) -> Outcome<T>
     where
         T: DeserializeOwned + Send;
-    async fn basic_read(&self, mount: &str, path: &str) -> anyhow::Result<Value>;
-    async fn write<T>(&self, mount: Option<&str>, path: &str, secret: &T) -> anyhow::Result<()>
+    async fn basic_read(&self, mount: &str, path: &str) -> Outcome<Value>;
+    async fn write<T>(&self, mount: Option<&str>, path: &str, secret: &T) -> Outcome<()>
     where
         T: Serialize + Send + Sync;
-    async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> anyhow::Result<()>;
-    fn secrets() -> anyhow::Result<HashMap<String, Value>>;
-    async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> anyhow::Result<()>;
-    fn local_secrets() -> anyhow::Result<HashMap<String, Value>>;
-    async fn check_mount(&self) -> anyhow::Result<()>;
-    fn insert_json<T>(
-        mapa: &mut HashMap<String, Value>,
-        to_read: T,
-        env: &str,
-        required: bool
-    ) -> anyhow::Result<()>
-    where
-        T: AsRef<Path>;
-    fn insert_pem<T>(
-        mapa: &mut HashMap<String, Value>,
-        to_read: T,
-        env: &str
-    ) -> anyhow::Result<()>
-    where
-        T: AsRef<Path>;
+    async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()>;
+    async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()>;
+    async fn check_mount(&self) -> Outcome<()>;
 
     async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
     where

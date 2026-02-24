@@ -18,11 +18,12 @@
 use async_trait::async_trait;
 
 use crate::data::entities::recv_interaction::{Entity, Model, NewModel};
+use crate::errors::Outcome;
 use crate::services::repo::subtraits::BasicRepoTrait;
 
 #[async_trait]
 pub trait RecvInteractionTrait: BasicRepoTrait<Entity, NewModel> + Send + Sync {
-    async fn get_by_reference(&self, reference: &str) -> anyhow::Result<Model>;
-    async fn get_by_cont_id(&self, cont_id: &str) -> anyhow::Result<Model>;
-    async fn get_by_some_id(&self, some_id: &str) -> anyhow::Result<Option<Model>>;
+    async fn get_by_reference(&self, reference: &str) -> Outcome<Model>;
+    async fn get_by_cont_id(&self, cont_id: &str) -> Outcome<Model>;
+    async fn get_by_some_id(&self, some_id: &str) -> Outcome<Option<Model>>;
 }

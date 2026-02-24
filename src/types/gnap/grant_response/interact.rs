@@ -37,7 +37,7 @@ pub struct UserCodeUri4Int {
 }
 
 impl Interact4GResponse {
-    pub fn new(option: InteractStart, nonce: &str, uri: Option<String>) -> Self {
+    pub fn new(option: &InteractStart, nonce: &str, uri: Option<&str>) -> Self {
         let mut data = Self {
             oidc4vp: None,
             redirect: None,
@@ -49,7 +49,7 @@ impl Interact4GResponse {
         };
 
         if let InteractStart::Oidc4VP = option {
-            data.oidc4vp = uri;
+            data.oidc4vp = uri.map(|uri| uri.to_string());
         }
 
         data

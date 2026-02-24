@@ -15,221 +15,283 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::backtrace::Backtrace;
+use std::fmt::{Display, Formatter, Result};
+
+use axum::Json;
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::{Json, http::StatusCode};
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use tracing::error;
 
-use crate::errors::error_log_trait::ErrorLogTrait;
+use crate::errors::sub_errors::{ErrorInfo, HttpContext};
 use crate::types::errors::{BadFormat, MissingAction};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ErrorInfo {
-    pub message: String,
-    pub error_code: u16,
-    #[serde(skip)]
-    pub status_code: StatusCode,
-    pub details: Option<String>
-}
-
-#[derive(Error, Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum Errors {
-    #[error("Petition Error")]
+    // HTTP CONTEXT
     PetitionError {
-        #[serde(flatten)]
         info: ErrorInfo,
-        http_code: Option<u16>,
-        url: String,
-        method: String,
-        cause: String
+        ctx: HttpContext,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Provider Error")]
+    WalletError {
+        info: ErrorInfo,
+        ctx: HttpContext,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
+    },
     ProviderError {
-        #[serde(flatten)]
         info: ErrorInfo,
-        http_code: Option<u16>,
-        url: String,
-        method: String,
-        cause: String
+        ctx: HttpContext,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Consumer Error")]
     ConsumerError {
-        #[serde(flatten)]
         info: ErrorInfo,
-        http_code: Option<u16>,
-        url: String,
-        method: String,
-        cause: String
+        ctx: HttpContext,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Consumer Error")]
     AuthorityError {
-        #[serde(flatten)]
         info: ErrorInfo,
-        http_code: Option<u16>,
-        url: String,
-        method: String,
-        cause: String
+        ctx: HttpContext,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Missing Action Error")]
+    // ACTION
     MissingActionError {
-        #[serde(flatten)]
         info: ErrorInfo,
         action: MissingAction,
-        cause: String
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Missing Resource Error")]
+    // ID
     MissingResourceError {
-        #[serde(flatten)]
         info: ErrorInfo,
         resource_id: String,
-        cause: String
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Format Error")]
-    FormatError {
-        #[serde(flatten)]
-        info: ErrorInfo,
-        cause: String
-    },
-    #[error("Unauthorized")]
-    UnauthorizedError {
-        #[serde(flatten)]
-        info: ErrorInfo,
-        cause: String
-    },
-    #[error("Forbidden")]
-    ForbiddenError {
-        #[serde(flatten)]
-        info: ErrorInfo,
-        cause: String
-    },
-    #[error("Database Error")]
-    DatabaseError {
-        #[serde(flatten)]
-        info: ErrorInfo,
-        cause: String
-    },
-    #[error("Feature Not Implemented Error")]
-    FeatureNotImplError {
-        #[serde(flatten)]
-        info: ErrorInfo,
-        feature: String,
-        cause: String
-    },
-    #[error("Wallet Error")]
-    WalletError {
-        #[serde(flatten)]
-        info: ErrorInfo,
-        http_code: u16,
-        url: String,
-        method: String,
-        cause: String
-    },
-    #[error("Security Error")]
-    SecurityError {
-        #[serde(flatten)]
-        info: ErrorInfo,
-        cause: String
-    },
-    #[error("File Read Error")]
+    // PATHS
     ReadError {
-        #[serde(flatten)]
         info: ErrorInfo,
         path: String,
-        cause: String
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("File Write Error")]
     WriteError {
-        #[serde(flatten)]
         info: ErrorInfo,
         path: String,
-        cause: String
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Parse Error")]
-    ParseError {
-        #[serde(flatten)]
+    // BASICS
+    FormatError {
         info: ErrorInfo,
-        cause: String
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Module not active Error")]
-    ModuleNotActiveError {
-        #[serde(flatten)]
+    UnauthorizedError {
         info: ErrorInfo,
-        cause: String
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Environment Variable Error")]
+    ForbiddenError {
+        info: ErrorInfo,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
+    },
+    SecurityError {
+        info: ErrorInfo,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
+    },
+    DatabaseError {
+        info: ErrorInfo,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
+    },
+    FeatureNotImplError {
+        info: ErrorInfo,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
+    },
     EnvVarError {
-        #[serde(flatten)]
         info: ErrorInfo,
-        cause: String
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     },
-    #[error("Vault Error")]
-    VaultError {
-        #[serde(flatten)]
+    ModuleNotActiveError {
         info: ErrorInfo,
-        cause: String
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
+    },
+    ParseError {
+        info: ErrorInfo,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
+    },
+    VaultError {
+        info: ErrorInfo,
+        reason: String,
+        source: Option<anyhow::Error>,
+        backtrace: Backtrace
     }
 }
 
+impl Display for Errors {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Errors::PetitionError { info, .. } => write!(f, "{}", info.message),
+            Errors::WalletError { info, .. } => write!(f, "{}", info.message),
+            Errors::ProviderError { info, .. } => write!(f, "{}", info.message),
+            Errors::ConsumerError { info, .. } => write!(f, "{}", info.message),
+            Errors::AuthorityError { info, .. } => write!(f, "{}", info.message),
+            Errors::MissingActionError { info, .. } => write!(f, "{}", info.message),
+            Errors::MissingResourceError { info, .. } => write!(f, "{}", info.message),
+            Errors::FormatError { info, .. } => write!(f, "{}", info.message),
+            Errors::UnauthorizedError { info, .. } => write!(f, "{}", info.message),
+            Errors::ForbiddenError { info, .. } => write!(f, "{}", info.message),
+            Errors::SecurityError { info, .. } => write!(f, "{}", info.message),
+            Errors::DatabaseError { info, .. } => write!(f, "{}", info.message),
+            Errors::FeatureNotImplError { info, .. } => write!(f, "{}", info.message),
+            Errors::EnvVarError { info, .. } => write!(f, "{}", info.message),
+            Errors::ModuleNotActiveError { info, .. } => write!(f, "{}", info.message),
+            Errors::ReadError { info, .. } => write!(f, "{}", info.message),
+            Errors::WriteError { info, .. } => write!(f, "{}", info.message),
+            Errors::ParseError { info, .. } => write!(f, "{}", info.message),
+            Errors::VaultError { info, .. } => write!(f, "{}", info.message)
+        }
+    }
+}
+
+impl std::error::Error for Errors {}
+
 impl Errors {
-    pub fn petition_new(url: &str, method: &str, http_code: Option<u16>, cause: &str) -> Errors {
+    pub fn petition<R: Into<String>, S: Into<String>, T: Into<String>>(
+        url: R,
+        method: S,
+        http_code: Option<u16>,
+        reason: T,
+        source: Option<anyhow::Error>
+    ) -> Self {
         Errors::PetitionError {
             info: ErrorInfo {
-                message: "A petition went wrong".to_string(),
-                error_code: 1000,
+                message: "Petition Error".to_string(),
+                error_code: 1100,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None
             },
-            http_code,
-            url: url.to_string(),
-            method: method.to_string(),
-            cause: cause.to_string()
+            ctx: Errors::build_ctx(http_code, url, method),
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-    pub fn provider_new(url: &str, method: &str, http_code: Option<u16>, cause: &str) -> Errors {
+    pub fn wallet<R: Into<String>, S: Into<String>, T: Into<String>>(
+        url: R,
+        method: S,
+        http_code: Option<u16>,
+        reason: T,
+        source: Option<anyhow::Error>
+    ) -> Self {
+        Errors::WalletError {
+            info: ErrorInfo {
+                message: "Wallet Error".to_string(),
+                error_code: 1200,
+                status_code: StatusCode::BAD_GATEWAY,
+                details: None
+            },
+            ctx: Errors::build_ctx(http_code, url, method),
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
+        }
+    }
+    pub fn provider<R: Into<String>, S: Into<String>, T: Into<String>>(
+        url: R,
+        method: S,
+        http_code: Option<u16>,
+        reason: T,
+        source: Option<anyhow::Error>
+    ) -> Self {
         Errors::ProviderError {
             info: ErrorInfo {
-                message: "Unexpected response from the Provider".to_string(),
-                error_code: 2200,
+                message: "Provider Error".to_string(),
+                error_code: 1300,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None
             },
-            http_code,
-            url: url.to_string(),
-            method: method.to_string(),
-            cause: cause.to_string()
+            ctx: Errors::build_ctx(http_code, url, method),
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-    pub fn consumer_new(url: &str, method: &str, http_code: Option<u16>, cause: &str) -> Errors {
+    pub fn consumer<R: Into<String>, S: Into<String>, T: Into<String>>(
+        url: R,
+        method: S,
+        http_code: Option<u16>,
+        reason: T,
+        source: Option<anyhow::Error>
+    ) -> Self {
         Errors::ConsumerError {
             info: ErrorInfo {
-                message: "Unexpected response from the Consumer".to_string(),
-                error_code: 2300,
+                message: "Consumer Error".to_string(),
+                error_code: 1400,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None
             },
-            http_code,
-            url: url.to_string(),
-            method: method.to_string(),
-            cause: cause.to_string()
+            ctx: Errors::build_ctx(http_code, url, method),
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-    pub fn authority_new(url: &str, method: &str, http_code: Option<u16>, cause: &str) -> Errors {
+    pub fn authority<R: Into<String>, S: Into<String>, T: Into<String>>(
+        url: R,
+        method: S,
+        http_code: Option<u16>,
+        reason: T,
+        source: Option<anyhow::Error>
+    ) -> Self {
         Errors::AuthorityError {
             info: ErrorInfo {
-                message: "Unexpected response from the Authority".to_string(),
-                error_code: 2400,
+                message: "Authority Error".to_string(),
+                error_code: 1500,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None
             },
-            http_code,
-            url: url.to_string(),
-            method: method.to_string(),
-            cause: cause.to_string()
+            ctx: Errors::build_ctx(http_code, url, method),
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-
-    pub fn missing_action_new(action: MissingAction, cause: &str) -> Errors {
+    pub fn missing_action<R: Into<String>>(
+        action: MissingAction,
+        reason: R,
+        source: Option<anyhow::Error>
+    ) -> Self {
         let error_code = match action {
             MissingAction::Token => 3110,
             MissingAction::Wallet => 3120,
@@ -240,28 +302,40 @@ impl Errors {
         };
         Errors::MissingActionError {
             info: ErrorInfo {
-                message: format!("The action {} is required to proceed with this step", action),
+                message: "Missing Action Error".to_string(),
                 error_code,
                 status_code: StatusCode::PRECONDITION_FAILED,
                 details: None
             },
             action,
-            cause: cause.to_string()
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-    pub fn missing_resource_new(resource_id: &str, cause: &str) -> Errors {
+    pub fn missing_resource<R: Into<String>, T: Into<String>>(
+        id: R,
+        reason: T,
+        source: Option<anyhow::Error>
+    ) -> Self {
         Errors::MissingResourceError {
             info: ErrorInfo {
-                message: "Required resource missing".to_string(),
+                message: "Missing Resource Error".to_string(),
                 error_code: 3200,
                 status_code: StatusCode::NOT_FOUND,
                 details: None
             },
-            resource_id: resource_id.to_string(),
-            cause: cause.to_string()
+            resource_id: id.into(),
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-    pub fn format_new(option: BadFormat, cause: &str) -> Errors {
+    pub fn format<R: Into<String>>(
+        option: BadFormat,
+        reason: R,
+        source: Option<anyhow::Error>
+    ) -> Self {
         let (error_code, status_code) = match option {
             BadFormat::Sent => (3110, StatusCode::BAD_GATEWAY),
             BadFormat::Received => (3120, StatusCode::BAD_REQUEST),
@@ -269,256 +343,328 @@ impl Errors {
         };
         Errors::FormatError {
             info: ErrorInfo {
-                message: "Invalid Format".to_string(),
+                message: "Format Error".to_string(),
                 error_code,
                 status_code,
                 details: None
             },
-            cause: cause.to_string()
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-    pub fn unauthorized_new(cause: &str) -> Errors {
+    pub fn unauthorized<R: Into<String>>(reason: R, source: Option<anyhow::Error>) -> Self {
         Errors::UnauthorizedError {
             info: ErrorInfo {
-                message: "Unauthorized".to_string(),
+                message: "Unauthorized Error".to_string(),
                 error_code: 4200,
                 status_code: StatusCode::UNAUTHORIZED,
                 details: None
             },
-            cause: cause.to_string()
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-    pub fn forbidden_new(cause: &str) -> Errors {
+    pub fn forbidden<R: Into<String>>(reason: R, source: Option<anyhow::Error>) -> Self {
         Errors::ForbiddenError {
             info: ErrorInfo {
-                message: "Forbidden".to_string(),
+                message: "Forbidden Error".to_string(),
                 error_code: 4300,
                 status_code: StatusCode::FORBIDDEN,
                 details: None
             },
-            cause: cause.to_string()
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-    pub fn database_new(cause: &str) -> Errors {
-        Errors::DatabaseError {
-            info: ErrorInfo {
-                message: "Error related to the database".to_string(),
-                error_code: 5100,
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                details: None
-            },
-            cause: cause.to_string()
-        }
-    }
-    pub fn not_impl_new(feature: &str, cause: &str) -> Errors {
-        Errors::FeatureNotImplError {
-            info: ErrorInfo {
-                message: "Feature not implemented yet".to_string(),
-                error_code: 5200,
-                status_code: StatusCode::NOT_IMPLEMENTED,
-                details: None
-            },
-            feature: feature.to_string(),
-            cause: cause.to_string()
-        }
-    }
-    pub fn wallet_new(url: &str, method: &str, http_code: u16, cause: &str) -> Errors {
-        Errors::WalletError {
-            info: ErrorInfo {
-                message: "Unexpected response from the Wallet".to_string(),
-                error_code: 2100,
-                status_code: StatusCode::BAD_GATEWAY,
-                details: None
-            },
-            http_code,
-            url: url.to_string(),
-            method: method.to_string(),
-            cause: cause.to_string()
-        }
-    }
-    pub fn security_new(cause: &str) -> Errors {
+    pub fn security<R: Into<String>>(reason: R, source: Option<anyhow::Error>) -> Self {
         Errors::SecurityError {
             info: ErrorInfo {
-                message: "Invalid petition".to_string(),
+                message: "Security Error".to_string(),
                 error_code: 4400,
                 status_code: StatusCode::UNPROCESSABLE_ENTITY,
                 details: None
             },
-            cause: cause.to_string()
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-    pub fn read_new(path: &str, cause: &str) -> Self {
-        Self::ReadError {
+    pub fn db<R: Into<String>>(reason: R, source: Option<anyhow::Error>) -> Self {
+        Errors::DatabaseError {
             info: ErrorInfo {
-                message: format!("Failed to read file {}", path),
-                error_code: 6010,
+                message: "Database Error".to_string(),
+                error_code: 5100,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None
             },
-            path: path.to_string(),
-            cause: cause.to_string()
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-
-    pub fn write_new(path: &str, cause: &str) -> Self {
-        Self::WriteError {
+    pub fn not_impl<R: Into<String>>(reason: R, source: Option<anyhow::Error>) -> Self {
+        Errors::FeatureNotImplError {
             info: ErrorInfo {
-                message: format!("Failed to write file {}", path),
-                error_code: 6020,
+                message: "Feature Not Implemented".to_string(),
+                error_code: 5200,
+                status_code: StatusCode::NOT_IMPLEMENTED,
+                details: None
+            },
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
+        }
+    }
+    pub fn env_var<R: Into<String>>(reason: R, source: Option<anyhow::Error>) -> Self {
+        Errors::EnvVarError {
+            info: ErrorInfo {
+                message: "Environment Variable Error".to_string(),
+                error_code: 5300,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None
             },
-            path: path.to_string(),
-            cause: cause.to_string()
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-
-    pub fn parse_new(cause: &str) -> Self {
-        Self::ParseError {
+    pub fn not_active<R: Into<String>>(reason: R, source: Option<anyhow::Error>) -> Self {
+        Errors::ModuleNotActiveError {
             info: ErrorInfo {
-                message: "Failed to parse file".to_string(),
-                error_code: 6030,
+                message: "Module Not Active Error".to_string(),
+                error_code: 5400,
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                details: None
+            },
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
+        }
+    }
+    pub fn read<R: Into<String>, S: Into<String>>(
+        path: R,
+        reason: S,
+        source: Option<anyhow::Error>
+    ) -> Self {
+        Errors::ReadError {
+            info: ErrorInfo {
+                message: "Read Error".to_string(),
+                error_code: 5510,
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                details: None
+            },
+            path: path.into(),
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
+        }
+    }
+    pub fn write<R: Into<String>, S: Into<String>>(
+        path: R,
+        reason: S,
+        source: Option<anyhow::Error>
+    ) -> Self {
+        Errors::WriteError {
+            info: ErrorInfo {
+                message: "Write Error".to_string(),
+                error_code: 5520,
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                details: None
+            },
+            path: path.into(),
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
+        }
+    }
+    pub fn parse<R: Into<String>>(reason: R, source: Option<anyhow::Error>) -> Self {
+        Errors::ParseError {
+            info: ErrorInfo {
+                message: "Parse Error".to_string(),
+                error_code: 5530,
                 status_code: StatusCode::BAD_REQUEST,
                 details: None
             },
-            cause: cause.to_string()
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
-
-    pub fn module_new(module: &str) -> Self {
-        Self::ModuleNotActiveError {
+    pub fn vault<R: Into<String>>(reason: R, source: Option<anyhow::Error>) -> Self {
+        Errors::VaultError {
             info: ErrorInfo {
-                message: "You are trying to use a module which is not active".to_string(),
-                error_code: 5500,
+                message: "Vault Error".to_string(),
+                error_code: 5600,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None
             },
-            cause: format!("module {} is not active", module)
-        }
-    }
-    pub fn env_new(e: String) -> Self {
-        Self::EnvVarError {
-            info: ErrorInfo {
-                message: "You are trying to use an undefined env variable".to_string(),
-                error_code: 800,
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                details: None
-            },
-            cause: e
-        }
-    }
-    pub fn vault_new(e: String) -> Self {
-        Self::VaultError {
-            info: ErrorInfo {
-                message: "Error related to the vault".to_string(),
-                error_code: 800,
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                details: None
-            },
-            cause: e
+            reason: reason.into(),
+            source,
+            backtrace: Backtrace::capture()
         }
     }
 }
 
+// ERROR HELPERS
 impl Errors {
-    // WARNING ----------------------------------------------->
-    // ONLY USE TAP IF YOU DON'T CARE WHERE THE LOG LINE POINTS TO
-    pub fn db_tap(e: String) -> Self {
-        let error = Self::database_new(&e);
-        error!("{}", error.log());
-        error
+    fn build_ctx<R: Into<String>, S: Into<String>>(
+        http_code: Option<u16>,
+        url: R,
+        method: S
+    ) -> HttpContext {
+        HttpContext { http_code, url: url.into(), method: method.into() }
     }
-    pub fn miss_tap(e: &str) -> Self {
-        let error = Self::database_new(&e);
-        error!("{}", error.log());
-        error
-    }
-}
 
-impl IntoResponse for &Errors {
-    fn into_response(self) -> Response {
-        let info = match self {
-            Errors::PetitionError { info, .. }
-            | Errors::ProviderError { info, .. }
-            | Errors::ConsumerError { info, .. }
-            | Errors::AuthorityError { info, .. }
-            | Errors::MissingActionError { info, .. }
-            | Errors::MissingResourceError { info, .. }
-            | Errors::FormatError { info, .. }
-            | Errors::UnauthorizedError { info, .. }
-            | Errors::ForbiddenError { info, .. }
-            | Errors::DatabaseError { info, .. }
-            | Errors::FeatureNotImplError { info, .. }
-            | Errors::ReadError { info, .. }
-            | Errors::ParseError { info, .. }
-            | Errors::WriteError { info, .. }
-            | Errors::SecurityError { info, .. }
-            | Errors::ModuleNotActiveError { info, .. }
-            | Errors::EnvVarError { info, .. }
-            | Errors::VaultError { info, .. }
-            | Errors::WalletError { info, .. } => info
+    pub fn with_details<S: Into<String>>(mut self, details: S) -> Self {
+        let details = Some(details.into());
+        match &mut self {
+            Errors::PetitionError { info, .. } => info.details = details,
+            Errors::WalletError { info, .. } => info.details = details,
+            Errors::ProviderError { info, .. } => info.details = details,
+            Errors::ConsumerError { info, .. } => info.details = details,
+            Errors::AuthorityError { info, .. } => info.details = details,
+            Errors::MissingActionError { info, .. } => info.details = details,
+            Errors::MissingResourceError { info, .. } => info.details = details,
+            Errors::ReadError { info, .. } => info.details = details,
+            Errors::WriteError { info, .. } => info.details = details,
+            Errors::FormatError { info, .. } => info.details = details,
+            Errors::UnauthorizedError { info, .. } => info.details = details,
+            Errors::ForbiddenError { info, .. } => info.details = details,
+            Errors::SecurityError { info, .. } => info.details = details,
+            Errors::DatabaseError { info, .. } => info.details = details,
+            Errors::FeatureNotImplError { info, .. } => info.details = details,
+            Errors::EnvVarError { info, .. } => info.details = details,
+            Errors::ModuleNotActiveError { info, .. } => info.details = details,
+            Errors::ParseError { info, .. } => info.details = details,
+            Errors::VaultError { info, .. } => info.details = details
+        }
+        self
+    }
+    pub fn info(&self) -> &ErrorInfo {
+        match self {
+            Errors::PetitionError { info, .. } => info,
+            Errors::WalletError { info, .. } => info,
+            Errors::ProviderError { info, .. } => info,
+            Errors::ConsumerError { info, .. } => info,
+            Errors::AuthorityError { info, .. } => info,
+            Errors::MissingActionError { info, .. } => info,
+            Errors::MissingResourceError { info, .. } => info,
+            Errors::ReadError { info, .. } => info,
+            Errors::WriteError { info, .. } => info,
+            Errors::FormatError { info, .. } => info,
+            Errors::UnauthorizedError { info, .. } => info,
+            Errors::ForbiddenError { info, .. } => info,
+            Errors::SecurityError { info, .. } => info,
+            Errors::DatabaseError { info, .. } => info,
+            Errors::FeatureNotImplError { info, .. } => info,
+            Errors::EnvVarError { info, .. } => info,
+            Errors::ModuleNotActiveError { info, .. } => info,
+            Errors::ParseError { info, .. } => info,
+            Errors::VaultError { info, .. } => info
+        }
+    }
+    pub fn context(&self) -> String {
+        let ctx = match self {
+            Errors::PetitionError { ctx, .. } => ctx,
+            Errors::WalletError { ctx, .. } => ctx,
+            Errors::ProviderError { ctx, .. } => ctx,
+            Errors::ConsumerError { ctx, .. } => ctx,
+            Errors::AuthorityError { ctx, .. } => ctx,
+            _ => return "".to_string()
         };
 
-        (info.status_code, Json(info)).into_response()
+        let http_code = match ctx.http_code {
+            Some(code) => {
+                format!("Http Code: {}", code)
+            }
+            None => "".to_string()
+        };
+        format!("Url: {} \n Method: {} \n {}", ctx.url, ctx.method, http_code)
+    }
+    pub fn action(&self) -> String {
+        match self {
+            Errors::MissingActionError { action, .. } => format!("Action: {}", action),
+            _ => "".to_string()
+        }
+    }
+    pub fn id(&self) -> String {
+        match self {
+            Errors::MissingResourceError { resource_id, .. } => {
+                format!("Resource ID: {}", resource_id)
+            }
+            _ => "".to_string()
+        }
+    }
+    pub fn path(&self) -> String {
+        let path = match self {
+            Errors::ReadError { path, .. } => path,
+            Errors::WriteError { path, .. } => path,
+            _ => return "".to_string()
+        };
+        format!("Path: {}", path)
+    }
+    pub fn rest(&self) -> String {
+        let (reason, source, backtrace) = match self {
+            Errors::PetitionError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::WalletError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::ProviderError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::ConsumerError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::AuthorityError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::MissingActionError { reason, source, backtrace, .. } => {
+                (reason, source, backtrace)
+            }
+            Errors::MissingResourceError { reason, source, backtrace, .. } => {
+                (reason, source, backtrace)
+            }
+            Errors::ReadError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::WriteError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::FormatError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::UnauthorizedError { reason, source, backtrace, .. } => {
+                (reason, source, backtrace)
+            }
+            Errors::ForbiddenError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::SecurityError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::DatabaseError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::FeatureNotImplError { reason, source, backtrace, .. } => {
+                (reason, source, backtrace)
+            }
+            Errors::EnvVarError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::ModuleNotActiveError { reason, source, backtrace, .. } => {
+                (reason, source, backtrace)
+            }
+            Errors::ParseError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::VaultError { reason, source, backtrace, .. } => (reason, source, backtrace)
+        };
+
+        let reason = format!("Reason: {}", reason);
+
+        let source = match source {
+            Some(data) => format!("Source: {}", data),
+            None => "".to_string()
+        };
+
+        format!("{} \n {} \n {}", reason, source, backtrace)
     }
 }
 
-impl ErrorLogTrait for Errors {
-    fn log(&self) -> String {
-        fn format_info(info: &ErrorInfo, cause: &str) -> String {
-            let details = info.details.as_deref().unwrap_or("No details");
-            format!(
-                "Error Code: {}\nMessage: {}\nDetails: {}\nCause: {}",
-                info.error_code, info.message, details, cause
-            )
-        }
+impl IntoResponse for Errors {
+    fn into_response(self) -> Response {
+        error!(
+            "Error occurred: {}\nContext:\n{}\nAction: {}\nID: {}\nPath: {}\nRest:\n{}",
+            self,
+            self.context(),
+            self.action(),
+            self.id(),
+            self.path(),
+            self.rest(),
+        );
 
-        fn format_http_error(
-            info: &ErrorInfo,
-            url: &str,
-            method: &str,
-            http_code: Option<u16>,
-            cause: &str
-        ) -> String {
-            let base = format_info(info, cause);
-            let code = http_code.unwrap_or(0);
-            format!("{}\nMethod: {}\nUrl: {}\nHttp Code: {}", base, method, url, code)
-        }
+        let info = self.info();
+        let status = info.status_code;
 
-        match self {
-            Errors::PetitionError { info, http_code, url, method, cause }
-            | Errors::ProviderError { info, http_code, url, method, cause }
-            | Errors::AuthorityError { info, http_code, url, method, cause }
-            | Errors::ConsumerError { info, http_code, url, method, cause } => {
-                format_http_error(info, url, method, *http_code, cause)
-            }
-            Errors::WalletError { info, http_code, url, method, cause } => {
-                format_http_error(info, url, method, Some(*http_code), cause)
-            }
-            Errors::MissingActionError { info, action, cause } => {
-                format!("{}\nMissingAction: {}", format_info(info, cause), action)
-            }
-            Errors::FeatureNotImplError { info, feature, cause } => {
-                format!("{}\nFeature: {}", format_info(info, cause), feature)
-            }
-            Errors::MissingResourceError { info, resource_id, cause } => {
-                format!("{}\nResource Id: {}", format_info(info, cause), resource_id)
-            }
-            Errors::ReadError { info, path, cause } => {
-                format!("{}\nPath: {}", format_info(info, cause), path)
-            }
-            Errors::WriteError { info, path, cause } => {
-                format!("{}\nPath: {}", format_info(info, cause), path)
-            }
-            Errors::FormatError { info, cause }
-            | Errors::UnauthorizedError { info, cause }
-            | Errors::ForbiddenError { info, cause }
-            | Errors::DatabaseError { info, cause }
-            | Errors::ParseError { info, cause }
-            | Errors::ModuleNotActiveError { info, cause }
-            | Errors::EnvVarError { info, cause }
-            | Errors::VaultError { info, cause }
-            | Errors::SecurityError { info, cause } => format_info(info, cause)
-        }
+        (status, Json(info)).into_response()
     }
 }

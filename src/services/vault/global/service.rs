@@ -15,6 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub trait ErrorLogTrait {
-    fn log(&self) -> String;
+use super::super::fake_vault::FakeVaultService;
+use super::super::vault_rs::RealVaultService;
+
+#[enum_dispatch::enum_dispatch(VaultTrait)]
+pub enum VaultService {
+    Real(RealVaultService),
+    Fake(FakeVaultService)
 }

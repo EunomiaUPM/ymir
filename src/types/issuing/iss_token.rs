@@ -27,8 +27,12 @@ pub struct IssuingToken {
 }
 
 impl IssuingToken {
-    pub fn new(token: String) -> IssuingToken {
-        IssuingToken { access_token: token, token_type: "Bearer".to_string(), expires_in: 600 }
+    pub fn new<T: Into<String>>(token: T) -> IssuingToken {
+        IssuingToken {
+            access_token: token.into(),
+            token_type: "Bearer".to_string(),
+            expires_in: 600
+        }
     }
 }
 

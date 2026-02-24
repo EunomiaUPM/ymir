@@ -17,9 +17,11 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::types::issuing::CredentialDefinition;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CredentialRequestsss {
-    pub credential_requests: Vec<CredentialRequest>,
+    pub credential_requests: Vec<CredentialRequest>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,9 +35,4 @@ pub struct CredentialRequest {
 pub struct Proof {
     pub proof_type: String,
     pub jwt: String
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CredentialDefinition {
-    pub r#type: Vec<String>
 }

@@ -15,13 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::types::CommonHostsConfig;
-use crate::types::vcs::{VcType, W3cDataModelVersion};
+use crate::config::traits::{HostsConfigTrait, VcConfigTrait};
+use crate::types::vcs::VcType;
 
-pub trait BasicVerifierConfigTrait {
-    fn hosts(&self) -> &CommonHostsConfig;
+pub trait BasicVerifierConfigTrait: HostsConfigTrait + VcConfigTrait {
     fn is_local(&self) -> bool;
     fn get_requested_vcs(&self) -> Vec<VcType>;
     fn get_api_path(&self) -> String;
-    fn get_data_model(&self) -> W3cDataModelVersion;
 }

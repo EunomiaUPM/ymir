@@ -15,17 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::IssueConfigTrait;
 use serde::{Deserialize, Serialize};
+
+use crate::config::traits::IssueConfigTrait;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct IssueConfig {
     pub dataspace_id: Option<String>,
-    pub federated_catalog_uri: Option<String>,
+    pub federated_catalog_uri: Option<String>
 }
 
 impl IssueConfigTrait for IssueConfig {
-    fn issue_config(&self) -> &IssueConfig {
-        self
-    }
+    fn issue_config(&self) -> &IssueConfig { self }
 }

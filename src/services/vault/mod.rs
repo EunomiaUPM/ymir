@@ -14,7 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-pub mod vault_rs;
-mod vault_trait;
 
+pub mod fake_vault;
+pub mod global;
+pub mod vault_rs;
+pub mod vault_trait;
+
+pub use global::VaultService;
 pub use vault_trait::VaultTrait;

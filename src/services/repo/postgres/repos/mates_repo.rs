@@ -15,17 +15,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use anyhow::bail;
 use async_trait::async_trait;
 use sea_orm::QueryFilter;
 use sea_orm::sea_query::OnConflict;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait};
-use tracing::error;
 use urn::Urn;
 
 use crate::data::IntoActiveSet;
 use crate::data::entities::mates::{Column, Entity, Model, NewModel};
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::{Errors, Outcome};
 use crate::services::repo::subtraits::{BasicRepoTrait, MatesTrait};
 
 pub struct MatesRepo {
@@ -42,41 +40,18 @@ impl BasicRepoTrait<Entity, NewModel> for MatesRepo {
 
 #[async_trait]
 impl MatesTrait for MatesRepo {
-    async fn get_me(&self) -> anyhow::Result<Model> {
-        match Entity::find().filter(Column::IsMe.eq(true)).one(self.db()).await {
-            Ok(Some(data)) => Ok(data),
-            Ok(None) => {
-                let error = Errors::missing_resource_new("me", "missing myself in the database");
-                error!("{}", error.log());
-                bail!(error)
-            }
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+    async fn get_me(&self) -> Outcome<Model> {
+        let to_find = Entity::find().filter(Column::IsMe.eq(true));
+        self.help_find(to_find, "myself", "myself").await
     }
 
-    async fn get_by_token(&self, token: &str) -> anyhow::Result<Model> {
-        match Entity::find().filter(Column::Token.eq(token)).one(self.db()).await {
-            Ok(Some(data)) => Ok(data),
-            Ok(None) => {
-                let error =
-                    Errors::missing_resource_new(token, &format!("missing token: {}", token));
-                error!("{}", error.log());
-                bail!(error)
-            }
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+    async fn get_by_token(&self, token: &str) -> Outcome<Model> {
+        let to_find = Entity::find().filter(Column::Token.eq(token));
+        self.help_find(to_find, "token", token).await
     }
-    async fn force_create(&self, mate: NewModel) -> anyhow::Result<Model> {
+    async fn force_create(&self, mate: NewModel) -> Outcome<Model> {
         let active_mate = mate.to_active();
-        match Entity::insert(active_mate)
+        Entity::insert(active_mate)
             .on_conflict(
                 OnConflict::column(Column::ParticipantId)
                     .update_columns([
@@ -89,19 +64,15 @@ impl MatesTrait for MatesRepo {
             )
             .exec_with_returning(self.db())
             .await
-        {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+            .map_err(|e| Errors::db("Error forcing creating mate", Some(anyhow::Error::from(e))))
     }
 
-    async fn get_batch(&self, ids: &Vec<Urn>) -> anyhow::Result<Vec<Model>> {
+    async fn get_batch(&self, ids: &Vec<Urn>) -> Outcome<Vec<Model>> {
         let ids = ids.iter().map(|i| i.to_string()).collect::<Vec<String>>();
-        let mates = Entity::find().filter(Column::ParticipantId.is_in(ids)).all(self.db()).await?;
+        let mates =
+            Entity::find().filter(Column::ParticipantId.is_in(ids)).all(self.db()).await.map_err(
+                |e| Errors::db("Error forcing getting batch", Some(anyhow::Error::from(e)))
+            )?;
         Ok(mates)
     }
 }

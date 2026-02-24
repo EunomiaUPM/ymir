@@ -18,7 +18,9 @@
 use async_trait::async_trait;
 use reqwest::Response;
 use serde_json::Value;
+
 use crate::data::entities::{mates, minions};
+use crate::errors::Outcome;
 use crate::types::dids::dids_info::DidsInfo;
 use crate::types::wallet::{
     CredentialOfferResponse, KeyDefinition, MatchingVCs, OidcUri, Vpd, WalletCredentials,
@@ -34,18 +36,23 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn onboard(&self) -> anyhow::Result<(mates::NewModel, minions::NewModel)>;
     async fn partial_onboard(&self) -> anyhow::Result<(mates::NewModel, minions::NewModel)>;
     async fn has_onboarded(&self) -> bool;
+    async fn register(&self) -> Outcome<()>;
+    async fn login(&self) -> Outcome<()>;
+    async fn logout(&self) -> Outcome<()>;
+    async fn onboard(&self) -> Outcome<(mates::NewModel, minions::NewModel)>;
+    async fn partial_onboard(&self) -> Outcome<()>;
     // GET FROM MANAGER (It gives a cloned Value, not a reference)
-    async fn get_wallet(&self) -> anyhow::Result<WalletInfo>;
-    async fn first_wallet_mut(&self) -> anyhow::Result<tokio::sync::MutexGuard<'_, WalletSession>>;
-    async fn get_did(&self) -> anyhow::Result<String>;
-    async fn get_token(&self) -> anyhow::Result<String>;
-    async fn get_did_doc(&self) -> anyhow::Result<Value>;
-    async fn get_key(&self) -> anyhow::Result<KeyDefinition>;
+    async fn get_wallet(&self) -> Outcome<WalletInfo>;
+    async fn first_wallet_mut(&self) -> Outcome<tokio::sync::MutexGuard<'_, WalletSession>>;
+    async fn get_did(&self) -> Outcome<String>;
+    async fn get_token(&self) -> Outcome<String>;
+    async fn get_did_doc(&self) -> Outcome<Value>;
+    async fn get_key(&self) -> Outcome<KeyDefinition>;
     // RETRIEVE FROM WALLET
-    async fn retrieve_wallet_info(&self) -> anyhow::Result<()>;
-    async fn retrieve_wallet_keys(&self) -> anyhow::Result<()>;
-    async fn retrieve_wallet_dids(&self) -> anyhow::Result<()>;
-    async fn retrieve_wallet_credentials(&self) -> anyhow::Result<Vec<WalletCredentials>>;
+    async fn retrieve_wallet_info(&self) -> Outcome<()>;
+    async fn retrieve_wallet_keys(&self) -> Outcome<()>;
+    async fn retrieve_wallet_dids(&self) -> Outcome<()>;
+    async fn retrieve_wallet_credentials(&self) -> Outcome<Vec<WalletCredentials>>;
     // REGISTER STUFF IN WALLET
     async fn register_key(&self) -> anyhow::Result<()>;
     async fn register_did(&self) -> anyhow::Result<Option<String>>;
@@ -77,4 +84,28 @@ pub trait WalletTrait: Send + Sync + 'static {
         payload: &OidcUri,
         vcs_id: Vec<String>,
     ) -> anyhow::Result<Option<String>>;
+    async fn register_key(&self) -> Outcome<()>;
+    async fn register_did(&self) -> Outcome<()>;
+    async fn reg_did_jwk(&self) -> Outcome<Response>;
+    async fn reg_did_web(&self) -> Outcome<Response>;
+    async fn set_default_did(&self) -> Outcome<()>;
+    // DELETE STUFF FROM WALLET
+    async fn delete_key(&self, key: KeyDefinition) -> Outcome<()>;
+    async fn delete_did(&self, did_info: DidsInfo) -> Outcome<()>;
+    async fn resolve_credential_offer(&self, payload: &OidcUri)
+    -> Outcome<CredentialOfferResponse>;
+    async fn resolve_credential_issuer(
+        &self,
+        cred_offer: &CredentialOfferResponse,
+    ) -> Outcome<Value>;
+    async fn use_offer_req(
+        &self,
+        payload: &OidcUri,
+        cred_offer: &CredentialOfferResponse,
+    ) -> Outcome<()>;
+    async fn get_vpd(&self, payload: &OidcUri) -> Outcome<Vpd>;
+    fn parse_vpd(&self, vpd_as_string: &str) -> Outcome<Vpd>;
+    async fn get_matching_vcs(&self, vpd: &Vpd) -> Outcome<Vec<String>>;
+    async fn match_vc4vp(&self, vp_def: Value) -> Outcome<Vec<MatchingVCs>>;
+    async fn present_vp(&self, payload: &OidcUri, vcs_id: Vec<String>) -> Outcome<Option<String>>;
 }

@@ -19,12 +19,13 @@ use async_trait::async_trait;
 use urn::Urn;
 
 use crate::data::entities::mates::{Entity, Model, NewModel};
+use crate::errors::Outcome;
 use crate::services::repo::subtraits::BasicRepoTrait;
 
 #[async_trait]
 pub trait MatesTrait: BasicRepoTrait<Entity, NewModel> + Send + Sync {
-    async fn get_me(&self) -> anyhow::Result<Model>;
-    async fn get_by_token(&self, token: &str) -> anyhow::Result<Model>;
-    async fn force_create(&self, mate: NewModel) -> anyhow::Result<Model>;
-    async fn get_batch(&self, ids: &Vec<Urn>) -> anyhow::Result<Vec<Model>>;
+    async fn get_me(&self) -> Outcome<Model>;
+    async fn get_by_token(&self, token: &str) -> Outcome<Model>;
+    async fn force_create(&self, mate: NewModel) -> Outcome<Model>;
+    async fn get_batch(&self, ids: &Vec<Urn>) -> Outcome<Vec<Model>>;
 }

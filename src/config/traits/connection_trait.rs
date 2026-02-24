@@ -21,10 +21,6 @@ use crate::config::types::ConnectionConfig;
 
 pub trait ConnectionConfigTrait {
     fn connection(&self) -> &ConnectionConfig;
-    fn is_local(&self) -> bool {
-        self.connection().is_local
-    }
-    fn is_tls_enabled(&self) -> bool {
-        self.connection().is_tls_enabled
-    }
+    fn is_local(&self) -> bool { self.connection().is_local }
+    fn is_tls_enabled(&self) -> bool { self.connection().is_tls_enabled }
 }

@@ -15,15 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use anyhow::bail;
 use async_trait::async_trait;
 use sea_orm::sea_query::OnConflict;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use tracing::error;
 
 use crate::data::IntoActiveSet;
 use crate::data::entities::business_mates::{Column, Entity, Model, NewModel};
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::{Errors, Outcome};
 use crate::services::repo::subtraits::BasicRepoTrait;
 use crate::services::repo::subtraits::BusinessMatesRepoTrait;
 
@@ -42,26 +40,14 @@ impl BasicRepoTrait<Entity, NewModel> for BusinessMatesRepo {
 
 #[async_trait]
 impl BusinessMatesRepoTrait for BusinessMatesRepo {
-    async fn get_by_token(&self, token: &str) -> anyhow::Result<Model> {
-        match Entity::find().filter(Column::Token.eq(token)).one(self.db()).await {
-            Ok(Some(data)) => Ok(data),
-            Ok(None) => {
-                let error =
-                    Errors::missing_resource_new(token, &format!("missing token: {}", token));
-                error!("{}", error.log());
-                bail!(error)
-            }
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+    async fn get_by_token(&self, token: &str) -> Outcome<Model> {
+        let to_find = Entity::find().filter(Column::Token.eq(token));
+        self.help_find(to_find, "token", token).await
     }
 
-    async fn force_create(&self, mate: NewModel) -> anyhow::Result<Model> {
+    async fn force_create(&self, mate: NewModel) -> Outcome<Model> {
         let active_mate = mate.to_active();
-        match Entity::insert(active_mate)
+        Entity::insert(active_mate)
             .on_conflict(
                 OnConflict::column(Column::ParticipantId)
                     .update_columns([Column::Token, Column::LastInteraction])
@@ -69,13 +55,6 @@ impl BusinessMatesRepoTrait for BusinessMatesRepo {
             )
             .exec_with_returning(self.db())
             .await
-        {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+            .map_err(|e| Errors::db("Error forcing creating mate", Some(anyhow::Error::from(e))))
     }
 }

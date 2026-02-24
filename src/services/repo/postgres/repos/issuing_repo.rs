@@ -20,6 +20,7 @@ use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use super::super::super::subtraits::{BasicRepoTrait, IssuingTrait};
 use crate::data::entities::issuing::{Column, Entity, Model, NewModel};
+use crate::errors::Outcome;
 
 #[derive(Clone)]
 pub struct IssuingRepo {
@@ -36,12 +37,12 @@ impl BasicRepoTrait<Entity, NewModel> for IssuingRepo {
 
 #[async_trait]
 impl IssuingTrait for IssuingRepo {
-    async fn get_by_pre_auth_code(&self, code: &str) -> anyhow::Result<Model> {
+    async fn get_by_pre_auth_code(&self, code: &str) -> Outcome<Model> {
         let to_find = Entity::find().filter(Column::PreAuthCode.eq(code));
         self.help_find(to_find, "code", code).await
     }
 
-    async fn get_by_token(&self, token: &str) -> anyhow::Result<Model> {
+    async fn get_by_token(&self, token: &str) -> Outcome<Model> {
         let to_find = Entity::find().filter(Column::Token.eq(token));
         self.help_find(to_find, "token", token).await
     }

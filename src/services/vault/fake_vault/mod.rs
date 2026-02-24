@@ -8,25 +8,13 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
+mod service;
 
-use super::{InputDescriptor, W3cDataModelVersion};
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct VPDef {
-    pub id: String,
-    pub input_descriptors: Vec<InputDescriptor>
-}
-
-impl VPDef {
-    pub fn new<T: Into<String>>(id: T, vc_type: &str, model: &W3cDataModelVersion) -> Self {
-        VPDef { id: id.into(), input_descriptors: vec![InputDescriptor::new(vc_type, model)] }
-    }
-}
+pub use service::FakeVaultService;

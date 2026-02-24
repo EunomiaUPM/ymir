@@ -18,10 +18,11 @@
 use async_trait::async_trait;
 
 use crate::data::entities::business_mates::{Entity, Model, NewModel};
+use crate::errors::Outcome;
 use crate::services::repo::subtraits::BasicRepoTrait;
 
 #[async_trait]
 pub trait BusinessMatesRepoTrait: BasicRepoTrait<Entity, NewModel> + Send + Sync {
-    async fn get_by_token(&self, token: &str) -> anyhow::Result<Model>;
-    async fn force_create(&self, mate: NewModel) -> anyhow::Result<Model>;
+    async fn get_by_token(&self, token: &str) -> Outcome<Model>;
+    async fn force_create(&self, mate: NewModel) -> Outcome<Model>;
 }

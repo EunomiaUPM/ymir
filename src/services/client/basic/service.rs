@@ -17,14 +17,12 @@
 
 use std::time::Duration;
 
-use anyhow::bail;
 use async_trait::async_trait;
 use axum::http::HeaderMap;
 use reqwest::{Client, RequestBuilder, Response};
-use tracing::error;
 
 use super::super::ClientTrait;
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::{Errors, Outcome};
 use crate::types::http::Body;
 
 pub struct BasicClientService {
@@ -45,16 +43,16 @@ impl BasicClientService {
         req: RequestBuilder,
         method: &str,
         url: &str
-    ) -> anyhow::Result<Response> {
-        match req.send().await {
-            Ok(resp) => Ok(resp),
-            Err(e) => {
-                let http_code = e.status().map(|s| s.as_u16());
-                let error = Errors::petition_new(url, method, http_code, &e.to_string());
-                error!("{}", error.log());
-                bail!(error.log());
-            }
-        }
+    ) -> Outcome<Response> {
+        req.send().await.map_err(|e| {
+            Errors::petition(
+                url,
+                method,
+                e.status().map(|s| s.as_u16()),
+                "Error sending petition",
+                Some(anyhow::Error::from(e))
+            )
+        })
     }
     fn apply_body(&self, req: RequestBuilder, body: Body) -> RequestBuilder {
         match body {
@@ -67,7 +65,7 @@ impl BasicClientService {
 
 #[async_trait]
 impl ClientTrait for BasicClientService {
-    async fn get(&self, url: &str, headers: Option<HeaderMap>) -> anyhow::Result<Response> {
+    async fn get(&self, url: &str, headers: Option<HeaderMap>) -> Outcome<Response> {
         let req = if let Some(h) = headers {
             self.client.get(url).headers(h)
         } else {
@@ -76,12 +74,7 @@ impl ClientTrait for BasicClientService {
         self.send_request(req, "GET", url).await
     }
 
-    async fn post(
-        &self,
-        url: &str,
-        headers: Option<HeaderMap>,
-        body: Body
-    ) -> anyhow::Result<Response> {
+    async fn post(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response> {
         let req = if let Some(h) = headers {
             self.client.post(url).headers(h)
         } else {
@@ -91,12 +84,7 @@ impl ClientTrait for BasicClientService {
         self.send_request(req, "POST", url).await
     }
 
-    async fn put(
-        &self,
-        url: &str,
-        headers: Option<HeaderMap>,
-        body: Body
-    ) -> anyhow::Result<Response> {
+    async fn put(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response> {
         let req = if let Some(h) = headers {
             self.client.put(url).headers(h)
         } else {
@@ -106,12 +94,7 @@ impl ClientTrait for BasicClientService {
         self.send_request(req, "PUT", url).await
     }
 
-    async fn delete(
-        &self,
-        url: &str,
-        headers: Option<HeaderMap>,
-        body: Body
-    ) -> anyhow::Result<Response> {
+    async fn delete(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response> {
         let req = if let Some(h) = headers {
             self.client.delete(url).headers(h)
         } else {

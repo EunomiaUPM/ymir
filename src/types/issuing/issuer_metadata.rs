@@ -18,8 +18,9 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use crate::types::vcs::VcType;
+
 use super::CredentialConfiguration;
+use crate::types::vcs::VcType;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct IssuerMetadata {
@@ -33,7 +34,7 @@ pub struct IssuerMetadata {
 }
 
 impl IssuerMetadata {
-    pub fn new(host: &str, vcs: Option<Vec<VcType>>) -> Self {
+    pub fn new(host: &str, vcs: Option<&[VcType]>) -> Self {
         let credential_configurations_supported = CredentialConfiguration::basic(vcs);
 
         IssuerMetadata {

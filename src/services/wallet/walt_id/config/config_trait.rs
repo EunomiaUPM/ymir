@@ -15,14 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::types::{CommonHostsConfig, WalletConfig};
-use crate::types::dids::did_type::DidType;
+use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 
-pub trait WaltIdConfigTrait {
-    fn get_raw_wallet_config(&self) -> WalletConfig;
-    fn get_wallet_api_url(&self) -> String;
-    fn get_did_type(&self) -> DidType;
-    fn get_did_web_path(&self) -> Option<String>;
-    fn get_did_web_domain(&self) -> String;
-    fn hosts(&self) -> &CommonHostsConfig;
-}
+pub trait WaltIdConfigTrait: HostsConfigTrait + WalletConfigTrait + DidConfigTrait {}

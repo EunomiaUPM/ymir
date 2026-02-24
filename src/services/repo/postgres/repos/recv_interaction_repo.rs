@@ -15,13 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use anyhow::bail;
 use async_trait::async_trait;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use tracing::error;
 
 use crate::data::entities::recv_interaction::{Column, Entity, Model, NewModel};
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::{Errors, Outcome};
 use crate::services::repo::subtraits::BasicRepoTrait;
 use crate::services::repo::subtraits::RecvInteractionTrait;
 
@@ -39,50 +37,20 @@ impl BasicRepoTrait<Entity, NewModel> for RecvInteractionRepo {
 
 #[async_trait]
 impl RecvInteractionTrait for RecvInteractionRepo {
-    async fn get_by_reference(&self, reference: &str) -> anyhow::Result<Model> {
-        match Entity::find().filter(Column::InteractRef.eq(reference)).one(self.db()).await {
-            Ok(Some(data)) => Ok(data),
-            Ok(None) => {
-                let error = Errors::missing_resource_new(
-                    reference,
-                    &format!("missing reference: {}", reference)
-                );
-                error!("{}", error.log());
-                bail!(error)
-            }
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+    async fn get_by_reference(&self, reference: &str) -> Outcome<Model> {
+        let to_find = Entity::find().filter(Column::InteractRef.eq(reference));
+        self.help_find(to_find, "reference", reference).await
     }
 
-    async fn get_by_cont_id(&self, cont_id: &str) -> anyhow::Result<Model> {
-        match Entity::find().filter(Column::ContinueId.eq(cont_id)).one(self.db()).await {
-            Ok(Some(data)) => Ok(data),
-            Ok(None) => {
-                let error =
-                    Errors::missing_resource_new(cont_id, &format!("missing cont_id: {}", cont_id));
-                error!("{}", error.log());
-                bail!(error)
-            }
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+    async fn get_by_cont_id(&self, cont_id: &str) -> Outcome<Model> {
+        let to_find = Entity::find().filter(Column::ContinueId.eq(cont_id));
+        self.help_find(to_find, "cont_id", cont_id).await
     }
 
-    async fn get_by_some_id(&self, some_id: &str) -> anyhow::Result<Option<Model>> {
-        match Entity::find_by_id(some_id).one(self.db()).await {
-            Ok(data) => Ok(data),
-            Err(e) => {
-                let error = Errors::database_new(&e.to_string());
-                error!("{}", error.log());
-                bail!(error)
-            }
-        }
+    async fn get_by_some_id(&self, some_id: &str) -> Outcome<Option<Model>> {
+        Entity::find_by_id(some_id)
+            .one(self.db())
+            .await
+            .map_err(|e| Errors::db("Error finding some model", Some(anyhow::Error::from(e))))
     }
 }

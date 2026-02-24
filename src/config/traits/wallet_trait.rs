@@ -20,7 +20,5 @@ use crate::config::types::WalletConfig;
 
 pub trait WalletConfigTrait {
     fn wallet_config(&self) -> &WalletConfig;
-    fn get_wallet_host(&self) -> String {
-        self.wallet_config().api.get_host()
-    }
+    fn get_wallet_api_url(&self) -> String { self.wallet_config().api.get_host() }
 }

@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
 use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
@@ -67,7 +68,7 @@ impl Display for InteractActions {
 }
 
 impl AccessTokenRequirements4GR {
-    pub fn new(option: GRUse, vc_type: Option<VcType>, token: Option<TokenReqTypeGR>) -> Self {
+    pub fn new(option: &GRUse, vc_type: Option<&VcType>, token: Option<&TokenReqTypeGR>) -> Self {
         let mut data = AccessTokenRequirements4GR::default();
 
         match option {

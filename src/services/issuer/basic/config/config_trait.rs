@@ -15,11 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::types::CommonHostsConfig;
+use crate::config::traits::{DidConfigTrait, HostsConfigTrait};
 
-pub trait BasicIssuerConfigTrait {
-    fn hosts(&self) -> &CommonHostsConfig;
+pub trait BasicIssuerConfigTrait: HostsConfigTrait + DidConfigTrait {
     fn is_local(&self) -> bool;
     fn get_api_path(&self) -> String;
-    fn get_did(&self) -> String;
 }

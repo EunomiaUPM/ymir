@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
 use std::marker::PhantomData;
 
 use chrono::{DateTime, Utc};
@@ -72,11 +73,16 @@ impl Default for VcInsideGaiaVPBuilder<Missing, Missing> {
 }
 
 impl<T, R> VcInsideGaiaVPBuilder<T, R> {
-    pub fn context(self, context: Vec<String>) -> VcInsideGaiaVPBuilder<Present, T> {
-        VcInsideGaiaVPBuilder { context, id: self.id, r#type: self.r#type, _marker: PhantomData }
+    pub fn context(self, context: &[&str]) -> VcInsideGaiaVPBuilder<Present, T> {
+        VcInsideGaiaVPBuilder {
+            context: context.iter().map(|&s| s.to_string()).collect(),
+            id: self.id,
+            r#type: self.r#type,
+            _marker: PhantomData
+        }
     }
-    pub fn id(self, id: String) -> VcInsideGaiaVPBuilder<T, Present> {
-        let id = format!("application/vc+ld+json+jw, {}", id);
+    pub fn id<W: Into<String>>(self, id: W) -> VcInsideGaiaVPBuilder<T, Present> {
+        let id = format!("application/vc+ld+json+jw, {}", id.into());
         VcInsideGaiaVPBuilder {
             context: self.context,
             id: Some(id),

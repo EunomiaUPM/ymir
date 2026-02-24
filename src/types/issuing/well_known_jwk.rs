@@ -30,7 +30,7 @@ pub struct WellKnownJwks {
 }
 
 impl WellKnownJwks {
-    pub fn new(key: RsaPublicKey) -> WellKnownJwks {
+    pub fn new(key: &RsaPublicKey) -> WellKnownJwks {
         WellKnownJwks {
             kty: "RSA".to_string(),
             n: URL_SAFE_NO_PAD.encode(key.n().to_bytes_be()),

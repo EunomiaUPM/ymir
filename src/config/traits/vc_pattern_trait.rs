@@ -20,9 +20,7 @@ use crate::types::vcs::{VcModel, W3cDataModelVersion};
 
 pub trait VcConfigTrait {
     fn vc_config(&self) -> &VcConfig;
-    fn get_vc_model(&self) -> &VcModel {
-        &self.vc_config().vc_model
-    }
+    fn get_vc_model(&self) -> &VcModel { &self.vc_config().vc_model }
     fn get_w3c_data_model(&self) -> Option<&W3cDataModelVersion> {
         self.vc_config().w3c_data_model.as_ref()
     }

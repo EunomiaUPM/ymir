@@ -31,5 +31,5 @@ pub struct RejectedCallbackBody {
 #[serde(untagged)]
 pub enum CallbackBody {
     Approved(ApprovedCallbackBody),
-    Rejected(RejectedCallbackBody),
+    Rejected(RejectedCallbackBody)
 }

@@ -19,27 +19,13 @@ use async_trait::async_trait;
 use axum::http::HeaderMap;
 use reqwest::Response;
 
+use crate::errors::Outcome;
 use crate::types::http::Body;
 
 #[async_trait]
 pub trait ClientTrait: Send + Sync {
-    async fn get(&self, url: &str, headers: Option<HeaderMap>) -> anyhow::Result<Response>;
-    async fn post(
-        &self,
-        url: &str,
-        headers: Option<HeaderMap>,
-        body: Body
-    ) -> anyhow::Result<Response>;
-    async fn put(
-        &self,
-        url: &str,
-        headers: Option<HeaderMap>,
-        body: Body
-    ) -> anyhow::Result<Response>;
-    async fn delete(
-        &self,
-        url: &str,
-        headers: Option<HeaderMap>,
-        body: Body
-    ) -> anyhow::Result<Response>;
+    async fn get(&self, url: &str, headers: Option<HeaderMap>) -> Outcome<Response>;
+    async fn post(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response>;
+    async fn put(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response>;
+    async fn delete(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response>;
 }

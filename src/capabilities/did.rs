@@ -17,20 +17,18 @@
 
 use std::sync::Arc;
 
-use anyhow::bail;
-use axum::http::HeaderMap;
-use axum::http::header::{ACCEPT, CONTENT_TYPE};
-use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::jwk::Jwk;
 use serde_json::Value;
-use tracing::{error, info};
+use tracing::info;
 
-use crate::errors::{ErrorLogTrait, Errors};
+use crate::errors::{Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::types::dids::did_type::DidType;
 use crate::types::errors::BadFormat;
+use crate::utils::{
+    decode_url_safe_no_pad, json_headers, parse_from_slice, parse_from_value, parse_json_resp
+};
 
 pub struct DidResolver;
 
@@ -42,15 +40,15 @@ impl DidResolver {
         }
     }
 
-    pub async fn get_key(did: &str, client: Arc<dyn ClientTrait>) -> anyhow::Result<DecodingKey> {
+    pub async fn get_key(did: &str, client: Arc<dyn ClientTrait>) -> Outcome<DecodingKey> {
         info!("Retrieving key from did");
         let (did_base, kid_opt) = DidResolver::split_did_id(did);
 
-        let key = match Self::parse_did(did) {
+        let key: Jwk = match Self::parse_did(did) {
             DidType::Jwk => {
-                let vec = URL_SAFE_NO_PAD.decode(&(did_base.replace("did:jwk:", "")))?;
-                let jwk: Jwk = serde_json::from_slice(&vec)?;
-                DecodingKey::from_jwk(&jwk)?
+                let vec = decode_url_safe_no_pad(&(did_base.replace("did:jwk:", "")))?;
+                let jwk: Jwk = parse_from_slice(&vec)?;
+                jwk
             }
 
             DidType::Web => {
@@ -59,71 +57,61 @@ impl DidResolver {
 
                 info!("Resolving DID Document: {}", url);
 
-                let mut headers = HeaderMap::new();
-                headers.insert(CONTENT_TYPE, "application/json".parse()?);
-                headers.insert(ACCEPT, "application/json".parse()?);
+                let headers = json_headers();
 
                 let res = client.get(&url, Some(headers)).await?;
 
                 let doc: Value = match res.status().as_u16() {
                     200 => {
                         info!("DID Document retrieved successfully");
-                        res.json().await?
+
+                        parse_json_resp(res).await?
                     }
-                    _ => {
-                        let error =
-                            Errors::format_new(BadFormat::Received, "DID Document not retrieved");
-                        error!("{}", error.log());
-                        bail!(error)
+                    status => {
+                        return Err(Errors::petition(
+                            url,
+                            "GET",
+                            Some(status),
+                            "Didi Document not retrieved",
+                            None
+                        ));
                     }
                 };
 
                 let methods = doc["verificationMethod"].as_array().ok_or_else(|| {
-                    let error =
-                        Errors::format_new(BadFormat::Received, "Missing verificationMethod");
-                    error!("{}", error.log());
-                    error
+                    Errors::format(BadFormat::Received, "Missing verificationMethod", None)
                 })?;
 
                 let method = if let Some(kid) = kid_opt {
                     let full_kid = format!("{}#{}", did_base, kid);
-                    methods.iter().find(|m| m["id"] == full_kid).ok_or_else(|| {
-                        let error = Errors::format_new(
-                            BadFormat::Received,
-                            &format!("Key not found: {}", full_kid)
-                        );
-                        error!("{}", error.log());
-                        error
-                    })?
+                    methods
+                        .iter()
+                        .find(|m| m["id"] == full_kid)
+                        .ok_or_else(|| Errors::format(BadFormat::Received, "Key not found", None))?
                 } else {
                     methods.first().ok_or_else(|| {
-                        let error = Errors::format_new(
+                        Errors::format(
                             BadFormat::Received,
-                            "No verification methods in DID Document"
-                        );
-                        error!("{}", error.log());
-                        error
+                            "No verification methods in DID Document",
+                            None
+                        )
                     })?
                 };
 
                 let jwk_value = method["publicKeyJwk"].as_object().ok_or_else(|| {
-                    let error = Errors::format_new(BadFormat::Received, "Missing publicKeyJwk");
-                    error!("{}", error.log());
-                    error
+                    Errors::format(BadFormat::Received, "Missing publicKeyJwk", None)
                 })?;
 
-                let jwk: Jwk = serde_json::from_value(jwk_value.clone().into())?;
-                DecodingKey::from_jwk(&jwk)?
+                let jwk: Jwk = parse_from_value(jwk_value.clone().into())?;
+
+                jwk
             }
 
-            DidType::Other => {
-                let error = Errors::not_impl_new("did method", &did.to_string());
-                error!("{}", error.log());
-                bail!(error);
-            }
+            DidType::Other => return Err(Errors::not_impl(format!("Did method: {}", did), None))
         };
-
-        Ok(key)
+        DecodingKey::from_jwk(&key).map_err(|e| {
+            Errors::parse("Error parsing decoding key to jwk", Some(anyhow::Error::from(e)))
+        })
     }
 
     pub fn parse_did(did: &str) -> DidType {

@@ -26,6 +26,7 @@ pub enum MissingAction {
     Did,
     Key,
     Onboarding,
+    Credentials,
     Unknown
 }
 
@@ -37,6 +38,7 @@ impl fmt::Display for MissingAction {
             MissingAction::Key => "Key",
             MissingAction::Did => "DID",
             MissingAction::Onboarding => "Onboarding",
+            MissingAction::Credentials => "Credentials",
             _ => "Unknown"
         };
         write!(f, "{}", s)

@@ -19,6 +19,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
+use crate::errors::Outcome;
 use crate::types::vcs::VcType;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -41,10 +42,14 @@ pub struct UrnPreAuthorizedCode {
 }
 
 impl VCCredOffer {
-    pub fn new(issuer: String, token: String, vc_type: String) -> anyhow::Result<VCCredOffer> {
+    pub fn new<S: Into<String>, T: Into<String>>(
+        issuer: S,
+        token: T,
+        vc_type: &str
+    ) -> Outcome<VCCredOffer> {
         let mut types: Vec<VcType> = Vec::new();
 
-        for s in vc_type.split('&').map(|s| s.trim()) {
+        for s in vc_type.to_string().split('&').map(|s| s.trim()) {
             let data = VcType::from_str(s)?;
             types.push(data);
         }
@@ -52,9 +57,9 @@ impl VCCredOffer {
         let configuration_ids = types.iter().map(|t| t.to_conf()).collect();
 
         Ok(VCCredOffer {
-            credential_issuer: issuer,
+            credential_issuer: issuer.into(),
             grants: CredOfferGrants {
-                urn_pre_authorized_code: UrnPreAuthorizedCode { pre_authorized_code: token }
+                urn_pre_authorized_code: UrnPreAuthorizedCode { pre_authorized_code: token.into() }
             },
             credential_configuration_ids: configuration_ids
         })

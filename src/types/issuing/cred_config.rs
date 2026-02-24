@@ -35,9 +35,8 @@ pub struct CredentialDefinition {
 }
 
 impl CredentialConfiguration {
-    pub fn basic(vcs: Option<Vec<VcType>>) -> HashMap<String, CredentialConfiguration> {
+    pub fn basic(vcs: Option<&[VcType]>) -> HashMap<String, CredentialConfiguration> {
         let mut credential_configurations_supported = HashMap::new();
-
         let vcs = vcs.unwrap_or(VcType::variants());
         for vc_type in vcs {
             credential_configurations_supported.insert(

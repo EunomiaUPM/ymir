@@ -23,6 +23,6 @@ pub struct StringHelper {
 }
 
 impl StringHelper {
-    pub fn new(inner: String) -> StringHelper { StringHelper { inner } }
-    pub fn data(&self) -> String { self.inner.clone() }
+    pub fn new<T: Into<String>>(inner: T) -> StringHelper { StringHelper { inner: inner.into() } }
+    pub fn data(&self) -> &str { &self.inner }
 }

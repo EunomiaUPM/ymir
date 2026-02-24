@@ -15,63 +15,64 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::types::vcs::W3cDataModelVersion;
 use serde::{Deserialize, Serialize};
+
+use crate::types::vcs::W3cDataModelVersion;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InputDescriptor {
     pub id: String,
     pub format: InputDescriptorFormat,
-    pub constraints: InputDescriptorConstraints,
+    pub constraints: InputDescriptorConstraints
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InputDescriptorFormat {
-    jwt_vc_json: InputDescriptorFormatJWTJson,
+    jwt_vc_json: InputDescriptorFormatJWTJson
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InputDescriptorFormatJWTJson {
-    pub alg: Vec<String>,
+    pub alg: Vec<String>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InputDescriptorConstraints {
-    pub fields: Vec<InputDescriptorConstraintsFields>,
+    pub fields: Vec<InputDescriptorConstraintsFields>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InputDescriptorConstraintsFields {
     pub path: Vec<String>,
-    pub filter: InputDescriptorConstraintsFieldsFilter,
+    pub filter: InputDescriptorConstraintsFieldsFilter
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InputDescriptorConstraintsFieldsFilter {
     pub r#type: String,
-    pub pattern: String,
+    pub pattern: String
 }
 
 impl InputDescriptor {
-    pub fn new(vc_type: String, model: W3cDataModelVersion) -> Self {
+    pub fn new(vc_type: &str, model: &W3cDataModelVersion) -> Self {
         let path = match model {
             W3cDataModelVersion::V1 => vec!["$.vc.type".to_string()],
-            W3cDataModelVersion::V2 => vec!["$.type".to_string()],
+            W3cDataModelVersion::V2 => vec!["$.type".to_string()]
         };
         InputDescriptor {
-            id: vc_type.clone(),
+            id: vc_type.to_string(),
             format: InputDescriptorFormat {
-                jwt_vc_json: InputDescriptorFormatJWTJson { alg: vec!["RSA".to_string()] },
+                jwt_vc_json: InputDescriptorFormatJWTJson { alg: vec!["RSA".to_string()] }
             },
             constraints: InputDescriptorConstraints {
                 fields: vec![InputDescriptorConstraintsFields {
                     path,
                     filter: InputDescriptorConstraintsFieldsFilter {
                         r#type: "string".to_string(),
-                        pattern: vc_type,
-                    },
-                }],
-            },
+                        pattern: vc_type.to_string()
+                    }
+                }]
+            }
         }
     }
 }

@@ -38,19 +38,19 @@ pub struct GrantRequest {
 
 impl GrantRequest {
     pub fn new(
-        option: GRUse,
-        client: Client4GR,
-        vc_type: Option<VcType>,
+        option: &GRUse,
+        client: &Client4GR,
+        vc_type: Option<&VcType>,
         model: &req_interaction::Model
     ) -> Self {
         Self {
             access_token: AccessTokenRequirements4GR::new(
                 option,
                 vc_type,
-                Some(TokenReqTypeGR::Bearer)
+                Some(&TokenReqTypeGR::Bearer)
             ),
             subject: None,
-            client,
+            client: client.clone(),
             user: None,
             interact: Some(Interact4GR::new(model))
         }
