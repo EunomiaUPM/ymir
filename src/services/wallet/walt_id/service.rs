@@ -34,7 +34,7 @@ use crate::data::entities::{mates, minions};
 use crate::errors::{Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
-use crate::services::vault::vault_rs::VaultService;
+use crate::services::vault::vault_rs::RealVaultService;
 use crate::types::dids::did_type::DidType;
 use crate::types::dids::dids_info::DidsInfo;
 use crate::types::errors::{BadFormat, MissingAction};
@@ -47,15 +47,15 @@ use crate::types::wallet::{
     WalletSession
 };
 use crate::utils::{
-    ParseHeaderExt, decode_url_safe_no_pad, expect_from_env, get_query_param, parse_from_slice,
-    parse_from_str, parse_json_resp, parse_text_resp, parse_to_value
+    ParseHeaderExt, decode_url_safe_no_pad, expect_from_env, get_query_param, json_headers,
+    parse_from_slice, parse_from_str, parse_json_resp, parse_text_resp, parse_to_value
 };
 
 pub struct WaltIdService {
     wallet_session: Arc<Mutex<WalletSession>>,
     key_data: Arc<Mutex<Vec<KeyDefinition>>>,
     client: Arc<dyn ClientTrait>,
-    vault: Arc<VaultService>,
+    vault: Arc<RealVaultService>,
     config: WaltIdConfig
 }
 
@@ -63,7 +63,7 @@ impl WaltIdService {
     pub fn new(
         config: WaltIdConfig,
         client: Arc<dyn ClientTrait>,
-        vault: Arc<VaultService>
+        vault: Arc<RealVaultService>
     ) -> WaltIdService {
         WaltIdService {
             wallet_session: Arc::new(Mutex::new(WalletSession {
@@ -89,9 +89,7 @@ impl WalletTrait for WaltIdService {
         let db_path = expect_from_env("VAULT_APP_WALLET");
         let body = self.vault.read(None, &db_path).await?;
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let headers = json_headers();
 
         let res = self.client.post(&url, Some(headers), Body::Json(body)).await?;
 
@@ -123,9 +121,7 @@ impl WalletTrait for WaltIdService {
         let body: SemiWalletSecrets = self.vault.read(None, &db_path).await?;
         let body = parse_to_value(&body)?;
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let headers = json_headers();
 
         let res = self.client.post(&url, Some(headers), Body::Json(body)).await?;
 
@@ -169,9 +165,7 @@ impl WalletTrait for WaltIdService {
         info!("Login out of web wallet");
         let url = format!("{}/wallet-api/auth/logout", self.config.get_wallet_api_url());
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let headers = json_headers();
 
         let res = self.client.post(&url, Some(headers), Body::None).await?;
 
@@ -333,9 +327,7 @@ impl WalletTrait for WaltIdService {
 
         let token = self.get_token().await?;
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         let res = self.client.get(&url, Some(headers)).await?;
@@ -424,9 +416,7 @@ impl WalletTrait for WaltIdService {
             &wallet.id
         );
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         let res = self.client.get(&url, Some(headers)).await?;
@@ -469,9 +459,7 @@ impl WalletTrait for WaltIdService {
             &wallet.id
         );
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         let res = self.client.get(&url, Some(headers)).await?;
@@ -574,9 +562,7 @@ impl WalletTrait for WaltIdService {
             key_data.key_id.id
         );
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         self.client.post(&url, Some(headers), Body::None).await
@@ -604,9 +590,7 @@ impl WalletTrait for WaltIdService {
             path
         );
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         self.client.post(&url, Some(headers), Body::None).await
@@ -626,9 +610,7 @@ impl WalletTrait for WaltIdService {
             did
         );
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         let res = self.client.post(&url, Some(headers), Body::None).await?;
@@ -781,9 +763,7 @@ impl WalletTrait for WaltIdService {
             cred_offer.credential_issuer
         );
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         let res = self.client.get(&url, Some(headers)).await?;
@@ -823,9 +803,7 @@ impl WalletTrait for WaltIdService {
             cred_offer.grants.pre_authorized_code.pre_authorized_code
         );
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         let res = self.client.post(&url, Some(headers), Body::Raw(payload.uri.clone())).await?;
@@ -929,9 +907,7 @@ impl WalletTrait for WaltIdService {
             wallet.id
         );
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         let res = self.client.post(&url, Some(headers), Body::Json(vp_def)).await?;
@@ -963,9 +939,7 @@ impl WalletTrait for WaltIdService {
             wallet.id
         );
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let mut headers = json_headers();
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         let body = MatchVCsRequest {

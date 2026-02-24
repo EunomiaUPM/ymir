@@ -38,7 +38,9 @@ use crate::types::errors::BadFormat;
 use crate::types::gnap::ApprovedCallbackBody;
 use crate::types::http::Body;
 use crate::types::vcs::{VPDef, W3cDataModelVersion};
-use crate::utils::{get_claim, get_opt_claim, parse_to_string, parse_to_value, validate_token};
+use crate::utils::{
+    get_claim, get_opt_claim, json_headers, parse_to_string, parse_to_value, validate_token
+};
 
 pub struct BasicVerifierService {
     client: Arc<dyn ClientTrait>,
@@ -415,9 +417,7 @@ impl VerifierTrait for BasicVerifierService {
         } else if model.method == "push" {
             let url = model.uri.clone();
 
-            let mut headers = HeaderMap::new();
-            headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-            headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+            let headers = json_headers();
 
             let body = ApprovedCallbackBody {
                 interact_ref: model.interact_ref.clone(),

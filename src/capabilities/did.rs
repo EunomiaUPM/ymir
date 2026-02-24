@@ -17,8 +17,6 @@
 
 use std::sync::Arc;
 
-use axum::http::header::{ACCEPT, CONTENT_TYPE};
-use axum::http::{HeaderMap, HeaderValue};
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::jwk::Jwk;
 use serde_json::Value;
@@ -28,7 +26,9 @@ use crate::errors::{Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::types::dids::did_type::DidType;
 use crate::types::errors::BadFormat;
-use crate::utils::{decode_url_safe_no_pad, parse_from_slice, parse_from_value, parse_json_resp};
+use crate::utils::{
+    decode_url_safe_no_pad, json_headers, parse_from_slice, parse_from_value, parse_json_resp
+};
 
 pub struct DidResolver;
 
@@ -57,9 +57,7 @@ impl DidResolver {
 
                 info!("Resolving DID Document: {}", url);
 
-                let mut headers = HeaderMap::new();
-                headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-                headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+                let headers = json_headers();
 
                 let res = client.get(&url, Some(headers)).await?;
 

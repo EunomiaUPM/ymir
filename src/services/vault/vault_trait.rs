@@ -16,7 +16,6 @@
  */
 
 use std::collections::HashMap;
-use std::path::Path;
 
 use async_trait::async_trait;
 use sea_orm::DatabaseConnection;
@@ -37,21 +36,8 @@ pub trait VaultTrait: Send + Sync + 'static {
     where
         T: Serialize + Send + Sync;
     async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()>;
-    fn secrets() -> Outcome<HashMap<String, Value>>;
     async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()>;
-    fn local_secrets() -> Outcome<HashMap<String, Value>>;
     async fn check_mount(&self) -> Outcome<()>;
-    fn insert_json<T>(
-        mapa: &mut HashMap<String, Value>,
-        to_read: T,
-        env: &str,
-        required: bool
-    ) -> Outcome<()>
-    where
-        T: AsRef<Path>;
-    fn insert_pem<T>(mapa: &mut HashMap<String, Value>, to_read: T, env: &str) -> Outcome<()>
-    where
-        T: AsRef<Path>;
 
     async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
     where

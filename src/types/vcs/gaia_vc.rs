@@ -33,7 +33,7 @@ pub struct GaiaVP {
     #[serde(rename = "validFrom", skip_serializing_if = "Option::is_none")]
     pub valid_from: Option<DateTime<Utc>>,
     #[serde(rename = "validUntil", skip_serializing_if = "Option::is_none")]
-    pub valid_until: Option<DateTime<Utc>>,
+    pub valid_until: Option<DateTime<Utc>>
 }
 
 pub struct GaiaVPBuilder<R, S, T, U> {
@@ -43,7 +43,7 @@ pub struct GaiaVPBuilder<R, S, T, U> {
     pub issuer: Option<String>,
     pub valid_from: Option<DateTime<Utc>>,
     pub valid_until: Option<DateTime<Utc>>,
-    _marker: PhantomData<(R, S, T, U)>,
+    _marker: PhantomData<(R, S, T, U)>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -51,14 +51,14 @@ pub struct VcInsideGaiaVP {
     #[serde(rename = "@context")]
     pub context: Vec<String>,
     pub id: String,
-    pub r#type: String,
+    pub r#type: String
 }
 
 pub struct VcInsideGaiaVPBuilder<T, S> {
     pub context: Vec<String>,
     pub id: Option<String>,
     pub r#type: String,
-    _marker: PhantomData<(T, S)>,
+    _marker: PhantomData<(T, S)>
 }
 
 impl Default for VcInsideGaiaVPBuilder<Missing, Missing> {
@@ -67,7 +67,7 @@ impl Default for VcInsideGaiaVPBuilder<Missing, Missing> {
             context: vec![],
             id: None,
             r#type: "EnvelopedVerifiableCredential".to_string(),
-            _marker: PhantomData,
+            _marker: PhantomData
         }
     }
 }
@@ -78,7 +78,7 @@ impl<T, R> VcInsideGaiaVPBuilder<T, R> {
             context: context.iter().map(|&s| s.to_string()).collect(),
             id: self.id,
             r#type: self.r#type,
-            _marker: PhantomData,
+            _marker: PhantomData
         }
     }
     pub fn id<W: Into<String>>(self, id: W) -> VcInsideGaiaVPBuilder<T, Present> {
@@ -87,7 +87,7 @@ impl<T, R> VcInsideGaiaVPBuilder<T, R> {
             context: self.context,
             id: Some(id),
             r#type: self.r#type,
-            _marker: PhantomData,
+            _marker: PhantomData
         }
     }
 }

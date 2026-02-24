@@ -16,4 +16,4 @@
  */
 
 mod service;
-pub use service::VaultService;
+pub use service::RealVaultService;

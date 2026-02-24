@@ -33,7 +33,7 @@ use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
 use crate::errors::{Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
-use crate::services::vault::vault_rs::VaultService;
+use crate::services::vault::vault_rs::RealVaultService;
 use crate::types::errors::BadFormat;
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
@@ -49,14 +49,14 @@ use crate::utils::{
 pub struct BasicIssuerService {
     config: BasicIssuerConfig,
     client: Arc<dyn ClientTrait>,
-    vault: Arc<VaultService>
+    vault: Arc<RealVaultService>
 }
 
 impl BasicIssuerService {
     pub fn new(
         config: BasicIssuerConfig,
         client: Arc<dyn ClientTrait>,
-        vault: Arc<VaultService>
+        vault: Arc<RealVaultService>
     ) -> BasicIssuerService {
         BasicIssuerService { config, client, vault }
     }

@@ -36,11 +36,11 @@ use crate::services::vault::VaultTrait;
 use crate::types::secrets::{DbSecrets, StringHelper};
 use crate::utils::{expect_from_env, parse_from_value, parse_to_value, read, read_json};
 
-pub struct VaultService {
+pub struct RealVaultService {
     client: Arc<VaultClient>
 }
 
-impl VaultService {
+impl RealVaultService {
     pub fn new() -> Self {
         let settings = VaultClientSettingsBuilder::default()
             .build()
@@ -63,7 +63,7 @@ impl VaultService {
 }
 
 #[async_trait]
-impl VaultTrait for VaultService {
+impl VaultTrait for RealVaultService {
     async fn read<T>(&self, mount: Option<&str>, path: &str) -> Outcome<T>
     where
         T: DeserializeOwned
@@ -112,29 +112,7 @@ impl VaultTrait for VaultService {
 
         Ok(())
     }
-    fn secrets() -> Outcome<HashMap<String, Value>> {
-        let mut map: HashMap<String, Value> = HashMap::new();
 
-        let secret_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("secrets");
-        let config_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("config");
-
-        Self::insert_json(&mut map, secret_path.join("db.json"), "VAULT_APP_DB", true)?;
-        Self::insert_json(&mut map, secret_path.join("wallet.json"), "VAULT_APP_WALLET", false)?;
-
-        Self::insert_pem(&mut map, secret_path.join("private_key.pem"), "VAULT_APP_PRIV_KEY")?;
-        Self::insert_pem(&mut map, secret_path.join("public_key.pem"), "VAULT_APP_PUB_PKEY")?;
-        Self::insert_pem(&mut map, secret_path.join("cert.pem"), "VAULT_APP_CERT")?;
-
-        Self::insert_pem(&mut map, config_path.join("vault-cert.pem"), "VAULT_APP_CLIENT_CERT")?;
-        Self::insert_pem(&mut map, config_path.join("vault-key.pem"), "VAULT_APP_CLIENT_KEY")?;
-        Self::insert_pem(
-            &mut map,
-            config_path.join("vault-ca.pem"),
-            "VAULT_APP_ROOT_CLIENT_KEY"
-        )?;
-
-        Ok(map)
-    }
     async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()> {
         self.check_mount().await?;
 
@@ -154,20 +132,7 @@ impl VaultTrait for VaultService {
 
         Ok(())
     }
-    fn local_secrets() -> Outcome<HashMap<String, Value>> {
-        let mut map: HashMap<String, Value> = HashMap::new();
 
-        let secret_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("secrets");
-
-        Self::insert_json(&mut map, secret_path.join("db.json"), "VAULT_APP_DB", true)?;
-        Self::insert_json(&mut map, secret_path.join("wallet.json"), "VAULT_APP_WALLET", false)?;
-
-        Self::insert_pem(&mut map, secret_path.join("private_key.pem"), "VAULT_APP_PRIV_KEY")?;
-        Self::insert_pem(&mut map, secret_path.join("public_key.pem"), "VAULT_APP_PUB_PKEY")?;
-        Self::insert_pem(&mut map, secret_path.join("cert.pem"), "VAULT_APP_CERT")?;
-
-        Ok(map)
-    }
     async fn check_mount(&self) -> Outcome<()> {
         let mount_name = expect_from_env("VAULT_MOUNT");
 
@@ -193,6 +158,21 @@ impl VaultTrait for VaultService {
         Ok(())
     }
 
+    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
+    where
+        T: DatabaseConfigTrait + Send + Sync
+    {
+        let db_path = expect_from_env("VAULT_APP_DB");
+
+        let db_secrets: DbSecrets =
+            self.read(None, &db_path).await.expect("Not able to retrieve env files");
+        Database::connect(config.get_full_db_url(&db_secrets))
+            .await
+            .expect("Database can't connect")
+    }
+}
+
+impl RealVaultService {
     fn insert_json<T>(
         mapa: &mut HashMap<String, Value>,
         to_read: T,
@@ -210,7 +190,6 @@ impl VaultTrait for VaultService {
         mapa.insert(vault_path, db_json);
         Ok(())
     }
-
     fn insert_pem<T>(mapa: &mut HashMap<String, Value>, to_read: T, env: &str) -> Outcome<()>
     where
         T: AsRef<Path>
@@ -221,16 +200,41 @@ impl VaultTrait for VaultService {
         mapa.insert(vault_path, data);
         Ok(())
     }
-    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
-    where
-        T: DatabaseConfigTrait + Send + Sync
-    {
-        let db_path = expect_from_env("VAULT_APP_DB");
+    fn local_secrets() -> Outcome<HashMap<String, Value>> {
+        let mut map: HashMap<String, Value> = HashMap::new();
 
-        let db_secrets: DbSecrets =
-            self.read(None, &db_path).await.expect("Not able to retrieve env files");
-        Database::connect(config.get_full_db_url(&db_secrets))
-            .await
-            .expect("Database can't connect")
+        let secret_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("secrets");
+
+        Self::insert_json(&mut map, secret_path.join("db.json"), "VAULT_APP_DB", true)?;
+        Self::insert_json(&mut map, secret_path.join("wallet.json"), "VAULT_APP_WALLET", false)?;
+
+        Self::insert_pem(&mut map, secret_path.join("private_key.pem"), "VAULT_APP_PRIV_KEY")?;
+        Self::insert_pem(&mut map, secret_path.join("public_key.pem"), "VAULT_APP_PUB_PKEY")?;
+        Self::insert_pem(&mut map, secret_path.join("cert.pem"), "VAULT_APP_CERT")?;
+
+        Ok(map)
+    }
+    fn secrets() -> Outcome<HashMap<String, Value>> {
+        let mut map: HashMap<String, Value> = HashMap::new();
+
+        let secret_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("secrets");
+        let config_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("config");
+
+        Self::insert_json(&mut map, secret_path.join("db.json"), "VAULT_APP_DB", true)?;
+        Self::insert_json(&mut map, secret_path.join("wallet.json"), "VAULT_APP_WALLET", false)?;
+
+        Self::insert_pem(&mut map, secret_path.join("private_key.pem"), "VAULT_APP_PRIV_KEY")?;
+        Self::insert_pem(&mut map, secret_path.join("public_key.pem"), "VAULT_APP_PUB_PKEY")?;
+        Self::insert_pem(&mut map, secret_path.join("cert.pem"), "VAULT_APP_CERT")?;
+
+        Self::insert_pem(&mut map, config_path.join("vault-cert.pem"), "VAULT_APP_CLIENT_CERT")?;
+        Self::insert_pem(&mut map, config_path.join("vault-key.pem"), "VAULT_APP_CLIENT_KEY")?;
+        Self::insert_pem(
+            &mut map,
+            config_path.join("vault-ca.pem"),
+            "VAULT_APP_ROOT_CLIENT_KEY"
+        )?;
+
+        Ok(map)
     }
 }

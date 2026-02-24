@@ -15,10 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod fake_vault;
-pub mod global;
-pub mod vault_rs;
-pub mod vault_trait;
+mod service;
 
-pub use global::VaultService;
-pub use vault_trait::VaultTrait;
+pub use service::FakeVaultService;

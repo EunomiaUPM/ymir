@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::env;
 use std::path::Path;
+use std::{env, fs};
 
 use axum::http::HeaderValue;
 use base64::Engine;
@@ -29,7 +29,7 @@ use serde_json::Value;
 
 use crate::errors::{Errors, Outcome};
 use crate::types::errors::BadFormat;
-use crate::utils::{read, validate_data};
+use crate::utils::validate_data;
 
 pub trait ParseHeaderExt {
     fn parse_header(&self) -> Outcome<HeaderValue>;
@@ -40,10 +40,25 @@ impl ParseHeaderExt for str {
         self.parse().map_err(|e| {
             Errors::parse(
                 format!("Invalid header value: '{}'", self),
-                Some(anyhow::Error::from(e)),
+                Some(anyhow::Error::from(e))
             )
         })
     }
+}
+
+pub fn read<P>(path: P) -> Outcome<String>
+where
+    P: AsRef<Path>
+{
+    let path_ref = path.as_ref();
+
+    fs::read_to_string(path_ref).map_err(|e| {
+        Errors::read(
+            path_ref.display().to_string(),
+            format!("Unable to read file: {}", path_ref.display()),
+            Some(anyhow::Error::from(e))
+        )
+    })
 }
 
 pub async fn parse_json_resp<T: DeserializeOwned>(response: Response) -> Outcome<T> {
@@ -94,7 +109,7 @@ pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
     URL_SAFE_NO_PAD.decode(data).map_err(|e| {
         Errors::parse(
             format!("Unable to decode url safe no pad: {}", data),
-            Some(anyhow::Error::from(e)),
+            Some(anyhow::Error::from(e))
         )
     })
 }
@@ -102,7 +117,7 @@ pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
 pub fn read_json<T, P>(path: P) -> Outcome<T>
 where
     T: DeserializeOwned,
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let data = read(path)?;
     serde_json::from_str(&data)
@@ -130,7 +145,7 @@ pub fn get_opt_claim(claims: &Value, path: &[&str]) -> Outcome<Option<String>> {
     for key in path.iter() {
         node = match node.get(key) {
             Some(data) => data,
-            None => return Ok(None),
+            None => return Ok(None)
         };
     }
     let data = validate_data(node, field)?;
