@@ -15,25 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use serde::{Deserialize, Serialize};
+
 use crate::config::traits::DidConfigTrait;
 use crate::types::dids::did_type::DidType;
-use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DidConfig {
     pub did: String,
     pub r#type: DidType,
-    pub did_web_options: Option<DidWebOptions>,
+    pub did_web_options: Option<DidWebOptions>
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DidWebOptions {
     pub domain: String,
-    pub path: Option<String>,
+    pub path: Option<String>
 }
 
 impl DidConfigTrait for DidConfig {
-    fn did_config(&self) -> &DidConfig {
-        self
-    }
+    fn did_config(&self) -> &DidConfig { self }
 }

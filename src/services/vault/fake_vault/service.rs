@@ -31,7 +31,7 @@ use crate::types::secrets::DbSecrets;
 use crate::utils::{expect_from_env, read_json};
 
 pub struct FakeVaultService {
-    path: PathBuf,
+    path: PathBuf
 }
 
 impl FakeVaultService {
@@ -46,7 +46,7 @@ impl FakeVaultService {
 impl VaultTrait for FakeVaultService {
     async fn read<T>(&self, _mount: Option<&str>, path: &str) -> Outcome<T>
     where
-        T: DeserializeOwned + Send,
+        T: DeserializeOwned + Send
     {
         let path = self.path.join(path);
         read_json(path)
@@ -59,7 +59,7 @@ impl VaultTrait for FakeVaultService {
 
     async fn write<T>(&self, _mount: Option<&str>, _path: &str, _secret: &T) -> Outcome<()>
     where
-        T: Serialize + Send + Sync,
+        T: Serialize + Send + Sync
     {
         Ok(())
     }
@@ -72,13 +72,11 @@ impl VaultTrait for FakeVaultService {
         Ok(())
     }
 
-    async fn check_mount(&self) -> Outcome<()> {
-        Ok(())
-    }
+    async fn check_mount(&self) -> Outcome<()> { Ok(()) }
 
     async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
     where
-        T: DatabaseConfigTrait + Send + Sync,
+        T: DatabaseConfigTrait + Send + Sync
     {
         let db_path = expect_from_env("VAULT_APP_DB");
         let path = self.path.join(db_path);

@@ -15,8 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::ConnectionConfigTrait;
 use serde::{Deserialize, Serialize};
+
+use crate::config::traits::ConnectionConfigTrait;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ConnectionConfig {
@@ -26,7 +27,5 @@ pub struct ConnectionConfig {
 }
 
 impl ConnectionConfigTrait for ConnectionConfig {
-    fn connection(&self) -> &ConnectionConfig {
-        self
-    }
+    fn connection(&self) -> &ConnectionConfig { self }
 }

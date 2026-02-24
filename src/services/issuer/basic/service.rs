@@ -36,26 +36,26 @@ use crate::services::vault::{VaultService, VaultTrait};
 use crate::types::errors::BadFormat;
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
-    TokenRequest, VCCredOffer, WellKnownJwks,
+    TokenRequest, VCCredOffer, WellKnownJwks
 };
 use crate::types::secrets::StringHelper;
 use crate::types::vcs::VcType;
 use crate::utils::{
     expect_from_env, get_from_opt, get_rsa_key, has_expired, sign_token, trim_4_base,
-    validate_token,
+    validate_token
 };
 
 pub struct BasicIssuerService {
     config: BasicIssuerConfig,
     client: Arc<dyn ClientTrait>,
-    vault: Arc<VaultService>,
+    vault: Arc<VaultService>
 }
 
 impl BasicIssuerService {
     pub fn new(
         config: BasicIssuerConfig,
         client: Arc<dyn ClientTrait>,
-        vault: Arc<VaultService>,
+        vault: Arc<VaultService>
     ) -> BasicIssuerService {
         BasicIssuerService { config, client, vault }
     }
@@ -72,14 +72,14 @@ impl IssuerTrait for BasicIssuerService {
         );
         let aud = match self.config.is_local() {
             true => host.replace("127.0.0.1", "host.docker.internal"),
-            false => host,
+            false => host
         };
 
         issuing::NewModel {
             id: model.id.clone(),
             name: model.participant_slug.clone(),
             vc_type: model.vc_type.clone(),
-            aud,
+            aud
         }
     }
 
@@ -118,7 +118,7 @@ impl IssuerTrait for BasicIssuerService {
     fn get_cred_offer_data(
         &self,
         model: &issuing::Model,
-        path: Option<&str>,
+        path: Option<&str>
     ) -> Outcome<VCCredOffer> {
         info!("Retrieving credential offer data");
 
@@ -126,12 +126,12 @@ impl IssuerTrait for BasicIssuerService {
         let issuer = format!("{}{}", self.config.get_host(HostType::Http), path);
         let issuer = match self.config.is_local() {
             true => issuer.replace("127.0.0.1", "host.docker.internal"),
-            false => issuer,
+            false => issuer
         };
 
         match model.step {
             true => VCCredOffer::new(issuer, &model.tx_code, &model.vc_type),
-            false => VCCredOffer::new(issuer, &model.pre_auth_code, &model.vc_type),
+            false => VCCredOffer::new(issuer, &model.pre_auth_code, &model.vc_type)
         }
     }
 
@@ -141,7 +141,7 @@ impl IssuerTrait for BasicIssuerService {
         let host = format!("{}{}", self.config.get_host(HostType::Http), path);
         let host = match self.config.is_local() {
             true => host.replace("127.0.0.1", "host.docker.internal"),
-            false => host,
+            false => host
         };
         IssuerMetadata::new(&host, vcs)
     }
@@ -149,7 +149,7 @@ impl IssuerTrait for BasicIssuerService {
     fn get_oauth_server_data(
         &self,
         path: Option<&str>,
-        vcs: Option<&[VcType]>,
+        vcs: Option<&[VcType]>
     ) -> AuthServerMetadata {
         info!("Retrieving oauth server data");
 
@@ -157,7 +157,7 @@ impl IssuerTrait for BasicIssuerService {
         let host = format!("{}{}", self.config.get_host(HostType::Http), path);
         let host = match self.config.is_local() {
             true => host.replace("127.0.0.1", "host.docker.internal"),
-            false => host,
+            false => host
         };
 
         AuthServerMetadata::new(&host, vcs)
@@ -206,7 +206,7 @@ impl IssuerTrait for BasicIssuerService {
         model: &mut issuing::Model,
         cred_req: &CredentialRequest,
         token: &str,
-        did: Option<&str>,
+        did: Option<&str>
     ) -> Outcome<()> {
         info!("Validating credential vc_request");
 
@@ -218,7 +218,7 @@ impl IssuerTrait for BasicIssuerService {
             return Err(Errors::format(
                 BadFormat::Received,
                 format!("Cannot issue a credentia with format: {}", cred_req.format),
-                None,
+                None
             ));
         }
 
@@ -226,7 +226,7 @@ impl IssuerTrait for BasicIssuerService {
             return Err(Errors::format(
                 BadFormat::Received,
                 format!("Cannot validate proof with type: {}", cred_req.proof.proof_type),
-                None,
+                None
             ));
         }
 
@@ -234,7 +234,7 @@ impl IssuerTrait for BasicIssuerService {
         let (token, kid) = validate_token::<DidPossession>(
             &cred_req.proof.jwt,
             Some(&model.aud),
-            self.client.clone(),
+            self.client.clone()
         )
         .await?;
         self.validate_did_possession(&token, &kid)?;
@@ -256,7 +256,7 @@ impl IssuerTrait for BasicIssuerService {
         &self,
         req_model: &vc_request::Model,
         int_model: &recv_interaction::Model,
-        iss_model: &issuing::Model,
+        iss_model: &issuing::Model
     ) -> Outcome<minions::NewModel> {
         let did = get_from_opt(iss_model.holder_did.as_ref(), "did")?;
         let base_url = trim_4_base(&int_model.uri);
@@ -267,7 +267,7 @@ impl IssuerTrait for BasicIssuerService {
             participant_type: "Minion".to_string(),
             base_url: Some(base_url),
             is_vc_issued: true,
-            is_me: false,
+            is_me: false
         })
     }
 
