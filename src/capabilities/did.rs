@@ -22,12 +22,12 @@ use jsonwebtoken::jwk::Jwk;
 use serde_json::Value;
 use tracing::info;
 
-use crate::errors::{Errors, Outcome};
+use crate::errors::{Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
 use crate::types::dids::did_type::DidType;
 use crate::types::errors::BadFormat;
 use crate::utils::{
-    decode_url_safe_no_pad, json_headers, parse_from_slice, parse_from_value, parse_json_resp
+    decode_url_safe_no_pad, json_headers, parse_from_slice, parse_from_value, parse_json_resp,
 };
 
 pub struct DidResolver;
@@ -36,7 +36,7 @@ impl DidResolver {
     pub fn split_did_id(did: &str) -> (&str, Option<&str>) {
         match did.split_once('#') {
             Some((did_kid, id)) => (did_kid, Some(id)),
-            None => (did, None)
+            None => (did, None),
         }
     }
 
@@ -72,8 +72,9 @@ impl DidResolver {
                             url,
                             "GET",
                             Some(status),
+                            PetitionFailure::HttpStatus(res.status()),
                             "Didi Document not retrieved",
-                            None
+                            None,
                         ));
                     }
                 };
@@ -93,7 +94,7 @@ impl DidResolver {
                         Errors::format(
                             BadFormat::Received,
                             "No verification methods in DID Document",
-                            None
+                            None,
                         )
                     })?
                 };
@@ -107,7 +108,7 @@ impl DidResolver {
                 jwk
             }
 
-            DidType::Other => return Err(Errors::not_impl(format!("Did method: {}", did), None))
+            DidType::Other => return Err(Errors::not_impl(format!("Did method: {}", did), None)),
         };
         DecodingKey::from_jwk(&key).map_err(|e| {
             Errors::parse("Error parsing decoding key to jwk", Some(anyhow::Error::from(e)))
@@ -132,7 +133,7 @@ impl DidResolver {
                 let path = path.join("/");
                 format!("https://{}/{}/did.json", domain, path)
             }
-            _ => String::new()
+            _ => String::new(),
         }
     }
 }

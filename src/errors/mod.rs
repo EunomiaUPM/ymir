@@ -18,6 +18,7 @@
 mod errors;
 mod outcome;
 mod sub_errors;
+mod extra;
 
 pub use errors::*;
 pub use outcome::*;
