@@ -156,7 +156,7 @@ pub fn get_opt_claim(claims: &Value, path: &[&str]) -> Outcome<Option<String>> {
     Ok(Some(data))
 }
 
-pub fn match_json_payload<T>(
+pub fn extract_payload<T>(
     payload: Result<Json<T>, JsonRejection>
 ) -> Result<T, axum::response::Response> {
     payload.map(|Json(v)| v).map_err(|e| {
@@ -165,7 +165,7 @@ pub fn match_json_payload<T>(
     })
 }
 
-pub fn match_form_payload<T>(
+pub fn extract_form_payload<T>(
     payload: Result<Form<T>, FormRejection>
 ) -> Result<T, axum::response::Response> {
     payload.map(|Form(v)| v).map_err(|e| {
