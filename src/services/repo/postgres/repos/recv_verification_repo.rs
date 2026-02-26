@@ -49,6 +49,6 @@ impl RecvVerificationTrait for RecvVerificationRepo {
         active_model
             .insert(self.db())
             .await
-            .map_err(|e| Errors::db("Error creating from basic", Some(anyhow::Error::from(e))))
+            .map_err(|e| Errors::db("Error creating from basic", Some(Box::new(e))))
     }
 }

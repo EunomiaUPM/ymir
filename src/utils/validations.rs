@@ -26,9 +26,8 @@ use serde_json::Value;
 use tracing::info;
 
 use crate::capabilities::DidResolver;
-use crate::errors::{Errors, Outcome};
+use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::client::ClientTrait;
-use crate::types::errors::BadFormat;
 use crate::utils::get_from_opt;
 
 pub fn validate_data(node: &Value, field: &str) -> Outcome<String> {
@@ -37,7 +36,7 @@ pub fn validate_data(node: &Value, field: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Field '{}' is not a string", field),
-                None
+                None,
             )
         })
         .map(|s| s.to_string())
@@ -56,17 +55,17 @@ pub fn has_expired(exp: u64) -> Outcome<()> {
 pub async fn validate_token<T>(
     token: &str,
     audience: Option<&str>,
-    client: Arc<dyn ClientTrait>
+    client: Arc<dyn ClientTrait>,
 ) -> Outcome<(TokenData<T>, String)>
 where
-    T: Serialize + DeserializeOwned
+    T: Serialize + DeserializeOwned,
 {
     info!("Validating token");
     let header = jsonwebtoken::decode_header(&token).map_err(|e| {
         Errors::format(
             BadFormat::Received,
             format!("Unable to decode token header: {}", token),
-            Some(anyhow::Error::from(e))
+            Some(Box::new(e)),
         )
     })?;
     let kid_str = get_from_opt(header.kid.as_ref(), "kid")?;
@@ -91,9 +90,8 @@ where
         }
     };
 
-    let token_data = jsonwebtoken::decode::<T>(&token, &key, &val).map_err(|e| {
-        Errors::security("VPT signature is incorrect", Some(anyhow::Error::from(e)))
-    })?;
+    let token_data = jsonwebtoken::decode::<T>(&token, &key, &val)
+        .map_err(|e| Errors::security("VPT signature is incorrect", Some(Box::new(e))))?;
 
     info!("Token signature is correct");
     Ok((token_data, kid.to_string()))

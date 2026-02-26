@@ -64,14 +64,14 @@ impl MatesTrait for MatesRepo {
             )
             .exec_with_returning(self.db())
             .await
-            .map_err(|e| Errors::db("Error forcing creating mate", Some(anyhow::Error::from(e))))
+            .map_err(|e| Errors::db("Error forcing creating mate", Some(Box::new(e))))
     }
 
     async fn get_batch(&self, ids: &Vec<Urn>) -> Outcome<Vec<Model>> {
         let ids = ids.iter().map(|i| i.to_string()).collect::<Vec<String>>();
         let mates =
             Entity::find().filter(Column::ParticipantId.is_in(ids)).all(self.db()).await.map_err(
-                |e| Errors::db("Error forcing getting batch", Some(anyhow::Error::from(e)))
+                |e| Errors::db("Error forcing getting batch", Some(Box::new(e)))
             )?;
         Ok(mates)
     }

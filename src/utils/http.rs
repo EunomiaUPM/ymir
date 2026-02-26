@@ -15,18 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use async_trait::async_trait;
 use axum::http::header::{ACCEPT, CONTENT_TYPE};
 use axum::http::{HeaderMap, HeaderValue};
-use reqwest::Url;
+use reqwest::{Response, Url};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
-use crate::errors::{Errors, Outcome};
-use crate::types::errors::BadFormat;
+use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 
 pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
 where
-    T: Clone + Serialize + DeserializeOwned
+    T: Clone + Serialize + DeserializeOwned,
 {
     value
         .ok_or_else(|| {
@@ -53,9 +53,9 @@ pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Missing query parameter '{}'", param_name),
-                None
+                None,
             )
-        }
+        },
     )
 }
 
@@ -64,4 +64,45 @@ pub fn json_headers() -> HeaderMap {
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
     headers
+}
+
+#[async_trait]
+pub trait ResponseExt {
+    async fn parse_json<T: DeserializeOwned>(self) -> Outcome<T>;
+    async fn parse_text(self) -> Outcome<String>;
+}
+
+#[async_trait]
+impl ResponseExt for Response {
+    async fn parse_json<T: DeserializeOwned>(self) -> Outcome<T> {
+        let url = self.url().to_string();
+        let status = self.status();
+        let text = self.parse_text().await?;
+
+        serde_json::from_str(&text).map_err(|e| {
+            Errors::petition(
+                &url,
+                "unknown",
+                Some(status),
+                PetitionFailure::BodyDeserialization,
+                format!("Raw: {}", text),
+                Some(Box::new(e)),
+            )
+        })
+    }
+
+    async fn parse_text(self) -> Outcome<String> {
+        let url = self.url().to_string();
+        let status = self.status();
+        self.text().await.map_err(|e| {
+            Errors::petition(
+                &url,
+                "unknown",
+                Some(status),
+                PetitionFailure::BodyRead,
+                "Failed to read body",
+                Some(Box::new(e)),
+            )
+        })
+    }
 }

@@ -22,12 +22,11 @@ use jsonwebtoken::jwk::Jwk;
 use serde_json::Value;
 use tracing::info;
 
-use crate::errors::{Errors, Outcome, PetitionFailure};
+use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
 use crate::types::dids::did_type::DidType;
-use crate::types::errors::BadFormat;
 use crate::utils::{
-    decode_url_safe_no_pad, json_headers, parse_from_slice, parse_from_value, parse_json_resp,
+    ResponseExt, decode_url_safe_no_pad, json_headers, parse_from_slice, parse_from_value,
 };
 
 pub struct DidResolver;
@@ -61,22 +60,18 @@ impl DidResolver {
 
                 let res = client.get(&url, Some(headers)).await?;
 
-                let doc: Value = match res.status().as_u16() {
-                    200 => {
-                        info!("DID Document retrieved successfully");
-
-                        parse_json_resp(res).await?
-                    }
-                    status => {
-                        return Err(Errors::petition(
-                            url,
-                            "GET",
-                            Some(status),
-                            PetitionFailure::HttpStatus(res.status()),
-                            "Didi Document not retrieved",
-                            None,
-                        ));
-                    }
+                let doc: Value = if res.status().is_success() {
+                    info!("DID Document retrieved successfully");
+                    res.parse_json().await?
+                } else {
+                    return Err(Errors::petition(
+                        url,
+                        "GET",
+                        Some(res.status()),
+                        PetitionFailure::HttpStatus(res.status()),
+                        "Didi Document not retrieved",
+                        None,
+                    ));
                 };
 
                 let methods = doc["verificationMethod"].as_array().ok_or_else(|| {
@@ -110,9 +105,8 @@ impl DidResolver {
 
             DidType::Other => return Err(Errors::not_impl(format!("Did method: {}", did), None)),
         };
-        DecodingKey::from_jwk(&key).map_err(|e| {
-            Errors::parse("Error parsing decoding key to jwk", Some(anyhow::Error::from(e)))
-        })
+        DecodingKey::from_jwk(&key)
+            .map_err(|e| Errors::parse("Error parsing decoding key to jwk", Some(Box::new(e))))
     }
 
     pub fn parse_did(did: &str) -> DidType {

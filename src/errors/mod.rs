@@ -15,11 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod errors;
-mod outcome;
+mod constructors;
+mod core;
+mod helpers;
+mod response;
 mod sub_errors;
-mod extra;
 
-pub use errors::*;
-pub use outcome::*;
+pub use core::Errors;
 pub use sub_errors::*;
+
+pub type AnyError = Box<dyn std::error::Error + Send + Sync>;
+pub type Outcome<T> = Result<T, Errors>;

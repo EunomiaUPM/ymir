@@ -15,10 +15,39 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::errors::Outcome;
+use crate::utils::parse_to_value;
+use serde::Serialize;
 use serde_json::Value;
+use std::collections::HashMap;
 
+#[derive(Clone)]
 pub enum Body {
     Json(Value),
     Raw(String),
-    None
+    Form(HashMap<String, String>),
+    None,
+}
+
+impl From<&str> for Body {
+    fn from(value: &str) -> Self {
+        Body::Raw(value.to_string())
+    }
+}
+
+impl From<HashMap<String, String>> for Body {
+    fn from(value: HashMap<String, String>) -> Self {
+        Body::Form(value)
+    }
+}
+
+impl Body {
+    pub fn json<T: Serialize>(value: &T) -> Outcome<Body> {
+        let body = parse_to_value(value)?;
+        Ok(Body::Json(body))
+    }
+
+    pub fn str(value: &str) -> Outcome<Body> {
+        Ok(Body::Raw(value.to_string()))
+    }
 }

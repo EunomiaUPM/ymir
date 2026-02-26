@@ -46,7 +46,7 @@ where
             .all(self.db())
             .await;
         let models = models
-            .map_err(|e| Errors::db("Unable to get all models", Some(anyhow::Error::from(e))))?;
+            .map_err(|e| Errors::db("Unable to get all models", Some(Box::new(e))))?;
 
         Ok(models)
     }
@@ -58,7 +58,7 @@ where
             .map_err(|e| {
                 Errors::db(
                     format!("Unable to get model with id: {}", id),
-                    Some(anyhow::Error::from(e))
+                    Some(Box::new(e))
                 )
             })?
             .ok_or_else(|| {
@@ -72,7 +72,7 @@ where
         let model: T::Model = active_model
             .insert(self.db())
             .await
-            .map_err(|e| Errors::db("Unable to create model", Some(anyhow::Error::from(e))))?;
+            .map_err(|e| Errors::db("Unable to create model", Some(Box::new(e))))?;
         Ok(model)
     }
 
@@ -81,7 +81,7 @@ where
         let new_model: T::Model = active_model
             .update(self.db())
             .await
-            .map_err(|e| Errors::db("Unable to update model", Some(anyhow::Error::from(e))))?;
+            .map_err(|e| Errors::db("Unable to update model", Some(Box::new(e))))?;
         Ok(new_model)
     }
 
@@ -92,7 +92,7 @@ where
         active_model
             .delete(self.db())
             .await
-            .map_err(|e| Errors::db("Unable to delete model", Some(anyhow::Error::from(e))))?;
+            .map_err(|e| Errors::db("Unable to delete model", Some(Box::new(e))))?;
         Ok(())
     }
 
@@ -103,7 +103,7 @@ where
             .map_err(|e| {
                 Errors::db(
                     format!("Unable to find model with column '{}' with value {}", resource, id),
-                    Some(anyhow::Error::from(e))
+                    Some(Box::new(e))
                 )
             })?
             .ok_or_else(|| {

@@ -55,6 +55,6 @@ impl BusinessMatesRepoTrait for BusinessMatesRepo {
             )
             .exec_with_returning(self.db())
             .await
-            .map_err(|e| Errors::db("Error forcing creating mate", Some(anyhow::Error::from(e))))
+            .map_err(|e| Errors::db("Error forcing creating mate", Some(Box::new(e))))
     }
 }
