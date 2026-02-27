@@ -162,26 +162,26 @@ pub enum Errors {
 impl Display for Errors {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Errors::PetitionError { info, .. } => write!(f, "{}", info.message),
-            Errors::WalletError { info, .. } => write!(f, "{}", info.message),
-            Errors::ProviderError { info, .. } => write!(f, "{}", info.message),
-            Errors::ConsumerError { info, .. } => write!(f, "{}", info.message),
-            Errors::AuthorityError { info, .. } => write!(f, "{}", info.message),
-            Errors::MissingActionError { info, .. } => write!(f, "{}", info.message),
-            Errors::MissingResourceError { info, .. } => write!(f, "{}", info.message),
-            Errors::FormatError { info, .. } => write!(f, "{}", info.message),
-            Errors::UnauthorizedError { info, .. } => write!(f, "{}", info.message),
-            Errors::ForbiddenError { info, .. } => write!(f, "{}", info.message),
-            Errors::SecurityError { info, .. } => write!(f, "{}", info.message),
-            Errors::DatabaseError { info, .. } => write!(f, "{}", info.message),
-            Errors::FeatureNotImplError { info, .. } => write!(f, "{}", info.message),
-            Errors::EnvVarError { info, .. } => write!(f, "{}", info.message),
-            Errors::ModuleNotActiveError { info, .. } => write!(f, "{}", info.message),
-            Errors::ReadError { info, .. } => write!(f, "{}", info.message),
-            Errors::WriteError { info, .. } => write!(f, "{}", info.message),
-            Errors::ParseError { info, .. } => write!(f, "{}", info.message),
-            Errors::VaultError { info, .. } => write!(f, "{}", info.message),
-            Errors::CrazyError { info, .. } => write!(f, "{}", info.message)
+            Errors::PetitionError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::WalletError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::ProviderError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::ConsumerError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::AuthorityError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::MissingActionError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::MissingResourceError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::FormatError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::UnauthorizedError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::ForbiddenError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::SecurityError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::DatabaseError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::FeatureNotImplError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::EnvVarError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::ModuleNotActiveError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::ReadError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::WriteError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::ParseError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::VaultError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::CrazyError { info, .. } => write!(f, "{\n}", info.message)
         }
     }
 }

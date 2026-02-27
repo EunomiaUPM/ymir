@@ -95,24 +95,24 @@ impl Errors {
             }
             None => "".to_string()
         };
-        format!("Url: {} \n Method: {} \n {}", ctx.url, ctx.method, http_code)
+        format!("Url: {} \n Method: {} \n {} \n", ctx.url, ctx.method, http_code)
     }
     pub fn failure(&self) -> String {
         match self {
-            Errors::PetitionError { failure, .. } => format!("Failure: {}", failure),
+            Errors::PetitionError { failure, .. } => format!("Failure: {} \n", failure),
             _ => "".to_string()
         }
     }
     pub fn action(&self) -> String {
         match self {
-            Errors::MissingActionError { action, .. } => format!("Action: {}", action),
+            Errors::MissingActionError { action, .. } => format!("Action: {} \n", action),
             _ => "".to_string()
         }
     }
     pub fn id(&self) -> String {
         match self {
             Errors::MissingResourceError { resource_id, .. } => {
-                format!("Resource ID: {}", resource_id)
+                format!("Resource ID: {} \n", resource_id)
             }
             _ => "".to_string()
         }
@@ -123,7 +123,7 @@ impl Errors {
             Errors::WriteError { path, .. } => path,
             _ => return "".to_string()
         };
-        format!("Path: {}", path)
+        format!("Path: {} \n", path)
     }
     pub fn rest(&self) -> String {
         let (reason, source, backtrace) = match self {
@@ -166,12 +166,12 @@ impl Errors {
             None => "".to_string()
         };
 
-        format!("{} \n {} \n {}", reason, source, backtrace)
+        format!("{} \n {} \n {} \n", reason, source, backtrace)
     }
 
     pub fn log(&self) {
         error!(
-            "Error occurred: {}\nContext:\n{}\n {}\n {}\n {}\n {}\n {}",
+            "Error occurred: {}{}{}{}{}{}{}",
             self,
             self.context(),
             self.failure(),
