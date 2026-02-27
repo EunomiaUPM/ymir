@@ -15,9 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::{AnyError, ErrorInfo, HttpContext, MissingAction, PetitionFailure};
 use std::backtrace::Backtrace;
 use std::fmt::{Display, Formatter};
+
+use super::{AnyError, ErrorInfo, HttpContext, MissingAction, PetitionFailure};
 
 #[derive(Debug)]
 pub enum Errors {
@@ -28,35 +29,35 @@ pub enum Errors {
         failure: PetitionFailure,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     WalletError {
         info: ErrorInfo,
         ctx: HttpContext,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     ProviderError {
         info: ErrorInfo,
         ctx: HttpContext,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     ConsumerError {
         info: ErrorInfo,
         ctx: HttpContext,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     AuthorityError {
         info: ErrorInfo,
         ctx: HttpContext,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     // ACTION
     MissingActionError {
@@ -64,7 +65,7 @@ pub enum Errors {
         action: MissingAction,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     // ID
     MissingResourceError {
@@ -72,7 +73,7 @@ pub enum Errors {
         resource_id: String,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     // PATHS
     ReadError {
@@ -80,82 +81,82 @@ pub enum Errors {
         path: String,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     WriteError {
         info: ErrorInfo,
         path: String,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     // BASICS
     FormatError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     UnauthorizedError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     ForbiddenError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     SecurityError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     DatabaseError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     FeatureNotImplError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     EnvVarError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     ModuleNotActiveError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     ParseError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     VaultError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Backtrace
     },
     CrazyError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
-    },
+        backtrace: Backtrace
+    }
 }
 
 impl Display for Errors {
@@ -180,7 +181,7 @@ impl Display for Errors {
             Errors::WriteError { info, .. } => write!(f, "{}", info.message),
             Errors::ParseError { info, .. } => write!(f, "{}", info.message),
             Errors::VaultError { info, .. } => write!(f, "{}", info.message),
-            Errors::CrazyError { info, .. } => write!(f, "{}", info.message),
+            Errors::CrazyError { info, .. } => write!(f, "{}", info.message)
         }
     }
 }

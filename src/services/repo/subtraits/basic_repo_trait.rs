@@ -45,8 +45,8 @@ where
             .offset(offset.unwrap_or(0))
             .all(self.db())
             .await;
-        let models = models
-            .map_err(|e| Errors::db("Unable to get all models", Some(Box::new(e))))?;
+        let models =
+            models.map_err(|e| Errors::db("Unable to get all models", Some(Box::new(e))))?;
 
         Ok(models)
     }
@@ -56,10 +56,7 @@ where
 
         let model = model
             .map_err(|e| {
-                Errors::db(
-                    format!("Unable to get model with id: {}", id),
-                    Some(Box::new(e))
-                )
+                Errors::db(format!("Unable to get model with id: {}", id), Some(Box::new(e)))
             })?
             .ok_or_else(|| {
                 Errors::missing_resource(id, format!("Unable to get model with id: {}", id), None)

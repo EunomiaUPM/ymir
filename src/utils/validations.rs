@@ -36,7 +36,7 @@ pub fn validate_data(node: &Value, field: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Field '{}' is not a string", field),
-                None,
+                None
             )
         })
         .map(|s| s.to_string())
@@ -55,17 +55,17 @@ pub fn has_expired(exp: u64) -> Outcome<()> {
 pub async fn validate_token<T>(
     token: &str,
     audience: Option<&str>,
-    client: Arc<dyn ClientTrait>,
+    client: Arc<dyn ClientTrait>
 ) -> Outcome<(TokenData<T>, String)>
 where
-    T: Serialize + DeserializeOwned,
+    T: Serialize + DeserializeOwned
 {
     info!("Validating token");
     let header = jsonwebtoken::decode_header(&token).map_err(|e| {
         Errors::format(
             BadFormat::Received,
             format!("Unable to decode token header: {}", token),
-            Some(Box::new(e)),
+            Some(Box::new(e))
         )
     })?;
     let kid_str = get_from_opt(header.kid.as_ref(), "kid")?;

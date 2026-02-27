@@ -16,14 +16,15 @@
  */
 
 use axum::http::StatusCode;
-use super::{ErrorInfo, Errors, HttpContext};
 use tracing::error;
+
+use super::{ErrorInfo, Errors, HttpContext};
 
 impl Errors {
     pub fn build_ctx<R: Into<String>, S: Into<String>>(
         http_code: Option<StatusCode>,
         url: R,
-        method: S,
+        method: S
     ) -> HttpContext {
         HttpContext { http_code, url: url.into(), method: method.into() }
     }
@@ -50,7 +51,7 @@ impl Errors {
             Errors::ModuleNotActiveError { info, .. } => info.details = details,
             Errors::ParseError { info, .. } => info.details = details,
             Errors::VaultError { info, .. } => info.details = details,
-            Errors::CrazyError { info, .. } => info.details = details,
+            Errors::CrazyError { info, .. } => info.details = details
         }
         self
     }
@@ -75,7 +76,7 @@ impl Errors {
             Errors::ModuleNotActiveError { info, .. } => info,
             Errors::ParseError { info, .. } => info,
             Errors::VaultError { info, .. } => info,
-            Errors::CrazyError { info, .. } => info,
+            Errors::CrazyError { info, .. } => info
         }
     }
     pub fn context(&self) -> String {
@@ -85,27 +86,27 @@ impl Errors {
             Errors::ProviderError { ctx, .. } => ctx,
             Errors::ConsumerError { ctx, .. } => ctx,
             Errors::AuthorityError { ctx, .. } => ctx,
-            _ => return "".to_string(),
+            _ => return "".to_string()
         };
 
         let http_code = match ctx.http_code {
             Some(code) => {
                 format!("Http Code: {}", code)
             }
-            None => "".to_string(),
+            None => "".to_string()
         };
         format!("Url: {} \n Method: {} \n {}", ctx.url, ctx.method, http_code)
     }
     pub fn failure(&self) -> String {
         match self {
             Errors::PetitionError { failure, .. } => format!("Failure: {}", failure),
-            _ => "".to_string(),
+            _ => "".to_string()
         }
     }
     pub fn action(&self) -> String {
         match self {
             Errors::MissingActionError { action, .. } => format!("Action: {}", action),
-            _ => "".to_string(),
+            _ => "".to_string()
         }
     }
     pub fn id(&self) -> String {
@@ -113,14 +114,14 @@ impl Errors {
             Errors::MissingResourceError { resource_id, .. } => {
                 format!("Resource ID: {}", resource_id)
             }
-            _ => "".to_string(),
+            _ => "".to_string()
         }
     }
     pub fn path(&self) -> String {
         let path = match self {
             Errors::ReadError { path, .. } => path,
             Errors::WriteError { path, .. } => path,
-            _ => return "".to_string(),
+            _ => return "".to_string()
         };
         format!("Path: {}", path)
     }
@@ -155,14 +156,14 @@ impl Errors {
             }
             Errors::ParseError { reason, source, backtrace, .. } => (reason, source, backtrace),
             Errors::VaultError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::CrazyError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::CrazyError { reason, source, backtrace, .. } => (reason, source, backtrace)
         };
 
         let reason = format!("Reason: {}", reason);
 
         let source = match source {
             Some(data) => format!("Source: {}", data),
-            None => "".to_string(),
+            None => "".to_string()
         };
 
         format!("{} \n {} \n {}", reason, source, backtrace)

@@ -15,9 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::collections::HashMap;
+
 use async_trait::async_trait;
+use axum::extract::rejection::{FormRejection, JsonRejection};
 use axum::http::header::{ACCEPT, CONTENT_TYPE};
 use axum::http::{HeaderMap, HeaderValue};
+use axum::{Form, Json};
 use reqwest::{Response, Url};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -26,7 +30,7 @@ use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 
 pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
 where
-    T: Clone + Serialize + DeserializeOwned,
+    T: Clone + Serialize + DeserializeOwned
 {
     value
         .ok_or_else(|| {
@@ -53,9 +57,9 @@ pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Missing query parameter '{}'", param_name),
-                None,
+                None
             )
-        },
+        }
     )
 }
 
@@ -86,7 +90,7 @@ impl ResponseExt for Response {
                 Some(status),
                 PetitionFailure::BodyDeserialization,
                 format!("Raw: {}", text),
-                Some(Box::new(e)),
+                Some(Box::new(e))
             )
         })
     }
@@ -101,8 +105,56 @@ impl ResponseExt for Response {
                 Some(status),
                 PetitionFailure::BodyRead,
                 "Failed to read body",
-                Some(Box::new(e)),
+                Some(Box::new(e))
             )
         })
     }
+}
+
+pub fn extract_payload<T>(payload: Result<Json<T>, JsonRejection>) -> Outcome<T> {
+    payload.map(|Json(v)| v).map_err(|e| {
+        Errors::format(
+            BadFormat::Received,
+            "Error extracting Json payload",
+            Some(Box::new(e))
+        )
+    })
+}
+
+pub fn extract_form_payload<T>(payload: Result<Form<T>, FormRejection>) -> Outcome<T> {
+    payload.map(|Form(v)| v).map_err(|e| {
+        Errors::format(
+            BadFormat::Received,
+            "Error extracting form payload",
+            Some(Box::new(e))
+        )
+    })
+}
+
+pub fn extract_query_param(params: &HashMap<String, String>, key: &str) -> Outcome<String> {
+    params.get(key).cloned().ok_or_else(|| {
+        Errors::format(
+            BadFormat::Received,
+            format!("Unable to retrieve '{}' from query params", key),
+            None
+        )
+    })
+}
+
+pub fn extract_gnap_token(headers: HeaderMap) -> Outcome<String> {
+    headers
+        .get("Authorization")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|s| s.strip_prefix("GNAP "))
+        .map(|token| token.to_string())
+        .ok_or_else(|| Errors::unauthorized("GNAP token missing", None))
+}
+
+pub fn extract_bearer_token(headers: HeaderMap) -> Outcome<String> {
+    headers
+        .get("Authorization")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .map(|token| token.to_string())
+        .ok_or_else(|| Errors::unauthorized("Bearer token missing", None))
 }

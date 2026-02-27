@@ -18,10 +18,7 @@
 use std::path::Path;
 use std::{env, fs};
 
-use axum::extract::rejection::{FormRejection, JsonRejection};
 use axum::http::HeaderValue;
-use axum::response::IntoResponse;
-use axum::{Form, Json};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use jsonwebtoken::EncodingKey;
@@ -29,7 +26,6 @@ use reqwest::Response;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use tracing::error;
 
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::utils::validate_data;
@@ -48,7 +44,7 @@ impl ParseHeaderExt for str {
 
 pub fn read<P>(path: P) -> Outcome<String>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let path_ref = path.as_ref();
 
@@ -56,7 +52,7 @@ where
         Errors::read(
             path_ref.display().to_string(),
             format!("Unable to read file: {}", path_ref.display()),
-            Some(Box::new(e)),
+            Some(Box::new(e))
         )
     })
 }
@@ -100,7 +96,7 @@ pub fn parse_to_string<T: Serialize>(value: &T) -> Outcome<String> {
         .map_err(|e| Errors::parse("Unable to parse to string", Some(Box::new(e))))
 }
 
-pub fn get_rsa_key(key: String) -> Outcome<EncodingKey> {
+pub fn get_rsa_key(key: &str) -> Outcome<EncodingKey> {
     EncodingKey::from_rsa_pem(key.as_bytes())
         .map_err(|e| Errors::parse("Unable to decode RSA key", Some(Box::new(e))))
 }
@@ -109,7 +105,7 @@ pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
     URL_SAFE_NO_PAD.decode(data).map_err(|e| {
         Errors::parse(
             format!("Unable to decode url safe no pad: {}", data),
-            Some(Box::new(e)),
+            Some(Box::new(e))
         )
     })
 }
@@ -117,7 +113,7 @@ pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
 pub fn read_json<T, P>(path: P) -> Outcome<T>
 where
     T: DeserializeOwned,
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let data = read(path)?;
     serde_json::from_str(&data)
@@ -145,27 +141,9 @@ pub fn get_opt_claim(claims: &Value, path: &[&str]) -> Outcome<Option<String>> {
     for key in path.iter() {
         node = match node.get(key) {
             Some(data) => data,
-            None => return Ok(None),
+            None => return Ok(None)
         };
     }
     let data = validate_data(node, field)?;
     Ok(Some(data))
-}
-
-pub fn extract_payload<T>(
-    payload: Result<Json<T>, JsonRejection>,
-) -> Result<T, axum::response::Response> {
-    payload.map(|Json(v)| v).map_err(|e| {
-        error!("{:#?}", e);
-        e.into_response()
-    })
-}
-
-pub fn extract_form_payload<T>(
-    payload: Result<Form<T>, FormRejection>,
-) -> Result<T, axum::response::Response> {
-    payload.map(|Form(v)| v).map_err(|e| {
-        error!("{:#?}", e);
-        e.into_response()
-    })
 }

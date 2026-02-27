@@ -15,30 +15,28 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::Outcome;
-use crate::utils::parse_to_value;
+use std::collections::HashMap;
+
 use serde::Serialize;
 use serde_json::Value;
-use std::collections::HashMap;
+
+use crate::errors::Outcome;
+use crate::utils::parse_to_value;
 
 #[derive(Clone)]
 pub enum Body {
     Json(Value),
     Raw(String),
     Form(HashMap<String, String>),
-    None,
+    None
 }
 
 impl From<&str> for Body {
-    fn from(value: &str) -> Self {
-        Body::Raw(value.to_string())
-    }
+    fn from(value: &str) -> Self { Body::Raw(value.to_string()) }
 }
 
 impl From<HashMap<String, String>> for Body {
-    fn from(value: HashMap<String, String>) -> Self {
-        Body::Form(value)
-    }
+    fn from(value: HashMap<String, String>) -> Self { Body::Form(value) }
 }
 
 impl Body {
@@ -47,7 +45,5 @@ impl Body {
         Ok(Body::Json(body))
     }
 
-    pub fn str(value: &str) -> Outcome<Body> {
-        Ok(Body::Raw(value.to_string()))
-    }
+    pub fn str(value: &str) -> Outcome<Body> { Ok(Body::Raw(value.to_string())) }
 }

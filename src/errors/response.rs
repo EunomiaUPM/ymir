@@ -15,9 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::Errors;
 use axum::Json;
 use axum::response::{IntoResponse, Response};
+
+use super::Errors;
 
 impl IntoResponse for Errors {
     fn into_response(self) -> Response {
@@ -30,6 +31,4 @@ impl IntoResponse for Errors {
     }
 }
 
-impl Errors {
-
-}
+impl Errors {}

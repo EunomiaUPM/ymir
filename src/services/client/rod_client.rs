@@ -30,13 +30,11 @@ use crate::types::http::Body;
 pub struct ClientService {
     client: Client,
     limiter: Arc<Semaphore>,
-    max_retries: u32,
+    max_retries: u32
 }
 
 impl Default for ClientService {
-    fn default() -> Self {
-        Self::new(10, 10, 3)
-    }
+    fn default() -> Self { Self::new(10, 10, 3) }
 }
 
 impl ClientService {
@@ -59,7 +57,7 @@ impl ClientService {
         method: reqwest::Method,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body,
+        body: Body
     ) -> Outcome<Response> {
         let _permit = self.limiter.acquire().await.map_err(|_| {
             Errors::petition(
@@ -68,7 +66,7 @@ impl ClientService {
                 None,
                 PetitionFailure::Concurrency,
                 "Semaphore closed",
-                None,
+                None
             )
         })?;
 
@@ -80,7 +78,7 @@ impl ClientService {
         method: reqwest::Method,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body,
+        body: Body
     ) -> Outcome<Response> {
         let mut attempt = 1;
 
@@ -107,9 +105,9 @@ impl ClientService {
             Errors::PetitionError { failure, .. } => match failure {
                 PetitionFailure::Network => true,
                 PetitionFailure::HttpStatus(s) => s.is_server_error(),
-                _ => false,
+                _ => false
             },
-            _ => false,
+            _ => false
         }
     }
 
@@ -118,7 +116,7 @@ impl ClientService {
         method: reqwest::Method,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body,
+        body: Body
     ) -> Outcome<Response> {
         let mut req = self.client.request(method.clone(), url);
 
@@ -135,7 +133,7 @@ impl ClientService {
                 e.status().map(|s| s),
                 PetitionFailure::Network,
                 "Error sending petition",
-                Some(Box::new(e)),
+                Some(Box::new(e))
             )
         })?;
 
@@ -148,7 +146,7 @@ impl ClientService {
                 Some(status.clone()),
                 PetitionFailure::HttpStatus(status),
                 message,
-                None,
+                None
             ));
         }
 
@@ -163,9 +161,9 @@ impl ClientService {
                 Ok(encoded) => req
                     .header(reqwest::header::CONTENT_TYPE, "application/x-www-form-urlencoded")
                     .body(encoded),
-                Err(e) => return Err(Errors::parse("Unable to parse form", Some(Box::new(e)))),
+                Err(e) => return Err(Errors::parse("Unable to parse form", Some(Box::new(e))))
             },
-            Body::None => req,
+            Body::None => req
         };
         Ok(req)
     }

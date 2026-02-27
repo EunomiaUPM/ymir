@@ -22,7 +22,10 @@ mod response;
 mod sub_errors;
 
 pub use core::Errors;
+
+use axum::response::Response;
 pub use sub_errors::*;
 
 pub type AnyError = Box<dyn std::error::Error + Send + Sync>;
 pub type Outcome<T> = Result<T, Errors>;
+pub type AppResult<T = Response> = Result<T, Errors>;

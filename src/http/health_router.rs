@@ -18,7 +18,6 @@
 use axum::Router;
 use axum::response::IntoResponse;
 use axum::routing::get;
-use reqwest::StatusCode;
 
 pub struct HealthRouter;
 impl HealthRouter {
@@ -30,5 +29,5 @@ impl HealthRouter {
             .route("/liveness", get(Self::get_ok))
             .route("/readiness", get(Self::get_ok))
     }
-    async fn get_ok() -> impl IntoResponse { (StatusCode::OK, "OK").into_response() }
+    async fn get_ok() -> impl IntoResponse { "OK".into_response() }
 }
