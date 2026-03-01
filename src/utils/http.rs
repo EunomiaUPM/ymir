@@ -30,7 +30,7 @@ use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 
 pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
 where
-    T: Clone + Serialize + DeserializeOwned
+    T: Clone + Serialize + DeserializeOwned,
 {
     value
         .ok_or_else(|| {
@@ -57,9 +57,9 @@ pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Missing query parameter '{}'", param_name),
-                None
+                None,
             )
-        }
+        },
     )
 }
 
@@ -81,16 +81,14 @@ impl ResponseExt for Response {
     async fn parse_json<T: DeserializeOwned>(self) -> Outcome<T> {
         let url = self.url().to_string();
         let status = self.status();
-        let text = self.parse_text().await?;
-
-        serde_json::from_str(&text).map_err(|e| {
+        self.json().await.map_err(|e| {
             Errors::petition(
                 &url,
                 "unknown",
                 Some(status),
                 PetitionFailure::BodyDeserialization,
-                format!("Raw: {}", text),
-                Some(Box::new(e))
+                "Error deserializing body",
+                Some(Box::new(e)),
             )
         })
     }
@@ -105,7 +103,7 @@ impl ResponseExt for Response {
                 Some(status),
                 PetitionFailure::BodyRead,
                 "Failed to read body",
-                Some(Box::new(e))
+                Some(Box::new(e)),
             )
         })
     }
@@ -116,7 +114,7 @@ pub fn extract_payload<T>(payload: Result<Json<T>, JsonRejection>) -> Outcome<T>
         Errors::format(
             BadFormat::Received,
             "Error extracting Json payload",
-            Some(Box::new(e))
+            Some(Box::new(e)),
         )
     })
 }
@@ -126,7 +124,7 @@ pub fn extract_form_payload<T>(payload: Result<Form<T>, FormRejection>) -> Outco
         Errors::format(
             BadFormat::Received,
             "Error extracting form payload",
-            Some(Box::new(e))
+            Some(Box::new(e)),
         )
     })
 }
@@ -136,7 +134,7 @@ pub fn extract_query_param(params: &HashMap<String, String>, key: &str) -> Outco
         Errors::format(
             BadFormat::Received,
             format!("Unable to retrieve '{}' from query params", key),
-            None
+            None,
         )
     })
 }
