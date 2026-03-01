@@ -19,5 +19,5 @@ use crate::config::traits::{DidConfigTrait, HostsConfigTrait};
 
 pub trait BasicIssuerConfigTrait: HostsConfigTrait + DidConfigTrait {
     fn is_local(&self) -> bool;
-    fn get_api_path(&self) -> String;
+    fn get_api_path(&self) -> &str;
 }

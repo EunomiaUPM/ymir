@@ -28,21 +28,31 @@ pub struct BasicVerifierConfig {
     is_local: bool,
     api_path: String,
     requested_vcs: Vec<VcType>,
-    vc_config: VcConfig
+    vc_config: VcConfig,
 }
 
 impl HostsConfigTrait for BasicVerifierConfig {
-    fn hosts(&self) -> &CommonHostsConfig { &self.hosts }
+    fn hosts(&self) -> &CommonHostsConfig {
+        &self.hosts
+    }
 }
 
 impl VcConfigTrait for BasicVerifierConfig {
-    fn vc_config(&self) -> &VcConfig { &self.vc_config }
+    fn vc_config(&self) -> &VcConfig {
+        &self.vc_config
+    }
 }
 
 impl BasicVerifierConfigTrait for BasicVerifierConfig {
-    fn is_local(&self) -> bool { self.is_local }
-    fn get_requested_vcs(&self) -> Vec<VcType> { self.requested_vcs.clone() }
-    fn get_api_path(&self) -> String { self.api_path.clone() }
+    fn is_local(&self) -> bool {
+        self.is_local
+    }
+    fn get_requested_vcs(&self) -> Vec<VcType> {
+        self.requested_vcs.clone()
+    }
+    fn get_api_path(&self) -> &str {
+        &self.api_path
+    }
 }
 
 pub struct BasicVerifierConfigBuilder<H, L, A, V, C> {
@@ -51,7 +61,7 @@ pub struct BasicVerifierConfigBuilder<H, L, A, V, C> {
     api_path: Option<String>,
     requested_vcs: Option<Vec<VcType>>,
     vc_config: Option<VcConfig>,
-    _marker: PhantomData<(H, L, A, V, C)>
+    _marker: PhantomData<(H, L, A, V, C)>,
 }
 
 impl BasicVerifierConfigBuilder<Missing, Missing, Missing, Missing, Missing> {
@@ -62,7 +72,7 @@ impl BasicVerifierConfigBuilder<Missing, Missing, Missing, Missing, Missing> {
             api_path: None,
             requested_vcs: None,
             vc_config: None,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 }
@@ -70,7 +80,7 @@ impl BasicVerifierConfigBuilder<Missing, Missing, Missing, Missing, Missing> {
 impl<H, L, A, V, C> BasicVerifierConfigBuilder<H, L, A, V, C> {
     pub fn hosts(
         self,
-        hosts: CommonHostsConfig
+        hosts: CommonHostsConfig,
     ) -> BasicVerifierConfigBuilder<Present, L, A, V, C> {
         BasicVerifierConfigBuilder {
             hosts: Some(hosts),
@@ -78,7 +88,7 @@ impl<H, L, A, V, C> BasicVerifierConfigBuilder<H, L, A, V, C> {
             api_path: self.api_path,
             requested_vcs: self.requested_vcs,
             vc_config: self.vc_config,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 
@@ -89,13 +99,13 @@ impl<H, L, A, V, C> BasicVerifierConfigBuilder<H, L, A, V, C> {
             api_path: self.api_path,
             requested_vcs: self.requested_vcs,
             vc_config: self.vc_config,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 
     pub fn api_path(
         self,
-        api_path: impl Into<String>
+        api_path: impl Into<String>,
     ) -> BasicVerifierConfigBuilder<H, L, Present, V, C> {
         BasicVerifierConfigBuilder {
             hosts: self.hosts,
@@ -103,13 +113,13 @@ impl<H, L, A, V, C> BasicVerifierConfigBuilder<H, L, A, V, C> {
             api_path: Some(api_path.into()),
             requested_vcs: self.requested_vcs,
             vc_config: self.vc_config,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 
     pub fn requested_vcs(
         self,
-        vcs: Vec<VcType>
+        vcs: Vec<VcType>,
     ) -> BasicVerifierConfigBuilder<H, L, A, Present, C> {
         BasicVerifierConfigBuilder {
             hosts: self.hosts,
@@ -117,7 +127,7 @@ impl<H, L, A, V, C> BasicVerifierConfigBuilder<H, L, A, V, C> {
             api_path: self.api_path,
             requested_vcs: Some(vcs),
             vc_config: self.vc_config,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 
@@ -128,7 +138,7 @@ impl<H, L, A, V, C> BasicVerifierConfigBuilder<H, L, A, V, C> {
             api_path: self.api_path,
             requested_vcs: self.requested_vcs,
             vc_config: Some(vc_config),
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 }
@@ -140,7 +150,7 @@ impl BasicVerifierConfigBuilder<Present, Present, Present, Present, Present> {
             is_local: self.is_local.unwrap(),
             api_path: self.api_path.unwrap(),
             requested_vcs: self.requested_vcs.unwrap(),
-            vc_config: self.vc_config.unwrap()
+            vc_config: self.vc_config.unwrap(),
         }
     }
 }

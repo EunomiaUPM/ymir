@@ -95,7 +95,7 @@ impl Errors {
             }
             None => "".to_string()
         };
-        format!("Url: {} \n Method: {} \n {} \n", ctx.url, ctx.method, http_code)
+        format!("Url: {} \nMethod: {} \n{} \n", ctx.url, ctx.method, http_code)
     }
     pub fn failure(&self) -> String {
         match self {
