@@ -136,13 +136,22 @@ impl IssuerTrait for BasicIssuerService {
 
     fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata {
         info!("Retrieving issuer data");
-        let path = path.unwrap_or(self.config.get_api_path());
-        let host = format!("{}{}", self.config.get_host(HostType::Http), path);
-        let host = match self.config.is_local() {
-            true => host.replace("127.0.0.1", "host.docker.internal"),
-            false => host,
+
+        let path =
+            path.map(|s| s.to_string()).unwrap_or(format!("{}/issuer", self.config.get_api_path()));
+
+        let base_host = self.config.get_host(HostType::Http);
+        let base_host = match self.config.is_local() {
+            true => base_host.replace("127.0.0.1", "host.docker.internal"),
+            false => base_host,
         };
-        IssuerMetadata::new(&host, vcs)
+
+        let host_path = format!("{}{}", self.config.get_host(HostType::Http), path);
+        let host_path = match self.config.is_local() {
+            true => host_path.replace("127.0.0.1", "host.docker.internal"),
+            false => host_path,
+        };
+        IssuerMetadata::new(&base_host, &host_path, vcs)
     }
 
     fn get_oauth_server_data(
@@ -151,15 +160,22 @@ impl IssuerTrait for BasicIssuerService {
         vcs: Option<&[VcType]>,
     ) -> AuthServerMetadata {
         info!("Retrieving oauth server data");
+        let path =
+            path.map(|s| s.to_string()).unwrap_or(format!("{}/issuer", self.config.get_api_path()));
 
-        let path = path.unwrap_or(self.config.get_api_path());
-        let host = format!("{}{}", self.config.get_host(HostType::Http), path);
-        let host = match self.config.is_local() {
-            true => host.replace("127.0.0.1", "host.docker.internal"),
-            false => host,
+        let base_host = self.config.get_host(HostType::Http);
+        let base_host = match self.config.is_local() {
+            true => base_host.replace("127.0.0.1", "host.docker.internal"),
+            false => base_host,
         };
 
-        AuthServerMetadata::new(&host, vcs)
+        let host_path = format!("{}{}", self.config.get_host(HostType::Http), path);
+        let host_path = match self.config.is_local() {
+            true => host_path.replace("127.0.0.1", "host.docker.internal"),
+            false => host_path,
+        };
+
+        AuthServerMetadata::new(&base_host, &host_path, vcs)
     }
 
     fn get_token(&self, model: &issuing::Model) -> IssuingToken {

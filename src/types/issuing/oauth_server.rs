@@ -41,23 +41,23 @@ pub struct AuthServerMetadata {
     pub id_token_signing_alg_values_supported: Vec<String>,
     pub code_challenge_methods_supported: Vec<String>,
     pub credential_configurations_supported: HashMap<String, CredentialConfiguration>,
-    pub authorization_servers: Vec<String>
+    pub authorization_servers: Vec<String>,
 }
 
 impl AuthServerMetadata {
-    pub fn new(host: &str, vcs: Option<&[VcType]>) -> Self {
+    pub fn new(base_host: &str, host_path: &str, vcs: Option<&[VcType]>) -> Self {
         let credential_configurations_supported = CredentialConfiguration::basic(vcs);
 
         AuthServerMetadata {
-            issuer: host.to_string(),
-            credential_issuer: host.to_string(),
-            credential_endpoint: format!("{}/credential", host),
-            authorization_endpoint: format!("{}/authorize", host),
-            pushed_authorization_request_endpoint: format!("{}/par", host),
-            token_endpoint: format!("{}/token", host),
-            jwks_uri: format!("{}/jwks", host),
-            batch_credential_endpoint: format!("{}/batch_credential", host),
-            deferred_credential_endpoint: format!("{}/credential_deferred", host),
+            issuer: base_host.to_string(),
+            credential_issuer: base_host.to_string(),
+            credential_endpoint: format!("{}/credential", host_path),
+            authorization_endpoint: format!("{}/authorize", host_path),
+            pushed_authorization_request_endpoint: format!("{}/par", host_path),
+            token_endpoint: format!("{}/token", host_path),
+            jwks_uri: format!("{}/jwks", host_path),
+            batch_credential_endpoint: format!("{}/batch_credential", host_path),
+            deferred_credential_endpoint: format!("{}/credential_deferred", host_path),
             scopes_supported: vec!["openid".to_string()],
             response_types_supported: vec![
                 "code".to_string(),
@@ -73,7 +73,7 @@ impl AuthServerMetadata {
             id_token_signing_alg_values_supported: vec!["RSA".to_string()],
             code_challenge_methods_supported: vec!["S256".to_string()],
             credential_configurations_supported,
-            authorization_servers: vec![host.to_string()]
+            authorization_servers: vec![base_host.to_string()],
         }
     }
 }
