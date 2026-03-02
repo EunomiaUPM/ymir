@@ -241,7 +241,6 @@ impl IssuerTrait for BasicIssuerService {
             ));
         }
 
-        debug!("{:#?}", cred_req);
         let did = did.unwrap_or(self.config.get_did());
         let (token, kid) = validate_token::<DidPossession>(
             &cred_req.proof.jwt,

@@ -23,7 +23,7 @@ use jsonwebtoken::{TokenData, Validation};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use tracing::info;
+use tracing::{debug, info};
 
 use crate::capabilities::DidResolver;
 use crate::errors::{BadFormat, Errors, Outcome};
@@ -61,6 +61,7 @@ where
     T: Serialize + DeserializeOwned
 {
     info!("Validating token");
+    debug!("{}", token);
     let header = jsonwebtoken::decode_header(&token).map_err(|e| {
         Errors::format(
             BadFormat::Received,
