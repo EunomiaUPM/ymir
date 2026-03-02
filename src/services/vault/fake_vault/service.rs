@@ -107,9 +107,9 @@ impl FakeVaultService {
 
         let value = StringHelper::new(pem);
 
-        write_json(json_file, &value)
+        write_json(self.path.join(json_file), &value)
     }
     pub fn pem_to_json_extension(s: &str) -> String {
-        s.replace(".pem", ".json")
+        s.replace(".json", ".pem")
     }
 }
