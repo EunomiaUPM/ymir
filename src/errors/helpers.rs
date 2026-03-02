@@ -166,7 +166,7 @@ impl Errors {
             None => "".to_string()
         };
 
-        format!("{} \n {} \n {} \n", reason, source, backtrace)
+        format!("{} \n{} \n{} \n", reason, source, backtrace)
     }
 
     pub fn log(&self) {

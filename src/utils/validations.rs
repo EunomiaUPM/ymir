@@ -16,6 +16,7 @@
  */
 
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use chrono::Utc;
@@ -36,7 +37,7 @@ pub fn validate_data(node: &Value, field: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Field '{}' is not a string", field),
-                None
+                None,
             )
         })
         .map(|s| s.to_string())
@@ -55,10 +56,10 @@ pub fn has_expired(exp: u64) -> Outcome<()> {
 pub async fn validate_token<T>(
     token: &str,
     audience: Option<&str>,
-    client: Arc<dyn ClientTrait>
+    client: Arc<dyn ClientTrait>,
 ) -> Outcome<(TokenData<T>, String)>
 where
-    T: Serialize + DeserializeOwned
+    T: Serialize + DeserializeOwned + Debug,
 {
     info!("Validating token");
     debug!("{}", token);
@@ -66,7 +67,7 @@ where
         Errors::format(
             BadFormat::Received,
             format!("Unable to decode token header: {}", token),
-            Some(Box::new(e))
+            Some(Box::new(e)),
         )
     })?;
     let kid_str = get_from_opt(header.kid.as_ref(), "kid")?;
@@ -90,6 +91,12 @@ where
             val.validate_aud = false;
         }
     };
+
+    let fake_token_data: TokenData<T> = jsonwebtoken::dangerous::insecure_decode(&token)
+        .map_err(|e| Errors::crazy("Debug error", Some(Box::new(e))))?;
+    println!("{:#?}", fake_token_data);
+    println!("{:#?}", key);
+    println!("{:#?}", val);
 
     let token_data = jsonwebtoken::decode::<T>(&token, &key, &val)
         .map_err(|e| Errors::security("Token signature is incorrect", Some(Box::new(e))))?;
