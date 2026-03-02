@@ -90,14 +90,14 @@ pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
     URL_SAFE_NO_PAD.decode(data).map_err(|e| {
         Errors::parse(
             format!("Unable to decode url safe no pad: {}", data),
-            Some(Box::new(e)),
+            Some(Box::new(e))
         )
     })
 }
 
 pub fn read<P>(path: P) -> Outcome<String>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let path_ref = path.as_ref();
 
@@ -105,7 +105,7 @@ where
         Errors::read(
             path_ref.display().to_string(),
             format!("Unable to read file: {}", path_ref.display()),
-            Some(Box::new(e)),
+            Some(Box::new(e))
         )
     })
 }
@@ -113,7 +113,7 @@ where
 pub fn read_json<T, P>(path: P) -> Outcome<T>
 where
     T: DeserializeOwned,
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let data = read(path)?;
     serde_json::from_str(&data)
@@ -122,7 +122,7 @@ where
 
 pub fn write<P>(path: P, content: String) -> Outcome<()>
 where
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let path_ref = path.as_ref();
 
@@ -130,7 +130,7 @@ where
         Errors::write(
             path_ref.display().to_string(),
             format!("Unable to write file: {}", path_ref.display()),
-            Some(Box::new(e)),
+            Some(Box::new(e))
         )
     })
 }
@@ -138,7 +138,7 @@ where
 pub fn write_json<T, P>(path: P, value: &T) -> Outcome<()>
 where
     T: Serialize,
-    P: AsRef<Path>,
+    P: AsRef<Path>
 {
     let data = serde_json::to_string_pretty(value)
         .map_err(|e| Errors::parse("Unable to serialize value to JSON", Some(Box::new(e))))?;
@@ -166,7 +166,7 @@ pub fn get_opt_claim(claims: &Value, path: &[&str]) -> Outcome<Option<String>> {
     for key in path.iter() {
         node = match node.get(key) {
             Some(data) => data,
-            None => return Ok(None),
+            None => return Ok(None)
         };
     }
     let data = validate_data(node, field)?;
