@@ -142,7 +142,7 @@ impl VerifierTrait for BasicVerifierService {
 
         model.vpt = Some(vp_token.to_string());
         let (token, kid) =
-            validate_token(vp_token, Some(&model.state), self.client.clone()).await?;
+            validate_token(vp_token, Some(&model.audience), self.client.clone()).await?;
         self.validate_nonce(model, &token)?;
         self.validate_vp_subject(model, &token, &kid)?;
         self.validate_vp_id(model, &token)?;
