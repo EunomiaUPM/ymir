@@ -92,12 +92,6 @@ where
         }
     };
 
-    let fake_token_data: TokenData<T> = jsonwebtoken::dangerous::insecure_decode(&token)
-        .map_err(|e| Errors::crazy("Debug error", Some(Box::new(e))))?;
-    println!("{:#?}", fake_token_data);
-    println!("{:#?}", key);
-    println!("{:#?}", val);
-
     let token_data = jsonwebtoken::decode::<T>(&token, &key, &val)
         .map_err(|e| Errors::security("Token signature is incorrect", Some(Box::new(e))))?;
 
