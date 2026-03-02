@@ -22,7 +22,7 @@ use jsonwebtoken::{Algorithm, Header, TokenData};
 use rsa::RsaPublicKey;
 use rsa::pkcs1::DecodeRsaPublicKey;
 use serde_json::Value;
-use tracing::info;
+use tracing::{debug, info};
 use urlencoding;
 
 use super::super::IssuerTrait;
@@ -64,11 +64,7 @@ impl BasicIssuerService {
 impl IssuerTrait for BasicIssuerService {
     fn start_vci(&self, model: &vc_request::Model) -> issuing::NewModel {
         info!("Starting OIDC4VCI");
-        let host = format!(
-            "{}{}/issuer",
-            self.config.get_host(HostType::Http),
-            self.config.get_api_path()
-        );
+        let host = self.config.get_host(HostType::Http);
         let aud = match self.config.is_local() {
             true => host.replace("127.0.0.1", "host.docker.internal"),
             false => host,
@@ -245,6 +241,7 @@ impl IssuerTrait for BasicIssuerService {
             ));
         }
 
+        debug!("{:#?}", cred_req);
         let did = did.unwrap_or(self.config.get_did());
         let (token, kid) = validate_token::<DidPossession>(
             &cred_req.proof.jwt,

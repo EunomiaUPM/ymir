@@ -91,7 +91,7 @@ where
     };
 
     let token_data = jsonwebtoken::decode::<T>(&token, &key, &val)
-        .map_err(|e| Errors::security("VPT signature is incorrect", Some(Box::new(e))))?;
+        .map_err(|e| Errors::security("Token signature is incorrect", Some(Box::new(e))))?;
 
     info!("Token signature is correct");
     Ok((token_data, kid.to_string()))
