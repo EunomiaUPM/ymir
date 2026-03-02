@@ -21,8 +21,7 @@ use crate::config::traits::IssueConfigTrait;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct IssueConfig {
-    pub dataspace_id: Option<String>,
-    pub federated_catalog_uri: Option<String>
+    pub dataspace_id: Option<String>
 }
 
 impl IssueConfigTrait for IssueConfig {

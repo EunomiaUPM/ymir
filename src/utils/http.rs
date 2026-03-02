@@ -15,14 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::collections::HashMap;
+
+use async_trait::async_trait;
+use axum::extract::rejection::{FormRejection, JsonRejection};
 use axum::http::header::{ACCEPT, CONTENT_TYPE};
 use axum::http::{HeaderMap, HeaderValue};
-use reqwest::Url;
+use axum::{Form, Json};
+use reqwest::{Response, Url};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
-use crate::errors::{Errors, Outcome};
-use crate::types::errors::BadFormat;
+use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 
 pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
 where
@@ -64,4 +68,91 @@ pub fn json_headers() -> HeaderMap {
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
     headers
+}
+
+#[async_trait]
+pub trait ResponseExt {
+    async fn parse_json<T: DeserializeOwned>(self) -> Outcome<T>;
+    async fn parse_text(self) -> Outcome<String>;
+}
+
+#[async_trait]
+impl ResponseExt for Response {
+    async fn parse_json<T: DeserializeOwned>(self) -> Outcome<T> {
+        let url = self.url().to_string();
+        let status = self.status();
+        self.json().await.map_err(|e| {
+            Errors::petition(
+                &url,
+                "unknown",
+                Some(status),
+                PetitionFailure::BodyDeserialization,
+                "Error deserializing body",
+                Some(Box::new(e))
+            )
+        })
+    }
+
+    async fn parse_text(self) -> Outcome<String> {
+        let url = self.url().to_string();
+        let status = self.status();
+        self.text().await.map_err(|e| {
+            Errors::petition(
+                &url,
+                "unknown",
+                Some(status),
+                PetitionFailure::BodyRead,
+                "Failed to read body",
+                Some(Box::new(e))
+            )
+        })
+    }
+}
+
+pub fn extract_payload<T>(payload: Result<Json<T>, JsonRejection>) -> Outcome<T> {
+    payload.map(|Json(v)| v).map_err(|e| {
+        Errors::format(
+            BadFormat::Received,
+            "Error extracting Json payload",
+            Some(Box::new(e))
+        )
+    })
+}
+
+pub fn extract_form_payload<T>(payload: Result<Form<T>, FormRejection>) -> Outcome<T> {
+    payload.map(|Form(v)| v).map_err(|e| {
+        Errors::format(
+            BadFormat::Received,
+            "Error extracting form payload",
+            Some(Box::new(e))
+        )
+    })
+}
+
+pub fn extract_query_param(params: &HashMap<String, String>, key: &str) -> Outcome<String> {
+    params.get(key).cloned().ok_or_else(|| {
+        Errors::format(
+            BadFormat::Received,
+            format!("Unable to retrieve '{}' from query params", key),
+            None
+        )
+    })
+}
+
+pub fn extract_gnap_token(headers: HeaderMap) -> Outcome<String> {
+    headers
+        .get("Authorization")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|s| s.strip_prefix("GNAP "))
+        .map(|token| token.to_string())
+        .ok_or_else(|| Errors::unauthorized("GNAP token missing", None))
+}
+
+pub fn extract_bearer_token(headers: HeaderMap) -> Outcome<String> {
+    headers
+        .get("Authorization")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .map(|token| token.to_string())
+        .ok_or_else(|| Errors::unauthorized("Bearer token missing", None))
 }

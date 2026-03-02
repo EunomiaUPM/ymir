@@ -34,17 +34,17 @@ pub struct IssuerMetadata {
 }
 
 impl IssuerMetadata {
-    pub fn new(host: &str, vcs: Option<&[VcType]>) -> Self {
+    pub fn new(base_host: &str, host_path: &str, vcs: Option<&[VcType]>) -> Self {
         let credential_configurations_supported = CredentialConfiguration::basic(vcs);
 
         IssuerMetadata {
-            issuer: host.to_string(),
-            credential_issuer: host.to_string(),
-            credential_endpoint: format!("{}/credential", host),
-            batch_credential_endpoint: format!("{}/credential-batch", host),
-            jwks_uri: format!("{}/jwks", host),
+            issuer: base_host.to_string(),
+            credential_issuer: base_host.to_string(),
+            credential_endpoint: format!("{}/credential", host_path),
+            batch_credential_endpoint: format!("{}/credential-batch", host_path),
+            jwks_uri: format!("{}/jwks", host_path),
             credential_configurations_supported,
-            authorization_servers: vec![host.to_string()]
+            authorization_servers: vec![base_host.to_string()]
         }
     }
 }

@@ -15,15 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use axum::http::HeaderMap;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use rand::Rng;
 use serde::Serialize;
 
-use crate::errors::{Errors, Outcome};
-use crate::types::errors::BadFormat;
+use crate::errors::{BadFormat, Errors, Outcome};
 
 pub fn create_opaque_token() -> String {
     let mut bytes = [0u8; 32]; // 256 bits
@@ -31,28 +29,7 @@ pub fn create_opaque_token() -> String {
     URL_SAFE_NO_PAD.encode(&bytes)
 }
 
-pub fn extract_gnap_token(headers: HeaderMap) -> Option<String> {
-    headers
-        .get("Authorization")
-        .and_then(|value| value.to_str().ok())
-        .and_then(|s| s.strip_prefix("GNAP "))
-        .map(|token| token.to_string())
-}
-
-pub fn extract_bearer_token(headers: HeaderMap) -> Option<String> {
-    headers
-        .get("Authorization")
-        .and_then(|value| value.to_str().ok())
-        .and_then(|s| s.strip_prefix("Bearer "))
-        .map(|token| token.to_string())
-}
-
 pub fn sign_token<T: Serialize>(header: &Header, claims: &T, key: &EncodingKey) -> Outcome<String> {
-    encode(&header, &claims, &key).map_err(|e| {
-        Errors::format(
-            BadFormat::Received,
-            "Unable to sign token",
-            Some(anyhow::Error::from(e))
-        )
-    })
+    encode(&header, &claims, &key)
+        .map_err(|e| Errors::format(BadFormat::Received, "Unable to sign token", Some(Box::new(e))))
 }

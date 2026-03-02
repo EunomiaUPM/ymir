@@ -51,6 +51,6 @@ impl RecvInteractionTrait for RecvInteractionRepo {
         Entity::find_by_id(some_id)
             .one(self.db())
             .await
-            .map_err(|e| Errors::db("Error finding some model", Some(anyhow::Error::from(e))))
+            .map_err(|e| Errors::db("Error finding some model", Some(Box::new(e))))
     }
 }

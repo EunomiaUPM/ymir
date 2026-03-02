@@ -31,13 +31,12 @@ use super::config::WaltIdConfig;
 use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::HostType;
 use crate::data::entities::{mates, minions};
-use crate::errors::{Errors, Outcome};
+use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
 use crate::services::vault::global::VaultService;
 use crate::types::dids::did_type::DidType;
 use crate::types::dids::dids_info::DidsInfo;
-use crate::types::errors::{BadFormat, MissingAction};
 use crate::types::http::Body;
 use crate::types::jwt::AuthJwtClaims;
 use crate::types::secrets::{SemiWalletSecrets, StringHelper};
@@ -47,8 +46,8 @@ use crate::types::wallet::{
     WalletSession
 };
 use crate::utils::{
-    ParseHeaderExt, decode_url_safe_no_pad, expect_from_env, get_query_param, json_headers,
-    parse_from_slice, parse_from_str, parse_json_resp, parse_text_resp, parse_to_value
+    ParseHeaderExt, ResponseExt, decode_url_safe_no_pad, expect_from_env, get_query_param,
+    json_headers, parse_from_slice, parse_from_str, parse_text_resp, parse_to_value
 };
 
 pub struct WaltIdService {
@@ -78,6 +77,44 @@ impl WaltIdService {
             vault
         }
     }
+
+    async fn request(
+        &self,
+        method: &str,
+        path: &str,
+        body: Body,
+        use_auth: bool,
+        is_json: bool,
+        error_msg: &str
+    ) -> Outcome<Response> {
+        let url = format!("{}/wallet-api{}", self.config.get_wallet_api_url(), path);
+        let mut headers = if is_json {
+            json_headers()
+        } else {
+            let mut h = HeaderMap::new();
+            h.insert(CONTENT_TYPE, HeaderValue::from_static("text/plain"));
+            h.insert(ACCEPT, HeaderValue::from_static("application/json"));
+            h
+        };
+
+        if use_auth {
+            let token = self.get_token().await?;
+            headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
+        }
+
+        let res = match method {
+            "GET" => self.client.get(&url, Some(headers)).await?,
+            "POST" => self.client.post(&url, Some(headers), body).await?,
+            "DELETE" => self.client.delete(&url, Some(headers), body).await?,
+            _ => return Err(Errors::not_impl(format!("Method {}", method), None))
+        };
+
+        if res.status().is_success() {
+            Ok(res)
+        } else {
+            Err(Errors::wallet(&url, method, Some(res.status()), error_msg, None))
+        }
+    }
 }
 
 #[async_trait]
@@ -91,93 +128,84 @@ impl WalletTrait for WaltIdService {
 
         let res = self.client.post(&url, Some(json_headers()), Body::Json(body)).await?;
 
-        match res.status().as_u16() {
-            201 => {
-                info!("Wallet account registration successful");
-            }
-            409 => {
+        if res.status().is_success() {
+            info!("Wallet account registration successful");
+        } else {
+            if res.status().as_u16() == 409 {
                 warn!("Wallet account has already registered");
-            }
-            status => {
+            } else {
                 return Err(Errors::wallet(
                     &url,
                     "POST",
-                    Some(status),
+                    Some(res.status()),
                     "Petition to register Wallet failed",
                     None
                 ));
             }
         }
+
         Ok(())
     }
 
     async fn login(&self) -> Outcome<()> {
         info!("Login into web wallet");
-        let url = format!("{}/wallet-api/auth/login", self.config.get_wallet_api_url());
 
         let db_path = expect_from_env("VAULT_APP_WALLET");
         let body: SemiWalletSecrets = self.vault.read(None, &db_path).await?;
-        let body = parse_to_value(&body)?;
 
-        let res = self.client.post(&url, Some(json_headers()), Body::Json(body)).await?;
-
-        match res.status().as_u16() {
-            200 => {
-                info!("Wallet login successful");
-
-                let json_res: WalletLoginResponse = parse_json_resp(res).await?;
-
-                let mut wallet_session = self.wallet_session.lock().await;
-                wallet_session.account_id = Some(json_res.id);
-                wallet_session.token = Some(json_res.token.clone());
-
-                let jwt_parts: Vec<&str> = json_res.token.split('.').collect();
-                if jwt_parts.len() != 3 {
-                    return Err(Errors::format(
-                        BadFormat::Sent,
-                        "The jwt does not have the correct format",
-                        None
-                    ));
-                }
-
-                let decoded = decode_url_safe_no_pad(jwt_parts[1])?;
-                let claims: AuthJwtClaims = parse_from_slice(&decoded)?;
-                wallet_session.token_exp = Some(claims.exp);
-
-                info!("Login data saved successfully");
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "POST",
-                Some(status),
-                "Petition to login into Wallet failed",
+                "/auth/login",
+                Body::json(&body)?,
+                false,
+                true,
+                "Petition to login into Wallet failed"
+            )
+            .await?;
+
+        info!("Wallet login successful");
+
+        let json_res: WalletLoginResponse = res.parse_json().await?;
+
+        let mut wallet_session = self.wallet_session.lock().await;
+        wallet_session.account_id = Some(json_res.id);
+
+        let jwt = json_res.token;
+        let jwt_parts: Vec<&str> = jwt.split('.').collect();
+        if jwt_parts.len() != 3 {
+            return Err(Errors::format(
+                BadFormat::Sent,
+                "The jwt does not have the correct format",
                 None
-            ))
+            ));
         }
+
+        let decoded = decode_url_safe_no_pad(jwt_parts[1])?;
+        let claims: AuthJwtClaims = parse_from_slice(&decoded)?;
+        wallet_session.token_exp = Some(claims.exp);
+        wallet_session.token = Some(jwt);
+
+        info!("Login data saved successfully");
+        Ok(())
     }
 
     async fn logout(&self) -> Outcome<()> {
         info!("Login out of web wallet");
-        let url = format!("{}/wallet-api/auth/logout", self.config.get_wallet_api_url());
+        self.request(
+            "POST",
+            "/auth/logout",
+            Body::None,
+            false,
+            true,
+            "Petition to logout from Wallet failed"
+        )
+        .await?;
 
-        let res = self.client.post(&url, Some(json_headers()), Body::None).await?;
-
-        match res.status().as_u16() {
-            200 => {
-                info!("Wallet logout successful");
-                let mut wallet_session = self.wallet_session.lock().await;
-                wallet_session.token = None;
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
-                "POST",
-                Some(status),
-                "Petition to logout from Wallet failed",
-                None
-            ))
-        }
+        info!("Wallet logout successful");
+        let mut wallet_session = self.wallet_session.lock().await;
+        wallet_session.token = None;
+        Ok(())
     }
 
     async fn onboard(&self) -> Outcome<(mates::NewModel, minions::NewModel)> {
@@ -264,7 +292,7 @@ impl WalletTrait for WaltIdService {
         info!("Getting wallet data");
         let wallet_session = self.wallet_session.lock().await;
 
-        wallet_session.wallets.first().map(Clone::clone).ok_or_else(|| {
+        wallet_session.wallets.first().cloned().ok_or_else(|| {
             Errors::missing_action(
                 MissingAction::Wallet,
                 "There is no wallet to retrieve dids from",
@@ -300,7 +328,7 @@ impl WalletTrait for WaltIdService {
         info!("Getting token");
 
         let wallet_session = self.wallet_session.lock().await;
-        wallet_session.token.clone().ok_or_else(|| {
+        wallet_session.token.as_ref().cloned().ok_or_else(|| {
             Errors::missing_action(
                 MissingAction::Token,
                 "There is no token available for use",
@@ -316,7 +344,7 @@ impl WalletTrait for WaltIdService {
         let did = wallet.dids.first().map(|data| data.document.clone()).ok_or_else(|| {
             Errors::missing_action(MissingAction::Did, "No dids found in wallet", None)
         })?;
-        parse_to_value(&did)
+        parse_from_str(&did)
     }
 
     async fn get_key(&self) -> Outcome<KeyDefinition> {
@@ -332,164 +360,116 @@ impl WalletTrait for WaltIdService {
     // ------------------------------------------------------------------------------->
     async fn retrieve_wallet_info(&self) -> Outcome<()> {
         info!("Retrieving wallet info from web wallet");
-        let url = format!(
-            "{}/wallet-api/wallet/accounts/wallets",
-            self.config.get_wallet_api_url()
-        );
 
-        let token = self.get_token().await?;
-        let mut headers = json_headers();
-
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res = self.client.get(&url, Some(headers)).await?;
-
-        match res.status().as_u16() {
-            200 => {
-                let weird_wallets: WalletInfoResponse = parse_json_resp(res).await?;
-                let weird_wallets = weird_wallets.wallets;
-                let mut wallets = Vec::<WalletInfo>::new();
-                for wallet in weird_wallets {
-                    let wallet = wallet.to_normal();
-                    if !wallets.contains(&wallet) {
-                        wallets.push(wallet);
-                    }
-                }
-                let mut wallet_session = self.wallet_session.lock().await;
-                for wallet in wallets {
-                    if !wallet_session.wallets.contains(&wallet) {
-                        wallet_session.wallets.push(wallet);
-                    }
-                }
-                info!("Wallet data loaded successfully");
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "GET",
-                Some(status),
-                "Petition to retrieve Wallet information failed",
-                None
-            ))
+                "/wallet/accounts/wallets",
+                Body::None,
+                true,
+                true,
+                "Petition to retrieve Wallet information failed"
+            )
+            .await?;
+
+        let weird_wallets: WalletInfoResponse = res.parse_json().await?;
+        let mut wallets = Vec::<WalletInfo>::new();
+        for wallet in weird_wallets.wallets {
+            let wallet = wallet.to_normal();
+            if !wallets.contains(&wallet) {
+                wallets.push(wallet);
+            }
         }
+        let mut wallet_session = self.wallet_session.lock().await;
+        for wallet in wallets {
+            if !wallet_session.wallets.contains(&wallet) {
+                wallet_session.wallets.push(wallet);
+            }
+        }
+        info!("Wallet data loaded successfully");
+        Ok(())
     }
 
     async fn retrieve_wallet_keys(&self) -> Outcome<()> {
         info!("Retrieving keys from web wallet");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
+        let path = format!("/wallet/{}/keys", wallet.id);
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/keys",
-            self.config.get_wallet_api_url(),
-            &wallet.id
-        );
-
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("text/plain"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res = self.client.get(&url, Some(headers)).await?;
-
-        match res.status().as_u16() {
-            200 => {
-                info!("Keys retrieved successfully");
-                let res = parse_text_resp(res).await?;
-                let keys: Vec<KeyDefinition> = parse_from_str(&res)?;
-                let mut key_data = self.key_data.lock().await;
-                for key in keys {
-                    if !key_data.contains(&key) {
-                        key_data.push(key);
-                    }
-                }
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "GET",
-                Some(status),
-                "Petition to retrieve keys failed",
-                None
-            ))
+                &path,
+                Body::None,
+                true,
+                false,
+                "Petition to retrieve keys failed"
+            )
+            .await?;
+
+        info!("Keys retrieved successfully");
+        let keys: Vec<KeyDefinition> = res.parse_json().await?;
+        let mut key_data = self.key_data.lock().await;
+        for key in keys {
+            if !key_data.contains(&key) {
+                key_data.push(key);
+            }
         }
+        Ok(())
     }
 
     async fn retrieve_wallet_dids(&self) -> Outcome<()> {
         info!("Retrieving dids from web wallet");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
+        let path = format!("/wallet/{}/dids", wallet.id);
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/dids",
-            self.config.get_wallet_api_url(),
-            &wallet.id
-        );
-
-        let mut headers = json_headers();
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res = self.client.get(&url, Some(headers)).await?;
-
-        match res.status().as_u16() {
-            200 => {
-                let dids: Vec<DidsInfo> = parse_json_resp(res).await?;
-
-                let mut wallet_session = self.first_wallet_mut().await?;
-                let wallet = wallet_session.wallets.first_mut().unwrap();
-
-                for did in dids {
-                    if !wallet.dids.contains(&did) {
-                        wallet.dids.push(did)
-                    }
-                }
-
-                info!("Wallet Dids data loaded successfully");
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "GET",
-                Some(status),
-                "Petition to retrieve Wallet DIDs failed",
-                None
-            ))
+                &path,
+                Body::None,
+                true,
+                true,
+                "Petition to retrieve Wallet DIDs failed"
+            )
+            .await?;
+
+        let dids: Vec<DidsInfo> = res.parse_json().await?;
+
+        let mut wallet_session = self.first_wallet_mut().await?;
+        let wallet = wallet_session.wallets.first_mut().unwrap();
+
+        for did in dids {
+            if !wallet.dids.contains(&did) {
+                wallet.dids.push(did)
+            }
         }
+
+        info!("Wallet Dids data loaded successfully");
+        Ok(())
     }
 
     async fn retrieve_wallet_credentials(&self) -> Outcome<Vec<WalletCredentials>> {
         info!("Retrieving credentials from web wallet");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
+        let path = format!("/wallet/{}/credentials", wallet.id);
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/credentials",
-            self.config.get_wallet_api_url(),
-            &wallet.id
-        );
-
-        let mut headers = json_headers();
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res = self.client.get(&url, Some(headers)).await?;
-
-        match res.status().as_u16() {
-            200 => {
-                let res: Vec<WalletCredentials> = parse_json_resp(res).await?;
-                info!("Wallet Credentials data loaded successfully");
-                Ok(res)
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "GET",
-                Some(status),
-                "Petition to retrieve Wallet Credentials failed",
-                None
-            ))
-        }
+                &path,
+                Body::None,
+                true,
+                true,
+                "Petition to retrieve Wallet Credentials failed"
+            )
+            .await?;
+
+        let res: Vec<WalletCredentials> = res.parse_json().await?;
+        info!("Wallet Credentials data loaded successfully");
+        Ok(res)
     }
 
     // REGISTER STUFF IN WALLET
@@ -498,38 +478,23 @@ impl WalletTrait for WaltIdService {
         info!("Registering key in web wallet");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
+        let priv_key_path = expect_from_env("VAULT_APP_PRIV_KEY");
+        let priv_key: StringHelper = self.vault.read(None, &priv_key_path).await?;
 
-        let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
-        let priv_key: StringHelper = self.vault.read(None, &priv_key).await?;
+        let path = format!("/wallet/{}/keys/import", wallet.id);
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/keys/import",
-            self.config.get_wallet_api_url(),
-            &wallet.id
-        );
+        self.request(
+            "POST",
+            &path,
+            Body::Raw(priv_key.data().to_string()),
+            true,
+            false,
+            "Petition to register key failed"
+        )
+        .await?;
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("text/plain"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res =
-            self.client.post(&url, Some(headers), Body::Raw(priv_key.data().to_string())).await?;
-
-        match res.status().as_u16() {
-            201 => {
-                info!("Key registered successfully");
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
-                "POST",
-                Some(status),
-                "Petition to register key failed",
-                None
-            ))
-        }
+        info!("Key registered successfully");
+        Ok(())
     }
 
     async fn register_did(&self) -> Outcome<Option<String>> {
@@ -540,48 +505,49 @@ impl WalletTrait for WaltIdService {
             DidType::Jwk => self.reg_did_jwk().await?,
             DidType::Other => return Err(Errors::not_impl("Other did type", None))
         };
-        match res.status().as_u16() {
-            200 => {
-                info!("Did registered successfully");
-                let res = parse_text_resp(res).await?;
-                info!("{:#?}", res);
-                Ok(Some(res))
-            }
-            409 => {
+        if res.status().is_success() {
+            info!("Did registered successfully");
+            let res = res.parse_text().await?;
+            debug!("{:#?}", res);
+            Ok(Some(res))
+        } else {
+            if res.status().as_u16() == 409 {
                 warn!("Did already exists");
                 Ok(None)
+            } else {
+                Err(Errors::wallet(
+                    "http://register_did_in_wallet",
+                    "POST",
+                    Some(res.status()),
+                    "Petition to register key failed",
+                    None
+                ))
             }
-            status => Err(Errors::wallet(
-                "http://register_did_in_wallet",
-                "POST",
-                Some(status),
-                "Petition to register key failed",
-                None
-            ))
         }
     }
 
     async fn reg_did_jwk(&self) -> Outcome<Response> {
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
         let key_data = self.get_key().await?;
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/dids/create/jwk?keyId={}&alias=jwk",
-            self.config.get_wallet_api_url(),
-            &wallet.id,
-            key_data.key_id.id
+        let path = format!(
+            "/wallet/{}/dids/create/jwk?keyId={}&alias=jwk",
+            wallet.id, key_data.key_id.id
         );
 
-        let mut headers = json_headers();
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        self.client.post(&url, Some(headers), Body::None).await
+        self.request(
+            "POST",
+            &path,
+            Body::None,
+            true,
+            true,
+            "Petition to register key failed"
+        )
+        .await
     }
 
     async fn reg_did_web(&self) -> Outcome<Response> {
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
         let key_data = self.get_key().await?;
 
         let options =
@@ -592,56 +558,45 @@ impl WalletTrait for WaltIdService {
             None => "".to_string()
         };
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/dids/create/web?keyId={}&alias=web&domain={}{}",
-            self.config.get_wallet_api_url(),
-            &wallet.id,
-            &key_data.key_id.id,
-            options.domain,
-            path
+        let path = format!(
+            "/wallet/{}/dids/create/web?keyId={}&alias=web&domain={}{}",
+            wallet.id, &key_data.key_id.id, options.domain, path
         );
 
-        let mut headers = json_headers();
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        self.client.post(&url, Some(headers), Body::None).await
+        self.request(
+            "POST",
+            &path,
+            Body::None,
+            true,
+            true,
+            "Petition to register key failed"
+        )
+        .await
     }
 
     async fn set_default_did(&self, did: Option<&str>) -> Outcome<()> {
         info!("Setting default did in web wallet");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
         let did = match did {
             Some(did) => did.to_string(),
             None => self.get_did().await?
         };
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/dids/default?did={}",
-            self.config.get_wallet_api_url(),
-            &wallet.id,
-            did
-        );
+        let path = format!("/wallet/{}/dids/default?did={}", wallet.id, did);
 
-        let mut headers = json_headers();
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
+        self.request(
+            "POST",
+            &path,
+            Body::None,
+            true,
+            true,
+            "Petition to set did as default failed"
+        )
+        .await?;
 
-        let res = self.client.post(&url, Some(headers), Body::None).await?;
-
-        match res.status().as_u16() {
-            202 => {
-                info!("Did has been set as default");
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
-                "POST",
-                Some(status),
-                "Petition to set did as default failed",
-                None
-            ))
-        }
+        info!("Did has been set as default");
+        Ok(())
     }
 
     // DELETE STUFF FROM WALLET
@@ -650,78 +605,48 @@ impl WalletTrait for WaltIdService {
         info!("Deleting key in web wallet and from internal data");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
+        let path = format!("/wallet/{}/keys/{}", wallet.id, key_id.key_id.id);
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/keys/{}",
-            self.config.get_wallet_api_url(),
-            &wallet.id,
-            key_id.key_id.id
-        );
+        self.request(
+            "DELETE",
+            &path,
+            Body::None,
+            true,
+            false,
+            "Petition to delete key failed"
+        )
+        .await?;
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("text/plain"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res = self.client.delete(&url, Some(headers), Body::None).await?;
-
-        match res.status().as_u16() {
-            202 => {
-                info!("Key deleted successfully from web wallet");
-                let mut keys_data = self.key_data.lock().await;
-                keys_data.retain(|key| *key != key_id);
-                info!("Key deleted successfully from internal data");
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
-                "DELETE",
-                Some(status),
-                "Petition to delete key failed",
-                None
-            ))
-        }
+        info!("Key deleted successfully from web wallet");
+        let mut keys_data = self.key_data.lock().await;
+        keys_data.retain(|key| *key != key_id);
+        info!("Key deleted successfully from internal data");
+        Ok(())
     }
 
     async fn delete_did(&self, did_info: DidsInfo) -> Outcome<()> {
         info!("Deleting did from web wallet and from internal data");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
+        let path = format!("/wallet/{}/dids/{}", wallet.id, did_info.did);
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/dids/{}",
-            self.config.get_wallet_api_url(),
-            &wallet.id,
-            did_info.did
-        );
+        self.request(
+            "DELETE",
+            &path,
+            Body::None,
+            true,
+            false,
+            "Petition to delete key failed"
+        )
+        .await?;
 
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("text/plain"));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
+        info!("Did deleted successfully from web wallet");
+        let mut wallet_session = self.first_wallet_mut().await?;
+        let wallet = wallet_session.wallets.first_mut().unwrap();
 
-        let res = self.client.delete(&url, Some(headers), Body::None).await?;
-
-        match res.status().as_u16() {
-            202 => {
-                info!("Did deleted successfully from web wallet");
-                let mut wallet_session = self.first_wallet_mut().await?;
-                let wallet = wallet_session.wallets.first_mut().unwrap();
-
-                wallet.dids.retain(|did| *did != did_info);
-                info!("Did deleted successfully from internal data");
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
-                "DELETE",
-                Some(status),
-                "Petition to delete key failed",
-                None
-            ))
-        }
+        wallet.dids.retain(|did| *did != did_info);
+        info!("Did deleted successfully from internal data");
+        Ok(())
     }
 
     // DO STUFF IN WALLET
@@ -733,31 +658,26 @@ impl WalletTrait for WaltIdService {
         info!("Resolving credential offer");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
-
-        let url = format!(
-            "{}/wallet-api/wallet/{}/exchange/resolveCredentialOffer",
-            self.config.get_wallet_api_url(),
-            &wallet.id
-        );
+        let path = format!("/wallet/{}/exchange/resolveCredentialOffer", wallet.id);
 
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("text/plain;charset=UTF-8"));
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        let token = self.get_token().await?;
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
+        let url = format!("{}/wallet-api{}", self.config.get_wallet_api_url(), path);
         let res = self.client.post(&url, Some(headers), Body::Raw(payload.uri.clone())).await?;
 
-        match res.status().as_u16() {
-            200 => {
-                let data: CredentialOfferResponse = parse_json_resp(res).await?;
-                info!("Credential offer resolved successfully");
-                Ok(data)
-            }
-            status => Err(Errors::wallet(
+        if res.status().is_success() {
+            let data: CredentialOfferResponse = res.parse_json().await?;
+            info!("Credential offer resolved successfully");
+            Ok(data)
+        } else {
+            Err(Errors::wallet(
                 &url,
                 "POST",
-                Some(status),
+                Some(res.status()),
                 "Petition to resolve credential offer failed",
                 None
             ))
@@ -771,34 +691,25 @@ impl WalletTrait for WaltIdService {
         info!("Resolving credential issuer metadata");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
-
-        let url = format!(
-            "{}/wallet-api/wallet/{}/exchange/resolveIssuerOpenIDMetadata?issuer={}",
-            self.config.get_wallet_api_url(),
-            &wallet.id,
-            cred_offer.credential_issuer
+        let path = format!(
+            "/wallet/{}/exchange/resolveIssuerOpenIDMetadata?issuer={}",
+            wallet.id, cred_offer.credential_issuer
         );
 
-        let mut headers = json_headers();
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res = self.client.get(&url, Some(headers)).await?;
-
-        match res.status().as_u16() {
-            200 => {
-                let data: Value = parse_json_resp(res).await?;
-                info!("Credential issuer resolved successfully");
-                Ok(data)
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "GET",
-                Some(status),
-                "Petition resolve credential issuer failed",
-                None
-            ))
-        }
+                &path,
+                Body::None,
+                true,
+                true,
+                "Petition resolve credential issuer failed"
+            )
+            .await?;
+
+        let data: Value = res.parse_json().await?;
+        info!("Credential issuer resolved successfully");
+        Ok(data)
     }
 
     async fn use_offer_req(
@@ -809,73 +720,51 @@ impl WalletTrait for WaltIdService {
         info!("Accepting credential");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
         let did = self.get_did().await?;
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/exchange/useOfferRequest?did={}&requireUserInput=false&pinOrTxCode={}",
-            self.config.get_wallet_api_url(),
-            &wallet.id,
-            did,
-            cred_offer.grants.pre_authorized_code.pre_authorized_code
+        let path = format!(
+            "/wallet/{}/exchange/useOfferRequest?did={}&requireUserInput=false&pinOrTxCode={}",
+            wallet.id, did, cred_offer.grants.pre_authorized_code.pre_authorized_code
         );
 
-        let mut headers = json_headers();
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res = self.client.post(&url, Some(headers), Body::Raw(payload.uri.clone())).await?;
-
-        match res.status().as_u16() {
-            200 => {
-                let data: Value = parse_json_resp(res).await?;
-                info!("Credential accepted successfully");
-                debug!("{:#?}", data);
-                Ok(())
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "POST",
-                Some(status),
-                "Petition accept credential issuer failed",
-                None
-            ))
-        }
+                &path,
+                Body::Raw(payload.uri.clone()),
+                true,
+                true,
+                "Petition accept credential issuer failed"
+            )
+            .await?;
+
+        let data: Value = res.parse_json().await?;
+        info!("Credential accepted successfully");
+        debug!("{:#?}", data);
+        Ok(())
     }
 
     async fn get_vpd(&self, payload: &OidcUri) -> Outcome<Vpd> {
         info!("Joining exchange");
 
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
+        let path = format!("/wallet/{}/exchange/resolvePresentationRequest", wallet.id);
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/exchange/resolvePresentationRequest",
-            self.config.get_wallet_api_url(),
-            &wallet.id
-        );
-
-        let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("text/plain"));
-        headers.insert(ACCEPT, HeaderValue::from_static("text/plain"));
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res = self.client.post(&url, Some(headers), Body::Raw(payload.uri.clone())).await?;
-
-        match res.status().as_u16() {
-            200 => {
-                info!("Joined the exchange successful");
-                let vpd = parse_text_resp(res).await?;
-                let vpd = self.parse_vpd(&vpd)?;
-                Ok(vpd)
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "POST",
-                Some(status),
-                "Error joining the exchange",
-                None
-            ))
-        }
+                &path,
+                Body::Raw(payload.uri.clone()),
+                true,
+                false,
+                "Error joining the exchange"
+            )
+            .await?;
+
+        info!("Joined the exchange successful");
+        let vpd = parse_text_resp(res).await?;
+        let vpd = self.parse_vpd(&vpd)?;
+        Ok(vpd)
     }
 
     fn parse_vpd(&self, vpd_as_string: &str) -> Outcome<Vpd> {
@@ -883,12 +772,10 @@ impl WalletTrait for WaltIdService {
 
         let url = Url::parse(
             decode(&vpd_as_string)
-                .map_err(|e| Errors::parse("Unable to decode vpd", Some(anyhow::Error::from(e))))?
+                .map_err(|e| Errors::parse("Unable to decode vpd", Some(Box::new(e))))?
                 .as_ref()
         )
-        .map_err(|e| {
-            Errors::parse("Unable to extract url from string", Some(anyhow::Error::from(e)))
-        })?;
+        .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
 
         let vpd_json = get_query_param(&url, "presentation_definition")?;
 
@@ -897,9 +784,10 @@ impl WalletTrait for WaltIdService {
 
     async fn get_matching_vcs(&self, vpd: &Vpd) -> Outcome<Vec<String>> {
         info!("Matching Verifiable Credentials for OIDC4VP");
-        let mut vcs_id = Vec::new();
-        for descriptor in vpd.input_descriptors.clone() {
-            let n_vpd = Vpd { id: "temporal_id".to_string(), input_descriptors: vec![descriptor] };
+        let mut vcs_id = Vec::with_capacity(vpd.input_descriptors.len());
+        for descriptor in &vpd.input_descriptors {
+            let n_vpd =
+                Vpd { id: "temporal_id".to_string(), input_descriptors: vec![descriptor.clone()] };
             let vcs = self.match_vc4vp(parse_to_value(&n_vpd)?).await?;
             let vc_id = vcs.first().map(|data| data.id.clone()).ok_or_else(|| {
                 Errors::missing_action(
@@ -916,48 +804,34 @@ impl WalletTrait for WaltIdService {
     async fn match_vc4vp(&self, vp_def: Value) -> Outcome<Vec<MatchingVCs>> {
         info!("Matching vcs for a specific descriptor");
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/exchange/matchCredentialsForPresentationDefinition",
-            self.config.get_wallet_api_url(),
+        let path = format!(
+            "/wallet/{}/exchange/matchCredentialsForPresentationDefinition",
             wallet.id
         );
 
-        let mut headers = json_headers();
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
-
-        let res = self.client.post(&url, Some(headers), Body::Json(vp_def)).await?;
-        match res.status().as_u16() {
-            200 => {
-                info!("Credentials matched successfully");
-                let vc_json: Vec<MatchingVCs> = parse_json_resp(res).await?;
-                Ok(vc_json)
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "POST",
-                Some(status),
-                "Petition to match credentials failed",
-                None
-            ))
-        }
+                &path,
+                Body::Json(vp_def),
+                true,
+                true,
+                "Petition to match credentials failed"
+            )
+            .await?;
+
+        info!("Credentials matched successfully");
+        let vc_json: Vec<MatchingVCs> = res.parse_json().await?;
+        Ok(vc_json)
     }
 
     async fn present_vp(&self, payload: &OidcUri, vcs_id: Vec<String>) -> Outcome<Option<String>> {
         info!("Presenting Verifiable Presentation");
         let wallet = self.get_wallet().await?;
-        let token = self.get_token().await?;
         let did = self.get_did().await?;
 
-        let url = format!(
-            "{}/wallet-api/wallet/{}/exchange/usePresentationRequest",
-            self.config.get_wallet_api_url(),
-            wallet.id
-        );
-
-        let mut headers = json_headers();
-        headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
+        let path = format!("/wallet/{}/exchange/usePresentationRequest", wallet.id);
 
         let body = MatchVCsRequest {
             did,
@@ -965,23 +839,22 @@ impl WalletTrait for WaltIdService {
             selected_credentials: vcs_id
         };
 
-        let res = self.client.post(&url, Some(headers), Body::Json(parse_to_value(&body)?)).await?;
-        match res.status().as_u16() {
-            200 => {
-                info!("Credentials presented successfully");
-                // let data: RedirectResponse = res.json().await?;
-                match res.json::<Option<RedirectResponse>>().await {
-                    Ok(Some(data)) => Ok(Some(data.redirect_uri)),
-                    _ => Ok(None)
-                }
-            }
-            status => Err(Errors::wallet(
-                &url,
+        let res = self
+            .request(
                 "POST",
-                Some(status),
-                "Petition to present credentials failed",
-                None
-            ))
+                &path,
+                Body::json(&body)?,
+                true,
+                true,
+                "Petition to present credentials failed"
+            )
+            .await?;
+
+        info!("Credentials presented successfully");
+        // let data: RedirectResponse = res.json().await?;
+        match res.json::<Option<RedirectResponse>>().await {
+            Ok(Some(data)) => Ok(Some(data.redirect_uri)),
+            _ => Ok(None)
         }
     }
 }

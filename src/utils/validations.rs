@@ -16,6 +16,7 @@
  */
 
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use chrono::Utc;
@@ -23,12 +24,11 @@ use jsonwebtoken::{TokenData, Validation};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use tracing::info;
+use tracing::{debug, info};
 
 use crate::capabilities::DidResolver;
-use crate::errors::{Errors, Outcome};
+use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::client::ClientTrait;
-use crate::types::errors::BadFormat;
 use crate::utils::get_from_opt;
 
 pub fn validate_data(node: &Value, field: &str) -> Outcome<String> {
@@ -59,14 +59,15 @@ pub async fn validate_token<T>(
     client: Arc<dyn ClientTrait>
 ) -> Outcome<(TokenData<T>, String)>
 where
-    T: Serialize + DeserializeOwned
+    T: Serialize + DeserializeOwned + Debug
 {
     info!("Validating token");
+    debug!("{}", token);
     let header = jsonwebtoken::decode_header(&token).map_err(|e| {
         Errors::format(
             BadFormat::Received,
             format!("Unable to decode token header: {}", token),
-            Some(anyhow::Error::from(e))
+            Some(Box::new(e))
         )
     })?;
     let kid_str = get_from_opt(header.kid.as_ref(), "kid")?;
@@ -91,9 +92,8 @@ where
         }
     };
 
-    let token_data = jsonwebtoken::decode::<T>(&token, &key, &val).map_err(|e| {
-        Errors::security("VPT signature is incorrect", Some(anyhow::Error::from(e)))
-    })?;
+    let token_data = jsonwebtoken::decode::<T>(&token, &key, &val)
+        .map_err(|e| Errors::security("Token signature is incorrect", Some(Box::new(e))))?;
 
     info!("Token signature is correct");
     Ok((token_data, kid.to_string()))

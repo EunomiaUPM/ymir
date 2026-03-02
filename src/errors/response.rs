@@ -15,5 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod service;
-pub use service::BasicClientService;
+use axum::Json;
+use axum::response::{IntoResponse, Response};
+
+use super::Errors;
+
+impl IntoResponse for Errors {
+    fn into_response(self) -> Response {
+        self.log();
+
+        let info = self.info();
+        let status = info.status_code;
+
+        (status, Json(info)).into_response()
+    }
+}
+
+impl Errors {}

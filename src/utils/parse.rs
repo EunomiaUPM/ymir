@@ -27,8 +27,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
-use crate::errors::{Errors, Outcome};
-use crate::types::errors::BadFormat;
+use crate::errors::{BadFormat, Errors, Outcome};
 use crate::utils::validate_data;
 
 pub trait ParseHeaderExt {
@@ -38,12 +37,62 @@ pub trait ParseHeaderExt {
 impl ParseHeaderExt for str {
     fn parse_header(&self) -> Outcome<HeaderValue> {
         self.parse().map_err(|e| {
-            Errors::parse(
-                format!("Invalid header value: '{}'", self),
-                Some(anyhow::Error::from(e))
-            )
+            Errors::parse(format!("Invalid header value: '{}'", self), Some(Box::new(e)))
         })
     }
+}
+
+pub async fn parse_json_resp<T: DeserializeOwned>(response: Response) -> Outcome<T> {
+    response
+        .json()
+        .await
+        .map_err(|e| Errors::parse("Unable to parse json response", Some(Box::new(e))))
+}
+
+pub async fn parse_text_resp(response: Response) -> Outcome<String> {
+    response
+        .text()
+        .await
+        .map_err(|e| Errors::parse("Unable to parse text response", Some(Box::new(e))))
+}
+
+pub fn parse_from_value<T: DeserializeOwned>(value: Value) -> Outcome<T> {
+    serde_json::from_value(value)
+        .map_err(|e| Errors::parse("Unable to parse from value", Some(Box::new(e))))
+}
+
+pub fn parse_from_str<T: DeserializeOwned>(data: &str) -> Outcome<T> {
+    serde_json::from_str(data)
+        .map_err(|e| Errors::parse("Unable to parse from value", Some(Box::new(e))))
+}
+
+pub fn parse_from_slice<T: DeserializeOwned>(data: &[u8]) -> Outcome<T> {
+    serde_json::from_slice(data)
+        .map_err(|e| Errors::parse("Unable to parse from slice", Some(Box::new(e))))
+}
+
+pub fn parse_to_value<T: Serialize>(value: &T) -> Outcome<Value> {
+    serde_json::to_value(value)
+        .map_err(|e| Errors::parse("Unable to serialize value", Some(Box::new(e))))
+}
+
+pub fn parse_to_string<T: Serialize>(value: &T) -> Outcome<String> {
+    serde_json::to_string(value)
+        .map_err(|e| Errors::parse("Unable to parse to string", Some(Box::new(e))))
+}
+
+pub fn get_rsa_key(key: &str) -> Outcome<EncodingKey> {
+    EncodingKey::from_rsa_pem(key.as_bytes())
+        .map_err(|e| Errors::parse("Unable to decode RSA key", Some(Box::new(e))))
+}
+
+pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
+    URL_SAFE_NO_PAD.decode(data).map_err(|e| {
+        Errors::parse(
+            format!("Unable to decode url safe no pad: {}", data),
+            Some(Box::new(e))
+        )
+    })
 }
 
 pub fn read<P>(path: P) -> Outcome<String>
@@ -56,60 +105,7 @@ where
         Errors::read(
             path_ref.display().to_string(),
             format!("Unable to read file: {}", path_ref.display()),
-            Some(anyhow::Error::from(e))
-        )
-    })
-}
-
-pub async fn parse_json_resp<T: DeserializeOwned>(response: Response) -> Outcome<T> {
-    response
-        .json()
-        .await
-        .map_err(|e| Errors::parse("Unable to parse json response", Some(anyhow::Error::from(e))))
-}
-
-pub async fn parse_text_resp(response: Response) -> Outcome<String> {
-    response
-        .text()
-        .await
-        .map_err(|e| Errors::parse("Unable to parse text response", Some(anyhow::Error::from(e))))
-}
-
-pub fn parse_from_value<T: DeserializeOwned>(value: Value) -> Outcome<T> {
-    serde_json::from_value(value)
-        .map_err(|e| Errors::parse("Unable to parse from value", Some(anyhow::Error::from(e))))
-}
-
-pub fn parse_from_str<T: DeserializeOwned>(data: &str) -> Outcome<T> {
-    serde_json::from_str(data)
-        .map_err(|e| Errors::parse("Unable to parse from value", Some(anyhow::Error::from(e))))
-}
-
-pub fn parse_from_slice<T: DeserializeOwned>(data: &[u8]) -> Outcome<T> {
-    serde_json::from_slice(data)
-        .map_err(|e| Errors::parse("Unable to parse from slice", Some(anyhow::Error::from(e))))
-}
-
-pub fn parse_to_value<T: Serialize>(value: &T) -> Outcome<Value> {
-    serde_json::to_value(value)
-        .map_err(|e| Errors::parse("Unable to serialize value", Some(anyhow::Error::from(e))))
-}
-
-pub fn parse_to_string<T: Serialize>(value: &T) -> Outcome<String> {
-    serde_json::to_string(value)
-        .map_err(|e| Errors::parse("Unable to parse to string", Some(anyhow::Error::from(e))))
-}
-
-pub fn get_rsa_key(key: String) -> Outcome<EncodingKey> {
-    EncodingKey::from_rsa_pem(key.as_bytes())
-        .map_err(|e| Errors::parse("Unable to decode RSA key", Some(anyhow::Error::from(e))))
-}
-
-pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
-    URL_SAFE_NO_PAD.decode(data).map_err(|e| {
-        Errors::parse(
-            format!("Unable to decode url safe no pad: {}", data),
-            Some(anyhow::Error::from(e))
+            Some(Box::new(e))
         )
     })
 }
@@ -121,7 +117,32 @@ where
 {
     let data = read(path)?;
     serde_json::from_str(&data)
-        .map_err(|e| Errors::parse("Unable to parse JSON from file", Some(anyhow::Error::from(e))))
+        .map_err(|e| Errors::parse("Unable to parse JSON from file", Some(Box::new(e))))
+}
+
+pub fn write<P>(path: P, content: String) -> Outcome<()>
+where
+    P: AsRef<Path>
+{
+    let path_ref = path.as_ref();
+
+    fs::write(path_ref, content).map_err(|e| {
+        Errors::write(
+            path_ref.display().to_string(),
+            format!("Unable to write file: {}", path_ref.display()),
+            Some(Box::new(e))
+        )
+    })
+}
+
+pub fn write_json<T, P>(path: P, value: &T) -> Outcome<()>
+where
+    T: Serialize,
+    P: AsRef<Path>
+{
+    let data = serde_json::to_string_pretty(value)
+        .map_err(|e| Errors::parse("Unable to serialize value to JSON", Some(Box::new(e))))?;
+    write(path, data)
 }
 
 pub fn expect_from_env(env: &str) -> String {

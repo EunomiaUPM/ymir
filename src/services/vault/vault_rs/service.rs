@@ -45,7 +45,7 @@ impl RealVaultService {
         let settings = VaultClientSettingsBuilder::default()
             .build()
             .map_err(|e| {
-                Errors::vault("Error building vault", Some(anyhow::Error::from(e)));
+                Errors::vault("Error building vault", Some(Box::new(e)));
             })
             .expect("Error creating vault settings");
 
@@ -54,7 +54,7 @@ impl RealVaultService {
     pub fn custom(settings: VaultClientSettings) -> Self {
         let client = VaultClient::new(settings)
             .map_err(|e| {
-                Errors::vault("Error building custom vault", Some(anyhow::Error::from(e)));
+                Errors::vault("Error building custom vault", Some(Box::new(e)));
             })
             .expect("Error creating the client vault");
 
@@ -76,7 +76,7 @@ impl VaultTrait for RealVaultService {
     async fn basic_read(&self, mount: &str, path: &str) -> Outcome<Value> {
         let secret = kv2::read(&*self.client, mount, path)
             .await
-            .map_err(|e| Errors::vault("Error reading from vault", Some(anyhow::Error::from(e))))?;
+            .map_err(|e| Errors::vault("Error reading from vault", Some(Box::new(e))))?;
 
         Ok(secret)
     }
@@ -88,7 +88,7 @@ impl VaultTrait for RealVaultService {
         let mount = mount.unwrap_or(&basic_mount);
         kv2::set(&*self.client, mount, path, secret)
             .await
-            .map_err(|e| Errors::vault("Error writing to vault", Some(anyhow::Error::from(e))))?;
+            .map_err(|e| Errors::vault("Error writing to vault", Some(Box::new(e))))?;
 
         Ok(())
     }
@@ -138,7 +138,7 @@ impl VaultTrait for RealVaultService {
 
         let existing_mounts = mount::list(&*self.client)
             .await
-            .map_err(|e| Errors::vault("Error listing mounts", Some(anyhow::Error::from(e))))?;
+            .map_err(|e| Errors::vault("Error listing mounts", Some(Box::new(e))))?;
 
         let mount_path = format!("{}/", mount_name);
         if !existing_mounts.contains_key(&mount_path) {
@@ -149,7 +149,7 @@ impl VaultTrait for RealVaultService {
 
             mount::enable(&*self.client, &mount_name, "kv", Some(data))
                 .await
-                .map_err(|e| Errors::vault("Error creating vault", Some(anyhow::Error::from(e))))?;
+                .map_err(|e| Errors::vault("Error creating vault", Some(Box::new(e))))?;
 
             info!("Mount '{}' created successfully", mount_name);
         } else {

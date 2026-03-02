@@ -21,5 +21,5 @@ use crate::types::vcs::VcType;
 pub trait BasicVerifierConfigTrait: HostsConfigTrait + VcConfigTrait {
     fn is_local(&self) -> bool;
     fn get_requested_vcs(&self) -> Vec<VcType>;
-    fn get_api_path(&self) -> String;
+    fn get_api_path(&self) -> &str;
 }

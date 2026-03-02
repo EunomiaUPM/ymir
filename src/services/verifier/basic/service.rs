@@ -30,15 +30,12 @@ use crate::config::traits::{HostsConfigTrait, VcConfigTrait};
 use crate::config::types::HostType;
 use crate::data::entities::recv_interaction;
 use crate::data::entities::recv_verification::{Model, NewModel};
-use crate::errors::{Errors, Outcome};
+use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::client::ClientTrait;
-use crate::types::errors::BadFormat;
 use crate::types::gnap::ApprovedCallbackBody;
 use crate::types::http::Body;
 use crate::types::vcs::{VPDef, W3cDataModelVersion};
-use crate::utils::{
-    get_claim, get_opt_claim, json_headers, parse_to_string, parse_to_value, validate_token
-};
+use crate::utils::{get_claim, get_opt_claim, json_headers, parse_to_string, validate_token};
 
 pub struct BasicVerifierService {
     client: Arc<dyn ClientTrait>,
@@ -145,22 +142,11 @@ impl VerifierTrait for BasicVerifierService {
 
         model.vpt = Some(vp_token.to_string());
         let (token, kid) =
-            validate_token(vp_token, Some(&model.state), self.client.clone()).await?;
+            validate_token(vp_token, Some(&model.audience), self.client.clone()).await?;
         self.validate_nonce(model, &token)?;
         self.validate_vp_subject(model, &token, &kid)?;
         self.validate_vp_id(model, &token)?;
         self.validate_holder(model, &token)?;
-        // let id = match token.claims["jti"].as_str() {
-        //     Some(data) => data,
-        //     None => {
-        //         let error = Errors::format_new(
-        //             BadFormat::Received,
-        //             Some("VPT does not contain the 'jti' field".to_string()),
-        //         );
-        //         error!("{}", error.log());
-        //         bail!(error);
-        //     }
-        // };
 
         info!("VP Verification successful");
         let vcs = self.retrieve_vcs(token)?;
@@ -352,7 +338,7 @@ impl VerifierTrait for BasicVerifierService {
 
         if let Some(valid_from) = valid_from {
             let date = DateTime::parse_from_rfc3339(&valid_from).map_err(|e| {
-                Errors::security("wrong format for field valid_from", Some(anyhow::Error::from(e)))
+                Errors::security("wrong format for field valid_from", Some(Box::new(e)))
             })?;
             if date > Utc::now() {
                 return Err(Errors::security("VC is not valid yet", None));
@@ -377,7 +363,7 @@ impl VerifierTrait for BasicVerifierService {
 
         if let Some(valid_until) = valid_until {
             let date = DateTime::parse_from_rfc3339(&valid_until).map_err(|e| {
-                Errors::security("wrong format for field valid_until", Some(anyhow::Error::from(e)))
+                Errors::security("wrong format for field valid_until", Some(Box::new(e)))
             })?;
             if Utc::now() > date {
                 return Err(Errors::security("VC has expired", None));
@@ -397,7 +383,7 @@ impl VerifierTrait for BasicVerifierService {
             Errors::format(
                 BadFormat::Received,
                 "VPT does not contain de vc field",
-                Some(anyhow::Error::from(e))
+                Some(Box::new(e))
             )
         })?;
 
@@ -421,8 +407,7 @@ impl VerifierTrait for BasicVerifierService {
                 interact_ref: model.interact_ref.clone(),
                 hash: model.hash.clone()
             };
-            let body = parse_to_value(&body)?;
-            self.client.post(&url, Some(headers), Body::Json(body)).await?;
+            self.client.post(&url, Some(headers), Body::json(&body)?).await?;
 
             Ok(None)
         } else {

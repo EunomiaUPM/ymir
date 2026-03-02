@@ -17,6 +17,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::config::traits::DidConfigTrait;
 use crate::types::dids::did_type::DidType;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -30,4 +31,8 @@ pub struct DidConfig {
 pub struct DidWebOptions {
     pub domain: String,
     pub path: Option<String>
+}
+
+impl DidConfigTrait for DidConfig {
+    fn did_config(&self) -> &DidConfig { self }
 }

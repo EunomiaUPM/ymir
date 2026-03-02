@@ -40,7 +40,7 @@ impl DidConfigTrait for BasicIssuerConfig {
 impl BasicIssuerConfigTrait for BasicIssuerConfig {
     fn is_local(&self) -> bool { self.is_local }
 
-    fn get_api_path(&self) -> String { self.api_path.clone() }
+    fn get_api_path(&self) -> &str { &self.api_path }
 }
 
 pub struct BasicIssuerConfigBuilder<H, L, A, D> {

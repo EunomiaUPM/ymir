@@ -16,7 +16,6 @@
  */
 
 pub mod dids;
-pub mod errors;
 pub mod gnap;
 pub mod http;
 pub mod issuing;

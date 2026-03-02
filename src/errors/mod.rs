@@ -15,10 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod errors;
-mod outcome;
+mod constructors;
+mod core;
+mod helpers;
+mod response;
 mod sub_errors;
 
-pub use errors::*;
-pub use outcome::*;
+pub use core::Errors;
+
+use axum::response::Response;
 pub use sub_errors::*;
+
+pub type AnyError = Box<dyn std::error::Error + Send + Sync>;
+pub type Outcome<T> = Result<T, Errors>;
+pub type AppResult<T = Response> = Result<T, Errors>;

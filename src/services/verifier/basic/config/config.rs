@@ -42,7 +42,7 @@ impl VcConfigTrait for BasicVerifierConfig {
 impl BasicVerifierConfigTrait for BasicVerifierConfig {
     fn is_local(&self) -> bool { self.is_local }
     fn get_requested_vcs(&self) -> Vec<VcType> { self.requested_vcs.clone() }
-    fn get_api_path(&self) -> String { self.api_path.clone() }
+    fn get_api_path(&self) -> &str { &self.api_path }
 }
 
 pub struct BasicVerifierConfigBuilder<H, L, A, V, C> {

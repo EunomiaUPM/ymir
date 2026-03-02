@@ -15,6 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::fmt::{Display, Formatter};
+
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +31,62 @@ pub struct ErrorInfo {
 
 #[derive(Debug, Clone)]
 pub struct HttpContext {
-    pub http_code: Option<u16>,
+    pub http_code: Option<StatusCode>,
     pub url: String,
     pub method: String
+}
+
+#[derive(Debug)]
+pub enum PetitionFailure {
+    Network,                // reqwest::Error de conexión
+    HttpStatus(StatusCode), // 4xx/5xx del servidor remoto
+    BodyDeserialization,    // raw_text del error de parseo
+    BodyRead,               // error leyendo el stream
+    Serialization,          // error preparando el body
+    Concurrency             // semáforo cerrado
+}
+
+impl Display for PetitionFailure {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PetitionFailure::Network => write!(f, "Network failure"),
+            PetitionFailure::HttpStatus(code) => write!(f, "Remote HTTP error {}", code),
+            PetitionFailure::BodyDeserialization => write!(f, "Deserialization failed"),
+            PetitionFailure::BodyRead => write!(f, "Failed to read response body"),
+            PetitionFailure::Serialization => write!(f, "Serialization failed"),
+            PetitionFailure::Concurrency => write!(f, "Concurrency limit reached")
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum MissingAction {
+    Token,
+    Wallet,
+    Did,
+    Key,
+    Onboarding,
+    Credentials,
+    Unknown
+}
+
+impl Display for MissingAction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            MissingAction::Token => "Token",
+            MissingAction::Wallet => "Wallet",
+            MissingAction::Key => "Key",
+            MissingAction::Did => "DID",
+            MissingAction::Onboarding => "Onboarding",
+            MissingAction::Credentials => "Credentials",
+            _ => "Unknown"
+        };
+        write!(f, "{}", s)
+    }
+}
+
+pub enum BadFormat {
+    Sent,
+    Received,
+    Unknown
 }

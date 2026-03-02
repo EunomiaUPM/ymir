@@ -59,6 +59,6 @@ impl MinionsTrait for MinionsRepo {
             )
             .exec_with_returning(self.db())
             .await
-            .map_err(|e| Errors::db("Error forcing creating minion", Some(anyhow::Error::from(e))))
+            .map_err(|e| Errors::db("Error forcing creating minion", Some(Box::new(e))))
     }
 }

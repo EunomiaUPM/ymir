@@ -22,7 +22,7 @@ use jsonwebtoken::{Algorithm, Header, TokenData};
 use rsa::RsaPublicKey;
 use rsa::pkcs1::DecodeRsaPublicKey;
 use serde_json::Value;
-use tracing::info;
+use tracing::{debug, info};
 use urlencoding;
 
 use super::super::IssuerTrait;
@@ -30,11 +30,9 @@ use super::config::{BasicIssuerConfig, BasicIssuerConfigTrait};
 use crate::config::traits::{DidConfigTrait, HostsConfigTrait};
 use crate::config::types::HostType;
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
-use crate::errors::{Errors, Outcome};
+use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::client::ClientTrait;
-use crate::services::vault::VaultTrait;
-use crate::services::vault::vault_rs::RealVaultService;
-use crate::types::errors::BadFormat;
+use crate::services::vault::{VaultService, VaultTrait};
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
     TokenRequest, VCCredOffer, WellKnownJwks
@@ -49,14 +47,14 @@ use crate::utils::{
 pub struct BasicIssuerService {
     config: BasicIssuerConfig,
     client: Arc<dyn ClientTrait>,
-    vault: Arc<RealVaultService>
+    vault: Arc<VaultService>
 }
 
 impl BasicIssuerService {
     pub fn new(
         config: BasicIssuerConfig,
         client: Arc<dyn ClientTrait>,
-        vault: Arc<RealVaultService>
+        vault: Arc<VaultService>
     ) -> BasicIssuerService {
         BasicIssuerService { config, client, vault }
     }
@@ -66,11 +64,7 @@ impl BasicIssuerService {
 impl IssuerTrait for BasicIssuerService {
     fn start_vci(&self, model: &vc_request::Model) -> issuing::NewModel {
         info!("Starting OIDC4VCI");
-        let host = format!(
-            "{}{}/issuer",
-            self.config.get_host(HostType::Http),
-            self.config.get_api_path()
-        );
+        let host = self.config.get_host(HostType::Http);
         let aud = match self.config.is_local() {
             true => host.replace("127.0.0.1", "host.docker.internal"),
             false => host
@@ -123,12 +117,8 @@ impl IssuerTrait for BasicIssuerService {
     ) -> Outcome<VCCredOffer> {
         info!("Retrieving credential offer data");
 
-        let issuer = format!(
-            "{}{}/{}",
-            self.config.get_host(HostType::Http),
-            self.config.get_api_path(),
-            path.unwrap_or("issuer")
-        );
+        let path = path.unwrap_or("");
+        let issuer = format!("{}{}", self.config.get_host(HostType::Http), path);
         let issuer = match self.config.is_local() {
             true => issuer.replace("127.0.0.1", "host.docker.internal"),
             false => issuer
@@ -142,17 +132,22 @@ impl IssuerTrait for BasicIssuerService {
 
     fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata {
         info!("Retrieving issuer data");
-        let host = format!(
-            "{}{}/{}",
-            self.config.get_host(HostType::Http),
-            self.config.get_api_path(),
-            path.unwrap_or("issuer")
-        );
-        let host = match self.config.is_local() {
-            true => host.replace("127.0.0.1", "host.docker.internal"),
-            false => host
+
+        let path =
+            path.map(|s| s.to_string()).unwrap_or(format!("{}/issuer", self.config.get_api_path()));
+
+        let base_host = self.config.get_host(HostType::Http);
+        let base_host = match self.config.is_local() {
+            true => base_host.replace("127.0.0.1", "host.docker.internal"),
+            false => base_host
         };
-        IssuerMetadata::new(&host, vcs)
+
+        let host_path = format!("{}{}", self.config.get_host(HostType::Http), path);
+        let host_path = match self.config.is_local() {
+            true => host_path.replace("127.0.0.1", "host.docker.internal"),
+            false => host_path
+        };
+        IssuerMetadata::new(&base_host, &host_path, vcs)
     }
 
     fn get_oauth_server_data(
@@ -161,19 +156,22 @@ impl IssuerTrait for BasicIssuerService {
         vcs: Option<&[VcType]>
     ) -> AuthServerMetadata {
         info!("Retrieving oauth server data");
+        let path =
+            path.map(|s| s.to_string()).unwrap_or(format!("{}/issuer", self.config.get_api_path()));
 
-        let host = format!(
-            "{}{}/{}",
-            self.config.get_host(HostType::Http),
-            self.config.get_api_path(),
-            path.unwrap_or("issuer")
-        );
-        let host = match self.config.is_local() {
-            true => host.replace("127.0.0.1", "host.docker.internal"),
-            false => host
+        let base_host = self.config.get_host(HostType::Http);
+        let base_host = match self.config.is_local() {
+            true => base_host.replace("127.0.0.1", "host.docker.internal"),
+            false => base_host
         };
 
-        AuthServerMetadata::new(&host, vcs)
+        let host_path = format!("{}{}", self.config.get_host(HostType::Http), path);
+        let host_path = match self.config.is_local() {
+            true => host_path.replace("127.0.0.1", "host.docker.internal"),
+            false => host_path
+        };
+
+        AuthServerMetadata::new(&base_host, &host_path, vcs)
     }
 
     fn get_token(&self, model: &issuing::Model) -> IssuingToken {
@@ -207,7 +205,7 @@ impl IssuerTrait for BasicIssuerService {
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
         let priv_key: StringHelper = self.vault.read(None, &priv_key).await?;
 
-        let key = get_rsa_key(priv_key.data().to_string())?;
+        let key = get_rsa_key(priv_key.data())?;
 
         let vc_jwt = sign_token(&header, claims, &key)?;
 
@@ -291,7 +289,7 @@ impl IssuerTrait for BasicIssuerService {
         let pub_key: StringHelper = self.vault.read(None, &pub_key).await?;
 
         let key = RsaPublicKey::from_pkcs1_pem(&pub_key.data()).map_err(|e| {
-            return Errors::forbidden("Could not parse public key", Some(anyhow::Error::from(e)));
+            return Errors::forbidden("Could not parse public key", Some(Box::new(e)));
         })?;
         Ok(WellKnownJwks::new(&key))
     }
