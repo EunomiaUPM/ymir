@@ -25,4 +25,11 @@ pub trait DidConfigTrait {
     fn get_did_web_options(&self) -> Option<&DidWebOptions> {
         self.did_config().did_web_options.as_ref()
     }
+    fn get_did_web_domain(&self) -> Option<&str> {
+        self.get_did_web_options().map(|o| o.domain.as_str())
+    }
+
+    fn get_did_web_path(&self) -> Option<&str> {
+        self.get_did_web_options().and_then(|o| o.path.as_deref())
+    }
 }

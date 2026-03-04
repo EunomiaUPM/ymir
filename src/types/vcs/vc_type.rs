@@ -87,13 +87,26 @@ impl VcType {
     pub fn to_conf(&self) -> String {
         match self {
             VcType::LegalRegistrationNumber(_) => "LegalRegistrationNumber_jwt_vc_json".to_string(),
-            VcType::DataspaceParticipant => "DataspaceParticipant_vc_json".to_string(),
+            VcType::DataspaceParticipant => "DataspaceParticipant_jwt_vc_json".to_string(),
             VcType::LegalPerson => "LegalPerson_jwt_vc_json".to_string(),
             VcType::TermsAndConditions => "TermsAndConditions_jwt_vc_json".to_string(),
             _ => "Unknown".to_string()
         }
     }
-
+    pub fn from_conf(s: &str) -> Result<Self, Errors> {
+        match s {
+            "LegalRegistrationNumber_jwt_vc_json" => {
+                Ok(VcType::LegalRegistrationNumber(LegalRegistrationNumberTypes::TaxId))
+            }
+            "DataspaceParticipant_jwt_vc_json" => Ok(VcType::DataspaceParticipant),
+            "LegalPerson_jwt_vc_json" => Ok(VcType::LegalPerson),
+            "TermsAndConditions_jwt_vc_json" => Ok(VcType::TermsAndConditions),
+            _ => Err(Errors::parse(
+                format!("Unknown credential configuration: {}", s),
+                None
+            ))
+        }
+    }
     pub fn variants() -> &'static [VcType] {
         &[
             VcType::LegalRegistrationNumber(LegalRegistrationNumberTypes::TaxId),

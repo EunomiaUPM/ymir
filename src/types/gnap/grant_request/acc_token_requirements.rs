@@ -85,7 +85,7 @@ impl AccessTokenRequirements4GR {
                     .expect("You are requesting a VC but have not declared its type");
                 data.access.r#type = "vc-exchange".to_string();
                 data.access.actions = Some(vec![InteractActions::RequestVc.to_string()]);
-                data.access.datatypes = Some(vec![vc_type.to_string()]);
+                data.access.datatypes = Some(vec![vc_type.to_conf()]);
             }
         }
 

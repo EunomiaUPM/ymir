@@ -16,10 +16,12 @@
  */
 
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
 use crate::data::entities::req_interaction;
+use crate::errors::{BadFormat, Errors};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Interact4GR {
@@ -42,6 +44,22 @@ pub struct Finish4Interact {
 pub enum InteractStart {
     Oidc4VP,
     CrossUser
+}
+
+impl FromStr for InteractStart {
+    type Err = Errors;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "oidc4vp" => Ok(InteractStart::Oidc4VP),
+            "cross-user" => Ok(InteractStart::CrossUser),
+            _ => Err(Errors::format(
+                BadFormat::Received,
+                format!("Interact start method {} not defined", s),
+                None
+            ))
+        }
+    }
 }
 
 impl Display for InteractStart {
