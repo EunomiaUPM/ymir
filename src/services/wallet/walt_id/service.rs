@@ -550,17 +550,13 @@ impl WalletTrait for WaltIdService {
         let wallet = self.get_wallet().await?;
         let key_data = self.get_key().await?;
 
-        let options =
-            self.config.get_did_web_options().ok_or_else(|| Errors::not_active("did web", None))?;
-
-        let path = match options.path.as_ref() {
-            Some(path) => format!("&path={}", path),
-            None => "".to_string()
-        };
+        let path = self.config.get_did_web_path().unwrap_or("");
+        let domain =
+            self.config.get_did_web_path().ok_or_else(|| Errors::not_active("did web", None))?;
 
         let path = format!(
-            "/wallet/{}/dids/create/web?keyId={}&alias=web&domain={}{}",
-            wallet.id, &key_data.key_id.id, options.domain, path
+            "/wallet/{}/dids/create/web?keyId={}&alias=web&domain={}&path={}",
+            wallet.id, &key_data.key_id.id, domain, path
         );
 
         self.request(
