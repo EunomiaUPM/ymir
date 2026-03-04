@@ -552,7 +552,7 @@ impl WalletTrait for WaltIdService {
 
         let path = self.config.get_did_web_path().unwrap_or("");
         let domain =
-            self.config.get_did_web_path().ok_or_else(|| Errors::not_active("did web", None))?;
+            self.config.get_did_web_domain().ok_or_else(|| Errors::not_active("did web", None))?;
 
         let path = format!(
             "/wallet/{}/dids/create/web?keyId={}&alias=web&domain={}&path={}",
