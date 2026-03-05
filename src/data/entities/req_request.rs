@@ -26,14 +26,15 @@ use crate::data::IntoActiveSet;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub provider_id: String,                     // REQUEST
-    pub provider_slug: String,                   // REQUEST
-    pub grant_endpoint: String,                  // REQUEST
+    pub provider_id: String,    // REQUEST
+    pub provider_slug: String,  // REQUEST
+    pub grant_endpoint: String, // REQUEST
+    pub auto: bool,
     pub assigned_id: Option<String>,             // RESPONSE
     pub token: Option<String>,                   // COMPLETION
     pub status: String,                          // DEFAULT
     pub created_at: chrono::NaiveDateTime,       // DEFAULT
-    pub ended_at: Option<chrono::NaiveDateTime>  // COMPLETION
+    pub ended_at: Option<chrono::NaiveDateTime>, // COMPLETION
 }
 
 #[derive(Clone, Debug)]
@@ -41,7 +42,8 @@ pub struct NewModel {
     pub id: String,             // REQUEST
     pub provider_id: String,    // REQUEST
     pub provider_slug: String,  // REQUEST
-    pub grant_endpoint: String  // REQUEST
+    pub grant_endpoint: String, // REQUEST,
+    pub auto: Option<bool>,
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -51,11 +53,12 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             provider_id: ActiveValue::Set(self.provider_id),
             provider_slug: ActiveValue::Set(self.provider_slug),
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
+            auto: ActiveValue::Set(self.auto.unwrap_or(false)),
             assigned_id: ActiveValue::Set(None),
             token: ActiveValue::Set(None),
             status: ActiveValue::Set("Processing".to_string()),
             created_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            ended_at: ActiveValue::Set(None)
+            ended_at: ActiveValue::Set(None),
         }
     }
 }
@@ -67,11 +70,12 @@ impl IntoActiveSet<ActiveModel> for Model {
             provider_id: ActiveValue::Set(self.provider_id),
             provider_slug: ActiveValue::Set(self.provider_slug),
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
+            auto: ActiveValue::Set(self.auto),
             assigned_id: ActiveValue::Set(self.assigned_id),
             token: ActiveValue::Set(self.token),
             status: ActiveValue::Set(self.status),
             created_at: ActiveValue::Set(self.created_at),
-            ended_at: ActiveValue::Set(self.ended_at)
+            ended_at: ActiveValue::Set(self.ended_at),
         }
     }
 }
