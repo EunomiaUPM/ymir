@@ -23,8 +23,8 @@ use crate::data::entities::{mates, minions};
 use crate::errors::Outcome;
 use crate::types::dids::dids_info::DidsInfo;
 use crate::types::wallet::{
-    CredentialOfferResponse, KeyDefinition, MatchingVCs, OidcUri, Vpd, WalletCredentials,
-    WalletInfo, WalletSession
+    CredentialOfferResponse, KeyDefinition, MatchingVCs, Vpd, WalletCredentials, WalletInfo,
+    WalletSession,
 };
 
 #[async_trait]
@@ -60,20 +60,17 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn delete_key(&self, key: KeyDefinition) -> Outcome<()>;
     async fn delete_did(&self, did_info: DidsInfo) -> Outcome<()>;
     // DO STUFF IN WALLET
-    async fn resolve_credential_offer(&self, payload: &OidcUri)
-    -> Outcome<CredentialOfferResponse>;
+    async fn resolve_credential_offer(&self, uri: &str) -> Outcome<CredentialOfferResponse>;
     async fn resolve_credential_issuer(
         &self,
-        cred_offer: &CredentialOfferResponse
+        cred_offer: &CredentialOfferResponse,
     ) -> Outcome<Value>;
-    async fn use_offer_req(
-        &self,
-        payload: &OidcUri,
-        cred_offer: &CredentialOfferResponse
-    ) -> Outcome<()>;
-    async fn get_vpd(&self, payload: &OidcUri) -> Outcome<Vpd>;
+    async fn use_offer_req(&self, uri: &str, cred_offer: &CredentialOfferResponse) -> Outcome<()>;
+    async fn get_vpd(&self, uri: &str) -> Outcome<Vpd>;
     fn parse_vpd(&self, vpd_as_string: &str) -> Outcome<Vpd>;
     async fn get_matching_vcs(&self, vpd: &Vpd) -> Outcome<Vec<String>>;
     async fn match_vc4vp(&self, vp_def: Value) -> Outcome<Vec<MatchingVCs>>;
-    async fn present_vp(&self, payload: &OidcUri, vcs_id: Vec<String>) -> Outcome<Option<String>>;
+    async fn present_vp(&self, uri: &str, vcs_id: Vec<String>) -> Outcome<Option<String>>;
+    async fn process_oidc4vci(&self, uri: &str) -> Outcome<()>;
+    async fn process_oidc4vp(&self, uri: &str) -> Outcome<Option<String>>;
 }

@@ -31,11 +31,12 @@ pub struct Model {
     pub authority_slug: String, // REQUEST
     pub grant_endpoint: String, // REQUEST
     pub vc_type: String,
+    pub auto: bool,
     pub assigned_id: Option<String>, // RESPONSE
     pub vc_uri: Option<String>,
     pub status: String,                          // DEFAULT
     pub created_at: chrono::NaiveDateTime,       // DEFAULT
-    pub ended_at: Option<chrono::NaiveDateTime>  // COMPLETION
+    pub ended_at: Option<chrono::NaiveDateTime>, // COMPLETION
 }
 
 #[derive(Clone, Debug)]
@@ -44,7 +45,8 @@ pub struct NewModel {
     pub authority_id: String,   // REQUEST
     pub authority_slug: String, // REQUEST
     pub grant_endpoint: String, // REQUEST
-    pub vc_type: String
+    pub vc_type: String,
+    pub auto: Option<bool>,
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -55,11 +57,12 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             authority_slug: ActiveValue::Set(self.authority_slug),
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
             vc_type: ActiveValue::Set(self.vc_type),
+            auto: ActiveValue::Set(self.auto.unwrap_or(false)),
             assigned_id: ActiveValue::Set(None),
             vc_uri: ActiveValue::Set(None),
             status: ActiveValue::Set("Processing".to_string()),
             created_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            ended_at: ActiveValue::Set(None)
+            ended_at: ActiveValue::Set(None),
         }
     }
 }
@@ -72,11 +75,12 @@ impl IntoActiveSet<ActiveModel> for Model {
             authority_slug: ActiveValue::Set(self.authority_slug),
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
             vc_type: ActiveValue::Set(self.vc_type),
+            auto: ActiveValue::Set(self.auto),
             assigned_id: ActiveValue::Set(self.assigned_id),
             vc_uri: ActiveValue::Set(self.vc_uri),
             status: ActiveValue::Set(self.status),
             created_at: ActiveValue::Set(self.created_at),
-            ended_at: ActiveValue::Set(self.ended_at)
+            ended_at: ActiveValue::Set(self.ended_at),
         }
     }
 }

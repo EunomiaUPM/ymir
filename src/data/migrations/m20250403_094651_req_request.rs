@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_req_request" }
+    fn name(&self) -> &str {
+        "m20250403_094651_req_request"
+    }
 }
 
 #[async_trait::async_trait]
@@ -33,12 +35,13 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(ReqRequest::ProviderId).string().not_null())
                     .col(ColumnDef::new(ReqRequest::ProviderSlug).string().not_null())
                     .col(ColumnDef::new(ReqRequest::GrantEndpoint).string().not_null())
+                    .col(ColumnDef::new(ReqRequest::Auto).boolean().not_null())
                     .col(ColumnDef::new(ReqRequest::AssignedId).string())
                     .col(ColumnDef::new(ReqRequest::Token).string())
                     .col(ColumnDef::new(ReqRequest::Status).string().not_null())
                     .col(ColumnDef::new(ReqRequest::CreatedAt).date_time().not_null())
                     .col(ColumnDef::new(ReqRequest::EndedAt).date_time())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
@@ -55,9 +58,10 @@ pub enum ReqRequest {
     ProviderId,
     ProviderSlug,
     GrantEndpoint,
+    Auto,
     AssignedId,
     Token,
     Status,
     CreatedAt,
-    EndedAt
+    EndedAt,
 }
