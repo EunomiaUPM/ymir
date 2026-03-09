@@ -67,7 +67,7 @@ impl VerifierTrait for BasicVerifierService {
         let mut vcs = vec![];
 
         for vc in requested_vcs {
-            vcs.push(vc.name())
+            vcs.push(vc.to_string())
         }
 
         let vc_type = parse_to_string(&vcs)?;

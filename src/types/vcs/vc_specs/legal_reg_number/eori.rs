@@ -15,7 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod dataspace;
-pub mod legal_person;
-pub mod legal_reg_number;
-pub mod terms_and_conds;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Eori {
+    pub id: String,
+    // The Economic Operators Registration and Identification number (EORI).
+    #[serde(rename = "gx:eori")]
+    pub eori: String,
+    // The country where the EORI is registered.
+    #[serde(rename = "gx:country")]
+    pub country: Option<String>
+}

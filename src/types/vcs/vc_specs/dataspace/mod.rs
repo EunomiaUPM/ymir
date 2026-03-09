@@ -17,23 +17,14 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::types::vcs::vc_specs::BaseCredentialSubject;
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DataSpaceParticipant {
-    #[serde(flatten)]
-    pub base: BaseCredentialSubject,
+    pub id: String,
     pub dataspace_id: String
 }
 
 impl DataSpaceParticipant {
     pub fn new<R: Into<String>, S: Into<String>>(id: R, dataspace_id: S) -> DataSpaceParticipant {
-        DataSpaceParticipant {
-            base: BaseCredentialSubject {
-                id: id.into(),
-                r#type: "DataspaceParticipant".to_string()
-            },
-            dataspace_id: dataspace_id.into()
-        }
+        DataSpaceParticipant { id: id.into(), dataspace_id: dataspace_id.into() }
     }
 }

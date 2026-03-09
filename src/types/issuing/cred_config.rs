@@ -46,7 +46,7 @@ impl CredentialConfiguration {
                     cryptographic_binding_methods_supported: vec!["did".to_string()],
                     credential_signing_alg_values_supported: vec!["RSA".to_string()],
                     credential_definition: CredentialDefinition {
-                        r#type: vec!["VerifiableCredential".to_string(), vc_type.name()]
+                        r#type: vec!["VerifiableCredential".to_string(), vc_type.to_string()]
                     }
                 }
             );

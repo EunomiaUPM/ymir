@@ -15,7 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod dataspace;
-pub mod legal_person;
-pub mod legal_reg_number;
-pub mod terms_and_conds;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Euid {
+    pub id: String,
+    // The European Unique Identifier (EUID).
+    #[serde(rename = "gx:euid")]
+    pub euid: String
+}

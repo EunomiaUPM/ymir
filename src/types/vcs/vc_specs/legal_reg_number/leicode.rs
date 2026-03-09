@@ -17,8 +17,15 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct BaseCredentialSubject {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LeiCode {
     pub id: String,
-    pub r#type: String
+    // Unique LEI number.
+    #[serde(rename = "gx:leiCode")]
+    pub lei_code: String,
+    // The country subdivision (state/region) where the LEI number is registered.
+    pub subdivision_country_code: Option<String>,
+    // The country where the LEI number is registered.
+    #[serde(rename = "gx:country")]
+    pub country_code: String
 }

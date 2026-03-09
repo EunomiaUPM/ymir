@@ -14,8 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+use serde::{Deserialize, Serialize};
 
-pub mod dataspace;
-pub mod legal_person;
-pub mod legal_reg_number;
-pub mod terms_and_conds;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaxId {
+    pub id: String,
+    // Company tax ID used to identify it through the OpenCorporate service.
+    #[serde(rename = "gx:taxID")]
+    pub tax_id: String
+}

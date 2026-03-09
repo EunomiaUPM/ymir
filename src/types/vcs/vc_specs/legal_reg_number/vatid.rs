@@ -15,8 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod legal_registration_number;
-mod vc_data;
+use serde::{Deserialize, Serialize};
 
-pub use legal_registration_number::*;
-pub use vc_data::*;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VatId {
+    pub id: String,
+    // The VAT identification number.
+    #[serde(rename = "gx:vatID")]
+    pub vat_id: String,
+    // The country where the VAT identification number is registered.
+    #[serde(rename = "gx:countryCode")]
+    pub country_code: Option<String>
+}
