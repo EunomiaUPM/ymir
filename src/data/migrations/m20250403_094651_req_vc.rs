@@ -19,9 +19,7 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str {
-        "m20250403_094651_req_vc"
-    }
+    fn name(&self) -> &str { "m20250403_094651_req_vc" }
 }
 
 #[async_trait::async_trait]
@@ -42,7 +40,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(ReqVc::Status).string().not_null())
                     .col(ColumnDef::new(ReqVc::CreatedAt).date_time().not_null())
                     .col(ColumnDef::new(ReqVc::EndedAt).date_time())
-                    .to_owned(),
+                    .to_owned()
             )
             .await
     }
@@ -65,5 +63,5 @@ pub enum ReqVc {
     VcUri,
     Status,
     CreatedAt,
-    EndedAt,
+    EndedAt
 }

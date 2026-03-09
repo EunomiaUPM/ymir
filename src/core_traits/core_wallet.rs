@@ -31,19 +31,13 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
     fn wallet(&self) -> Arc<dyn WalletTrait>;
     fn mate(&self) -> Option<Arc<dyn MatesTrait>>;
     fn minion(&self) -> Option<Arc<dyn MinionsTrait>>;
-    async fn register(&self) -> Outcome<()> {
-        self.wallet().register().await
-    }
-    async fn login(&self) -> Outcome<()> {
-        self.wallet().login().await
-    }
-    async fn logout(&self) -> Outcome<()> {
-        self.wallet().logout().await
-    }
+    async fn register(&self) -> Outcome<()> { self.wallet().register().await }
+    async fn login(&self) -> Outcome<()> { self.wallet().login().await }
+    async fn logout(&self) -> Outcome<()> { self.wallet().logout().await }
     async fn onboard(&self) -> Outcome<()> {
         let (mate, minion) = match self.wallet().has_onboarded().await {
             true => self.wallet().partial_onboard().await?,
-            false => self.wallet().onboard().await?,
+            false => self.wallet().onboard().await?
         };
         if let Some(mater) = self.mate() {
             mater.force_create(mate).await?;
@@ -62,15 +56,11 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
     async fn link(&self) -> Outcome<()> {
         match self.wallet().has_onboarded().await {
             true => self.partial_onboard().await,
-            false => self.onboard().await,
+            false => self.onboard().await
         }
     }
-    async fn get_did_doc(&self) -> Outcome<Value> {
-        self.wallet().get_did_doc().await
-    }
-    async fn register_key(&self) -> Outcome<()> {
-        self.wallet().register_key().await
-    }
+    async fn get_did_doc(&self) -> Outcome<Value> { self.wallet().get_did_doc().await }
+    async fn register_key(&self) -> Outcome<()> { self.wallet().register_key().await }
     async fn register_did(&self) -> Outcome<()> {
         self.wallet().register_did().await?;
         Ok(())
@@ -87,12 +77,8 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
     async fn process_oidc4vp(&self, payload: OidcUri) -> Outcome<Option<String>> {
         self.wallet().process_oidc4vp(&payload.uri).await
     }
-    async fn get_wallet_info(&self) -> Outcome<WalletInfo> {
-        self.wallet().get_wallet().await
-    }
-    async fn get_wallet_did(&self) -> Outcome<String> {
-        self.wallet().get_did().await
-    }
+    async fn get_wallet_info(&self) -> Outcome<WalletInfo> { self.wallet().get_wallet().await }
+    async fn get_wallet_did(&self) -> Outcome<String> { self.wallet().get_did().await }
     async fn get_wallet_credentials(&self) -> Outcome<Vec<WalletCredentials>> {
         self.wallet().retrieve_wallet_credentials().await
     }
