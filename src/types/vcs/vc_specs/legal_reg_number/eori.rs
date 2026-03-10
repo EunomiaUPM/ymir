@@ -24,6 +24,6 @@ pub struct Eori {
     #[serde(rename = "gx:eori")]
     pub eori: String,
     // The country where the EORI is registered.
-    #[serde(rename = "gx:country")]
+    #[serde(rename = "gx:country", skip_serializing_if = "Option::is_none")]
     pub country: Option<String>
 }

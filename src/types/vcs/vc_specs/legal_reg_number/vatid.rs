@@ -24,6 +24,6 @@ pub struct VatId {
     #[serde(rename = "gx:vatID")]
     pub vat_id: String,
     // The country where the VAT identification number is registered.
-    #[serde(rename = "gx:countryCode")]
+    #[serde(rename = "gx:countryCode", skip_serializing_if = "Option::is_none")]
     pub country_code: Option<String>
 }
