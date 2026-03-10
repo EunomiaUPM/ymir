@@ -29,4 +29,7 @@ impl TermsAndConditionsCredSub {
     pub fn new_gaia(uri: impl Into<String>, hash: impl Into<String>) -> TermsAndConditionsCredSub {
         TermsAndConditionsCredSub { uri: uri.into(), hash: hash.into() }
     }
+    pub fn random() -> TermsAndConditionsCredSub {
+        TermsAndConditionsCredSub { uri: "uri_to_stuff".to_string(), hash: "kk".to_string() }
+    }
 }

@@ -58,18 +58,18 @@ pub struct Address {
 }
 
 impl LegalPersonCredentialSubject {
-    pub fn default4gaia(
+    pub fn new4gaia(
         kid: &str,
-        model: &VcType,
+        vc_type: &VcType,
         code: impl Into<String>
     ) -> Outcome<LegalPersonCredentialSubject> {
-        match model {
+        match vc_type {
             VcType::Eori
             | VcType::Euid
             | VcType::LeiCode
             | VcType::LocalRegistrationNumber
             | VcType::TaxId
-            | VcType::VatId => model,
+            | VcType::VatId => vc_type,
             vc_type => {
                 return Err(Errors::crazy(
                     format!("Unable to issue a LegalPerson vc while requesting {}", vc_type),
@@ -82,7 +82,7 @@ impl LegalPersonCredentialSubject {
             id: kid.to_string(),
             gx_registration_number: TypedRegistrationNumber {
                 id: kid.to_string(),
-                gx_registration_number_type: model.to_string(),
+                gx_registration_number_type: vc_type.to_string(),
                 gx_registration_number_value: code.into()
             },
             gx_legal_address: Address {

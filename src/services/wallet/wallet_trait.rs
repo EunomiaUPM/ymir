@@ -22,8 +22,9 @@ use serde_json::Value;
 use crate::data::entities::{mates, minions};
 use crate::errors::Outcome;
 use crate::types::dids::dids_info::DidsInfo;
+use crate::types::vcs::VPDef;
 use crate::types::wallet::{
-    CredentialOfferResponse, KeyDefinition, MatchingVCs, Vpd, WalletCredentials, WalletInfo,
+    CredentialOfferResponse, KeyDefinition, MatchingVCs, WalletCredentials, WalletInfo,
     WalletSession
 };
 
@@ -66,9 +67,9 @@ pub trait WalletTrait: Send + Sync + 'static {
         cred_offer: &CredentialOfferResponse
     ) -> Outcome<Value>;
     async fn use_offer_req(&self, uri: &str, cred_offer: &CredentialOfferResponse) -> Outcome<()>;
-    async fn get_vpd(&self, uri: &str) -> Outcome<Vpd>;
-    fn parse_vpd(&self, vpd_as_string: &str) -> Outcome<Vpd>;
-    async fn get_matching_vcs(&self, vpd: &Vpd) -> Outcome<Vec<String>>;
+    async fn get_vpd(&self, uri: &str) -> Outcome<VPDef>;
+    fn parse_vpd(&self, vpd_as_string: &str) -> Outcome<VPDef>;
+    async fn get_matching_vcs(&self, vpd: &VPDef) -> Outcome<Vec<String>>;
     async fn match_vc4vp(&self, vp_def: Value) -> Outcome<Vec<MatchingVCs>>;
     async fn present_vp(&self, uri: &str, vcs_id: Vec<String>) -> Outcome<Option<String>>;
     async fn process_oidc4vci(&self, uri: &str) -> Outcome<()>;

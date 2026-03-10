@@ -21,7 +21,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::errors::{BadFormat, Errors};
+use crate::errors::{BadFormat, Errors, Outcome};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum VcType {
@@ -120,5 +120,20 @@ impl VcType {
             VcType::LegalPerson,
             VcType::TermsAndConditions
         ]
+    }
+    pub fn to_gaia_weird(&self) -> Outcome<&str> {
+        match self {
+            VcType::Eori => Ok("gx:eori"),
+            VcType::Euid => Ok("gx:euid"),
+            VcType::LeiCode => Ok("gx:leiCode"),
+            VcType::LocalRegistrationNumber => Ok("gx:local"),
+            VcType::TaxId => Ok("gx:taxID"),
+            VcType::VatId => Ok("gx:vatID"),
+            vc_type => Err(Errors::format(
+                BadFormat::Received,
+                format!("Cannot implement this function with vc_type {}", vc_type),
+                None
+            ))
+        }
     }
 }
