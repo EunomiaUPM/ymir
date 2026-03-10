@@ -48,8 +48,8 @@ impl FromStr for VcType {
             "gx:TaxId" => Ok(VcType::TaxId),
             "gx:VatId" => Ok(VcType::VatId),
             "DataspaceParticipant" => Ok(VcType::DataspaceParticipant),
-            "LegalPerson" => Ok(VcType::LegalPerson),
-            "TermsAndConditions" => Ok(VcType::TermsAndConditions),
+            "gx:LegalPerson" => Ok(VcType::LegalPerson),
+            "gx:TermsAndConditions" => Ok(VcType::TermsAndConditions),
             format => Err(Errors::parse(format!("Unknown credential format: {}", format), None))
         }
     }
@@ -65,8 +65,8 @@ impl Display for VcType {
             VcType::TaxId => "gx:TaxId",
             VcType::VatId => "gx:VatId",
             VcType::DataspaceParticipant => "DataspaceParticipant",
-            VcType::LegalPerson => "LegalPerson",
-            VcType::TermsAndConditions => "TermsAndConditions"
+            VcType::LegalPerson => "gx:LegalPerson",
+            VcType::TermsAndConditions => "gx:TermsAndConditions"
         };
 
         write!(f, "{s}")
@@ -83,8 +83,8 @@ impl VcType {
             VcType::TaxId => "gx_TaxId_jwt_vc_json",
             VcType::VatId => "gx_VatId_jwt_vc_json",
             VcType::DataspaceParticipant => "DataspaceParticipant_jwt_vc_json",
-            VcType::LegalPerson => "LegalPerson_jwt_vc_json",
-            VcType::TermsAndConditions => "TermsAndConditions_jwt_vc_json"
+            VcType::LegalPerson => "gx_LegalPerson_jwt_vc_json",
+            VcType::TermsAndConditions => "gx_TermsAndConditions_jwt_vc_json"
         }
         .to_string()
     }
@@ -98,8 +98,8 @@ impl VcType {
             "gx_TaxId_jwt_vc_json" => Ok(VcType::TaxId),
             "gx_VatId_jwt_vc_json" => Ok(VcType::VatId),
             "DataspaceParticipant_jwt_vc_json" => Ok(VcType::DataspaceParticipant),
-            "LegalPerson_jwt_vc_json" => Ok(VcType::LegalPerson),
-            "TermsAndConditions_jwt_vc_json" => Ok(VcType::TermsAndConditions),
+            "gx_LegalPerson_jwt_vc_json" => Ok(VcType::LegalPerson),
+            "gx_TermsAndConditions_jwt_vc_json" => Ok(VcType::TermsAndConditions),
             _ => Err(Errors::format(
                 BadFormat::Received,
                 format!("Unknown credential configuration: {}", s),
@@ -129,6 +129,8 @@ impl VcType {
             VcType::LocalRegistrationNumber => Ok("gx:local"),
             VcType::TaxId => Ok("gx:taxID"),
             VcType::VatId => Ok("gx:vatID"),
+            VcType::LegalPerson => Ok("gx:legalPerson"),
+            VcType::TermsAndConditions => Ok("gx:termsAndConditions"),
             vc_type => Err(Errors::format(
                 BadFormat::Received,
                 format!("Cannot implement this function with vc_type {}", vc_type),
