@@ -14,7 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+use std::marker::PhantomData;
+
 use serde::{Deserialize, Serialize};
+
+use crate::types::present::{Missing, Present};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TaxId {
@@ -22,4 +26,32 @@ pub struct TaxId {
     // Company tax ID used to identify it through the OpenCorporate service.
     #[serde(rename = "gx:taxID")]
     pub tax_id: String
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TaxIdBuilder<T> {
+    id: Option<String>,
+
+    // Company tax ID used to identify it through the OpenCorporate service.
+    #[serde(rename = "gx:taxID")]
+    tax_id: String,
+
+    #[serde(skip)]
+    _marker: PhantomData<T>
+}
+
+impl TaxIdBuilder<Missing> {
+    pub fn new(tax_id: String) -> Self { Self { id: None, tax_id, _marker: PhantomData } }
+}
+
+impl<T> TaxIdBuilder<T> {
+    pub fn id(self, id: String) -> TaxIdBuilder<Present> {
+        TaxIdBuilder { id: Some(id), tax_id: self.tax_id, _marker: PhantomData }
+    }
+}
+
+impl TaxIdBuilder<Present> {
+    pub fn build(self) -> TaxId {
+        TaxId { id: self.id.expect("Builder invariant violated: id missing"), tax_id: self.tax_id }
+    }
 }

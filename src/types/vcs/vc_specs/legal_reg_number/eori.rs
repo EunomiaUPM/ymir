@@ -15,7 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::marker::PhantomData;
+
 use serde::{Deserialize, Serialize};
+
+use crate::types::present::{Missing, Present};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Eori {
@@ -26,4 +30,42 @@ pub struct Eori {
     // The country where the EORI is registered.
     #[serde(rename = "gx:country", skip_serializing_if = "Option::is_none")]
     pub country: Option<String>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EoriBuilder<T> {
+    id: Option<String>,
+    #[serde(rename = "gx:eori")]
+    eori: String,
+    #[serde(rename = "gx:country", skip_serializing_if = "Option::is_none")]
+    country: Option<String>,
+    #[serde(skip)]
+    _marker: PhantomData<T>
+}
+
+impl EoriBuilder<Missing> {
+    pub fn new(eori: String) -> Self {
+        Self { id: None, eori, country: None, _marker: PhantomData }
+    }
+}
+
+impl<T> EoriBuilder<T> {
+    pub fn id(self, id: String) -> EoriBuilder<Present> {
+        EoriBuilder { id: Some(id), eori: self.eori, country: self.country, _marker: PhantomData }
+    }
+
+    pub fn country(mut self, country: String) -> Self {
+        self.country = Some(country);
+        self
+    }
+}
+
+impl EoriBuilder<Present> {
+    pub fn build(self) -> Eori {
+        Eori {
+            id: self.id.expect("Builder invariant violated: id missing"),
+            eori: self.eori,
+            country: self.country
+        }
+    }
 }

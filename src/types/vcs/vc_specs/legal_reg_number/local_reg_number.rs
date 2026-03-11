@@ -15,7 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::marker::PhantomData;
+
 use serde::{Deserialize, Serialize};
+
+use crate::types::present::{Missing, Present};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LocalRegistrationNumber {
@@ -23,4 +27,35 @@ pub struct LocalRegistrationNumber {
     // The state issued company number.
     #[serde(rename = "gx:local")]
     pub local: String
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LocalRegistrationNumberBuilder<T> {
+    id: Option<String>,
+
+    // The state issued company number.
+    #[serde(rename = "gx:local")]
+    local: String,
+
+    #[serde(skip)]
+    _marker: PhantomData<T>
+}
+
+impl LocalRegistrationNumberBuilder<Missing> {
+    pub fn new(local: String) -> Self { Self { id: None, local, _marker: PhantomData } }
+}
+
+impl<T> LocalRegistrationNumberBuilder<T> {
+    pub fn id(self, id: String) -> LocalRegistrationNumberBuilder<Present> {
+        LocalRegistrationNumberBuilder { id: Some(id), local: self.local, _marker: PhantomData }
+    }
+}
+
+impl LocalRegistrationNumberBuilder<Present> {
+    pub fn build(self) -> LocalRegistrationNumber {
+        LocalRegistrationNumber {
+            id: self.id.expect("Builder invariant violated: id missing"),
+            local: self.local
+        }
+    }
 }

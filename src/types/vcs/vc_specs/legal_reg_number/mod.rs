@@ -29,7 +29,7 @@ pub use leicode::*;
 pub use local_reg_number::*;
 pub use taxid::*;
 pub use vatid::*;
-pub use vc_data::*;
+// pub use vc_data::*;
 
 // #[derive(Debug, Serialize, Deserialize)]
 // pub struct LegalPerson {

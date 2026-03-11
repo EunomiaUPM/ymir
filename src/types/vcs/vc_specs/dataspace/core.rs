@@ -15,9 +15,25 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod builder;
-mod core;
+use serde::{Deserialize, Serialize};
 
-pub use core::DataSpaceParticipant;
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DataSpaceParticipant {
+    pub id: String,
+    pub nickname: String,
+    pub dataspace_id: String
+}
 
-pub use builder::DataSpaceParticipantBuilder;
+impl DataSpaceParticipant {
+    pub fn new(
+        id: impl Into<String>,
+        nick: impl Into<String>,
+        dataspace_id: impl Into<String>
+    ) -> DataSpaceParticipant {
+        DataSpaceParticipant {
+            id: id.into(),
+            nickname: nick.into(),
+            dataspace_id: dataspace_id.into()
+        }
+    }
+}
