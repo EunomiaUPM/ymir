@@ -17,6 +17,7 @@
 
 mod access_token;
 mod callback;
+mod credential_res;
 mod gr_use;
 pub mod grant_request;
 pub mod grant_response;
@@ -24,5 +25,6 @@ mod interact_ref;
 
 pub use access_token::*;
 pub use callback::*;
+pub use credential_res::*;
 pub use gr_use::*;
 pub use interact_ref::*;

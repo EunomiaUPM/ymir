@@ -18,6 +18,9 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::data::entities::token_requirements::Model;
+use crate::types::gnap::grant_request::Access4Req;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccessToken {
     pub value: String,
@@ -25,7 +28,7 @@ pub struct AccessToken {
     pub label: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub manage: Option<Value>,
-    pub access: Vec<String>,
+    pub access: Access4Req,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -34,15 +37,39 @@ pub struct AccessToken {
 }
 
 impl AccessToken {
-    pub fn new<T: Into<String>>(value: T) -> Self {
+    pub fn new<T: Into<String>>(value: T, model: &Model) -> Self {
         Self {
             value: value.into(),
-            label: None,
+            label: model.label.clone(),
             manage: None,
-            access: vec!["talk".to_string()],
+            access: Access4Req {
+                r#type: model.r#type.clone(),
+                actions: Some(model.actions.clone()),
+                locations: model.locations.clone(),
+                datatypes: model.datatypes.clone(),
+                identifier: model.identifier.clone(),
+                privileges: model.privileges.clone()
+            },
             expires_in: None,
             key: None,
             flags: None
         }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ContinueToken {
+    pub value: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires_in: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub flags: Option<Vec<String>>
+}
+
+impl ContinueToken {
+    pub fn new<T: Into<String>>(value: T) -> Self {
+        ContinueToken { value: value.into(), label: None, expires_in: None, flags: None }
     }
 }

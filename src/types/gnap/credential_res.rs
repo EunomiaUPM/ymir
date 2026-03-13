@@ -17,12 +17,19 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::types::gnap::ContinueToken;
+use crate::types::vcs::VcType;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Continue4GResponse {
-    pub uri: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub wait: Option<i64>,
-    pub access_token: ContinueToken
+pub struct CredentialResponse {
+    pub credential_uri: String,
+    pub credential_type: String
+}
+
+impl CredentialResponse {
+    pub fn new(credential_uri: &str, vc_type: &VcType) -> CredentialResponse {
+        CredentialResponse {
+            credential_uri: credential_uri.to_string(),
+            credential_type: vc_type.to_conf()
+        }
+    }
 }

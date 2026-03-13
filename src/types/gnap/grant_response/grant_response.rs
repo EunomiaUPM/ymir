@@ -18,11 +18,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::data::entities::recv_interaction;
-use crate::types::gnap::AccessToken;
+use crate::types::gnap::credential_res::CredentialResponse;
 use crate::types::gnap::grant_request::InteractStart;
 use crate::types::gnap::grant_response::{
     Continue4GResponse, Interact4GResponse, Subject4GResponse
 };
+use crate::types::gnap::{AccessToken, ContinueToken};
+use crate::types::vcs::VcType;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GrantResponse {
@@ -32,24 +34,42 @@ pub struct GrantResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub access_token: Option<AccessToken>, // REQUIRED if an access token is included
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_response: Option<CredentialResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub interact: Option<Interact4GResponse>, // REQUIRED if interaction is needed
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subject: Option<Subject4GResponse>, // REQUIRED if subject information is included.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String> // TODO
+    pub error: Option<String>
 }
 
 impl GrantResponse {
-    pub fn new(option: &InteractStart, model: &recv_interaction::Model, uri: Option<&str>) -> Self {
+    pub fn vc_approved(uri: &str, vc_type: &VcType) -> Self {
+        Self {
+            r#continue: None,
+            access_token: None,
+            credential_response: Some(CredentialResponse::new(uri, vc_type)),
+            interact: None,
+            subject: None,
+            instance_id: None,
+            error: None
+        }
+    }
+    pub fn pending(
+        option: &InteractStart,
+        model: &recv_interaction::Model,
+        uri: Option<&str>
+    ) -> Self {
         Self {
             r#continue: Some(Continue4GResponse {
                 uri: model.continue_endpoint.clone(),
                 wait: None, // TODO Manage wait time
-                access_token: AccessToken::new(model.continue_token.clone())
+                access_token: ContinueToken::new(&model.continue_token)
             }),
             access_token: None,
+            credential_response: None,
             interact: Some(Interact4GResponse::new(option, &model.as_nonce, uri)),
             subject: None,
             instance_id: Some(model.id.clone()),
@@ -60,6 +80,7 @@ impl GrantResponse {
         Self {
             r#continue: None,
             access_token: None,
+            credential_response: None,
             interact: None,
             subject: None,
             instance_id: None,

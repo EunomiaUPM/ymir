@@ -17,12 +17,31 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::types::gnap::ContinueToken;
+use crate::types::gnap::grant_request::{Access4Req, InteractActions};
+use crate::types::vcs::VcType;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Continue4GResponse {
-    pub uri: String,
+pub struct CredentialRequest4GR {
+    pub access: Access4Req,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub wait: Option<i64>,
-    pub access_token: ContinueToken
+    pub label: Option<String>, // REQUIRED if used as part of a request for multiple access tokens
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub flags: Option<Vec<String>>
+}
+
+impl CredentialRequest4GR {
+    pub fn new(vc_type: &VcType) -> Self {
+        CredentialRequest4GR {
+            access: Access4Req {
+                r#type: "vc-exchange".to_string(),
+                actions: Some(vec![InteractActions::RequestVc.to_string()]),
+                locations: None,
+                datatypes: Some(vec![vc_type.to_conf()]),
+                identifier: None,
+                privileges: None
+            },
+            label: None,
+            flags: None
+        }
+    }
 }
