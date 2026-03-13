@@ -238,7 +238,8 @@ impl HttpSig {
     /// }
     /// ```
     pub fn check_cert(cert_pem: &str) -> Outcome<()> {
-        let cert = X509::from_pem(cert_pem.as_bytes())
+        let normalized = normalize_cert_pem(cert_pem);
+        let cert = X509::from_pem(normalized.as_bytes())
             .map_err(|e| Errors::security("Client certificate is malformed", Some(Box::new(e))))?;
 
         let now = openssl::asn1::Asn1Time::days_from_now(0)
@@ -274,6 +275,7 @@ impl HttpSig {
     // =========================================================================
 
     fn compute_thumbprint(cert_pem: &str) -> Outcome<String> {
+        let cert_pem = normalize_cert_pem(cert_pem);
         let cert = X509::from_pem(cert_pem.as_bytes())
             .map_err(|e| Errors::security("Failed to parse cert PEM", Some(Box::new(e))))?;
 
@@ -357,7 +359,8 @@ impl HttpSig {
         signature_bytes: &[u8],
         cert_pem: &str
     ) -> Outcome<()> {
-        let cert = X509::from_pem(cert_pem.as_bytes()).map_err(|e| {
+        let normalized = normalize_cert_pem(cert_pem);
+        let cert = X509::from_pem(normalized.as_bytes()).map_err(|e| {
             Errors::security("Failed to parse cert for verification", Some(Box::new(e)))
         })?;
 
@@ -434,4 +437,14 @@ impl HttpSig {
 
         Ok(&rest[..end])
     }
+}
+
+fn normalize_cert_pem(cert: &str) -> String {
+    let cert = cert.trim();
+
+    if cert.starts_with("-----BEGIN CERTIFICATE-----") {
+        return cert.to_string();
+    }
+
+    format!("-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----", cert)
 }

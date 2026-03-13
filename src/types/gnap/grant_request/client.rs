@@ -17,6 +17,7 @@
 
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -28,7 +29,7 @@ pub struct Client4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub class_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<Value>,
+    pub display: Option<Value>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -37,7 +38,7 @@ pub struct Key4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub jwk: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cert: Option<String>,
+    pub cert: Option<String>
 }
 
 impl Key4GR {
@@ -58,7 +59,7 @@ pub enum KeyProof {
     HttpSig,
     Mtls,
     Jwsd,
-    Jws,
+    Jws
 }
 
 impl Display for KeyProof {
@@ -89,7 +90,11 @@ impl FromStr for KeyProof {
             "mtls" => Ok(KeyProof::Mtls),
             "jwsd" => Ok(KeyProof::Jwsd),
             "jws" => Ok(KeyProof::Jws),
-            method => Err(Errors::format(BadFormat::Received, format!("Invalid proof format {}", method), None))
+            method => Err(Errors::format(
+                BadFormat::Received,
+                format!("Invalid proof format {}", method),
+                None
+            ))
         }
     }
 }
