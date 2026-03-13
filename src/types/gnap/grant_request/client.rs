@@ -16,11 +16,11 @@
  */
 
 use std::fmt::{Display, Formatter};
-
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::errors::{Errors, Outcome};
+use crate::errors::{BadFormat, Errors, Outcome};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Client4GR {
@@ -28,7 +28,7 @@ pub struct Client4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub class_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<Value>
+    pub display: Option<Value>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -37,7 +37,7 @@ pub struct Key4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub jwk: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cert: Option<String>
+    pub cert: Option<String>,
 }
 
 impl Key4GR {
@@ -58,7 +58,7 @@ pub enum KeyProof {
     HttpSig,
     Mtls,
     Jwsd,
-    Jws
+    Jws,
 }
 
 impl Display for KeyProof {
@@ -76,6 +76,20 @@ impl Display for KeyProof {
             KeyProof::Jws => {
                 write!(f, "jws")
             }
+        }
+    }
+}
+
+impl FromStr for KeyProof {
+    type Err = Errors;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "httpsig" => Ok(KeyProof::HttpSig),
+            "mtls" => Ok(KeyProof::Mtls),
+            "jwsd" => Ok(KeyProof::Jwsd),
+            "jws" => Ok(KeyProof::Jws),
+            method => Err(Errors::format(BadFormat::Received, format!("Invalid proof format {}", method), None))
         }
     }
 }
