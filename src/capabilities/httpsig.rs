@@ -36,24 +36,6 @@ const MAX_CLOCK_SKEW_SECS: u64 = 30;
 /// (RFC 9421) según el perfil GNAP (RFC 9635 sección 7.3.1).
 pub struct HttpSig;
 
-/// Resultado de la validación de un certificado.
-#[derive(Debug, Clone, PartialEq)]
-pub enum CertStatus {
-    /// El certificado es válido y está dentro de su periodo de validez.
-    Valid,
-    /// El certificado ha expirado.
-    Expired,
-    /// El certificado aún no es válido (fecha de inicio en el futuro).
-    NotYetValid,
-    /// El certificado no pudo ser parseado o está malformado.
-    Malformed
-}
-
-impl CertStatus {
-    /// Devuelve true solo si el certificado está en estado Valid.
-    pub fn is_valid(&self) -> bool { *self == CertStatus::Valid }
-}
-
 impl HttpSig {
     // =========================================================================
     // SIGNING — lado cliente
