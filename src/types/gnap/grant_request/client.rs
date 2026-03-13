@@ -15,8 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::fmt::{Display, Formatter};
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+use crate::errors::{Errors, Outcome};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Client4GR {
@@ -34,4 +38,44 @@ pub struct Key4GR {
     pub jwk: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cert: Option<String>
+}
+
+impl Key4GR {
+    pub fn new(proof: KeyProof, jwk: Option<Value>, cert: Option<String>) -> Outcome<Key4GR> {
+        let jwk = if cert.is_some() {
+            None
+        } else {
+            let jwk = jwk.ok_or_else(|| {
+                Errors::crazy("Cannot send a request if neither a cert nor a key are present", None)
+            })?;
+            Some(jwk)
+        };
+        Ok(Key4GR { proof: proof.to_string(), jwk, cert })
+    }
+}
+
+pub enum KeyProof {
+    HttpSig,
+    Mtls,
+    Jwsd,
+    Jws
+}
+
+impl Display for KeyProof {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            KeyProof::HttpSig => {
+                write!(f, "httpsig")
+            }
+            KeyProof::Mtls => {
+                write!(f, "mtls")
+            }
+            KeyProof::Jwsd => {
+                write!(f, "jwsd")
+            }
+            KeyProof::Jws => {
+                write!(f, "jws")
+            }
+        }
+    }
 }

@@ -33,6 +33,7 @@ pub struct Model {
     pub start: Vec<String>,        // RESPONSE
     pub method: String,            // RESPONSE
     pub uri: String,               // RESPONSE
+    pub cert: String,              // RESPONSE
     pub client_nonce: String,      // RESPONSE
     pub hash_method: String,       // RESPONSE
     pub hints: Option<String>,     // RESPONSE
@@ -51,6 +52,7 @@ pub struct NewModel {
     pub start: Vec<String>,          // REQUEST
     pub method: String,              // REQUEST
     pub uri: String,                 // REQUEST
+    pub cert: String,                // REQUEST
     pub client_nonce: String,        // REQUEST
     pub hash_method: Option<String>, // REQUEST
     pub hints: Option<String>,       // REQUEST
@@ -86,6 +88,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
             uri: ActiveValue::Set(self.uri),
+            cert: ActiveValue::Set(self.cert),
             client_nonce: ActiveValue::Set(self.client_nonce),
             hash_method: ActiveValue::Set(hash_method),
             hints: ActiveValue::Set(self.hints),
@@ -107,6 +110,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
             uri: ActiveValue::Set(self.uri),
+            cert: ActiveValue::Set(self.cert),
             client_nonce: ActiveValue::Set(self.client_nonce),
             hash_method: ActiveValue::Set(self.hash_method),
             hints: ActiveValue::Set(self.hints),

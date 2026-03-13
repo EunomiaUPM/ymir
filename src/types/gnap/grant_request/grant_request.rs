@@ -44,6 +44,20 @@ impl GrantRequest {
         model: &req_interaction::Model
     ) -> Self {
         Self {
+            access_token: AccessTokenRequirements4GR::new(option, vc_type, None),
+            subject: None,
+            client: client.clone(),
+            user: None,
+            interact: Some(Interact4GR::new(model))
+        }
+    }
+    pub fn new_bearer(
+        option: &GRUse,
+        client: &Client4GR,
+        vc_type: Option<&VcType>,
+        model: &req_interaction::Model
+    ) -> Self {
+        Self {
             access_token: AccessTokenRequirements4GR::new(
                 option,
                 vc_type,

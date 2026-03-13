@@ -157,6 +157,7 @@ impl ClientService {
         let req = match body {
             Body::Json(value) => req.json(&value),
             Body::Raw(s) => req.body(s),
+            Body::Bytes(bytes) => req.body(bytes),
             Body::Form(pairs) => match serde_urlencoded::to_string(&pairs) {
                 Ok(encoded) => req
                     .header(reqwest::header::CONTENT_TYPE, "application/x-www-form-urlencoded")

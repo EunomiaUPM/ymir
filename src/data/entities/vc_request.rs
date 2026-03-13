@@ -29,7 +29,7 @@ pub struct Model {
     pub id: String, // REQUEST
     pub participant_slug: String,                // REQUEST
     pub vc_type: String,                         // REQUEST
-    pub cert: Option<String>,                    // REQUEST
+    pub cert: String,                            // REQUEST
     pub interact_method: Vec<String>,            // REQUEST
     pub vc_uri: Option<String>,                  // RESPONSE
     pub status: String,                          // DEFAULT
@@ -44,7 +44,7 @@ pub struct NewModel {
     pub participant_slug: String,     // REQUEST
     pub vc_type: String,              // REQUEST
     pub interact_method: Vec<String>, // REQUEST
-    pub cert: Option<String>
+    pub cert: String
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
