@@ -43,6 +43,10 @@ pub trait HostsConfigTrait {
         host.ok_or_else(|| Errors::not_active(&format!("{} host is not defined", host_type), None))
             .expect(&format!("{} host is not defined", host_type))
     }
+
+    fn get_internal_port(&self, host_type: HostType) -> String {
+        self.get_helper(host_type).get_internal_port()
+    }
 }
 
 pub trait SingleHostTrait {
@@ -63,5 +67,8 @@ pub trait SingleHostTrait {
     }
     fn get_tls_port(&self) -> String {
         self.host().port.clone().unwrap_or_else(|| "443".to_string())
+    }
+    fn get_internal_port(&self) -> String {
+        self.host().internal_port.clone().unwrap_or_else(|| self.get_tls_port())
     }
 }

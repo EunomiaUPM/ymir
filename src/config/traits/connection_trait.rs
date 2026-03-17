@@ -22,4 +22,5 @@ pub trait ConnectionConfigTrait {
     fn is_local(&self) -> bool { self.connection().is_local }
     fn is_prod(&self) -> bool { self.connection().is_prod }
     fn is_vault_real(&self) -> bool { self.connection().is_vault_real }
+    fn has_tls_proxy(&self) -> bool { self.connection().has_tls_proxy }
 }
