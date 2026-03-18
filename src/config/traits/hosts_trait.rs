@@ -24,6 +24,9 @@ pub trait HostsConfigTrait {
     fn grpc(&self) -> Option<&HostConfig> { self.hosts().grpc.as_ref() }
     fn graphql(&self) -> Option<&HostConfig> { self.hosts().graphql.as_ref() }
     fn get_host(&self, host_type: HostType) -> String { self.get_helper(host_type).get_host() }
+    fn get_internal_host(&self, host_type: HostType) -> String {
+        self.get_helper(host_type).get_internal_host()
+    }
 
     fn get_host_without_protocol(&self, host_type: HostType) -> String {
         self.get_helper(host_type).get_host_without_protocol()
@@ -56,6 +59,14 @@ pub trait SingleHostTrait {
             Some(port) => format!("{}://{}:{}", self.host().protocol, self.host().url, port),
             None => format!("{}://{}", self.host().protocol, self.host().url)
         }
+    }
+    fn get_internal_host(&self) -> String {
+        format!(
+            "{}://{}:{}",
+            self.host().protocol,
+            self.host().url,
+            self.host().get_internal_port()
+        )
     }
     fn get_host_without_protocol(&self) -> String {
         match self.host().port.as_ref() {
