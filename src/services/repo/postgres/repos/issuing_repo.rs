@@ -42,6 +42,11 @@ impl IssuingTrait for IssuingRepo {
         self.help_find(to_find, "code", code).await
     }
 
+    async fn get_by_tx_code(&self, code: &str) -> Outcome<Model> {
+        let to_find = Entity::find().filter(Column::TxCode.eq(code));
+        self.help_find(to_find, "code", code).await
+    }
+
     async fn get_by_token(&self, token: &str) -> Outcome<Model> {
         let to_find = Entity::find().filter(Column::Token.eq(token));
         self.help_find(to_find, "token", token).await
