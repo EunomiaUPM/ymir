@@ -24,5 +24,6 @@ use crate::errors::Outcome;
 #[async_trait]
 pub trait IssuingTrait: BasicRepoTrait<Entity, NewModel> + Send + Sync {
     async fn get_by_pre_auth_code(&self, code: &str) -> Outcome<Model>;
+    async fn get_by_tx_code(&self, code: &str) -> Outcome<Model>;
     async fn get_by_token(&self, token: &str) -> Outcome<Model>;
 }

@@ -16,12 +16,15 @@
  */
 
 mod acc_token_requirements;
+mod actions;
 mod client;
+mod credential_request_req;
 mod grant_request;
 mod interact;
 mod subject;
 
 pub use acc_token_requirements::*;
+pub use actions::*;
 pub use client::*;
 pub use grant_request::*;
 pub use interact::*;

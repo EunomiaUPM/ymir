@@ -67,8 +67,9 @@ pub fn parse_from_str<T: DeserializeOwned>(data: &str) -> Outcome<T> {
 }
 
 pub fn parse_from_slice<T: DeserializeOwned>(data: &[u8]) -> Outcome<T> {
-    serde_json::from_slice(data)
-        .map_err(|e| Errors::parse("Unable to parse from slice", Some(Box::new(e))))
+    serde_json::from_slice(data).map_err(|e| {
+        Errors::format(BadFormat::Received, "Unable to parse from slice", Some(Box::new(e)))
+    })
 }
 
 pub fn parse_to_value<T: Serialize>(value: &T) -> Outcome<Value> {

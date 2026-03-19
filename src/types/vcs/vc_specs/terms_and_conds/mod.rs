@@ -17,27 +17,19 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::types::vcs::vc_specs::BaseCredentialSubject;
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TermsAndConditionsCredSub {
-    #[serde(flatten)]
-    pub base: BaseCredentialSubject,
     #[serde(rename = "gx:url")]
-    pub url: String,
+    pub uri: String,
     #[serde(rename = "gx:hash")]
     pub hash: String
 }
 
 impl TermsAndConditionsCredSub {
-    pub fn new_gaia<T: Into<String>>(kid: T) -> TermsAndConditionsCredSub {
-        Self {
-            base: BaseCredentialSubject {
-                id: kid.into(),
-                r#type: "gx:TermsAndConditions".to_string()
-            },
-            url: "test_url".to_string(),
-            hash: "test_hash".to_string()
-        }
+    pub fn new_gaia(uri: impl Into<String>, hash: impl Into<String>) -> TermsAndConditionsCredSub {
+        TermsAndConditionsCredSub { uri: uri.into(), hash: hash.into() }
+    }
+    pub fn random() -> TermsAndConditionsCredSub {
+        TermsAndConditionsCredSub { uri: "uri_to_stuff".to_string(), hash: "kk".to_string() }
     }
 }

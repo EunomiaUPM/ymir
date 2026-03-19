@@ -15,17 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::fmt::Display;
-
 use serde::{Deserialize, Serialize};
-use tracing::error;
 
-use crate::types::gnap::gr_use::GRUse;
-use crate::types::vcs::VcType;
+use super::InteractActions;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccessTokenRequirements4GR {
-    pub access: Access4AT,
+    pub access: Access4Req,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>, // REQUIRED if used as part of a request for multiple access tokens
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -34,7 +30,7 @@ pub struct AccessTokenRequirements4GR {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Access4AT {
+pub struct Access4Req {
     pub r#type: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub actions: Option<Vec<String>>, // Actions4Access4AT COMPLETAR
@@ -53,56 +49,17 @@ pub enum TokenReqTypeGR {
     Bearer
 }
 
-pub enum InteractActions {
-    Talk,
-    RequestVc
-}
-
-impl Display for InteractActions {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            InteractActions::Talk => write!(f, "talk"),
-            InteractActions::RequestVc => write!(f, "request-vc")
-        }
-    }
-}
-
 impl AccessTokenRequirements4GR {
-    pub fn new(option: &GRUse, vc_type: Option<&VcType>, token: Option<&TokenReqTypeGR>) -> Self {
-        let mut data = AccessTokenRequirements4GR::default();
-
-        match option {
-            GRUse::Talk => {
-                data.access.r#type = "api-access".to_string();
-                data.access.actions = Some(vec![InteractActions::Talk.to_string()]);
-            }
-            GRUse::VcReq => {
-                let vc_type = vc_type
-                    .or_else(|| {
-                        error!("You are requesting a VC but have not declared its type");
-                        None
-                    })
-                    .expect("You are requesting a VC but have not declared its type");
-                data.access.r#type = "vc-exchange".to_string();
-                data.access.actions = Some(vec![InteractActions::RequestVc.to_string()]);
-                data.access.datatypes = Some(vec![vc_type.to_conf()]);
-            }
-        }
-
-        if let Some(TokenReqTypeGR::Bearer) = token {
-            data.flags = Some(vec!["Bearer".to_string()]);
-        }
-
-        data
-    }
-}
-
-impl Default for AccessTokenRequirements4GR {
-    fn default() -> Self {
-        Self {
-            access: Access4AT {
-                r#type: "".to_string(),
-                actions: Some(vec![]),
+    pub fn new(actions: Option<&[InteractActions]>) -> Self {
+        let actions_vec: Vec<String> = actions
+            .map_or(vec![InteractActions::Talk], |a| a.to_vec())
+            .into_iter()
+            .map(|a| a.to_string())
+            .collect();
+        AccessTokenRequirements4GR {
+            access: Access4Req {
+                r#type: "api-access".to_string(),
+                actions: Some(actions_vec),
                 locations: None,
                 datatypes: None,
                 identifier: None,

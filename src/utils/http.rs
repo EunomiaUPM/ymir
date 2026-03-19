@@ -139,7 +139,7 @@ pub fn extract_query_param(params: &HashMap<String, String>, key: &str) -> Outco
     })
 }
 
-pub fn extract_gnap_token(headers: HeaderMap) -> Outcome<String> {
+pub fn extract_gnap_token(headers: &HeaderMap) -> Outcome<String> {
     headers
         .get("Authorization")
         .and_then(|value| value.to_str().ok())
@@ -148,7 +148,7 @@ pub fn extract_gnap_token(headers: HeaderMap) -> Outcome<String> {
         .ok_or_else(|| Errors::unauthorized("GNAP token missing", None))
 }
 
-pub fn extract_bearer_token(headers: HeaderMap) -> Outcome<String> {
+pub fn extract_bearer_token(headers: &HeaderMap) -> Outcome<String> {
     headers
         .get("Authorization")
         .and_then(|value| value.to_str().ok())

@@ -17,17 +17,20 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::Client4GR;
+use super::AccessTokenRequirements4GR;
 use super::Interact4GR;
-use super::{AccessTokenRequirements4GR, TokenReqTypeGR};
+use super::{Client4GR, InteractActions};
 use crate::data::entities::req_interaction;
-use crate::types::gnap::GRUse;
+use crate::types::gnap::grant_request::credential_request_req::CredentialRequest4GR;
 use crate::types::gnap::grant_request::subject::Subject4GR;
 use crate::types::vcs::VcType;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GrantRequest {
-    pub access_token: AccessTokenRequirements4GR,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub access_token: Option<AccessTokenRequirements4GR>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_request: Option<CredentialRequest4GR>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subject: Option<Subject4GR>, // REQUIRED if requesting subject information
     pub client: Client4GR,
@@ -37,18 +40,24 @@ pub struct GrantRequest {
 }
 
 impl GrantRequest {
-    pub fn new(
-        option: &GRUse,
+    pub fn new_vc(client: &Client4GR, vc_type: &VcType, model: &req_interaction::Model) -> Self {
+        Self {
+            access_token: None,
+            credential_request: Some(CredentialRequest4GR::new(vc_type)),
+            subject: None,
+            client: client.clone(),
+            user: None,
+            interact: Some(Interact4GR::new(model))
+        }
+    }
+    pub fn new_token(
         client: &Client4GR,
-        vc_type: Option<&VcType>,
+        actions: Option<&[InteractActions]>,
         model: &req_interaction::Model
     ) -> Self {
         Self {
-            access_token: AccessTokenRequirements4GR::new(
-                option,
-                vc_type,
-                Some(&TokenReqTypeGR::Bearer)
-            ),
+            access_token: Some(AccessTokenRequirements4GR::new(actions)),
+            credential_request: None,
             subject: None,
             client: client.clone(),
             user: None,

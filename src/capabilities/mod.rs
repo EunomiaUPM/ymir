@@ -16,4 +16,7 @@
  */
 
 mod did;
+mod httpsig;
+
 pub use did::DidResolver;
+pub use httpsig::HttpSig;

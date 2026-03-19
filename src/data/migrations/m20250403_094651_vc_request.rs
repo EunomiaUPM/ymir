@@ -37,7 +37,7 @@ impl MigrationTrait for Migration {
                             .array(ColumnType::Text)
                             .not_null()
                     )
-                    .col(ColumnDef::new(VcRequest::Cert).string())
+                    .col(ColumnDef::new(VcRequest::Cert).not_null().string())
                     .col(ColumnDef::new(VcRequest::VcUri).string())
                     .col(ColumnDef::new(VcRequest::IsVcIssued).boolean())
                     .col(ColumnDef::new(VcRequest::Status).string().not_null())

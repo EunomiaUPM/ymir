@@ -33,6 +33,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(RecvInteraction::Start).array(ColumnType::Text).not_null())
                     .col(ColumnDef::new(RecvInteraction::Method).string().not_null())
                     .col(ColumnDef::new(RecvInteraction::Uri).string().not_null())
+                    .col(ColumnDef::new(RecvInteraction::Cert).string().not_null())
                     .col(ColumnDef::new(RecvInteraction::ClientNonce).string().not_null())
                     .col(ColumnDef::new(RecvInteraction::HashMethod).string().not_null())
                     .col(ColumnDef::new(RecvInteraction::Hints).string())
@@ -60,6 +61,7 @@ pub enum RecvInteraction {
     Start,
     Method,
     Uri,
+    Cert,
     ClientNonce,
     ASNonce,
     InteractRef,

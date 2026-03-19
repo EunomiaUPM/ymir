@@ -25,7 +25,8 @@ use crate::config::traits::{HostsConfigTrait, SingleHostTrait};
 pub struct HostConfig {
     pub protocol: String,
     pub url: String,
-    pub port: Option<String>
+    pub port: Option<String>,
+    pub internal_port: Option<String>
 }
 
 impl SingleHostTrait for HostConfig {

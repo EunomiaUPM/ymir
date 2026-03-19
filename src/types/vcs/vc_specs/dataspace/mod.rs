@@ -15,25 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
+mod builder;
+mod core;
 
-use crate::types::vcs::vc_specs::BaseCredentialSubject;
+pub use core::DataSpaceParticipant;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct DataSpaceParticipant {
-    #[serde(flatten)]
-    pub base: BaseCredentialSubject,
-    pub dataspace_id: String
-}
-
-impl DataSpaceParticipant {
-    pub fn new<R: Into<String>, S: Into<String>>(id: R, dataspace_id: S) -> DataSpaceParticipant {
-        DataSpaceParticipant {
-            base: BaseCredentialSubject {
-                id: id.into(),
-                r#type: "DataspaceParticipant".to_string()
-            },
-            dataspace_id: dataspace_id.into()
-        }
-    }
-}
+pub use builder::DataSpaceParticipantBuilder;

@@ -15,8 +15,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod legal_registration_number;
-mod vc_data;
+use serde::{Deserialize, Serialize};
 
-pub use legal_registration_number::*;
-pub use vc_data::*;
+use crate::types::vcs::VcType;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CredentialResponse {
+    pub credential_uri: String,
+    pub credential_type: String
+}
+
+impl CredentialResponse {
+    pub fn new(credential_uri: &str, vc_type: &VcType) -> CredentialResponse {
+        CredentialResponse {
+            credential_uri: credential_uri.to_string(),
+            credential_type: vc_type.to_conf()
+        }
+    }
+}

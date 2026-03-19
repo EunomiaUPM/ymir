@@ -24,6 +24,9 @@ pub trait HostsConfigTrait {
     fn grpc(&self) -> Option<&HostConfig> { self.hosts().grpc.as_ref() }
     fn graphql(&self) -> Option<&HostConfig> { self.hosts().graphql.as_ref() }
     fn get_host(&self, host_type: HostType) -> String { self.get_helper(host_type).get_host() }
+    fn get_internal_host(&self, host_type: HostType) -> String {
+        self.get_helper(host_type).get_internal_host()
+    }
 
     fn get_host_without_protocol(&self, host_type: HostType) -> String {
         self.get_helper(host_type).get_host_without_protocol()
@@ -43,6 +46,10 @@ pub trait HostsConfigTrait {
         host.ok_or_else(|| Errors::not_active(&format!("{} host is not defined", host_type), None))
             .expect(&format!("{} host is not defined", host_type))
     }
+
+    fn get_internal_port(&self, host_type: HostType) -> String {
+        self.get_helper(host_type).get_internal_port()
+    }
 }
 
 pub trait SingleHostTrait {
@@ -52,6 +59,14 @@ pub trait SingleHostTrait {
             Some(port) => format!("{}://{}:{}", self.host().protocol, self.host().url, port),
             None => format!("{}://{}", self.host().protocol, self.host().url)
         }
+    }
+    fn get_internal_host(&self) -> String {
+        format!(
+            "{}://{}:{}",
+            self.host().protocol,
+            self.host().url,
+            self.host().get_internal_port()
+        )
     }
     fn get_host_without_protocol(&self) -> String {
         match self.host().port.as_ref() {
@@ -63,5 +78,8 @@ pub trait SingleHostTrait {
     }
     fn get_tls_port(&self) -> String {
         self.host().port.clone().unwrap_or_else(|| "443".to_string())
+    }
+    fn get_internal_port(&self) -> String {
+        self.host().internal_port.clone().unwrap_or_else(|| self.get_tls_port())
     }
 }

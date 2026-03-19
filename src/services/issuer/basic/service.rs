@@ -119,10 +119,7 @@ impl IssuerTrait for BasicIssuerService {
             false => issuer
         };
 
-        match model.step {
-            true => VCCredOffer::new(issuer, &model.tx_code, &model.vc_type),
-            false => VCCredOffer::new(issuer, &model.pre_auth_code, &model.vc_type)
-        }
+        VCCredOffer::new(issuer, &model.pre_auth_code, &model.vc_type)
     }
 
     fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata {
@@ -177,11 +174,11 @@ impl IssuerTrait for BasicIssuerService {
     fn validate_token_req(&self, model: &issuing::Model, payload: &TokenRequest) -> Outcome<()> {
         info!("Validating token vc_request");
 
-        if let Some(tx_code) = &payload.tx_code {
-            if model.tx_code != *tx_code {
-                return Err(Errors::forbidden("tx_code does not match", None));
-            }
-        }
+        // if let Some(tx_code) = &payload.tx_code {
+        //     if model.tx_code != *tx_code {
+        //         return Err(Errors::forbidden("tx_code does not match", None));
+        //     }
+        // }
 
         if model.pre_auth_code != payload.pre_authorized_code {
             return Err(Errors::forbidden("pre_auth_code does not match", None));

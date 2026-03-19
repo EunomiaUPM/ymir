@@ -39,7 +39,12 @@ impl BasicRepoTrait<Entity, NewModel> for IssuingRepo {
 impl IssuingTrait for IssuingRepo {
     async fn get_by_pre_auth_code(&self, code: &str) -> Outcome<Model> {
         let to_find = Entity::find().filter(Column::PreAuthCode.eq(code));
-        self.help_find(to_find, "code", code).await
+        self.help_find(to_find, "pre_auth_code", code).await
+    }
+
+    async fn get_by_tx_code(&self, code: &str) -> Outcome<Model> {
+        let to_find = Entity::find().filter(Column::TxCode.eq(code));
+        self.help_find(to_find, "tx_code", code).await
     }
 
     async fn get_by_token(&self, token: &str) -> Outcome<Model> {

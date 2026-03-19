@@ -22,8 +22,9 @@ use crate::config::traits::ConnectionConfigTrait;
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ConnectionConfig {
     pub is_local: bool,
-    pub is_tls_enabled: bool,
-    pub is_vault_real: bool
+    pub is_prod: bool,
+    pub is_vault_real: bool,
+    pub has_tls_proxy: bool
 }
 
 impl ConnectionConfigTrait for ConnectionConfig {

@@ -43,7 +43,7 @@ pub struct Finish4Interact {
 
 pub enum InteractStart {
     Oidc4VP,
-    CrossUser
+    Cert
 }
 
 impl FromStr for InteractStart {
@@ -52,7 +52,7 @@ impl FromStr for InteractStart {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
             "oidc4vp" => Ok(InteractStart::Oidc4VP),
-            "cross-user" => Ok(InteractStart::CrossUser),
+            "cert" => Ok(InteractStart::Cert),
             _ => Err(Errors::format(
                 BadFormat::Received,
                 format!("Interact start method {} not defined", s),
@@ -66,7 +66,16 @@ impl Display for InteractStart {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             InteractStart::Oidc4VP => write!(f, "oidc4vp"),
-            InteractStart::CrossUser => write!(f, "cross-user")
+            InteractStart::Cert => write!(f, "cross-user")
+        }
+    }
+}
+
+impl InteractStart {
+    pub fn to_start(&self) -> String {
+        match self {
+            InteractStart::Oidc4VP => "oidc4vp".to_string(),
+            InteractStart::Cert => "".to_string()
         }
     }
 }

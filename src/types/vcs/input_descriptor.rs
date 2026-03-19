@@ -19,35 +19,35 @@ use serde::{Deserialize, Serialize};
 
 use crate::types::vcs::W3cDataModelVersion;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InputDescriptor {
     pub id: String,
     pub format: InputDescriptorFormat,
     pub constraints: InputDescriptorConstraints
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InputDescriptorFormat {
     jwt_vc_json: InputDescriptorFormatJWTJson
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InputDescriptorFormatJWTJson {
     pub alg: Vec<String>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InputDescriptorConstraints {
     pub fields: Vec<InputDescriptorConstraintsFields>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InputDescriptorConstraintsFields {
     pub path: Vec<String>,
     pub filter: InputDescriptorConstraintsFieldsFilter
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InputDescriptorConstraintsFieldsFilter {
     pub r#type: String,
     pub pattern: String

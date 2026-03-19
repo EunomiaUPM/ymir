@@ -17,13 +17,27 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::errors::{Errors, Outcome};
 use crate::types::vcs::VcType;
-use crate::types::vcs::vc_specs::BaseCredentialSubject;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RegistrationNumber {
-    #[serde(flatten)]
-    pub base: BaseCredentialSubject,
+pub struct LegalPersonCredentialSubject {
+    pub id: String,
+    #[serde(rename = "gx:registrationNumber")]
+    pub gx_registration_number: TypedRegistrationNumber,
+    #[serde(rename = "gx:legalAddress")]
+    pub gx_legal_address: Address,
+    #[serde(rename = "gx:headquartersAddress")]
+    pub gx_headquarters_address: Address,
+    #[serde(rename = "schema:name")]
+    pub schema_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub schema_description: Option<String>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TypedRegistrationNumber {
+    pub id: String,
     #[serde(rename = "gx:registrationNumberType")]
     pub gx_registration_number_type: String,
     #[serde(rename = "gx:registrationNumberValue")]
@@ -43,40 +57,33 @@ pub struct Address {
     pub gx_street_address: String
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LegalPersonRef {
-    pub id: String,
-    pub r#type: String
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LegalPersonCredentialSubject {
-    pub id: String,
-    pub r#type: String,
-    #[serde(rename = "gx:registrationNumber")]
-    pub gx_registration_number: RegistrationNumber,
-    #[serde(rename = "gx:legalAddress")]
-    pub gx_legal_address: Address,
-    #[serde(rename = "gx:headquartersAddress")]
-    pub gx_headquarters_address: Address,
-    pub schema_name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub schema_description: Option<String>
-}
-
 impl LegalPersonCredentialSubject {
-    pub fn default4gaia<T: Into<String>>(kid: T) -> LegalPersonCredentialSubject {
-        let uid = uuid::Uuid::new_v4();
-        LegalPersonCredentialSubject {
-            id: uid.to_string(),
-            r#type: VcType::LegalPerson.to_string(),
-            gx_registration_number: RegistrationNumber {
-                base: BaseCredentialSubject {
-                    id: kid.into(),
-                    r#type: "gx:RegistrationNumber".to_string()
-                },
-                gx_registration_number_type: "gx:taxID".to_string(),
-                gx_registration_number_value: "todo".to_string()
+    pub fn new4gaia(
+        kid: &str,
+        vc_type: &VcType,
+        code: impl Into<String>
+    ) -> Outcome<LegalPersonCredentialSubject> {
+        match vc_type {
+            VcType::Eori
+            | VcType::Euid
+            | VcType::LeiCode
+            | VcType::LocalRegistrationNumber
+            | VcType::TaxId
+            | VcType::VatId => vc_type,
+            vc_type => {
+                return Err(Errors::crazy(
+                    format!("Unable to issue a LegalPerson vc while requesting {}", vc_type),
+                    None
+                ));
+            }
+        };
+
+        Ok(LegalPersonCredentialSubject {
+            id: kid.to_string(),
+            gx_registration_number: TypedRegistrationNumber {
+                id: kid.to_string(),
+                gx_registration_number_type: vc_type.to_string(),
+                gx_registration_number_value: code.into()
             },
             gx_legal_address: Address {
                 id: None,
@@ -98,6 +105,6 @@ impl LegalPersonCredentialSubject {
             },
             schema_name: "UPM to the sky".to_string(),
             schema_description: None
-        }
+        })
     }
 }

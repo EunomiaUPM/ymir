@@ -20,13 +20,14 @@ use std::collections::HashMap;
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::errors::Outcome;
+use crate::errors::{Errors, Outcome};
 use crate::utils::parse_to_value;
 
 #[derive(Clone)]
 pub enum Body {
     Json(Value),
     Raw(String),
+    Bytes(Vec<u8>),
     Form(HashMap<String, String>),
     None
 }
@@ -46,4 +47,9 @@ impl Body {
     }
 
     pub fn str(value: &str) -> Outcome<Body> { Ok(Body::Raw(value.to_string())) }
+    pub fn from_json_bytes<T: Serialize>(value: &T) -> Outcome<(Body, Vec<u8>)> {
+        let bytes = serde_json::to_vec(value)
+            .map_err(|e| Errors::parse("Failed to serialize body to bytes", Some(Box::new(e))))?;
+        Ok((Body::Bytes(bytes.clone()), bytes))
+    }
 }

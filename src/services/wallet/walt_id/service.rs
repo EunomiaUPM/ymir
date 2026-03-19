@@ -40,8 +40,9 @@ use crate::types::dids::dids_info::DidsInfo;
 use crate::types::http::Body;
 use crate::types::jwt::AuthJwtClaims;
 use crate::types::secrets::{SemiWalletSecrets, StringHelper};
+use crate::types::vcs::VPDef;
 use crate::types::wallet::{
-    CredentialOfferResponse, KeyDefinition, MatchVCsRequest, MatchingVCs, RedirectResponse, Vpd,
+    CredentialOfferResponse, KeyDefinition, MatchVCsRequest, MatchingVCs, RedirectResponse,
     WalletCredentials, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession
 };
 use crate::utils::{
@@ -732,7 +733,7 @@ impl WalletTrait for WaltIdService {
         Ok(())
     }
 
-    async fn get_vpd(&self, uri: &str) -> Outcome<Vpd> {
+    async fn get_vpd(&self, uri: &str) -> Outcome<VPDef> {
         info!("Joining exchange");
 
         let wallet = self.get_wallet().await?;
@@ -755,7 +756,7 @@ impl WalletTrait for WaltIdService {
         Ok(vpd)
     }
 
-    fn parse_vpd(&self, vpd_as_string: &str) -> Outcome<Vpd> {
+    fn parse_vpd(&self, vpd_as_string: &str) -> Outcome<VPDef> {
         info!("Parsing Vpd");
 
         let url = Url::parse(
@@ -770,12 +771,14 @@ impl WalletTrait for WaltIdService {
         parse_from_str(&vpd_json)
     }
 
-    async fn get_matching_vcs(&self, vpd: &Vpd) -> Outcome<Vec<String>> {
+    async fn get_matching_vcs(&self, vpd: &VPDef) -> Outcome<Vec<String>> {
         info!("Matching Verifiable Credentials for OIDC4VP");
         let mut vcs_id = Vec::with_capacity(vpd.input_descriptors.len());
         for descriptor in &vpd.input_descriptors {
-            let n_vpd =
-                Vpd { id: "temporal_id".to_string(), input_descriptors: vec![descriptor.clone()] };
+            let n_vpd = VPDef {
+                id: "temporal_id".to_string(),
+                input_descriptors: vec![descriptor.clone()]
+            };
             let vcs = self.match_vc4vp(parse_to_value(&n_vpd)?).await?;
             let vc_id = vcs.first().map(|data| data.id.clone()).ok_or_else(|| {
                 Errors::missing_action(
