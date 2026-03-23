@@ -16,7 +16,7 @@
  */
 
 use std::collections::HashMap;
-
+use std::str::FromStr;
 use async_trait::async_trait;
 use axum::extract::rejection::{FormRejection, JsonRejection};
 use axum::http::header::{ACCEPT, CONTENT_TYPE};
@@ -25,7 +25,7 @@ use axum::{Form, Json};
 use reqwest::{Response, Url};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-
+use urn::Urn;
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 
 pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
@@ -155,4 +155,10 @@ pub fn extract_bearer_token(headers: &HeaderMap) -> Outcome<String> {
         .and_then(|s| s.strip_prefix("Bearer "))
         .map(|token| token.to_string())
         .ok_or_else(|| Errors::unauthorized("Bearer token missing", None))
+}
+
+pub fn extract_path_urn(urn: &String) -> Outcome<Urn> {
+    let id_urn = Urn::from_str(&urn)
+        .map_err(|e| Errors::parse(format!("Invalid Urn: {}", e), None))?;
+    Ok(id_urn)
 }

@@ -29,3 +29,17 @@ pub use sub_errors::*;
 pub type AnyError = Box<dyn std::error::Error + Send + Sync>;
 pub type Outcome<T> = Result<T, Errors>;
 pub type AppResult<T = Response> = Result<T, Errors>;
+
+/// Trait for repository-specific error types to convert into [`Errors`].
+///
+/// Implement this trait (with an empty body) on any repo error enum that
+/// derives `thiserror::Error` and whose fields are `Send + Sync + 'static`.
+/// The default implementation wraps the error as a [`Errors::db`] variant.
+pub trait RepoIntoErrors: std::error::Error + Send + Sync + 'static {
+    fn into_errors(self) -> Errors
+    where
+        Self: Sized,
+    {
+        Errors::db(self.to_string(), Some(Box::new(self)))
+    }
+}
