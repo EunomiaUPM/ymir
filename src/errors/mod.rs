@@ -38,7 +38,7 @@ pub type AppResult<T = Response> = Result<T, Errors>;
 pub trait RepoIntoErrors: std::error::Error + Send + Sync + 'static {
     fn into_errors(self) -> Errors
     where
-        Self: Sized,
+        Self: Sized
     {
         Errors::db(self.to_string(), Some(Box::new(self)))
     }

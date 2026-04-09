@@ -190,7 +190,5 @@ impl From<serde_json::Error> for Errors {
 }
 
 impl From<urn::Error> for Errors {
-    fn from(e: urn::Error) -> Self {
-        Errors::parse(e.to_string(), Some(Box::new(e)))
-    }
+    fn from(e: urn::Error) -> Self { Errors::parse(e.to_string(), Some(Box::new(e))) }
 }

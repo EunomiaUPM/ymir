@@ -55,7 +55,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
         let code = create_opaque_token();
         let tx_code = create_opaque_token();
         let token = create_opaque_token();
-        let credential_id = Uuid::new_v4().to_string();
+        let credential_id = format!("urn:uuid:{}", Uuid::new_v4().to_string());
         ActiveModel {
             id: ActiveValue::Set(self.id),
             name: ActiveValue::Set(self.name),
