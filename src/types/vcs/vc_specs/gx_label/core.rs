@@ -17,9 +17,27 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WalletLoginResponse {
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GxLabelCredSubject {
     pub id: String,
-    pub username: String,
-    pub token: String
+    #[serde(rename = "gx:labelLevel")]
+    pub label_level: String,
+    #[serde(rename = "gx:engine_version")]
+    pub engine_version: String,
+    #[serde(rename = "gx:rules_version")]
+    pub rules_version: String,
+    #[serde(rename = "gx:compliant_credentials")]
+    pub compliant_credentials: Vec<CompliantCredential>,
+    #[serde(rename = "gx:validated_criteria")]
+    pub validated_criteria: Vec<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CompliantCredential {
+    pub id: String,
+    pub r#type: String,
+    #[serde(rename = "gx:digestSRI")]
+    pub digest_sri: String,
+}
+

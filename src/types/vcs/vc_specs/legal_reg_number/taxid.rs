@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
 use std::marker::PhantomData;
 
 use serde::{Deserialize, Serialize};
@@ -25,7 +26,7 @@ pub struct TaxId {
     pub id: String,
     // Company tax ID used to identify it through the OpenCorporate service.
     #[serde(rename = "gx:taxID")]
-    pub tax_id: String
+    pub tax_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -37,11 +38,13 @@ pub struct TaxIdBuilder<T> {
     tax_id: String,
 
     #[serde(skip)]
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 impl TaxIdBuilder<Missing> {
-    pub fn new(tax_id: String) -> Self { Self { id: None, tax_id, _marker: PhantomData } }
+    pub fn new(tax_id: String) -> Self {
+        Self { id: None, tax_id, _marker: PhantomData }
+    }
 }
 
 impl<T> TaxIdBuilder<T> {

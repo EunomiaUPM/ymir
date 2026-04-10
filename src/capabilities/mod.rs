@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 
 mod did;
 mod httpsig;
+mod digest_sri;
 
 pub use did::DidResolver;
 pub use httpsig::HttpSig;
+pub use digest_sri::DigestSRI;

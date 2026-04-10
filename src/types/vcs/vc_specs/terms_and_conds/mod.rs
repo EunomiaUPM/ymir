@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,17 +19,18 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TermsAndConditionsCredSub {
+    pub id: String,
     #[serde(rename = "gx:url")]
     pub uri: String,
     #[serde(rename = "gx:hash")]
-    pub hash: String
+    pub hash: String,
 }
 
 impl TermsAndConditionsCredSub {
-    pub fn new_gaia(uri: impl Into<String>, hash: impl Into<String>) -> TermsAndConditionsCredSub {
-        TermsAndConditionsCredSub { uri: uri.into(), hash: hash.into() }
+    pub fn new_gaia(id: impl Into<String>, uri: impl Into<String>, hash: impl Into<String>) -> TermsAndConditionsCredSub {
+        TermsAndConditionsCredSub { id: id.into(), uri: uri.into(), hash: hash.into() }
     }
-    pub fn random() -> TermsAndConditionsCredSub {
-        TermsAndConditionsCredSub { uri: "uri_to_stuff".to_string(), hash: "kk".to_string() }
+    pub fn random(id: impl Into<String>) -> TermsAndConditionsCredSub {
+        TermsAndConditionsCredSub { id: id.into(), uri: "uri_to_stuff".to_string(), hash: "kk".to_string() }
     }
 }

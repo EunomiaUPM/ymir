@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,10 @@ use crate::utils::read;
 
 pub trait ApiConfigTrait {
     fn api(&self) -> &ApiConfig;
-    fn get_openapi(&self) -> Outcome<String> { read(&self.api().openapi_path) }
-    fn get_api_version(&self) -> String { format!("/api/{}", self.api().version) }
+    fn get_openapi(&self) -> Outcome<String> {
+        read(&self.api().openapi_path)
+    }
+    fn get_api_version(&self) -> String {
+        format!("/api/{}", self.api().version)
+    }
 }

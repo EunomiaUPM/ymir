@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(RecvVerification::Id).string().not_null().primary_key())
                     .col(ColumnDef::new(RecvVerification::State).string().not_null())
                     .col(ColumnDef::new(RecvVerification::Nonce).string().not_null())
-                    .col(ColumnDef::new(RecvVerification::VcType).string().not_null())
+                    .col(ColumnDef::new(RecvVerification::VcType).array(ColumnType::Text).not_null())
                     .col(ColumnDef::new(RecvVerification::Audience).string().not_null())
                     .col(ColumnDef::new(RecvVerification::Holder).string())
                     .col(ColumnDef::new(RecvVerification::Vpt).string())

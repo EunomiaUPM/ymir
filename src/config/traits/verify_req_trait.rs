@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,10 @@ use crate::types::vcs::VcType;
 
 pub trait VerifyReqConfigTrait {
     fn verify_req_config(&self) -> &VerifyReqConfig;
-    fn is_cert_allowed(&self) -> bool { self.verify_req_config().is_cert_allowed }
-    fn get_requested_vcs(&self) -> &[VcType] { &self.verify_req_config().vcs_requested }
+    fn is_cert_allowed(&self) -> bool {
+        self.verify_req_config().is_cert_allowed
+    }
+    fn get_requested_vcs(&self) -> &[VcType] {
+        &self.verify_req_config().vcs_requested
+    }
 }

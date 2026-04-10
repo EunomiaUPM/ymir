@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ pub struct Model {
     pub id: String, // REQUEST
     pub state: String,                     // RANDOM
     pub nonce: String,                     // RANDOM
-    pub vc_type: String,                   // REQUEST
+    pub vc_type: Vec<String>,                   // REQUEST
     pub audience: String,                  // SEMI-RANDOM
     pub holder: Option<String>,            // RESPONSE
     pub vpt: Option<String>,               // RESPONSE
@@ -44,7 +44,7 @@ pub struct Model {
 pub struct NewModel {
     pub id: String,       // REQUEST
     pub audience: String, // SEMI-RANDOM
-    pub vc_type: String   // REQUEST
+    pub vc_type: Vec<String>   // REQUEST
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {

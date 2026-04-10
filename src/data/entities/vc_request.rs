@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ pub struct Model {
     pub vc_type: String,                         // REQUEST
     pub cert: String,                            // REQUEST
     pub interact_method: Vec<String>,            // REQUEST
+    pub vpt: Option<String>,
     pub vc_uri: Option<String>,                  // RESPONSE
     pub status: String,                          // DEFAULT
     pub is_vc_issued: bool,                      // COMPLETION
@@ -55,6 +56,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             vc_type: ActiveValue::Set(self.vc_type),
             cert: ActiveValue::Set(self.cert),
             interact_method: ActiveValue::Set(self.interact_method),
+            vpt: ActiveValue::Set(None),
             vc_uri: ActiveValue::Set(None),
             status: ActiveValue::Set("Pending".to_string()),
             is_vc_issued: ActiveValue::Set(false),
@@ -72,6 +74,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             vc_type: ActiveValue::Set(self.vc_type),
             cert: ActiveValue::Set(self.cert),
             interact_method: ActiveValue::Set(self.interact_method),
+            vpt: ActiveValue::Set(None),
             vc_uri: ActiveValue::Set(self.vc_uri),
             status: ActiveValue::Set(self.status),
             is_vc_issued: ActiveValue::Set(self.is_vc_issued),

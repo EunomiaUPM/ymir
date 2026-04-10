@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ impl MigrationTrait for Migration {
                             .array(ColumnType::Text)
                             .not_null()
                     )
+                    .col(ColumnDef::new(VcRequest::VPT).string())
                     .col(ColumnDef::new(VcRequest::Cert).not_null().string())
                     .col(ColumnDef::new(VcRequest::VcUri).string())
                     .col(ColumnDef::new(VcRequest::IsVcIssued).boolean())
@@ -61,6 +62,7 @@ pub enum VcRequest {
     VcType,
     Cert,
     InteractMethod,
+    VPT,
     VcUri,
     IsVcIssued,
     Status,
