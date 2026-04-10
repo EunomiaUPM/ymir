@@ -26,7 +26,7 @@ pub struct Euid {
     pub id: String,
     // The European Unique Identifier (EUID).
     #[serde(rename = "gx:euid")]
-    pub euid: String
+    pub euid: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,21 +38,34 @@ pub struct EuidBuilder<T> {
     euid: String,
 
     #[serde(skip)]
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 impl EuidBuilder<Missing> {
-    pub fn new(euid: String) -> Self { Self { id: None, euid, _marker: PhantomData } }
+    pub fn new(euid: String) -> Self {
+        Self {
+            id: None,
+            euid,
+            _marker: PhantomData,
+        }
+    }
 }
 
 impl<T> EuidBuilder<T> {
     pub fn id(self, id: String) -> EuidBuilder<Present> {
-        EuidBuilder { id: Some(id), euid: self.euid, _marker: PhantomData }
+        EuidBuilder {
+            id: Some(id),
+            euid: self.euid,
+            _marker: PhantomData,
+        }
     }
 }
 
 impl EuidBuilder<Present> {
     pub fn build(self) -> Euid {
-        Euid { id: self.id.expect("Builder invariant violated: id missing"), euid: self.euid }
+        Euid {
+            id: self.id.expect("Builder invariant violated: id missing"),
+            euid: self.euid,
+        }
     }
 }

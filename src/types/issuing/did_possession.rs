@@ -24,5 +24,5 @@ pub struct DidPossession {
     pub aud: String,
     pub jti: String,
     pub iat: u64,
-    pub exp: u64
+    pub exp: u64,
 }

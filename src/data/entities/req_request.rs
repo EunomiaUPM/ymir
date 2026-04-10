@@ -34,7 +34,7 @@ pub struct Model {
     pub token: Option<String>,                   // COMPLETION
     pub status: String,                          // DEFAULT
     pub created_at: chrono::NaiveDateTime,       // DEFAULT
-    pub ended_at: Option<chrono::NaiveDateTime>  // COMPLETION
+    pub ended_at: Option<chrono::NaiveDateTime>, // COMPLETION
 }
 
 #[derive(Clone, Debug)]
@@ -43,7 +43,7 @@ pub struct NewModel {
     pub provider_id: String,    // REQUEST
     pub provider_slug: String,  // REQUEST
     pub grant_endpoint: String, // REQUEST,
-    pub auto: Option<bool>
+    pub auto: Option<bool>,
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -58,7 +58,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             token: ActiveValue::Set(None),
             status: ActiveValue::Set("Processing".to_string()),
             created_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            ended_at: ActiveValue::Set(None)
+            ended_at: ActiveValue::Set(None),
         }
     }
 }
@@ -75,7 +75,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             token: ActiveValue::Set(self.token),
             status: ActiveValue::Set(self.status),
             created_at: ActiveValue::Set(self.created_at),
-            ended_at: ActiveValue::Set(self.ended_at)
+            ended_at: ActiveValue::Set(self.ended_at),
         }
     }
 }

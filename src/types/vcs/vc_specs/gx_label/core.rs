@@ -17,7 +17,6 @@
 
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GxLabelCredSubject {
     pub id: String,
@@ -40,4 +39,3 @@ pub struct CompliantCredential {
     #[serde(rename = "gx:digestSRI")]
     pub digest_sri: String,
 }
-

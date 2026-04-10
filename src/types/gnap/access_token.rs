@@ -33,7 +33,7 @@ pub struct AccessToken {
     pub expires_in: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key: Option<Value>,
-    pub flags: Option<Vec<String>>
+    pub flags: Option<Vec<String>>,
 }
 
 impl AccessToken {
@@ -48,11 +48,11 @@ impl AccessToken {
                 locations: model.locations.clone(),
                 datatypes: model.datatypes.clone(),
                 identifier: model.identifier.clone(),
-                privileges: model.privileges.clone()
+                privileges: model.privileges.clone(),
             },
             expires_in: None,
             key: None,
-            flags: None
+            flags: None,
         }
     }
 }
@@ -65,11 +65,16 @@ pub struct ContinueToken {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub flags: Option<Vec<String>>
+    pub flags: Option<Vec<String>>,
 }
 
 impl ContinueToken {
     pub fn new<T: Into<String>>(value: T) -> Self {
-        ContinueToken { value: value.into(), label: None, expires_in: None, flags: None }
+        ContinueToken {
+            value: value.into(),
+            label: None,
+            expires_in: None,
+            flags: None,
+        }
     }
 }

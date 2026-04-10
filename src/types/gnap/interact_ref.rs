@@ -19,5 +19,5 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RefBody {
-    pub interact_ref: String
+    pub interact_ref: String,
 }

@@ -22,14 +22,14 @@ use crate::types::vcs::VcType;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CredentialResponse {
     pub credential_uri: String,
-    pub credential_type: String
+    pub credential_type: String,
 }
 
 impl CredentialResponse {
     pub fn new(credential_uri: &str, vc_type: &VcType) -> CredentialResponse {
         CredentialResponse {
             credential_uri: credential_uri.to_string(),
-            credential_type: vc_type.to_conf()
+            credential_type: vc_type.to_conf(),
         }
     }
 }

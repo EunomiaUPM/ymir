@@ -32,7 +32,7 @@ pub struct Model {
     pub identifier: Option<String>,      // REQUEST
     pub privileges: Option<Vec<String>>, // REQUEST
     pub label: Option<String>,           // REQUEST
-    pub flags: Option<Vec<String>>       // REQUEST
+    pub flags: Option<Vec<String>>,      // REQUEST
 }
 
 impl IntoActiveSet<ActiveModel> for Model {
@@ -46,7 +46,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             identifier: ActiveValue::Set(self.identifier),
             privileges: ActiveValue::Set(self.privileges),
             label: ActiveValue::Set(self.label),
-            flags: ActiveValue::Set(self.flags)
+            flags: ActiveValue::Set(self.flags),
         }
     }
 }

@@ -24,15 +24,17 @@ use crate::types::dids::did_type::DidType;
 pub struct DidConfig {
     pub did: String,
     pub r#type: DidType,
-    pub did_web_options: Option<DidWebOptions>
+    pub did_web_options: Option<DidWebOptions>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DidWebOptions {
     pub domain: String,
-    pub path: Option<String>
+    pub path: Option<String>,
 }
 
 impl DidConfigTrait for DidConfig {
-    fn did_config(&self) -> &DidConfig { self }
+    fn did_config(&self) -> &DidConfig {
+        self
+    }
 }

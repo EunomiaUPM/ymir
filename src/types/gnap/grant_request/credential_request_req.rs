@@ -26,7 +26,7 @@ pub struct CredentialRequest4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>, // REQUIRED if used as part of a request for multiple access tokens
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub flags: Option<Vec<String>>
+    pub flags: Option<Vec<String>>,
 }
 
 impl CredentialRequest4GR {
@@ -38,10 +38,10 @@ impl CredentialRequest4GR {
                 locations: None,
                 datatypes: Some(vec![vc_type.to_conf()]),
                 identifier: None,
-                privileges: None
+                privileges: None,
             },
             label: None,
-            flags: None
+            flags: None,
         }
     }
 }

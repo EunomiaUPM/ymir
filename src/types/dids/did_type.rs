@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 pub enum DidType {
     Web,
     Jwk,
-    Other
+    Other,
 }
 
 impl fmt::Display for DidType {
@@ -31,7 +31,7 @@ impl fmt::Display for DidType {
         let s = match self {
             DidType::Web => "did:web",
             DidType::Jwk => "did:jwk",
-            DidType::Other => "other"
+            DidType::Other => "other",
         };
         write!(f, "{}", s)
     }

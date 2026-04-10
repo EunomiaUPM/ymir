@@ -32,6 +32,9 @@ impl VPDef {
             .map(|vc_type| InputDescriptor::new(vc_type, model))
             .collect();
 
-        VPDef { id: id.into(), input_descriptors }
+        VPDef {
+            id: id.into(),
+            input_descriptors,
+        }
     }
 }

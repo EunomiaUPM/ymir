@@ -85,9 +85,15 @@ pub trait SingleHostTrait {
         }
     }
     fn get_tls_port(&self) -> String {
-        self.host().port.clone().unwrap_or_else(|| "443".to_string())
+        self.host()
+            .port
+            .clone()
+            .unwrap_or_else(|| "443".to_string())
     }
     fn get_internal_port(&self) -> String {
-        self.host().internal_port.clone().unwrap_or_else(|| self.get_tls_port())
+        self.host()
+            .internal_port
+            .clone()
+            .unwrap_or_else(|| self.get_tls_port())
     }
 }

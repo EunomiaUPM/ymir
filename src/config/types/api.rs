@@ -22,9 +22,11 @@ use crate::config::traits::ApiConfigTrait;
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ApiConfig {
     pub version: String,
-    pub openapi_path: String
+    pub openapi_path: String,
 }
 
 impl ApiConfigTrait for ApiConfig {
-    fn api(&self) -> &ApiConfig { self }
+    fn api(&self) -> &ApiConfig {
+        self
+    }
 }

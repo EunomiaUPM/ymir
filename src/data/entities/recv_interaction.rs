@@ -43,7 +43,7 @@ pub struct Model {
     pub continue_token: String,    // RESPONSE
     pub as_nonce: String,          // RANDOM
     pub interact_ref: String,      // RANDOM
-    pub hash: String               // RANDOM
+    pub hash: String,              // RANDOM
 }
 
 #[derive(Clone, Debug)]
@@ -58,17 +58,26 @@ pub struct NewModel {
     pub hints: Option<String>,       // REQUEST
     pub grant_endpoint: String,      // REQUEST
     pub continue_endpoint: String,   // RESPONSE
-    pub continue_token: String       // RESPONSE
+    pub continue_token: String,      // RESPONSE
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
     fn to_active(self) -> ActiveModel {
-        let as_nonce: String =
-            rand::rng().sample_iter(&Alphanumeric).take(36).map(char::from).collect();
-        let interact_ref: String =
-            rand::rng().sample_iter(&Alphanumeric).take(16).map(char::from).collect();
-        let continue_id: String =
-            rand::rng().sample_iter(&Alphanumeric).take(12).map(char::from).collect();
+        let as_nonce: String = rand::rng()
+            .sample_iter(&Alphanumeric)
+            .take(36)
+            .map(char::from)
+            .collect();
+        let interact_ref: String = rand::rng()
+            .sample_iter(&Alphanumeric)
+            .take(16)
+            .map(char::from)
+            .collect();
+        let continue_id: String = rand::rng()
+            .sample_iter(&Alphanumeric)
+            .take(12)
+            .map(char::from)
+            .collect();
 
         let hash_method = self.hash_method.unwrap_or_else(|| "sha-256".to_string()); // TODO
         let hash_input = format!(
@@ -98,7 +107,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             continue_token: ActiveValue::Set(self.continue_token),
             as_nonce: ActiveValue::Set(as_nonce),
             interact_ref: ActiveValue::Set(interact_ref),
-            hash: ActiveValue::Set(hash)
+            hash: ActiveValue::Set(hash),
         }
     }
 }
@@ -120,7 +129,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             continue_token: ActiveValue::Set(self.continue_token),
             as_nonce: ActiveValue::Set(self.as_nonce),
             interact_ref: ActiveValue::Set(self.interact_ref),
-            hash: ActiveValue::Set(self.hash)
+            hash: ActiveValue::Set(self.hash),
         }
     }
 }

@@ -27,10 +27,22 @@ pub struct TermsAndConditionsCredSub {
 }
 
 impl TermsAndConditionsCredSub {
-    pub fn new_gaia(id: impl Into<String>, uri: impl Into<String>, hash: impl Into<String>) -> TermsAndConditionsCredSub {
-        TermsAndConditionsCredSub { id: id.into(), uri: uri.into(), hash: hash.into() }
+    pub fn new_gaia(
+        id: impl Into<String>,
+        uri: impl Into<String>,
+        hash: impl Into<String>,
+    ) -> TermsAndConditionsCredSub {
+        TermsAndConditionsCredSub {
+            id: id.into(),
+            uri: uri.into(),
+            hash: hash.into(),
+        }
     }
     pub fn random(id: impl Into<String>) -> TermsAndConditionsCredSub {
-        TermsAndConditionsCredSub { id: id.into(), uri: "uri_to_stuff".to_string(), hash: "kk".to_string() }
+        TermsAndConditionsCredSub {
+            id: id.into(),
+            uri: "uri_to_stuff".to_string(),
+            hash: "kk".to_string(),
+        }
     }
 }

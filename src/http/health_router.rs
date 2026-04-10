@@ -21,7 +21,9 @@ use axum::routing::get;
 
 pub struct HealthRouter;
 impl HealthRouter {
-    pub fn new() -> Self { Self {} }
+    pub fn new() -> Self {
+        Self {}
+    }
     pub fn router(self) -> Router {
         Router::new()
             .route("/health", get(Self::get_ok))
@@ -29,5 +31,7 @@ impl HealthRouter {
             .route("/liveness", get(Self::get_ok))
             .route("/readiness", get(Self::get_ok))
     }
-    async fn get_ok() -> impl IntoResponse { "OK".into_response() }
+    async fn get_ok() -> impl IntoResponse {
+        "OK".into_response()
+    }
 }

@@ -19,5 +19,5 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct VCData {
-    pub shitty_code: String
+    pub shitty_code: String,
 }

@@ -52,7 +52,10 @@ impl FromStr for VcType {
             "gx:LegalPerson" => Ok(VcType::LegalPerson),
             "gx:TermsAndConditions" => Ok(VcType::TermsAndConditions),
             "gx:LabelCredential" => Ok(VcType::GxLabel),
-            format => Err(Errors::parse(format!("Unknown credential format: {}", format), None))
+            format => Err(Errors::parse(
+                format!("Unknown credential format: {}", format),
+                None,
+            )),
         }
     }
 }
@@ -69,7 +72,7 @@ impl Display for VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant",
             VcType::LegalPerson => "gx:LegalPerson",
             VcType::TermsAndConditions => "gx:TermsAndConditions",
-            VcType::GxLabel => { "gx:LabelCredential" }
+            VcType::GxLabel => "gx:LabelCredential",
         };
 
         write!(f, "{s}")
@@ -88,9 +91,9 @@ impl VcType {
             VcType::DataspaceParticipant => "DataspaceParticipant_jwt_vc_json",
             VcType::LegalPerson => "gx_LegalPerson_jwt_vc_json",
             VcType::TermsAndConditions => "gx_TermsAndConditions_jwt_vc_json",
-            VcType::GxLabel => "gx_LabelCredential_jwt_vc_json"
+            VcType::GxLabel => "gx_LabelCredential_jwt_vc_json",
         }
-            .to_string()
+        .to_string()
     }
 
     pub fn from_conf(s: &str) -> Result<Self, Errors> {
@@ -109,7 +112,7 @@ impl VcType {
                 BadFormat::Received,
                 format!("Unknown credential configuration: {}", s),
                 None,
-            ))
+            )),
         }
     }
 
@@ -123,7 +126,7 @@ impl VcType {
             VcType::VatId,
             VcType::DataspaceParticipant,
             VcType::LegalPerson,
-            VcType::TermsAndConditions
+            VcType::TermsAndConditions,
         ]
     }
     pub fn to_gaia_weird(&self) -> Outcome<&str> {
@@ -140,7 +143,7 @@ impl VcType {
                 BadFormat::Received,
                 format!("Cannot implement this function with vc_type {}", vc_type),
                 None,
-            ))
+            )),
         }
     }
 }

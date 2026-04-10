@@ -25,5 +25,5 @@ pub struct Subject4GResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub assertion: Option<Vec<Value>>, // REQUIRED if returning assertions
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<String> // RECOMMENDED
+    pub updated_at: Option<String>, // RECOMMENDED
 }

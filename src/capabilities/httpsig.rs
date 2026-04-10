@@ -47,14 +47,20 @@ impl HttpSig {
         method: &str,
         url: &str,
         body_bytes: &[u8],
-        authorization: Option<&str>
+        authorization: Option<&str>,
     ) -> Outcome<HeaderMap> {
         let key_id = Self::compute_thumbprint(cert_pem)?;
 
-        let created = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+        let created = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
 
-        let nonce: String =
-            rand::rng().sample_iter(&Alphanumeric).take(32).map(char::from).collect();
+        let nonce: String = rand::rng()
+            .sample_iter(&Alphanumeric)
+            .take(32)
+            .map(char::from)
+            .collect();
 
         let content_digest = Self::compute_content_digest(body_bytes);
         let content_length = body_bytes.len();
@@ -67,7 +73,7 @@ impl HttpSig {
             created,
             &key_id,
             &nonce,
-            authorization
+            authorization,
         );
 
         let signature = Self::sign_base(&signature_base, private_key_pem)?;
@@ -78,25 +84,25 @@ impl HttpSig {
             "content-digest",
             content_digest.parse().map_err(|e| {
                 Errors::parse("Failed to parse content-digest header", Some(Box::new(e)))
-            })?
+            })?,
         );
         headers.insert(
             "content-length",
             content_length.to_string().parse().map_err(|e| {
                 Errors::parse("Failed to parse content-length header", Some(Box::new(e)))
-            })?
+            })?,
         );
         headers.insert(
             "signature-input",
             format!("sig1={sig_params}").parse().map_err(|e| {
                 Errors::parse("Failed to parse signature-input header", Some(Box::new(e)))
-            })?
+            })?,
         );
         headers.insert(
             "signature",
             format!("sig1=:{signature}:").parse().map_err(|e| {
                 Errors::parse("Failed to parse signature header", Some(Box::new(e)))
-            })?
+            })?,
         );
 
         Ok(headers)
@@ -119,7 +125,7 @@ impl HttpSig {
         method: &str,
         url: &str,
         body_bytes: &[u8],
-        cert_pem: &str
+        cert_pem: &str,
     ) -> Outcome<()> {
         let signature_input = Self::extract_header(headers, "signature-input")?;
         let signature_header = Self::extract_header(headers, "signature")?;
@@ -128,7 +134,7 @@ impl HttpSig {
         if !signature_input.contains("tag=\"gnap\"") {
             return Err(Errors::security(
                 "Missing required tag=\"gnap\" in Signature-Input",
-                None
+                None,
             ));
         }
 
@@ -136,16 +142,20 @@ impl HttpSig {
         if content_digest != expected_digest {
             return Err(Errors::security(
                 "Content-Digest mismatch — body may have been tampered",
-                None
+                None,
             ));
         }
 
-        let created =
-            Self::extract_sig_param(&signature_input, "created")?.parse::<u64>().map_err(|_| {
+        let created = Self::extract_sig_param(&signature_input, "created")?
+            .parse::<u64>()
+            .map_err(|_| {
                 Errors::security("Invalid `created` timestamp in Signature-Input", None)
             })?;
 
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
 
         if now < created || now - created > MAX_CLOCK_SKEW_SECS {
             return Err(Errors::security(
@@ -153,7 +163,7 @@ impl HttpSig {
                     "Signature timestamp out of acceptable range \
                      (created={created}, now={now}, max_skew={MAX_CLOCK_SKEW_SECS}s)"
                 ),
-                None
+                None,
             ));
         }
 
@@ -163,7 +173,7 @@ impl HttpSig {
         if keyid_in_sig != cert_thumbprint {
             return Err(Errors::security(
                 "keyid in Signature-Input does not match thumbprint of declared certificate",
-                None
+                None,
             ));
         }
 
@@ -189,7 +199,7 @@ impl HttpSig {
             created,
             &keyid_in_sig,
             &nonce,
-            authorization
+            authorization,
         );
 
         Self::verify_signature(&reconstructed_base, &signature_bytes, cert_pem)
@@ -233,24 +243,27 @@ impl HttpSig {
         match (not_before.compare(&now), now.compare(not_after)) {
             (
                 Ok(std::cmp::Ordering::Less) | Ok(std::cmp::Ordering::Equal),
-                Ok(std::cmp::Ordering::Less) | Ok(std::cmp::Ordering::Equal)
+                Ok(std::cmp::Ordering::Less) | Ok(std::cmp::Ordering::Equal),
             ) => Ok(()),
 
-            (Ok(std::cmp::Ordering::Greater), _) => {
-                Err(Errors::security("Client certificate is not yet valid", None))
-            }
+            (Ok(std::cmp::Ordering::Greater), _) => Err(Errors::security(
+                "Client certificate is not yet valid",
+                None,
+            )),
 
             (_, Ok(std::cmp::Ordering::Greater)) => {
                 Err(Errors::security("Client certificate has expired", None))
             }
 
-            _ => Err(Errors::security("Client certificate is malformed", None))
+            _ => Err(Errors::security("Client certificate is malformed", None)),
         }
     }
 
     /// Devuelve el thumbprint SHA-256 de un certificado PEM como string base64url.
     /// Útil para identificar un cert sin almacenarlo completo.
-    pub fn thumbprint(cert_pem: &str) -> Outcome<String> { Self::compute_thumbprint(cert_pem) }
+    pub fn thumbprint(cert_pem: &str) -> Outcome<String> {
+        Self::compute_thumbprint(cert_pem)
+    }
 
     // =========================================================================
     // Internals
@@ -281,17 +294,25 @@ impl HttpSig {
         created: u64,
         key_id: &str,
         nonce: &str,
-        authorization: Option<&str>
+        authorization: Option<&str>,
     ) -> (String, String) {
-        let mut components: Vec<&str> =
-            vec!["@method", "@target-uri", "content-digest", "content-length", "content-type"];
+        let mut components: Vec<&str> = vec![
+            "@method",
+            "@target-uri",
+            "content-digest",
+            "content-length",
+            "content-type",
+        ];
 
         if authorization.is_some() {
             components.push("authorization");
         }
 
-        let component_list =
-            components.iter().map(|c| format!("\"{c}\"")).collect::<Vec<_>>().join(" ");
+        let component_list = components
+            .iter()
+            .map(|c| format!("\"{c}\""))
+            .collect::<Vec<_>>()
+            .join(" ");
 
         let sig_params = format!(
             "({component_list})\
@@ -339,7 +360,7 @@ impl HttpSig {
     fn verify_signature(
         signature_base: &str,
         signature_bytes: &[u8],
-        cert_pem: &str
+        cert_pem: &str,
     ) -> Outcome<()> {
         let normalized = normalize_cert_pem(cert_pem);
         let cert = X509::from_pem(normalized.as_bytes()).map_err(|e| {
@@ -364,7 +385,7 @@ impl HttpSig {
         if !valid {
             return Err(Errors::security(
                 "Signature verification failed — request rejected",
-                None
+                None,
             ));
         }
 
@@ -378,7 +399,10 @@ impl HttpSig {
             .to_str()
             .map(|s| s.to_string())
             .map_err(|e| {
-                Errors::security(format!("Header {name} contains invalid UTF-8"), Some(Box::new(e)))
+                Errors::security(
+                    format!("Header {name} contains invalid UTF-8"),
+                    Some(Box::new(e)),
+                )
             })
     }
 
@@ -402,7 +426,7 @@ impl HttpSig {
 
         Err(Errors::security(
             format!("Parameter `{param}` not found in Signature-Input"),
-            None
+            None,
         ))
     }
 
@@ -428,5 +452,8 @@ fn normalize_cert_pem(cert: &str) -> String {
         return cert.to_string();
     }
 
-    format!("-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----", cert)
+    format!(
+        "-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----",
+        cert
+    )
 }

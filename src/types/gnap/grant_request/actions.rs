@@ -23,14 +23,14 @@ use crate::errors::Errors;
 #[derive(Clone)]
 pub enum InteractActions {
     Talk,
-    RequestVc
+    RequestVc,
 }
 
 impl Display for InteractActions {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             InteractActions::Talk => write!(f, "talk"),
-            InteractActions::RequestVc => write!(f, "request-vc")
+            InteractActions::RequestVc => write!(f, "request-vc"),
         }
     }
 }
@@ -44,8 +44,8 @@ impl FromStr for InteractActions {
             "request-vc" => Ok(InteractActions::RequestVc),
             actions => Err(Errors::parse(
                 format!("Unable to parse the requested action {}", actions),
-                None
-            ))
+                None,
+            )),
         }
     }
 }

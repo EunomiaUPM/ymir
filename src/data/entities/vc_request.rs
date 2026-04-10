@@ -27,16 +27,16 @@ use super::super::IntoActiveSet;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub participant_slug: String,                // REQUEST
-    pub vc_type: String,                         // REQUEST
-    pub cert: String,                            // REQUEST
-    pub interact_method: Vec<String>,            // REQUEST
+    pub participant_slug: String,     // REQUEST
+    pub vc_type: String,              // REQUEST
+    pub cert: String,                 // REQUEST
+    pub interact_method: Vec<String>, // REQUEST
     pub vpt: Option<String>,
     pub vc_uri: Option<String>,                  // RESPONSE
     pub status: String,                          // DEFAULT
     pub is_vc_issued: bool,                      // COMPLETION
     pub created_at: chrono::NaiveDateTime,       // DEFAULT
-    pub ended_at: Option<chrono::NaiveDateTime>  // COMPLETION
+    pub ended_at: Option<chrono::NaiveDateTime>, // COMPLETION
 }
 
 #[derive(Clone, Debug)]
@@ -45,7 +45,7 @@ pub struct NewModel {
     pub participant_slug: String,     // REQUEST
     pub vc_type: String,              // REQUEST
     pub interact_method: Vec<String>, // REQUEST
-    pub cert: String
+    pub cert: String,
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -61,7 +61,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             status: ActiveValue::Set("Pending".to_string()),
             is_vc_issued: ActiveValue::Set(false),
             created_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            ended_at: ActiveValue::Set(None)
+            ended_at: ActiveValue::Set(None),
         }
     }
 }
@@ -79,7 +79,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             status: ActiveValue::Set(self.status),
             is_vc_issued: ActiveValue::Set(self.is_vc_issued),
             created_at: ActiveValue::Set(self.created_at),
-            ended_at: ActiveValue::Set(self.ended_at)
+            ended_at: ActiveValue::Set(self.ended_at),
         }
     }
 }

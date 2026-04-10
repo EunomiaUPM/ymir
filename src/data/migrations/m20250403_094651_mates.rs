@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_mates" }
+    fn name(&self) -> &str {
+        "m20250403_094651_mates"
+    }
 }
 
 #[async_trait::async_trait]
@@ -29,21 +31,32 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(Mates::Table)
-                    .col(ColumnDef::new(Mates::ParticipantId).string().not_null().primary_key())
+                    .col(
+                        ColumnDef::new(Mates::ParticipantId)
+                            .string()
+                            .not_null()
+                            .primary_key(),
+                    )
                     .col(ColumnDef::new(Mates::ParticipantSlug).string().not_null())
                     .col(ColumnDef::new(Mates::ParticipantType).string().not_null())
                     .col(ColumnDef::new(Mates::BaseUrl).string().not_null())
                     .col(ColumnDef::new(Mates::Token).string())
                     .col(ColumnDef::new(Mates::SavedAt).date_time().not_null())
-                    .col(ColumnDef::new(Mates::LastInteraction).date_time().not_null())
+                    .col(
+                        ColumnDef::new(Mates::LastInteraction)
+                            .date_time()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Mates::IsMe).boolean().not_null())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(Mates::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(Mates::Table).to_owned())
+            .await
     }
 }
 
@@ -57,5 +70,5 @@ pub enum Mates {
     Token,
     SavedAt,
     LastInteraction,
-    IsMe
+    IsMe,
 }

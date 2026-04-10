@@ -29,15 +29,19 @@ pub enum Body {
     Raw(String),
     Bytes(Vec<u8>),
     Form(HashMap<String, String>),
-    None
+    None,
 }
 
 impl From<&str> for Body {
-    fn from(value: &str) -> Self { Body::Raw(value.to_string()) }
+    fn from(value: &str) -> Self {
+        Body::Raw(value.to_string())
+    }
 }
 
 impl From<HashMap<String, String>> for Body {
-    fn from(value: HashMap<String, String>) -> Self { Body::Form(value) }
+    fn from(value: HashMap<String, String>) -> Self {
+        Body::Form(value)
+    }
 }
 
 impl Body {
@@ -46,7 +50,9 @@ impl Body {
         Ok(Body::Json(body))
     }
 
-    pub fn str(value: &str) -> Outcome<Body> { Ok(Body::Raw(value.to_string())) }
+    pub fn str(value: &str) -> Outcome<Body> {
+        Ok(Body::Raw(value.to_string()))
+    }
     pub fn from_json_bytes<T: Serialize>(value: &T) -> Outcome<(Body, Vec<u8>)> {
         let bytes = serde_json::to_vec(value)
             .map_err(|e| Errors::parse("Failed to serialize body to bytes", Some(Box::new(e))))?;

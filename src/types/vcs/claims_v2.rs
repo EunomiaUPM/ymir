@@ -44,5 +44,5 @@ pub struct VCClaimsV2 {
     pub valid_from: Option<DateTime<Utc>>,
     #[serde()]
     #[serde(rename = "validUntil", skip_serializing_if = "Option::is_none")]
-    pub valid_until: Option<DateTime<Utc>>
+    pub valid_until: Option<DateTime<Utc>>,
 }

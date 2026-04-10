@@ -26,7 +26,7 @@ pub struct LocalRegistrationNumber {
     pub id: String,
     // The state issued company number.
     #[serde(rename = "gx:local")]
-    pub local: String
+    pub local: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,16 +38,26 @@ pub struct LocalRegistrationNumberBuilder<T> {
     local: String,
 
     #[serde(skip)]
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 impl LocalRegistrationNumberBuilder<Missing> {
-    pub fn new(local: String) -> Self { Self { id: None, local, _marker: PhantomData } }
+    pub fn new(local: String) -> Self {
+        Self {
+            id: None,
+            local,
+            _marker: PhantomData,
+        }
+    }
 }
 
 impl<T> LocalRegistrationNumberBuilder<T> {
     pub fn id(self, id: String) -> LocalRegistrationNumberBuilder<Present> {
-        LocalRegistrationNumberBuilder { id: Some(id), local: self.local, _marker: PhantomData }
+        LocalRegistrationNumberBuilder {
+            id: Some(id),
+            local: self.local,
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -55,7 +65,7 @@ impl LocalRegistrationNumberBuilder<Present> {
     pub fn build(self) -> LocalRegistrationNumber {
         LocalRegistrationNumber {
             id: self.id.expect("Builder invariant violated: id missing"),
-            local: self.local
+            local: self.local,
         }
     }
 }

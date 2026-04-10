@@ -20,16 +20,16 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize)]
 pub struct ApprovedCallbackBody {
     pub interact_ref: String,
-    pub hash: String
+    pub hash: String,
 }
 #[derive(Deserialize, Serialize)]
 pub struct RejectedCallbackBody {
-    pub rejected: String
+    pub rejected: String,
 }
 
 #[derive(Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum CallbackBody {
     Approved(ApprovedCallbackBody),
-    Rejected(RejectedCallbackBody)
+    Rejected(RejectedCallbackBody),
 }

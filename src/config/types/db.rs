@@ -27,11 +27,13 @@ use crate::errors::Errors;
 pub struct DatabaseConfig {
     pub db_type: DbType,
     pub url: String,
-    pub port: String
+    pub port: String,
 }
 
 impl DatabaseConfigTrait for DatabaseConfig {
-    fn db(&self) -> &DatabaseConfig { self }
+    fn db(&self) -> &DatabaseConfig {
+        self
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -40,7 +42,7 @@ pub enum DbType {
     Mysql,
     Sqlite,
     Mongo,
-    Memory
+    Memory,
 }
 
 impl Display for DbType {
@@ -50,7 +52,7 @@ impl Display for DbType {
             DbType::Mysql => write!(f, "mysql"),
             DbType::Sqlite => write!(f, "sqlite"),
             DbType::Mongo => write!(f, "mongodb"),
-            DbType::Memory => write!(f, "memory")
+            DbType::Memory => write!(f, "memory"),
         }
     }
 }
@@ -64,7 +66,7 @@ impl FromStr for DbType {
             "sqlite" => Ok(DbType::Postgres),
             "mongodb" => Ok(DbType::Postgres),
             "memory" => Ok(DbType::Postgres),
-            _ => Err(Errors::parse("unknown database type", None))
+            _ => Err(Errors::parse("unknown database type", None)),
         }
     }
 }

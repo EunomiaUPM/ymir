@@ -27,15 +27,19 @@ use crate::errors::{Errors, Outcome};
 use crate::services::repo::subtraits::{BasicRepoTrait, MatesTrait};
 
 pub struct MatesRepo {
-    db_connection: DatabaseConnection
+    db_connection: DatabaseConnection,
 }
 
 impl MatesRepo {
-    pub fn new(db_connection: DatabaseConnection) -> Self { Self { db_connection } }
+    pub fn new(db_connection: DatabaseConnection) -> Self {
+        Self { db_connection }
+    }
 }
 
 impl BasicRepoTrait<Entity, NewModel> for MatesRepo {
-    fn db(&self) -> &DatabaseConnection { &self.db_connection }
+    fn db(&self) -> &DatabaseConnection {
+        &self.db_connection
+    }
 }
 
 #[async_trait]
@@ -58,9 +62,9 @@ impl MatesTrait for MatesRepo {
                         Column::BaseUrl,
                         Column::LastInteraction,
                         Column::Token,
-                        Column::ParticipantSlug
+                        Column::ParticipantSlug,
                     ])
-                    .to_owned()
+                    .to_owned(),
             )
             .exec_with_returning(self.db())
             .await

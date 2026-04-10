@@ -43,18 +43,29 @@ pub struct TaxIdBuilder<T> {
 
 impl TaxIdBuilder<Missing> {
     pub fn new(tax_id: String) -> Self {
-        Self { id: None, tax_id, _marker: PhantomData }
+        Self {
+            id: None,
+            tax_id,
+            _marker: PhantomData,
+        }
     }
 }
 
 impl<T> TaxIdBuilder<T> {
     pub fn id(self, id: String) -> TaxIdBuilder<Present> {
-        TaxIdBuilder { id: Some(id), tax_id: self.tax_id, _marker: PhantomData }
+        TaxIdBuilder {
+            id: Some(id),
+            tax_id: self.tax_id,
+            _marker: PhantomData,
+        }
     }
 }
 
 impl TaxIdBuilder<Present> {
     pub fn build(self) -> TaxId {
-        TaxId { id: self.id.expect("Builder invariant violated: id missing"), tax_id: self.tax_id }
+        TaxId {
+            id: self.id.expect("Builder invariant violated: id missing"),
+            tax_id: self.tax_id,
+        }
     }
 }

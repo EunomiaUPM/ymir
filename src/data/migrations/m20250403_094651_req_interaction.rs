@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_req_interaction" }
+    fn name(&self) -> &str {
+        "m20250403_094651_req_interaction"
+    }
 }
 
 #[async_trait::async_trait]
@@ -29,14 +31,35 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(ReqInteraction::Table)
-                    .col(ColumnDef::new(ReqInteraction::Id).string().not_null().primary_key())
-                    .col(ColumnDef::new(ReqInteraction::Start).array(ColumnType::Text).not_null())
+                    .col(
+                        ColumnDef::new(ReqInteraction::Id)
+                            .string()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(ReqInteraction::Start)
+                            .array(ColumnType::Text)
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(ReqInteraction::Method).string().not_null())
                     .col(ColumnDef::new(ReqInteraction::Uri).string().not_null())
-                    .col(ColumnDef::new(ReqInteraction::ClientNonce).string().not_null())
-                    .col(ColumnDef::new(ReqInteraction::HashMethod).string().not_null())
+                    .col(
+                        ColumnDef::new(ReqInteraction::ClientNonce)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ReqInteraction::HashMethod)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(ReqInteraction::Hints).string())
-                    .col(ColumnDef::new(ReqInteraction::GrantEndpoint).string().not_null())
+                    .col(
+                        ColumnDef::new(ReqInteraction::GrantEndpoint)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(ReqInteraction::ContinueEndpoint).string())
                     .col(ColumnDef::new(ReqInteraction::ContinueToken).string())
                     .col(ColumnDef::new(ReqInteraction::ContinueWait).string())
@@ -44,13 +67,15 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(ReqInteraction::OidcVpUri).string())
                     .col(ColumnDef::new(ReqInteraction::InteractRef).string())
                     .col(ColumnDef::new(ReqInteraction::Hash).string())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(ReqInteraction::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(ReqInteraction::Table).to_owned())
+            .await
     }
 }
 
@@ -71,5 +96,5 @@ pub enum ReqInteraction {
     Hash,
     OidcVpUri,
     HashMethod,
-    Hints
+    Hints,
 }

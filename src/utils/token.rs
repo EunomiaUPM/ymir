@@ -30,6 +30,11 @@ pub fn create_opaque_token() -> String {
 }
 
 pub fn sign_token<T: Serialize>(header: &Header, claims: &T, key: &EncodingKey) -> Outcome<String> {
-    encode(&header, &claims, &key)
-        .map_err(|e| Errors::format(BadFormat::Received, "Unable to sign token", Some(Box::new(e))))
+    encode(&header, &claims, &key).map_err(|e| {
+        Errors::format(
+            BadFormat::Received,
+            "Unable to sign token",
+            Some(Box::new(e)),
+        )
+    })
 }

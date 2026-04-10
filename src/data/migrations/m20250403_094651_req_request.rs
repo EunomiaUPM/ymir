@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_req_request" }
+    fn name(&self) -> &str {
+        "m20250403_094651_req_request"
+    }
 }
 
 #[async_trait::async_trait]
@@ -29,23 +31,34 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(ReqRequest::Table)
-                    .col(ColumnDef::new(ReqRequest::Id).string().not_null().primary_key())
+                    .col(
+                        ColumnDef::new(ReqRequest::Id)
+                            .string()
+                            .not_null()
+                            .primary_key(),
+                    )
                     .col(ColumnDef::new(ReqRequest::ProviderId).string().not_null())
                     .col(ColumnDef::new(ReqRequest::ProviderSlug).string().not_null())
-                    .col(ColumnDef::new(ReqRequest::GrantEndpoint).string().not_null())
+                    .col(
+                        ColumnDef::new(ReqRequest::GrantEndpoint)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(ReqRequest::Auto).boolean().not_null())
                     .col(ColumnDef::new(ReqRequest::AssignedId).string())
                     .col(ColumnDef::new(ReqRequest::Token).string())
                     .col(ColumnDef::new(ReqRequest::Status).string().not_null())
                     .col(ColumnDef::new(ReqRequest::CreatedAt).date_time().not_null())
                     .col(ColumnDef::new(ReqRequest::EndedAt).date_time())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(ReqRequest::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(ReqRequest::Table).to_owned())
+            .await
     }
 }
 
@@ -61,5 +74,5 @@ pub enum ReqRequest {
     Token,
     Status,
     CreatedAt,
-    EndedAt
+    EndedAt,
 }

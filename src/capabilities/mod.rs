@@ -16,9 +16,9 @@
  */
 
 mod did;
-mod httpsig;
 mod digest_sri;
+mod httpsig;
 
 pub use did::DidResolver;
-pub use httpsig::HttpSig;
 pub use digest_sri::DigestSRI;
+pub use httpsig::HttpSig;

@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_minions" }
+    fn name(&self) -> &str {
+        "m20250403_094651_minions"
+    }
 }
 
 #[async_trait::async_trait]
@@ -29,22 +31,33 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(Minions::Table)
-                    .col(ColumnDef::new(Minions::ParticipantId).string().not_null().primary_key())
+                    .col(
+                        ColumnDef::new(Minions::ParticipantId)
+                            .string()
+                            .not_null()
+                            .primary_key(),
+                    )
                     .col(ColumnDef::new(Minions::ParticipantSlug).string().not_null())
                     .col(ColumnDef::new(Minions::ParticipantType).string().not_null())
                     .col(ColumnDef::new(Minions::BaseUrl).string())
                     .col(ColumnDef::new(Minions::VcUri).string())
                     .col(ColumnDef::new(Minions::IsVcIssued).boolean())
                     .col(ColumnDef::new(Minions::SavedAt).date_time().not_null())
-                    .col(ColumnDef::new(Minions::LastInteraction).date_time().not_null())
+                    .col(
+                        ColumnDef::new(Minions::LastInteraction)
+                            .date_time()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Minions::IsMe).boolean().not_null())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(Minions::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(Minions::Table).to_owned())
+            .await
     }
 }
 
@@ -59,5 +72,5 @@ pub enum Minions {
     IsVcIssued,
     SavedAt,
     LastInteraction,
-    IsMe
+    IsMe,
 }

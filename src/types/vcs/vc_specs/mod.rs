@@ -16,7 +16,7 @@
  */
 
 pub mod dataspace;
+pub mod gx_label;
 pub mod legal_person;
 pub mod legal_reg_number;
 pub mod terms_and_conds;
-pub mod gx_label;

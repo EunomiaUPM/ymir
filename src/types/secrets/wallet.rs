@@ -22,12 +22,12 @@ pub struct WalletSecrets {
     r#type: String,
     name: String,
     email: String,
-    password: String
+    password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SemiWalletSecrets {
     r#type: String,
     email: String,
-    password: String
+    password: String,
 }

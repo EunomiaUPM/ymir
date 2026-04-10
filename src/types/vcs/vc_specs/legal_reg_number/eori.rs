@@ -29,7 +29,7 @@ pub struct Eori {
     pub eori: String,
     // The country where the EORI is registered.
     #[serde(rename = "gx:country", skip_serializing_if = "Option::is_none")]
-    pub country: Option<String>
+    pub country: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,18 +40,28 @@ pub struct EoriBuilder<T> {
     #[serde(rename = "gx:country", skip_serializing_if = "Option::is_none")]
     country: Option<String>,
     #[serde(skip)]
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 impl EoriBuilder<Missing> {
     pub fn new(eori: String) -> Self {
-        Self { id: None, eori, country: None, _marker: PhantomData }
+        Self {
+            id: None,
+            eori,
+            country: None,
+            _marker: PhantomData,
+        }
     }
 }
 
 impl<T> EoriBuilder<T> {
     pub fn id(self, id: String) -> EoriBuilder<Present> {
-        EoriBuilder { id: Some(id), eori: self.eori, country: self.country, _marker: PhantomData }
+        EoriBuilder {
+            id: Some(id),
+            eori: self.eori,
+            country: self.country,
+            _marker: PhantomData,
+        }
     }
 
     pub fn country(mut self, country: String) -> Self {
@@ -65,7 +75,7 @@ impl EoriBuilder<Present> {
         Eori {
             id: self.id.expect("Builder invariant violated: id missing"),
             eori: self.eori,
-            country: self.country
+            country: self.country,
         }
     }
 }

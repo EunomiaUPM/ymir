@@ -24,9 +24,13 @@ impl Errors {
     pub fn build_ctx<R: Into<String>, S: Into<String>>(
         http_code: Option<StatusCode>,
         url: R,
-        method: S
+        method: S,
     ) -> HttpContext {
-        HttpContext { http_code, url: url.into(), method: method.into() }
+        HttpContext {
+            http_code,
+            url: url.into(),
+            method: method.into(),
+        }
     }
 
     pub fn with_details<S: Into<String>>(mut self, details: S) -> Self {
@@ -51,7 +55,7 @@ impl Errors {
             Errors::ModuleNotActiveError { info, .. } => info.details = details,
             Errors::ParseError { info, .. } => info.details = details,
             Errors::VaultError { info, .. } => info.details = details,
-            Errors::CrazyError { info, .. } => info.details = details
+            Errors::CrazyError { info, .. } => info.details = details,
         }
         self
     }
@@ -76,7 +80,7 @@ impl Errors {
             Errors::ModuleNotActiveError { info, .. } => info,
             Errors::ParseError { info, .. } => info,
             Errors::VaultError { info, .. } => info,
-            Errors::CrazyError { info, .. } => info
+            Errors::CrazyError { info, .. } => info,
         }
     }
     pub fn context(&self) -> String {
@@ -86,27 +90,30 @@ impl Errors {
             Errors::ProviderError { ctx, .. } => ctx,
             Errors::ConsumerError { ctx, .. } => ctx,
             Errors::AuthorityError { ctx, .. } => ctx,
-            _ => return "".to_string()
+            _ => return "".to_string(),
         };
 
         let http_code = match ctx.http_code {
             Some(code) => {
                 format!("Http Code: {}", code)
             }
-            None => "".to_string()
+            None => "".to_string(),
         };
-        format!("Url: {} \nMethod: {} \n{} \n", ctx.url, ctx.method, http_code)
+        format!(
+            "Url: {} \nMethod: {} \n{} \n",
+            ctx.url, ctx.method, http_code
+        )
     }
     pub fn failure(&self) -> String {
         match self {
             Errors::PetitionError { failure, .. } => format!("Failure: {} \n", failure),
-            _ => "".to_string()
+            _ => "".to_string(),
         }
     }
     pub fn action(&self) -> String {
         match self {
             Errors::MissingActionError { action, .. } => format!("Action: {} \n", action),
-            _ => "".to_string()
+            _ => "".to_string(),
         }
     }
     pub fn id(&self) -> String {
@@ -114,56 +121,146 @@ impl Errors {
             Errors::MissingResourceError { resource_id, .. } => {
                 format!("Resource ID: {} \n", resource_id)
             }
-            _ => "".to_string()
+            _ => "".to_string(),
         }
     }
     pub fn path(&self) -> String {
         let path = match self {
             Errors::ReadError { path, .. } => path,
             Errors::WriteError { path, .. } => path,
-            _ => return "".to_string()
+            _ => return "".to_string(),
         };
         format!("Path: {} \n", path)
     }
     pub fn rest(&self) -> String {
         let (reason, source, backtrace) = match self {
-            Errors::PetitionError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::WalletError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::ProviderError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::ConsumerError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::AuthorityError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::MissingActionError { reason, source, backtrace, .. } => {
-                (reason, source, backtrace)
-            }
-            Errors::MissingResourceError { reason, source, backtrace, .. } => {
-                (reason, source, backtrace)
-            }
-            Errors::ReadError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::WriteError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::FormatError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::UnauthorizedError { reason, source, backtrace, .. } => {
-                (reason, source, backtrace)
-            }
-            Errors::ForbiddenError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::SecurityError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::DatabaseError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::FeatureNotImplError { reason, source, backtrace, .. } => {
-                (reason, source, backtrace)
-            }
-            Errors::EnvVarError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::ModuleNotActiveError { reason, source, backtrace, .. } => {
-                (reason, source, backtrace)
-            }
-            Errors::ParseError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::VaultError { reason, source, backtrace, .. } => (reason, source, backtrace),
-            Errors::CrazyError { reason, source, backtrace, .. } => (reason, source, backtrace)
+            Errors::PetitionError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::WalletError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::ProviderError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::ConsumerError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::AuthorityError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::MissingActionError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::MissingResourceError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::ReadError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::WriteError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::FormatError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::UnauthorizedError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::ForbiddenError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::SecurityError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::DatabaseError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::FeatureNotImplError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::EnvVarError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::ModuleNotActiveError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::ParseError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::VaultError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
+            Errors::CrazyError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
         };
 
         let reason = format!("Reason: {}", reason);
 
         let source = match source {
             Some(data) => format!("Source: {}", data),
-            None => "".to_string()
+            None => "".to_string(),
         };
 
         format!("{} \n{} \n{} \n", reason, source, backtrace)
@@ -190,5 +287,7 @@ impl From<serde_json::Error> for Errors {
 }
 
 impl From<urn::Error> for Errors {
-    fn from(e: urn::Error) -> Self { Errors::parse(e.to_string(), Some(Box::new(e))) }
+    fn from(e: urn::Error) -> Self {
+        Errors::parse(e.to_string(), Some(Box::new(e)))
+    }
 }

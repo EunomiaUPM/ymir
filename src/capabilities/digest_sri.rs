@@ -15,13 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::Arc;
-use sha2::{Sha256, Digest};
-use base64::{engine::general_purpose, Engine};
-use serde_json::Value;
 use crate::errors::Outcome;
 use crate::services::client::ClientTrait;
 use crate::utils::ResponseExt;
+use base64::{Engine, engine::general_purpose};
+use serde_json::Value;
+use sha2::{Digest, Sha256};
+use std::sync::Arc;
 
 pub struct DigestSRI;
 
@@ -39,7 +39,11 @@ impl DigestSRI {
         Ok(computed == sri)
     }
 
-    pub async fn validate_http_sri(sri: impl Into<String>, url: &str, client: Arc<dyn ClientTrait>) -> Outcome<bool> {
+    pub async fn validate_http_sri(
+        sri: impl Into<String>,
+        url: &str,
+        client: Arc<dyn ClientTrait>,
+    ) -> Outcome<bool> {
         let sri = sri.into();
         let res = client.get(url, None).await?;
 

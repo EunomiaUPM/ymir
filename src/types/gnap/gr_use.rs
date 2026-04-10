@@ -17,5 +17,5 @@
 
 pub enum GRUse {
     Talk,
-    VcReq
+    VcReq,
 }

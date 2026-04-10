@@ -15,11 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::marker::PhantomData;
-use serde::{Deserialize, Serialize};
-use crate::types::present::{Missing, Present};
 use super::{CompliantCredential, GxLabelCredSubject};
-
+use crate::types::present::{Missing, Present};
+use serde::{Deserialize, Serialize};
+use std::marker::PhantomData;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GxLabelCredSubjectBuilder<R, S, T, U> {
@@ -38,9 +37,13 @@ pub struct GxLabelCredSubjectBuilder<R, S, T, U> {
     _marker: PhantomData<(R, S, T, U)>,
 }
 
-
 impl GxLabelCredSubjectBuilder<Missing, Missing, Missing, Missing> {
-    pub fn new(label_level: impl Into<String>, engine_version: impl Into<String>, rules_version: impl Into<String>, criteria: impl Into<String>) -> Self {
+    pub fn new(
+        label_level: impl Into<String>,
+        engine_version: impl Into<String>,
+        rules_version: impl Into<String>,
+        criteria: impl Into<String>,
+    ) -> Self {
         GxLabelCredSubjectBuilder {
             id: None,
             label_level: label_level.into(),
@@ -54,7 +57,10 @@ impl GxLabelCredSubjectBuilder<Missing, Missing, Missing, Missing> {
 }
 
 impl<R, S, T, U> GxLabelCredSubjectBuilder<R, S, T, U> {
-    pub fn legal_person(self, vc: CompliantCredential) -> GxLabelCredSubjectBuilder<R, Present, T, U> {
+    pub fn legal_person(
+        self,
+        vc: CompliantCredential,
+    ) -> GxLabelCredSubjectBuilder<R, Present, T, U> {
         let mut compliant_credentials = self.compliant_credentials;
         compliant_credentials.push(vc);
 
@@ -68,7 +74,10 @@ impl<R, S, T, U> GxLabelCredSubjectBuilder<R, S, T, U> {
             _marker: PhantomData,
         }
     }
-    pub fn reg_number(self, vc: CompliantCredential) -> GxLabelCredSubjectBuilder<R, S, Present, U> {
+    pub fn reg_number(
+        self,
+        vc: CompliantCredential,
+    ) -> GxLabelCredSubjectBuilder<R, S, Present, U> {
         let mut compliant_credentials = self.compliant_credentials;
         compliant_credentials.push(vc);
 
@@ -82,7 +91,10 @@ impl<R, S, T, U> GxLabelCredSubjectBuilder<R, S, T, U> {
             _marker: PhantomData,
         }
     }
-    pub fn terms_cons(self, vc: CompliantCredential) -> GxLabelCredSubjectBuilder<R, S, T, Present> {
+    pub fn terms_cons(
+        self,
+        vc: CompliantCredential,
+    ) -> GxLabelCredSubjectBuilder<R, S, T, Present> {
         let mut compliant_credentials = self.compliant_credentials;
         compliant_credentials.push(vc);
 
@@ -121,4 +133,3 @@ impl GxLabelCredSubjectBuilder<Present, Present, Present, Present> {
         }
     }
 }
-

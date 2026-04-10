@@ -22,15 +22,19 @@ use crate::data::entities::req_interaction::{Entity, NewModel};
 use crate::services::repo::subtraits::{BasicRepoTrait, ReqInteractionTrait};
 
 pub struct ReqInteractionRepo {
-    db_connection: DatabaseConnection
+    db_connection: DatabaseConnection,
 }
 
 impl ReqInteractionRepo {
-    pub fn new(db_connection: DatabaseConnection) -> Self { Self { db_connection } }
+    pub fn new(db_connection: DatabaseConnection) -> Self {
+        Self { db_connection }
+    }
 }
 
 impl BasicRepoTrait<Entity, NewModel> for ReqInteractionRepo {
-    fn db(&self) -> &DatabaseConnection { &self.db_connection }
+    fn db(&self) -> &DatabaseConnection {
+        &self.db_connection
+    }
 }
 
 #[async_trait]

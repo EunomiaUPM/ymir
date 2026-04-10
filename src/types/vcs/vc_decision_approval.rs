@@ -19,5 +19,5 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
 pub struct VcDecisionApproval {
-    pub approve: bool
+    pub approve: bool,
 }

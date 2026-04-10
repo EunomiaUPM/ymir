@@ -21,18 +21,18 @@ use crate::types::issuing::CredentialDefinition;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CredentialRequestsss {
-    pub credential_requests: Vec<CredentialRequest>
+    pub credential_requests: Vec<CredentialRequest>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CredentialRequest {
     pub format: String,
     pub proof: Proof,
-    pub credential_definition: CredentialDefinition
+    pub credential_definition: CredentialDefinition,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Proof {
     pub proof_type: String,
-    pub jwt: String
+    pub jwt: String,
 }

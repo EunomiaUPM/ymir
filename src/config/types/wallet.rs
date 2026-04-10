@@ -23,9 +23,11 @@ use crate::config::types::HostConfig;
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct WalletConfig {
     pub api: HostConfig,
-    pub id: Option<String>
+    pub id: Option<String>,
 }
 
 impl WalletConfigTrait for WalletConfig {
-    fn wallet_config(&self) -> &WalletConfig { self }
+    fn wallet_config(&self) -> &WalletConfig {
+        self
+    }
 }
