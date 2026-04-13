@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_recv_interaction" }
+    fn name(&self) -> &str {
+        "m20250403_094651_recv_interaction"
+    }
 }
 
 #[async_trait::async_trait]
@@ -29,28 +31,63 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(RecvInteraction::Table)
-                    .col(ColumnDef::new(RecvInteraction::Id).string().not_null().primary_key())
-                    .col(ColumnDef::new(RecvInteraction::Start).array(ColumnType::Text).not_null())
+                    .col(
+                        ColumnDef::new(RecvInteraction::Id)
+                            .string()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteraction::Start)
+                            .array(ColumnType::Text)
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvInteraction::Method).string().not_null())
                     .col(ColumnDef::new(RecvInteraction::Uri).string().not_null())
                     .col(ColumnDef::new(RecvInteraction::Cert).string().not_null())
-                    .col(ColumnDef::new(RecvInteraction::ClientNonce).string().not_null())
-                    .col(ColumnDef::new(RecvInteraction::HashMethod).string().not_null())
+                    .col(
+                        ColumnDef::new(RecvInteraction::ClientNonce)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteraction::HashMethod)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvInteraction::Hints).string())
-                    .col(ColumnDef::new(RecvInteraction::GrantEndpoint).string().not_null())
-                    .col(ColumnDef::new(RecvInteraction::ContinueEndpoint).string().not_null())
-                    .col(ColumnDef::new(RecvInteraction::ContinueId).string().not_null())
-                    .col(ColumnDef::new(RecvInteraction::ContinueToken).string().not_null())
+                    .col(
+                        ColumnDef::new(RecvInteraction::GrantEndpoint)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteraction::ContinueEndpoint)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteraction::ContinueId)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteraction::ContinueToken)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvInteraction::ASNonce).string())
                     .col(ColumnDef::new(RecvInteraction::InteractRef).string())
                     .col(ColumnDef::new(RecvInteraction::Hash).string())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(RecvInteraction::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(RecvInteraction::Table).to_owned())
+            .await
     }
 }
 
@@ -71,5 +108,5 @@ pub enum RecvInteraction {
     ContinueToken,
     Hash,
     HashMethod,
-    Hints
+    Hints,
 }

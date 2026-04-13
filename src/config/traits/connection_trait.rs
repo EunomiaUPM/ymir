@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,16 @@ use crate::config::types::ConnectionConfig;
 
 pub trait ConnectionConfigTrait {
     fn connection(&self) -> &ConnectionConfig;
-    fn is_local(&self) -> bool { self.connection().is_local }
-    fn is_prod(&self) -> bool { self.connection().is_prod }
-    fn is_vault_real(&self) -> bool { self.connection().is_vault_real }
-    fn has_tls_proxy(&self) -> bool { self.connection().has_tls_proxy }
+    fn is_local(&self) -> bool {
+        self.connection().is_local
+    }
+    fn is_prod(&self) -> bool {
+        self.connection().is_prod
+    }
+    fn is_vault_real(&self) -> bool {
+        self.connection().is_vault_real
+    }
+    fn has_tls_proxy(&self) -> bool {
+        self.connection().has_tls_proxy
+    }
 }

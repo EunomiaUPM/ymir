@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ pub fn validate_data(node: &Value, field: &str) -> Outcome<String> {
             Errors::format(
                 BadFormat::Received,
                 format!("Field '{}' is not a string", field),
-                None
+                None,
             )
         })
         .map(|s| s.to_string())
@@ -45,21 +45,29 @@ pub fn validate_data(node: &Value, field: &str) -> Outcome<String> {
 
 pub fn is_active(iat: u64) -> Outcome<()> {
     let now = Utc::now().timestamp() as u64;
-    if now >= iat { Ok(()) } else { Err(Errors::forbidden("Token is not yet valid", None)) }
+    if now >= iat {
+        Ok(())
+    } else {
+        Err(Errors::forbidden("Token is not yet valid", None))
+    }
 }
 
 pub fn has_expired(exp: u64) -> Outcome<()> {
     let now = Utc::now().timestamp() as u64;
-    if now <= exp { Ok(()) } else { Err(Errors::forbidden("Token has expired", None)) }
+    if now <= exp {
+        Ok(())
+    } else {
+        Err(Errors::forbidden("Token has expired", None))
+    }
 }
 
 pub async fn validate_token<T>(
     token: &str,
     audience: Option<&str>,
-    client: Arc<dyn ClientTrait>
+    client: Arc<dyn ClientTrait>,
 ) -> Outcome<(TokenData<T>, String)>
 where
-    T: Serialize + DeserializeOwned + Debug
+    T: Serialize + DeserializeOwned + Debug,
 {
     info!("Validating token");
     debug!("{}", token);
@@ -67,7 +75,7 @@ where
         Errors::format(
             BadFormat::Received,
             format!("Unable to decode token header: {}", token),
-            Some(Box::new(e))
+            Some(Box::new(e)),
         )
     })?;
     let kid_str = get_from_opt(header.kid.as_ref(), "kid")?;

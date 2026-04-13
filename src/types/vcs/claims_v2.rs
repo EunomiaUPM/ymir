@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,5 +44,5 @@ pub struct VCClaimsV2 {
     pub valid_from: Option<DateTime<Utc>>,
     #[serde()]
     #[serde(rename = "validUntil", skip_serializing_if = "Option::is_none")]
-    pub valid_until: Option<DateTime<Utc>>
+    pub valid_until: Option<DateTime<Utc>>,
 }

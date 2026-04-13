@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,9 @@ use crate::types::vcs::{VcModel, W3cDataModelVersion};
 
 pub trait VcConfigTrait {
     fn vc_config(&self) -> &VcConfig;
-    fn get_vc_model(&self) -> &VcModel { &self.vc_config().vc_model }
+    fn get_vc_model(&self) -> &VcModel {
+        &self.vc_config().vc_model
+    }
     fn get_w3c_data_model(&self) -> Option<&W3cDataModelVersion> {
         self.vc_config().w3c_data_model.as_ref()
     }

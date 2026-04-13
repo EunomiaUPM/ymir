@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ use crate::types::dids::dids_info::DidsInfo;
 use crate::types::vcs::VPDef;
 use crate::types::wallet::{
     CredentialOfferResponse, KeyDefinition, MatchingVCs, WalletCredentials, WalletInfo,
-    WalletSession
+    WalletSession,
 };
 
 #[async_trait]
@@ -64,7 +64,7 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn resolve_credential_offer(&self, uri: &str) -> Outcome<CredentialOfferResponse>;
     async fn resolve_credential_issuer(
         &self,
-        cred_offer: &CredentialOfferResponse
+        cred_offer: &CredentialOfferResponse,
     ) -> Outcome<Value>;
     async fn use_offer_req(&self, uri: &str, cred_offer: &CredentialOfferResponse) -> Outcome<()>;
     async fn get_vpd(&self, uri: &str) -> Outcome<VPDef>;

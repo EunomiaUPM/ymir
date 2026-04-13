@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ pub struct LegalPersonCredentialSubject {
     #[serde(rename = "schema:name")]
     pub schema_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub schema_description: Option<String>
+    pub schema_description: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -41,7 +41,7 @@ pub struct TypedRegistrationNumber {
     #[serde(rename = "gx:registrationNumberType")]
     pub gx_registration_number_type: String,
     #[serde(rename = "gx:registrationNumberValue")]
-    pub gx_registration_number_value: String
+    pub gx_registration_number_value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -54,14 +54,14 @@ pub struct Address {
     #[serde(rename = "gx:postalCode")]
     pub gx_postal_code: String,
     #[serde(rename = "gx:streetAddress")]
-    pub gx_street_address: String
+    pub gx_street_address: String,
 }
 
 impl LegalPersonCredentialSubject {
     pub fn new4gaia(
         kid: &str,
         vc_type: &VcType,
-        code: impl Into<String>
+        code: impl Into<String>,
     ) -> Outcome<LegalPersonCredentialSubject> {
         match vc_type {
             VcType::Eori
@@ -72,8 +72,11 @@ impl LegalPersonCredentialSubject {
             | VcType::VatId => vc_type,
             vc_type => {
                 return Err(Errors::crazy(
-                    format!("Unable to issue a LegalPerson vc while requesting {}", vc_type),
-                    None
+                    format!(
+                        "Unable to issue a LegalPerson vc while requesting {}",
+                        vc_type
+                    ),
+                    None,
                 ));
             }
         };
@@ -83,7 +86,7 @@ impl LegalPersonCredentialSubject {
             gx_registration_number: TypedRegistrationNumber {
                 id: kid.to_string(),
                 gx_registration_number_type: vc_type.to_string(),
-                gx_registration_number_value: code.into()
+                gx_registration_number_value: code.into(),
             },
             gx_legal_address: Address {
                 id: None,
@@ -92,7 +95,7 @@ impl LegalPersonCredentialSubject {
                 gx_locality: "Madrid".to_string(),
                 gx_postal_code: "28035".to_string(),
                 gx_street_address: "Av. Complutense, 30, Moncloa - Aravaca, 28040 Madrid"
-                    .to_string()
+                    .to_string(),
             },
             gx_headquarters_address: Address {
                 id: None,
@@ -101,10 +104,10 @@ impl LegalPersonCredentialSubject {
                 gx_locality: "Madrid".to_string(),
                 gx_postal_code: "28035".to_string(),
                 gx_street_address: "Av. Complutense, 30, Moncloa - Aravaca, 28040 Madrid"
-                    .to_string()
+                    .to_string(),
             },
             schema_name: "UPM to the sky".to_string(),
-            schema_description: None
+            schema_description: None,
         })
     }
 }

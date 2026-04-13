@@ -15,14 +15,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
-use crate::data::entities::business_mates::{Entity, Model, NewModel};
-use crate::errors::Outcome;
-use crate::services::repo::subtraits::BasicRepoTrait;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GxLabelCredSubject {
+    pub id: String,
+    #[serde(rename = "gx:labelLevel")]
+    pub label_level: String,
+    #[serde(rename = "gx:engine_version")]
+    pub engine_version: String,
+    #[serde(rename = "gx:rules_version")]
+    pub rules_version: String,
+    #[serde(rename = "gx:compliant_credentials")]
+    pub compliant_credentials: Vec<CompliantCredential>,
+    #[serde(rename = "gx:validated_criteria")]
+    pub validated_criteria: Vec<String>,
+}
 
-#[async_trait]
-pub trait BusinessMatesRepoTrait: BasicRepoTrait<Entity, NewModel> + Send + Sync {
-    async fn get_by_token(&self, token: &str) -> Outcome<Model>;
-    async fn force_create(&self, mate: NewModel) -> Outcome<Model>;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CompliantCredential {
+    pub id: String,
+    pub r#type: String,
+    #[serde(rename = "gx:digestSRI")]
+    pub digest_sri: String,
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 use std::collections::HashMap;
 use std::str::FromStr;
+
 use async_trait::async_trait;
 use axum::extract::rejection::{FormRejection, JsonRejection};
 use axum::http::header::{ACCEPT, CONTENT_TYPE};
@@ -26,15 +27,20 @@ use reqwest::{Response, Url};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use urn::Urn;
+
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 
 pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
 where
-    T: Clone + Serialize + DeserializeOwned
+    T: Clone + Serialize + DeserializeOwned,
 {
     value
         .ok_or_else(|| {
-            Errors::format(BadFormat::Received, &format!("Missing field: {}", field_name), None)
+            Errors::format(
+                BadFormat::Received,
+                &format!("Missing field: {}", field_name),
+                None,
+            )
         })
         .cloned()
 }
@@ -52,15 +58,17 @@ pub fn trim_4_base(input: &str) -> String {
 }
 
 pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
-    parsed_uri.query_pairs().find(|(k, _)| k == param_name).map(|(_, v)| v.into_owned()).ok_or_else(
-        || {
+    parsed_uri
+        .query_pairs()
+        .find(|(k, _)| k == param_name)
+        .map(|(_, v)| v.into_owned())
+        .ok_or_else(|| {
             Errors::format(
                 BadFormat::Received,
                 format!("Missing query parameter '{}'", param_name),
-                None
+                None,
             )
-        }
-    )
+        })
 }
 
 pub fn json_headers() -> HeaderMap {
@@ -88,7 +96,7 @@ impl ResponseExt for Response {
                 Some(status),
                 PetitionFailure::BodyDeserialization,
                 "Error deserializing body",
-                Some(Box::new(e))
+                Some(Box::new(e)),
             )
         })
     }
@@ -103,7 +111,7 @@ impl ResponseExt for Response {
                 Some(status),
                 PetitionFailure::BodyRead,
                 "Failed to read body",
-                Some(Box::new(e))
+                Some(Box::new(e)),
             )
         })
     }
@@ -114,7 +122,7 @@ pub fn extract_payload<T>(payload: Result<Json<T>, JsonRejection>) -> Outcome<T>
         Errors::format(
             BadFormat::Received,
             "Error extracting Json payload",
-            Some(Box::new(e))
+            Some(Box::new(e)),
         )
     })
 }
@@ -124,7 +132,7 @@ pub fn extract_form_payload<T>(payload: Result<Form<T>, FormRejection>) -> Outco
         Errors::format(
             BadFormat::Received,
             "Error extracting form payload",
-            Some(Box::new(e))
+            Some(Box::new(e)),
         )
     })
 }
@@ -134,7 +142,7 @@ pub fn extract_query_param(params: &HashMap<String, String>, key: &str) -> Outco
         Errors::format(
             BadFormat::Received,
             format!("Unable to retrieve '{}' from query params", key),
-            None
+            None,
         )
     })
 }
@@ -158,7 +166,7 @@ pub fn extract_bearer_token(headers: &HeaderMap) -> Outcome<String> {
 }
 
 pub fn extract_path_urn(urn: &String) -> Outcome<Urn> {
-    let id_urn = Urn::from_str(&urn)
-        .map_err(|e| Errors::parse(format!("Invalid Urn: {}", e), None))?;
+    let id_urn =
+        Urn::from_str(&urn).map_err(|e| Errors::parse(format!("Invalid Urn: {}", e), None))?;
     Ok(id_urn)
 }

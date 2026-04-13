@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ use serde_json::Value;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct KeyInfo {
-    pub id: String
+    pub id: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct KeyDefinition {
@@ -32,5 +32,5 @@ pub struct KeyDefinition {
     #[serde(rename = "keyPair")]
     pub key_pair: Value,
     #[serde(rename = "keyset_handle")]
-    pub keyset_handle: Option<Value>
+    pub keyset_handle: Option<Value>,
 }

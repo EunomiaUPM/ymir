@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,5 +25,5 @@ pub struct Subject4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub assertion_formats: Option<Vec<String>>, // REQUIRED if assertions are requested
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sub_ids: Option<Value> // If omitted assume that subject information requests are about the current user
+    pub sub_ids: Option<Value>, // If omitted assume that subject information requests are about the current user
 }

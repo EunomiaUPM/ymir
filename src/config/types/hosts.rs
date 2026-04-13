@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,29 +26,33 @@ pub struct HostConfig {
     pub protocol: String,
     pub url: String,
     pub port: Option<String>,
-    pub internal_port: Option<String>
+    pub internal_port: Option<String>,
 }
 
 impl SingleHostTrait for HostConfig {
-    fn host(&self) -> &HostConfig { self }
+    fn host(&self) -> &HostConfig {
+        self
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CommonHostsConfig {
     pub http: HostConfig,
     pub grpc: Option<HostConfig>,
-    pub graphql: Option<HostConfig>
+    pub graphql: Option<HostConfig>,
 }
 
 impl HostsConfigTrait for CommonHostsConfig {
-    fn hosts(&self) -> &CommonHostsConfig { self }
+    fn hosts(&self) -> &CommonHostsConfig {
+        self
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum HostType {
     Http,
     Grpc,
-    Graphql
+    Graphql,
 }
 
 impl Display for HostType {
@@ -56,7 +60,7 @@ impl Display for HostType {
         let str = match self {
             HostType::Http => "http",
             HostType::Grpc => "grpc",
-            HostType::Graphql => "graphql"
+            HostType::Graphql => "graphql",
         };
         write!(f, "{}", str)
     }

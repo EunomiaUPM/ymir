@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ pub struct VatId {
     pub vat_id: String,
     // The country where the VAT identification number is registered.
     #[serde(rename = "gx:countryCode", skip_serializing_if = "Option::is_none")]
-    pub country_code: Option<String>
+    pub country_code: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -45,12 +45,17 @@ pub struct VatIdBuilder<T> {
     country_code: Option<String>,
 
     #[serde(skip)]
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 impl VatIdBuilder<Missing> {
     pub fn new(vat_id: String) -> Self {
-        Self { id: None, vat_id, country_code: None, _marker: PhantomData }
+        Self {
+            id: None,
+            vat_id,
+            country_code: None,
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -60,7 +65,7 @@ impl<T> VatIdBuilder<T> {
             id: Some(id),
             vat_id: self.vat_id,
             country_code: self.country_code,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 
@@ -75,7 +80,7 @@ impl VatIdBuilder<Present> {
         VatId {
             id: self.id.expect("Builder invariant violated: id missing"),
             vat_id: self.vat_id,
-            country_code: self.country_code
+            country_code: self.country_code,
         }
     }
 }

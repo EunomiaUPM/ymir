@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,11 +35,11 @@ use crate::services::client::ClientTrait;
 use crate::types::gnap::ApprovedCallbackBody;
 use crate::types::http::Body;
 use crate::types::vcs::{VPDef, W3cDataModelVersion};
-use crate::utils::{get_claim, get_opt_claim, json_headers, parse_to_string, validate_token};
+use crate::utils::{get_claim, get_opt_claim, json_headers, validate_token};
 
 pub struct BasicVerifierService {
     client: Arc<dyn ClientTrait>,
-    config: BasicVerifierConfig
+    config: BasicVerifierConfig,
 }
 
 impl BasicVerifierService {
@@ -55,13 +55,16 @@ impl VerifierTrait for BasicVerifierService {
         let host_url = self.config.get_host(HostType::Http);
         let host_url = match self.config.is_local() {
             true => host_url.replace("127.0.0.1", "host.docker.internal"),
-            false => host_url
+            false => host_url,
         };
 
-        let client_id = format!("{}{}/verifier/verify", host_url, self.config.get_api_path(),);
+        let client_id = format!("{}{}/verifier/verify", host_url, self.config.get_api_path());
         let requested_vcs = self.config.get_requested_vcs();
         if requested_vcs.is_empty() {
-            return Err(Errors::unauthorized("Unable to verify following oidc4vp", None));
+            return Err(Errors::unauthorized(
+                "Unable to verify following oidc4vp",
+                None,
+            ));
         }
 
         let mut vcs = vec![];
@@ -70,8 +73,11 @@ impl VerifierTrait for BasicVerifierService {
             vcs.push(vc.to_string())
         }
 
-        let vc_type = parse_to_string(&vcs)?;
-        let new_verification_model = NewModel { id: id.to_string(), audience: client_id, vc_type };
+        let new_verification_model = NewModel {
+            id: id.to_string(),
+            audience: client_id,
+            vc_type: vcs,
+        };
 
         Ok(new_verification_model)
     }
@@ -83,7 +89,7 @@ impl VerifierTrait for BasicVerifierService {
         let host_url = format!("{}{}/verifier", host_url, self.config.get_api_path());
         let host_url = match self.config.is_local() {
             true => host_url.replace("127.0.0.1", "host.docker.internal"),
-            false => host_url
+            false => host_url,
         };
 
         let base_url = "openid4vp://authorize";
@@ -122,7 +128,9 @@ impl VerifierTrait for BasicVerifierService {
             .config
             .get_w3c_data_model()
             .ok_or_else(|| Errors::not_active("W3c data model", None))?;
-        Ok(VPDef::new(&ver_model.id, &ver_model.vc_type, model))
+
+        let vc_types: Vec<&str> = ver_model.vc_type.iter().map(|s| s.as_str()).collect();
+        Ok(VPDef::new(&ver_model.id, &vc_types, model))
     }
 
     async fn verify_all(&self, ver_model: &mut Model, vp_token: &str) -> Outcome<()> {
@@ -197,7 +205,7 @@ impl VerifierTrait for BasicVerifierService {
         &self,
         model: &mut Model,
         token: &TokenData<Value>,
-        kid: &str
+        kid: &str,
     ) -> Outcome<()> {
         info!("Validating subject");
 
@@ -206,7 +214,10 @@ impl VerifierTrait for BasicVerifierService {
 
         if let Some(sub) = sub {
             if sub != kid {
-                return Err(Errors::security("VPT token subject & kid does not match", None));
+                return Err(Errors::security(
+                    "VPT token subject & kid does not match",
+                    None,
+                ));
             }
             info!("VPT subject & kid matches");
         };
@@ -221,7 +232,7 @@ impl VerifierTrait for BasicVerifierService {
         &self,
         token: &TokenData<Value>,
         holder: &str,
-        model: &W3cDataModelVersion
+        model: &W3cDataModelVersion,
     ) -> Outcome<()> {
         info!("Validating VC subject");
 
@@ -229,7 +240,7 @@ impl VerifierTrait for BasicVerifierService {
             W3cDataModelVersion::V1 => {
                 get_claim(&token.claims, &["vc", "CredentialSubject", "id"])?
             }
-            W3cDataModelVersion::V2 => get_claim(&token.claims, &["CredentialSubject", "id"])?
+            W3cDataModelVersion::V2 => get_claim(&token.claims, &["CredentialSubject", "id"])?,
         };
 
         let sub = get_opt_claim(&token.claims, &["sub"])?;
@@ -238,7 +249,7 @@ impl VerifierTrait for BasicVerifierService {
             if sub != holder {
                 return Err(Errors::security(
                     "VCT token sub, credential subject & VP Holder do not match",
-                    None
+                    None,
                 ));
             }
             info!("Sub & Holder match");
@@ -247,7 +258,7 @@ impl VerifierTrait for BasicVerifierService {
         if holder != cred_sub_id {
             return Err(Errors::security(
                 "VCT token sub, credential subject & VP Holder do not match",
-                None
+                None,
             ));
         }
         info!("Vc Holder & Holder match");
@@ -284,13 +295,13 @@ impl VerifierTrait for BasicVerifierService {
         &self,
         token: &TokenData<Value>,
         kid: &str,
-        model: &W3cDataModelVersion
+        model: &W3cDataModelVersion,
     ) -> Outcome<()> {
         info!("Validating issuer");
 
         let vc_iss_id = match model {
             W3cDataModelVersion::V1 => get_claim(&token.claims, &["vc", "issuer", "id"])?,
-            W3cDataModelVersion::V2 => get_claim(&token.claims, &["issuer", "id"])?
+            W3cDataModelVersion::V2 => get_claim(&token.claims, &["issuer", "id"])?,
         };
         let iss = get_opt_claim(&token.claims, &["iss"])?;
 
@@ -298,7 +309,10 @@ impl VerifierTrait for BasicVerifierService {
 
         if vc_iss_id != kid {
             // VALIDATE IF ISSUER IS THE SAME AS KID
-            return Err(Errors::security("VCT token issuer & kid does not match", None));
+            return Err(Errors::security(
+                "VCT token issuer & kid does not match",
+                None,
+            ));
         }
         info!("VC issuer & kid matches");
         Ok(())
@@ -309,7 +323,7 @@ impl VerifierTrait for BasicVerifierService {
 
         let vc_id = match model {
             W3cDataModelVersion::V1 => get_claim(&token.claims, &["vc", "id"])?,
-            W3cDataModelVersion::V2 => get_claim(&token.claims, &["id"])?
+            W3cDataModelVersion::V2 => get_claim(&token.claims, &["id"])?,
         };
         let jti = get_opt_claim(&token.claims, &["jti"])?;
 
@@ -327,13 +341,13 @@ impl VerifierTrait for BasicVerifierService {
     fn validate_valid_from(
         &self,
         token: &TokenData<Value>,
-        model: &W3cDataModelVersion
+        model: &W3cDataModelVersion,
     ) -> Outcome<()> {
         info!("Validating issuance date");
 
         let valid_from = match model {
             W3cDataModelVersion::V1 => get_opt_claim(&token.claims, &["vc", "validFrom"])?,
-            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, &["validFrom"])?
+            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, &["validFrom"])?,
         };
 
         if let Some(valid_from) = valid_from {
@@ -352,13 +366,13 @@ impl VerifierTrait for BasicVerifierService {
     fn validate_valid_until(
         &self,
         token: &TokenData<Value>,
-        model: &W3cDataModelVersion
+        model: &W3cDataModelVersion,
     ) -> Outcome<()> {
         info!("Validating expiration date");
 
         let valid_until = match model {
             W3cDataModelVersion::V1 => get_opt_claim(&token.claims, &["vc", "validUntil"])?,
-            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, &["validUntil"])?
+            W3cDataModelVersion::V2 => get_opt_claim(&token.claims, &["validUntil"])?,
         };
 
         if let Some(valid_until) = valid_until {
@@ -377,13 +391,13 @@ impl VerifierTrait for BasicVerifierService {
     fn retrieve_vcs(&self, token: TokenData<Value>) -> Outcome<Vec<String>> {
         info!("Retrieving VCs");
         let vcs: Vec<String> = serde_json::from_value(
-            token.claims["vp"]["verifiableCredential"].clone()
+            token.claims["vp"]["verifiableCredential"].clone(),
         )
         .map_err(|e| {
             Errors::format(
                 BadFormat::Received,
                 "VPT does not contain de vc field",
-                Some(Box::new(e))
+                Some(Box::new(e)),
             )
         })?;
 
@@ -405,13 +419,18 @@ impl VerifierTrait for BasicVerifierService {
 
             let body = ApprovedCallbackBody {
                 interact_ref: model.interact_ref.clone(),
-                hash: model.hash.clone()
+                hash: model.hash.clone(),
             };
-            self.client.post(&url, Some(headers), Body::json(&body)?).await?;
+            self.client
+                .post(&url, Some(headers), Body::json(&body)?)
+                .await?;
 
             Ok(None)
         } else {
-            Err(Errors::not_impl(format!("Interact method '{}'", model.method), None))
+            Err(Errors::not_impl(
+                format!("Interact method '{}'", model.method),
+                None,
+            ))
         }
     }
 }
@@ -419,7 +438,10 @@ impl VerifierTrait for BasicVerifierService {
 fn check_iss(iss: Option<String>, kid: &str) -> Outcome<()> {
     if let Some(iss) = iss {
         if iss != kid {
-            return Err(Errors::security("VPT token issuer & kid does not match", None));
+            return Err(Errors::security(
+                "VPT token issuer & kid does not match",
+                None,
+            ));
         }
         info!("VPT issuer & kid matches");
     }

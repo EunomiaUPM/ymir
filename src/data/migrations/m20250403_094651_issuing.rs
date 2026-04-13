@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_issuing" }
+    fn name(&self) -> &str {
+        "m20250403_094651_issuing"
+    }
 }
 
 #[async_trait::async_trait]
@@ -29,7 +31,12 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(Issuing::Table)
-                    .col(ColumnDef::new(Issuing::Id).string().not_null().primary_key())
+                    .col(
+                        ColumnDef::new(Issuing::Id)
+                            .string()
+                            .not_null()
+                            .primary_key(),
+                    )
                     .col(ColumnDef::new(Issuing::Name).string().not_null())
                     .col(ColumnDef::new(Issuing::PreAuthCode).string().not_null())
                     .col(ColumnDef::new(Issuing::TxCode).string().not_null())
@@ -43,13 +50,15 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Issuing::CredentialId).string().not_null())
                     .col(ColumnDef::new(Issuing::Credential).string())
                     .col(ColumnDef::new(Issuing::CredentialData).string())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(Issuing::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(Issuing::Table).to_owned())
+            .await
     }
 }
 
@@ -69,5 +78,5 @@ pub enum Issuing {
     IssuerDid,
     CredentialId,
     Credential,
-    CredentialData
+    CredentialData,
 }

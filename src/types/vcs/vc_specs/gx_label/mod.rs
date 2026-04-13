@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -8,22 +8,15 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
+mod builder;
+mod core;
 
-use crate::config::traits::IssueConfigTrait;
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct IssueConfig {
-    pub dataspace_id: Option<String>
-}
-
-impl IssueConfigTrait for IssueConfig {
-    fn issue_config(&self) -> &IssueConfig { self }
-}
+pub use builder::*;
+pub use core::{CompliantCredential, GxLabelCredSubject};

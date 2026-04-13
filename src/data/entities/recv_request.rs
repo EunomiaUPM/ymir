@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,13 +30,13 @@ pub struct Model {
     pub token: Option<String>,                   // COMPLETION
     pub status: String,                          // DEFAULT
     pub created_at: chrono::NaiveDateTime,       // DEFAULT
-    pub ended_at: Option<chrono::NaiveDateTime>  // COMPLETION
+    pub ended_at: Option<chrono::NaiveDateTime>, // COMPLETION
 }
 
 #[derive(Clone, Debug)]
 pub struct NewModel {
     pub id: String,            // REQUEST
-    pub consumer_slug: String  // REQUEST
+    pub consumer_slug: String, // REQUEST
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -47,7 +47,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             token: ActiveValue::Set(None),
             status: ActiveValue::Set("Pending".to_string()),
             created_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            ended_at: ActiveValue::Set(None)
+            ended_at: ActiveValue::Set(None),
         }
     }
 }
@@ -60,7 +60,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             token: ActiveValue::Set(self.token),
             status: ActiveValue::Set(self.status),
             created_at: ActiveValue::Set(self.created_at),
-            ended_at: ActiveValue::Set(self.ended_at)
+            ended_at: ActiveValue::Set(self.ended_at),
         }
     }
 }

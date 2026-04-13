@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +20,18 @@ use crate::errors::Errors;
 
 pub trait HostsConfigTrait {
     fn hosts(&self) -> &CommonHostsConfig;
-    fn http(&self) -> &HostConfig { &self.hosts().http }
-    fn grpc(&self) -> Option<&HostConfig> { self.hosts().grpc.as_ref() }
-    fn graphql(&self) -> Option<&HostConfig> { self.hosts().graphql.as_ref() }
-    fn get_host(&self, host_type: HostType) -> String { self.get_helper(host_type).get_host() }
+    fn http(&self) -> &HostConfig {
+        &self.hosts().http
+    }
+    fn grpc(&self) -> Option<&HostConfig> {
+        self.hosts().grpc.as_ref()
+    }
+    fn graphql(&self) -> Option<&HostConfig> {
+        self.hosts().graphql.as_ref()
+    }
+    fn get_host(&self, host_type: HostType) -> String {
+        self.get_helper(host_type).get_host()
+    }
     fn get_internal_host(&self, host_type: HostType) -> String {
         self.get_helper(host_type).get_internal_host()
     }
@@ -40,7 +48,7 @@ pub trait HostsConfigTrait {
         let host = match host_type {
             HostType::Http => Some(self.http()),
             HostType::Grpc => self.grpc(),
-            HostType::Graphql => self.graphql()
+            HostType::Graphql => self.graphql(),
         };
 
         host.ok_or_else(|| Errors::not_active(&format!("{} host is not defined", host_type), None))
@@ -57,7 +65,7 @@ pub trait SingleHostTrait {
     fn get_host(&self) -> String {
         match self.host().port.as_ref() {
             Some(port) => format!("{}://{}:{}", self.host().protocol, self.host().url, port),
-            None => format!("{}://{}", self.host().protocol, self.host().url)
+            None => format!("{}://{}", self.host().protocol, self.host().url),
         }
     }
     fn get_internal_host(&self) -> String {
@@ -73,13 +81,19 @@ pub trait SingleHostTrait {
             Some(port) => {
                 format!("{}:{}", self.host().url, port)
             }
-            None => self.host().url.clone()
+            None => self.host().url.clone(),
         }
     }
     fn get_tls_port(&self) -> String {
-        self.host().port.clone().unwrap_or_else(|| "443".to_string())
+        self.host()
+            .port
+            .clone()
+            .unwrap_or_else(|| "443".to_string())
     }
     fn get_internal_port(&self) -> String {
-        self.host().internal_port.clone().unwrap_or_else(|| self.get_tls_port())
+        self.host()
+            .internal_port
+            .clone()
+            .unwrap_or_else(|| self.get_tls_port())
     }
 }

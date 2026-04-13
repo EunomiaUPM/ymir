@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,11 +22,19 @@ use super::{InputDescriptor, W3cDataModelVersion};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VPDef {
     pub id: String,
-    pub input_descriptors: Vec<InputDescriptor>
+    pub input_descriptors: Vec<InputDescriptor>,
 }
 
 impl VPDef {
-    pub fn new<T: Into<String>>(id: T, vc_type: &str, model: &W3cDataModelVersion) -> Self {
-        VPDef { id: id.into(), input_descriptors: vec![InputDescriptor::new(vc_type, model)] }
+    pub fn new(id: impl Into<String>, vc_types: &[&str], model: &W3cDataModelVersion) -> Self {
+        let input_descriptors = vc_types
+            .iter()
+            .map(|vc_type| InputDescriptor::new(vc_type, model))
+            .collect();
+
+        VPDef {
+            id: id.into(),
+            input_descriptors,
+        }
     }
 }

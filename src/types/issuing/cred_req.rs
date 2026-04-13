@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,18 +21,18 @@ use crate::types::issuing::CredentialDefinition;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CredentialRequestsss {
-    pub credential_requests: Vec<CredentialRequest>
+    pub credential_requests: Vec<CredentialRequest>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CredentialRequest {
     pub format: String,
     pub proof: Proof,
-    pub credential_definition: CredentialDefinition
+    pub credential_definition: CredentialDefinition,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Proof {
     pub proof_type: String,
-    pub jwt: String
+    pub jwt: String,
 }

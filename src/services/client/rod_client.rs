@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,11 +30,13 @@ use crate::types::http::Body;
 pub struct ClientService {
     client: Client,
     limiter: Arc<Semaphore>,
-    max_retries: u32
+    max_retries: u32,
 }
 
 impl Default for ClientService {
-    fn default() -> Self { Self::new(10, 10, 3) }
+    fn default() -> Self {
+        Self::new(10, 10, 0)
+    }
 }
 
 impl ClientService {
@@ -45,7 +47,11 @@ impl ClientService {
             .build()
             .expect("Failed to build request client");
 
-        Self { client, limiter: Arc::new(Semaphore::new(concurrency_limit)), max_retries }
+        Self {
+            client,
+            limiter: Arc::new(Semaphore::new(concurrency_limit)),
+            max_retries,
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -57,7 +63,7 @@ impl ClientService {
         method: reqwest::Method,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body
+        body: Body,
     ) -> Outcome<Response> {
         let _permit = self.limiter.acquire().await.map_err(|_| {
             Errors::petition(
@@ -66,7 +72,7 @@ impl ClientService {
                 None,
                 PetitionFailure::Concurrency,
                 "Semaphore closed",
-                None
+                None,
             )
         })?;
 
@@ -78,12 +84,15 @@ impl ClientService {
         method: reqwest::Method,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body
+        body: Body,
     ) -> Outcome<Response> {
         let mut attempt = 1;
 
         loop {
-            match self.send_request(method.clone(), url, headers.clone(), body.clone()).await {
+            match self
+                .send_request(method.clone(), url, headers.clone(), body.clone())
+                .await
+            {
                 Ok(response) => return Ok(response),
                 Err(err) => {
                     if !self.should_retry(&err, attempt) {
@@ -105,9 +114,9 @@ impl ClientService {
             Errors::PetitionError { failure, .. } => match failure {
                 PetitionFailure::Network => true,
                 PetitionFailure::HttpStatus(s) => s.is_server_error(),
-                _ => false
+                _ => false,
             },
-            _ => false
+            _ => false,
         }
     }
 
@@ -116,7 +125,7 @@ impl ClientService {
         method: reqwest::Method,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body
+        body: Body,
     ) -> Outcome<Response> {
         let mut req = self.client.request(method.clone(), url);
 
@@ -133,7 +142,7 @@ impl ClientService {
                 e.status().map(|s| s),
                 PetitionFailure::Network,
                 "Error sending petition",
-                Some(Box::new(e))
+                Some(Box::new(e)),
             )
         })?;
 
@@ -146,7 +155,7 @@ impl ClientService {
                 Some(status.clone()),
                 PetitionFailure::HttpStatus(status),
                 message,
-                None
+                None,
             ));
         }
 
@@ -160,11 +169,14 @@ impl ClientService {
             Body::Bytes(bytes) => req.body(bytes),
             Body::Form(pairs) => match serde_urlencoded::to_string(&pairs) {
                 Ok(encoded) => req
-                    .header(reqwest::header::CONTENT_TYPE, "application/x-www-form-urlencoded")
+                    .header(
+                        reqwest::header::CONTENT_TYPE,
+                        "application/x-www-form-urlencoded",
+                    )
                     .body(encoded),
-                Err(e) => return Err(Errors::parse("Unable to parse form", Some(Box::new(e))))
+                Err(e) => return Err(Errors::parse("Unable to parse form", Some(Box::new(e)))),
             },
-            Body::None => req
+            Body::None => req,
         };
         Ok(req)
     }
@@ -173,18 +185,22 @@ impl ClientService {
 #[async_trait]
 impl ClientTrait for ClientService {
     async fn get(&self, url: &str, headers: Option<HeaderMap>) -> Outcome<Response> {
-        self.dispatch(reqwest::Method::GET, url, headers, Body::None).await
+        self.dispatch(reqwest::Method::GET, url, headers, Body::None)
+            .await
     }
 
     async fn post(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response> {
-        self.dispatch(reqwest::Method::POST, url, headers, body).await
+        self.dispatch(reqwest::Method::POST, url, headers, body)
+            .await
     }
 
     async fn put(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response> {
-        self.dispatch(reqwest::Method::PUT, url, headers, body).await
+        self.dispatch(reqwest::Method::PUT, url, headers, body)
+            .await
     }
 
     async fn delete(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response> {
-        self.dispatch(reqwest::Method::DELETE, url, headers, body).await
+        self.dispatch(reqwest::Method::DELETE, url, headers, body)
+            .await
     }
 }

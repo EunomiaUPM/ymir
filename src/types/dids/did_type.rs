@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 pub enum DidType {
     Web,
     Jwk,
-    Other
+    Other,
 }
 
 impl fmt::Display for DidType {
@@ -31,7 +31,7 @@ impl fmt::Display for DidType {
         let s = match self {
             DidType::Web => "did:web",
             DidType::Jwk => "did:jwk",
-            DidType::Other => "other"
+            DidType::Other => "other",
         };
         write!(f, "{}", s)
     }

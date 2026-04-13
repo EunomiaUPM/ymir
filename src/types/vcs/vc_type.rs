@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,8 @@ pub enum VcType {
     VatId,
     DataspaceParticipant,
     LegalPerson,
-    TermsAndConditions
+    TermsAndConditions,
+    GxLabel,
 }
 
 impl FromStr for VcType {
@@ -50,7 +51,11 @@ impl FromStr for VcType {
             "DataspaceParticipant" => Ok(VcType::DataspaceParticipant),
             "gx:LegalPerson" => Ok(VcType::LegalPerson),
             "gx:TermsAndConditions" => Ok(VcType::TermsAndConditions),
-            format => Err(Errors::parse(format!("Unknown credential format: {}", format), None))
+            "gx:LabelCredential" => Ok(VcType::GxLabel),
+            format => Err(Errors::parse(
+                format!("Unknown credential format: {}", format),
+                None,
+            )),
         }
     }
 }
@@ -66,7 +71,8 @@ impl Display for VcType {
             VcType::VatId => "gx:VatId",
             VcType::DataspaceParticipant => "DataspaceParticipant",
             VcType::LegalPerson => "gx:LegalPerson",
-            VcType::TermsAndConditions => "gx:TermsAndConditions"
+            VcType::TermsAndConditions => "gx:TermsAndConditions",
+            VcType::GxLabel => "gx:LabelCredential",
         };
 
         write!(f, "{s}")
@@ -84,7 +90,8 @@ impl VcType {
             VcType::VatId => "gx_VatId_jwt_vc_json",
             VcType::DataspaceParticipant => "DataspaceParticipant_jwt_vc_json",
             VcType::LegalPerson => "gx_LegalPerson_jwt_vc_json",
-            VcType::TermsAndConditions => "gx_TermsAndConditions_jwt_vc_json"
+            VcType::TermsAndConditions => "gx_TermsAndConditions_jwt_vc_json",
+            VcType::GxLabel => "gx_LabelCredential_jwt_vc_json",
         }
         .to_string()
     }
@@ -100,11 +107,12 @@ impl VcType {
             "DataspaceParticipant_jwt_vc_json" => Ok(VcType::DataspaceParticipant),
             "gx_LegalPerson_jwt_vc_json" => Ok(VcType::LegalPerson),
             "gx_TermsAndConditions_jwt_vc_json" => Ok(VcType::TermsAndConditions),
+            "gx_LabelCredential_jwt_vc_json" => Ok(VcType::GxLabel),
             _ => Err(Errors::format(
                 BadFormat::Received,
                 format!("Unknown credential configuration: {}", s),
-                None
-            ))
+                None,
+            )),
         }
     }
 
@@ -118,7 +126,7 @@ impl VcType {
             VcType::VatId,
             VcType::DataspaceParticipant,
             VcType::LegalPerson,
-            VcType::TermsAndConditions
+            VcType::TermsAndConditions,
         ]
     }
     pub fn to_gaia_weird(&self) -> Outcome<&str> {
@@ -134,8 +142,8 @@ impl VcType {
             vc_type => Err(Errors::format(
                 BadFormat::Received,
                 format!("Cannot implement this function with vc_type {}", vc_type),
-                None
-            ))
+                None,
+            )),
         }
     }
 }

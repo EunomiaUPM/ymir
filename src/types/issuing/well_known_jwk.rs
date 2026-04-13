@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ pub struct WellKnownJwks {
     pub kty: String,
     pub n: String,
     pub e: String,
-    pub kid: String
+    pub kid: String,
 }
 
 impl WellKnownJwks {
@@ -35,7 +35,7 @@ impl WellKnownJwks {
             kty: "RSA".to_string(),
             n: URL_SAFE_NO_PAD.encode(key.n().to_bytes_be()),
             e: URL_SAFE_NO_PAD.encode(key.e().to_bytes_be()),
-            kid: "0".to_string()
+            kid: "0".to_string(),
         }
     }
 }

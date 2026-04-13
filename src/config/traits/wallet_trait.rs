@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,5 +20,7 @@ use crate::config::types::WalletConfig;
 
 pub trait WalletConfigTrait {
     fn wallet_config(&self) -> &WalletConfig;
-    fn get_wallet_api_url(&self) -> String { self.wallet_config().api.get_host() }
+    fn get_wallet_api_url(&self) -> String {
+        self.wallet_config().api.get_host()
+    }
 }

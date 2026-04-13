@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,17 +21,17 @@ use serde::{Deserialize, Serialize};
 pub struct CredentialOfferResponse {
     pub credential_configuration_ids: Vec<String>,
     pub credential_issuer: String,
-    pub grants: Grants
+    pub grants: Grants,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Grants {
     #[serde(rename = "urn:ietf:params:oauth:grant-type:pre-authorized_code")]
-    pub pre_authorized_code: PreAuthorizedGrant
+    pub pre_authorized_code: PreAuthorizedGrant,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PreAuthorizedGrant {
     #[serde(rename = "pre-authorized_code")]
-    pub pre_authorized_code: String
+    pub pre_authorized_code: String,
 }

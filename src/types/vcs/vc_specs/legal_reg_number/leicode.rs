@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ pub struct LeiCode {
     pub subdivision_country_code: Option<String>,
     // The country where the LEI number is registered.
     #[serde(rename = "gx:country")]
-    pub country_code: String
+    pub country_code: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -52,7 +52,7 @@ pub struct LeiCodeBuilder<T> {
     country_code: String,
 
     #[serde(skip)]
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 impl LeiCodeBuilder<Missing> {
@@ -62,7 +62,7 @@ impl LeiCodeBuilder<Missing> {
             lei_code,
             subdivision_country_code: None,
             country_code,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 }
@@ -74,7 +74,7 @@ impl<T> LeiCodeBuilder<T> {
             lei_code: self.lei_code,
             subdivision_country_code: self.subdivision_country_code,
             country_code: self.country_code,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 
@@ -90,7 +90,7 @@ impl LeiCodeBuilder<Present> {
             id: self.id.expect("Builder invariant violated: id missing"),
             lei_code: self.lei_code,
             subdivision_country_code: self.subdivision_country_code,
-            country_code: self.country_code
+            country_code: self.country_code,
         }
     }
 }

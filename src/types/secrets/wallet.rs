@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,12 +22,12 @@ pub struct WalletSecrets {
     r#type: String,
     name: String,
     email: String,
-    password: String
+    password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SemiWalletSecrets {
     r#type: String,
     email: String,
-    password: String
+    password: String,
 }

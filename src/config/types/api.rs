@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,11 @@ use crate::config::traits::ApiConfigTrait;
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ApiConfig {
     pub version: String,
-    pub openapi_path: String
+    pub openapi_path: String,
 }
 
 impl ApiConfigTrait for ApiConfig {
-    fn api(&self) -> &ApiConfig { self }
+    fn api(&self) -> &ApiConfig {
+        self
+    }
 }

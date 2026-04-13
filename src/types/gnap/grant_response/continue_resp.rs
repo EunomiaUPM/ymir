@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,5 +24,5 @@ pub struct Continue4GResponse {
     pub uri: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wait: Option<i64>,
-    pub access_token: ContinueToken
+    pub access_token: ContinueToken,
 }

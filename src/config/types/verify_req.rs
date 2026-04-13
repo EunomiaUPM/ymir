@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,17 +25,22 @@ use crate::types::vcs::VcType;
 pub struct VerifyReqConfig {
     pub is_cert_allowed: bool,
     #[serde(deserialize_with = "deserialize_vc_type_vec")]
-    pub vcs_requested: Vec<VcType>
+    pub vcs_requested: Vec<VcType>,
 }
 
 impl VerifyReqConfigTrait for VerifyReqConfig {
-    fn verify_req_config(&self) -> &VerifyReqConfig { self }
+    fn verify_req_config(&self) -> &VerifyReqConfig {
+        self
+    }
 }
 
 fn deserialize_vc_type_vec<'de, D>(deserializer: D) -> Result<Vec<VcType>, D::Error>
 where
-    D: Deserializer<'de>
+    D: Deserializer<'de>,
 {
     let strings: Vec<String> = Vec::deserialize(deserializer)?;
-    strings.into_iter().map(|s| s.parse::<VcType>().map_err(de::Error::custom)).collect()
+    strings
+        .into_iter()
+        .map(|s| s.parse::<VcType>().map_err(de::Error::custom))
+        .collect()
 }

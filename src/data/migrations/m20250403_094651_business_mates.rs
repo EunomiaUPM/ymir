@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_business_mates" }
+    fn name(&self) -> &str {
+        "m20250403_094651_business_mates"
+    }
 }
 
 #[async_trait::async_trait]
@@ -29,19 +31,38 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(BusinessMates::Table)
-                    .col(ColumnDef::new(BusinessMates::Id).string().not_null().primary_key())
-                    .col(ColumnDef::new(BusinessMates::ParticipantId).string().not_null())
+                    .col(
+                        ColumnDef::new(BusinessMates::Id)
+                            .string()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(BusinessMates::ParticipantId)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(BusinessMates::Token).string())
                     .col(ColumnDef::new(BusinessMates::TokenActions).string())
-                    .col(ColumnDef::new(BusinessMates::SavedAt).date_time().not_null())
-                    .col(ColumnDef::new(BusinessMates::LastInteraction).date_time().not_null())
-                    .to_owned()
+                    .col(
+                        ColumnDef::new(BusinessMates::SavedAt)
+                            .date_time()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(BusinessMates::LastInteraction)
+                            .date_time()
+                            .not_null(),
+                    )
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(BusinessMates::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(BusinessMates::Table).to_owned())
+            .await
     }
 }
 
@@ -53,5 +74,5 @@ pub enum BusinessMates {
     Token,
     TokenActions,
     SavedAt,
-    LastInteraction
+    LastInteraction,
 }

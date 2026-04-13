@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ pub struct Interact4GR {
     pub start: Vec<String>,
     pub finish: Finish4Interact, // REQUIRED because DataSpace Protocol is based on redirects
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hints: Option<String>
+    pub hints: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -38,12 +38,12 @@ pub struct Finish4Interact {
     pub uri: Option<String>, // REQUIRED for redirect and push methods
     pub nonce: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hash_method: Option<String>
+    pub hash_method: Option<String>,
 }
 
 pub enum InteractStart {
     Oidc4VP,
-    Cert
+    Cert,
 }
 
 impl FromStr for InteractStart {
@@ -56,8 +56,8 @@ impl FromStr for InteractStart {
             _ => Err(Errors::format(
                 BadFormat::Received,
                 format!("Interact start method {} not defined", s),
-                None
-            ))
+                None,
+            )),
         }
     }
 }
@@ -66,7 +66,7 @@ impl Display for InteractStart {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             InteractStart::Oidc4VP => write!(f, "oidc4vp"),
-            InteractStart::Cert => write!(f, "cross-user")
+            InteractStart::Cert => write!(f, "cross-user"),
         }
     }
 }
@@ -75,7 +75,7 @@ impl InteractStart {
     pub fn to_start(&self) -> String {
         match self {
             InteractStart::Oidc4VP => "oidc4vp".to_string(),
-            InteractStart::Cert => "".to_string()
+            InteractStart::Cert => "".to_string(),
         }
     }
 }
@@ -88,9 +88,9 @@ impl Interact4GR {
                 method: model.method.clone(),
                 uri: Some(model.uri.clone()),
                 nonce: model.client_nonce.clone(),
-                hash_method: model.hash.clone()
+                hash_method: model.hash.clone(),
             },
-            hints: None
+            hints: None,
         }
     }
 }

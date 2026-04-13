@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ pub struct AccessTokenRequirements4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>, // REQUIRED if used as part of a request for multiple access tokens
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub flags: Option<Vec<String>> /* A set of flags that indicate desired attributes or behavior to be attached
-                                    * to the access token by the AS */
+    pub flags: Option<Vec<String>>, /* A set of flags that indicate desired attributes or behavior to be attached
+                                     * to the access token by the AS */
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -41,12 +41,12 @@ pub struct Access4Req {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identifier: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub privileges: Option<Vec<String>>
+    pub privileges: Option<Vec<String>>,
 }
 
 pub enum TokenReqTypeGR {
     Key,
-    Bearer
+    Bearer,
 }
 
 impl AccessTokenRequirements4GR {
@@ -63,10 +63,10 @@ impl AccessTokenRequirements4GR {
                 locations: None,
                 datatypes: None,
                 identifier: None,
-                privileges: None
+                privileges: None,
             },
             label: None,
-            flags: None
+            flags: None,
         }
     }
 }

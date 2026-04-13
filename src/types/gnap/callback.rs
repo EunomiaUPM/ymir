@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,16 +20,16 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize)]
 pub struct ApprovedCallbackBody {
     pub interact_ref: String,
-    pub hash: String
+    pub hash: String,
 }
 #[derive(Deserialize, Serialize)]
 pub struct RejectedCallbackBody {
-    pub rejected: String
+    pub rejected: String,
 }
 
 #[derive(Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum CallbackBody {
     Approved(ApprovedCallbackBody),
-    Rejected(RejectedCallbackBody)
+    Rejected(RejectedCallbackBody),
 }

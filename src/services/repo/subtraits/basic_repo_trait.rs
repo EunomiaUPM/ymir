@@ -17,7 +17,7 @@
 use async_trait::async_trait;
 use sea_orm::{
     ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, PrimaryKeyTrait,
-    QuerySelect, Select
+    QuerySelect, Select,
 };
 
 use crate::data::IntoActiveSet;
@@ -35,7 +35,7 @@ where
         + 'static,
     T::ActiveModel: ActiveModelTrait<Entity = T> + Send + Sync + 'static,
     U: IntoActiveSet<T::ActiveModel> + Send + Sync + 'static,
-    <T as EntityTrait>::PrimaryKey: PrimaryKeyTrait<ValueType = String>
+    <T as EntityTrait>::PrimaryKey: PrimaryKeyTrait<ValueType = String>,
 {
     fn db(&self) -> &DatabaseConnection;
 
@@ -56,7 +56,10 @@ where
 
         let model = model
             .map_err(|e| {
-                Errors::db(format!("Unable to get model with id: {}", id), Some(Box::new(e)))
+                Errors::db(
+                    format!("Unable to get model with id: {}", id),
+                    Some(Box::new(e)),
+                )
             })?
             .ok_or_else(|| {
                 Errors::missing_resource(id, format!("Unable to get model with id: {}", id), None)
@@ -99,15 +102,21 @@ where
             .await
             .map_err(|e| {
                 Errors::db(
-                    format!("Unable to find model with column '{}' with value {}", resource, id),
-                    Some(Box::new(e))
+                    format!(
+                        "Unable to find model with column '{}' with value {}",
+                        resource, id
+                    ),
+                    Some(Box::new(e)),
                 )
             })?
             .ok_or_else(|| {
                 Errors::missing_resource(
                     id,
-                    format!("Unable to find model with column '{}' with value {}", resource, id),
-                    None
+                    format!(
+                        "Unable to find model with column '{}' with value {}",
+                        resource, id
+                    ),
+                    None,
                 )
             })?;
         Ok(model)

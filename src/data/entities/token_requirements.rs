@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ pub struct Model {
     pub identifier: Option<String>,      // REQUEST
     pub privileges: Option<Vec<String>>, // REQUEST
     pub label: Option<String>,           // REQUEST
-    pub flags: Option<Vec<String>>       // REQUEST
+    pub flags: Option<Vec<String>>,      // REQUEST
 }
 
 impl IntoActiveSet<ActiveModel> for Model {
@@ -46,7 +46,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             identifier: ActiveValue::Set(self.identifier),
             privileges: ActiveValue::Set(self.privileges),
             label: ActiveValue::Set(self.label),
-            flags: ActiveValue::Set(self.flags)
+            flags: ActiveValue::Set(self.flags),
         }
     }
 }

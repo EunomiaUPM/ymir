@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,11 +32,13 @@ use crate::types::wallet::{KeyDefinition, OidcUri, WalletCredentials, WalletInfo
 use crate::utils::extract_payload;
 
 pub struct WalletRouter {
-    holder: Arc<dyn CoreWalletTrait>
+    holder: Arc<dyn CoreWalletTrait>,
 }
 
 impl WalletRouter {
-    pub fn new(holder: Arc<dyn CoreWalletTrait>) -> Self { Self { holder } }
+    pub fn new(holder: Arc<dyn CoreWalletTrait>) -> Self {
+        Self { holder }
+    }
 
     pub fn router(self) -> Router {
         Router::new()
@@ -103,7 +105,7 @@ impl WalletRouter {
 
     async fn delete_key(
         State(holder): State<Arc<dyn CoreWalletTrait>>,
-        payload: Result<Json<KeyDefinition>, JsonRejection>
+        payload: Result<Json<KeyDefinition>, JsonRejection>,
     ) -> AppResult<()> {
         let payload = extract_payload(payload)?;
         holder.delete_key(payload).await
@@ -111,7 +113,7 @@ impl WalletRouter {
 
     async fn delete_did(
         State(holder): State<Arc<dyn CoreWalletTrait>>,
-        payload: Result<Json<DidsInfo>, JsonRejection>
+        payload: Result<Json<DidsInfo>, JsonRejection>,
     ) -> AppResult<()> {
         let payload = extract_payload(payload)?;
         holder.delete_did(payload).await
@@ -124,7 +126,7 @@ impl WalletRouter {
 
     async fn process_oidc4vci(
         State(holder): State<Arc<dyn CoreWalletTrait>>,
-        payload: Result<Json<OidcUri>, JsonRejection>
+        payload: Result<Json<OidcUri>, JsonRejection>,
     ) -> AppResult<()> {
         let payload = extract_payload(payload)?;
         holder.process_oidc4vci(payload).await
@@ -132,13 +134,13 @@ impl WalletRouter {
 
     async fn process_oidc4vp(
         State(holder): State<Arc<dyn CoreWalletTrait>>,
-        payload: Result<Json<OidcUri>, JsonRejection>
+        payload: Result<Json<OidcUri>, JsonRejection>,
     ) -> AppResult {
         let payload = extract_payload(payload)?;
         let res = holder.process_oidc4vp(payload).await?;
         Ok(match res {
             Some(data) => Redirect::to(&data).into_response(),
-            None => StatusCode::OK.into_response()
+            None => StatusCode::OK.into_response(),
         })
     }
 
@@ -147,13 +149,13 @@ impl WalletRouter {
     }
 
     async fn get_wallet_info(
-        State(holder): State<Arc<dyn CoreWalletTrait>>
+        State(holder): State<Arc<dyn CoreWalletTrait>>,
     ) -> AppResult<Json<WalletInfo>> {
         Ok(Json(holder.get_wallet_info().await?))
     }
 
     async fn get_wallet_credentials(
-        State(holder): State<Arc<dyn CoreWalletTrait>>
+        State(holder): State<Arc<dyn CoreWalletTrait>>,
     ) -> AppResult<Json<Vec<WalletCredentials>>> {
         Ok(Json(holder.get_wallet_credentials().await?))
     }

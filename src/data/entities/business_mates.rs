@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,14 +30,14 @@ pub struct Model {
     pub participant_id: String,
     pub token: Option<String>,
     pub saved_at: chrono::NaiveDateTime,
-    pub last_interaction: chrono::NaiveDateTime
+    pub last_interaction: chrono::NaiveDateTime,
 }
 
 #[derive(Clone, Debug)]
 pub struct NewModel {
     pub id: String,
     pub participant_id: String,
-    pub token: Option<String>
+    pub token: Option<String>,
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -47,7 +47,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             participant_id: ActiveValue::Set(self.participant_id),
             token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc())
+            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
         }
     }
 }
@@ -59,7 +59,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             participant_id: ActiveValue::Set(self.participant_id),
             token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(self.saved_at),
-            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc())
+            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
         }
     }
 }

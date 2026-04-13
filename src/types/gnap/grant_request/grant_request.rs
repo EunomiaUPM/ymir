@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ pub struct GrantRequest {
     pub client: Client4GR,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
-    pub interact: Option<Interact4GR>
+    pub interact: Option<Interact4GR>,
 }
 
 impl GrantRequest {
@@ -47,13 +47,13 @@ impl GrantRequest {
             subject: None,
             client: client.clone(),
             user: None,
-            interact: Some(Interact4GR::new(model))
+            interact: Some(Interact4GR::new(model)),
         }
     }
     pub fn new_token(
         client: &Client4GR,
         actions: Option<&[InteractActions]>,
-        model: &req_interaction::Model
+        model: &req_interaction::Model,
     ) -> Self {
         Self {
             access_token: Some(AccessTokenRequirements4GR::new(actions)),
@@ -61,7 +61,7 @@ impl GrantRequest {
             subject: None,
             client: client.clone(),
             user: None,
-            interact: Some(Interact4GR::new(model))
+            interact: Some(Interact4GR::new(model)),
         }
     }
 }

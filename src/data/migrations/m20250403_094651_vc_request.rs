@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_vc_request" }
+    fn name(&self) -> &str {
+        "m20250403_094651_vc_request"
+    }
 }
 
 #[async_trait::async_trait]
@@ -29,27 +31,39 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(VcRequest::Table)
-                    .col(ColumnDef::new(VcRequest::Id).string().not_null().primary_key())
-                    .col(ColumnDef::new(VcRequest::ParticipantSlug).string().not_null())
+                    .col(
+                        ColumnDef::new(VcRequest::Id)
+                            .string()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(VcRequest::ParticipantSlug)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(VcRequest::VcType).string().not_null())
                     .col(
                         ColumnDef::new(VcRequest::InteractMethod)
                             .array(ColumnType::Text)
-                            .not_null()
+                            .not_null(),
                     )
+                    .col(ColumnDef::new(VcRequest::VPT).string())
                     .col(ColumnDef::new(VcRequest::Cert).not_null().string())
                     .col(ColumnDef::new(VcRequest::VcUri).string())
                     .col(ColumnDef::new(VcRequest::IsVcIssued).boolean())
                     .col(ColumnDef::new(VcRequest::Status).string().not_null())
                     .col(ColumnDef::new(VcRequest::CreatedAt).date_time().not_null())
                     .col(ColumnDef::new(VcRequest::EndedAt).date_time())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(VcRequest::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(VcRequest::Table).to_owned())
+            .await
     }
 }
 
@@ -61,9 +75,10 @@ pub enum VcRequest {
     VcType,
     Cert,
     InteractMethod,
+    VPT,
     VcUri,
     IsVcIssued,
     Status,
     CreatedAt,
-    EndedAt
+    EndedAt,
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,9 @@ use axum::routing::get;
 
 pub struct HealthRouter;
 impl HealthRouter {
-    pub fn new() -> Self { Self {} }
+    pub fn new() -> Self {
+        Self {}
+    }
     pub fn router(self) -> Router {
         Router::new()
             .route("/health", get(Self::get_ok))
@@ -29,5 +31,7 @@ impl HealthRouter {
             .route("/liveness", get(Self::get_ok))
             .route("/readiness", get(Self::get_ok))
     }
-    async fn get_ok() -> impl IntoResponse { "OK".into_response() }
+    async fn get_ok() -> impl IntoResponse {
+        "OK".into_response()
+    }
 }

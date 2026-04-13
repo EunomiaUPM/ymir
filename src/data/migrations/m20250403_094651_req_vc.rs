@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_req_vc" }
+    fn name(&self) -> &str {
+        "m20250403_094651_req_vc"
+    }
 }
 
 #[async_trait::async_trait]
@@ -40,13 +42,15 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(ReqVc::Status).string().not_null())
                     .col(ColumnDef::new(ReqVc::CreatedAt).date_time().not_null())
                     .col(ColumnDef::new(ReqVc::EndedAt).date_time())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(ReqVc::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(ReqVc::Table).to_owned())
+            .await
     }
 }
 
@@ -63,5 +67,5 @@ pub enum ReqVc {
     VcUri,
     Status,
     CreatedAt,
-    EndedAt
+    EndedAt,
 }

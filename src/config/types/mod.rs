@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ mod connection;
 mod db;
 mod dids;
 mod hosts;
-mod issue;
 mod vc_pattern;
 mod verify_req;
 mod wallet;
@@ -30,7 +29,6 @@ pub use connection::*;
 pub use db::*;
 pub use dids::*;
 pub use hosts::*;
-pub use issue::*;
 pub use vc_pattern::*;
 pub use verify_req::*;
 pub use wallet::*;

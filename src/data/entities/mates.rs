@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ pub struct Model {
     pub token: Option<String>,                   // REQUEST
     pub saved_at: chrono::NaiveDateTime,         // DEFAULT
     pub last_interaction: chrono::NaiveDateTime, // DEFAULT
-    pub is_me: bool                              // REQUEST
+    pub is_me: bool,                             // REQUEST
 }
 
 #[derive(Clone, Debug)]
@@ -43,7 +43,7 @@ pub struct NewModel {
     pub participant_type: String,
     pub base_url: String,
     pub token: Option<String>,
-    pub is_me: bool
+    pub is_me: bool,
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -56,7 +56,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
             last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            is_me: ActiveValue::Set(self.is_me)
+            is_me: ActiveValue::Set(self.is_me),
         }
     }
 }
@@ -71,7 +71,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(self.saved_at),
             last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            is_me: ActiveValue::Set(self.is_me)
+            is_me: ActiveValue::Set(self.is_me),
         }
     }
 }

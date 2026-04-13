@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,10 +19,16 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct StringHelper {
-    inner: String
+    inner: String,
 }
 
 impl StringHelper {
-    pub fn new<T: Into<String>>(inner: T) -> StringHelper { StringHelper { inner: inner.into() } }
-    pub fn data(&self) -> &str { &self.inner }
+    pub fn new<T: Into<String>>(inner: T) -> StringHelper {
+        StringHelper {
+            inner: inner.into(),
+        }
+    }
+    pub fn data(&self) -> &str {
+        &self.inner
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,9 @@ use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 impl MigrationName for Migration {
-    fn name(&self) -> &str { "m20250403_094651_recv_request" }
+    fn name(&self) -> &str {
+        "m20250403_094651_recv_request"
+    }
 }
 
 #[async_trait::async_trait]
@@ -29,19 +31,34 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(RecvRequest::Table)
-                    .col(ColumnDef::new(RecvRequest::Id).string().not_null().primary_key())
-                    .col(ColumnDef::new(RecvRequest::ConsumerSlug).string().not_null())
+                    .col(
+                        ColumnDef::new(RecvRequest::Id)
+                            .string()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvRequest::ConsumerSlug)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvRequest::Token).string())
                     .col(ColumnDef::new(RecvRequest::Status).string().not_null())
-                    .col(ColumnDef::new(RecvRequest::CreatedAt).date_time().not_null())
+                    .col(
+                        ColumnDef::new(RecvRequest::CreatedAt)
+                            .date_time()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvRequest::EndedAt).date_time())
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_table(Table::drop().table(RecvRequest::Table).to_owned()).await
+        manager
+            .drop_table(Table::drop().table(RecvRequest::Table).to_owned())
+            .await
     }
 }
 
@@ -53,5 +70,5 @@ pub enum RecvRequest {
     Token,
     Status,
     CreatedAt,
-    EndedAt
+    EndedAt,
 }

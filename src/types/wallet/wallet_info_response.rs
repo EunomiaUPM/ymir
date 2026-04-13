@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ use crate::types::dids::dids_info::DidsInfo;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WalletInfoResponse {
     pub account: String,
-    pub wallets: Vec<ModifiedWalletInfo>
+    pub wallets: Vec<ModifiedWalletInfo>,
 }
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
@@ -35,7 +35,7 @@ pub struct ModifiedWalletInfo {
     #[serde(rename = "addedOn")]
     pub added_on: String,
     pub permission: String, // TODO
-    pub dids: Option<Vec<DidsInfo>>
+    pub dids: Option<Vec<DidsInfo>>,
 }
 
 impl ModifiedWalletInfo {
@@ -46,7 +46,7 @@ impl ModifiedWalletInfo {
             created_on: self.created_on,
             added_on: self.added_on,
             permission: self.permission,
-            dids: Vec::<DidsInfo>::new()
+            dids: Vec::<DidsInfo>::new(),
         }
     }
 }

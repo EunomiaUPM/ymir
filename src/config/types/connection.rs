@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,11 @@ pub struct ConnectionConfig {
     pub is_local: bool,
     pub is_prod: bool,
     pub is_vault_real: bool,
-    pub has_tls_proxy: bool
+    pub has_tls_proxy: bool,
 }
 
 impl ConnectionConfigTrait for ConnectionConfig {
-    fn connection(&self) -> &ConnectionConfig { self }
+    fn connection(&self) -> &ConnectionConfig {
+        self
+    }
 }

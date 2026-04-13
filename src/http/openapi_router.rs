@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,11 +22,13 @@ use axum::response::{Html, IntoResponse};
 use axum::routing::get;
 
 pub struct OpenapiRouter {
-    openapi: String
+    openapi: String,
 }
 
 impl OpenapiRouter {
-    pub fn new(openapi: String) -> OpenapiRouter { OpenapiRouter { openapi } }
+    pub fn new(openapi: String) -> OpenapiRouter {
+        OpenapiRouter { openapi }
+    }
 
     pub fn router(self) -> Router {
         Router::new()
@@ -39,7 +41,7 @@ impl OpenapiRouter {
         (
             StatusCode::OK,
             [("Content-Type", "application/json")],
-            openapi.as_bytes().to_owned()
+            openapi.as_bytes().to_owned(),
         )
     }
 

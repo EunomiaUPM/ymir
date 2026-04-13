@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ pub struct MatchingVCs {
     #[serde(rename = "parsedDocument")]
     pub parsed_document: Value,
     pub pending: bool,
-    pub wallet: String
+    pub wallet: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -38,5 +38,5 @@ pub struct MatchVCsRequest {
     #[serde(rename = "presentationRequest")]
     pub presentation_request: String,
     #[serde(rename = "selectedCredentials")]
-    pub selected_credentials: Vec<String>
+    pub selected_credentials: Vec<String>,
 }

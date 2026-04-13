@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,10 @@ pub trait ParseHeaderExt {
 impl ParseHeaderExt for str {
     fn parse_header(&self) -> Outcome<HeaderValue> {
         self.parse().map_err(|e| {
-            Errors::parse(format!("Invalid header value: '{}'", self), Some(Box::new(e)))
+            Errors::parse(
+                format!("Invalid header value: '{}'", self),
+                Some(Box::new(e)),
+            )
         })
     }
 }
@@ -68,7 +71,11 @@ pub fn parse_from_str<T: DeserializeOwned>(data: &str) -> Outcome<T> {
 
 pub fn parse_from_slice<T: DeserializeOwned>(data: &[u8]) -> Outcome<T> {
     serde_json::from_slice(data).map_err(|e| {
-        Errors::format(BadFormat::Received, "Unable to parse from slice", Some(Box::new(e)))
+        Errors::format(
+            BadFormat::Received,
+            "Unable to parse from slice",
+            Some(Box::new(e)),
+        )
     })
 }
 
@@ -91,14 +98,14 @@ pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
     URL_SAFE_NO_PAD.decode(data).map_err(|e| {
         Errors::parse(
             format!("Unable to decode url safe no pad: {}", data),
-            Some(Box::new(e))
+            Some(Box::new(e)),
         )
     })
 }
 
 pub fn read<P>(path: P) -> Outcome<String>
 where
-    P: AsRef<Path>
+    P: AsRef<Path>,
 {
     let path_ref = path.as_ref();
 
@@ -106,7 +113,7 @@ where
         Errors::read(
             path_ref.display().to_string(),
             format!("Unable to read file: {}", path_ref.display()),
-            Some(Box::new(e))
+            Some(Box::new(e)),
         )
     })
 }
@@ -114,7 +121,7 @@ where
 pub fn read_json<T, P>(path: P) -> Outcome<T>
 where
     T: DeserializeOwned,
-    P: AsRef<Path>
+    P: AsRef<Path>,
 {
     let data = read(path)?;
     serde_json::from_str(&data)
@@ -123,7 +130,7 @@ where
 
 pub fn write<P>(path: P, content: String) -> Outcome<()>
 where
-    P: AsRef<Path>
+    P: AsRef<Path>,
 {
     let path_ref = path.as_ref();
 
@@ -131,7 +138,7 @@ where
         Errors::write(
             path_ref.display().to_string(),
             format!("Unable to write file: {}", path_ref.display()),
-            Some(Box::new(e))
+            Some(Box::new(e)),
         )
     })
 }
@@ -139,7 +146,7 @@ where
 pub fn write_json<T, P>(path: P, value: &T) -> Outcome<()>
 where
     T: Serialize,
-    P: AsRef<Path>
+    P: AsRef<Path>,
 {
     let data = serde_json::to_string_pretty(value)
         .map_err(|e| Errors::parse("Unable to serialize value to JSON", Some(Box::new(e))))?;
@@ -152,10 +159,16 @@ pub fn expect_from_env(env: &str) -> String {
 
 pub fn get_claim(claims: &Value, path: &[&str]) -> Outcome<String> {
     let mut node = claims;
-    let field = path.last().ok_or_else(|| Errors::parse("Path vector is empty", None))?;
+    let field = path
+        .last()
+        .ok_or_else(|| Errors::parse("Path vector is empty", None))?;
     for key in path.iter() {
         node = node.get(key).ok_or_else(|| {
-            Errors::format(BadFormat::Received, format!("Missing field '{}'", key), None)
+            Errors::format(
+                BadFormat::Received,
+                format!("Missing field '{}'", key),
+                None,
+            )
         })?
     }
     validate_data(node, field)
@@ -163,11 +176,13 @@ pub fn get_claim(claims: &Value, path: &[&str]) -> Outcome<String> {
 
 pub fn get_opt_claim(claims: &Value, path: &[&str]) -> Outcome<Option<String>> {
     let mut node = claims;
-    let field = path.last().ok_or_else(|| Errors::parse("Path vector is empty", None))?;
+    let field = path
+        .last()
+        .ok_or_else(|| Errors::parse("Path vector is empty", None))?;
     for key in path.iter() {
         node = match node.get(key) {
             Some(data) => data,
-            None => return Ok(None)
+            None => return Ok(None),
         };
     }
     let data = validate_data(node, field)?;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,14 +26,14 @@ pub struct ErrorInfo {
     pub error_code: u16,
     #[serde(skip)]
     pub status_code: StatusCode,
-    pub details: Option<String>
+    pub details: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 pub struct HttpContext {
     pub http_code: Option<StatusCode>,
     pub url: String,
-    pub method: String
+    pub method: String,
 }
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ pub enum PetitionFailure {
     BodyDeserialization,    // raw_text del error de parseo
     BodyRead,               // error leyendo el stream
     Serialization,          // error preparando el body
-    Concurrency             // semáforo cerrado
+    Concurrency,            // semáforo cerrado
 }
 
 impl Display for PetitionFailure {
@@ -54,7 +54,7 @@ impl Display for PetitionFailure {
             PetitionFailure::BodyDeserialization => write!(f, "Deserialization failed"),
             PetitionFailure::BodyRead => write!(f, "Failed to read response body"),
             PetitionFailure::Serialization => write!(f, "Serialization failed"),
-            PetitionFailure::Concurrency => write!(f, "Concurrency limit reached")
+            PetitionFailure::Concurrency => write!(f, "Concurrency limit reached"),
         }
     }
 }
@@ -67,7 +67,7 @@ pub enum MissingAction {
     Key,
     Onboarding,
     Credentials,
-    Unknown
+    Unknown,
 }
 
 impl Display for MissingAction {
@@ -79,7 +79,7 @@ impl Display for MissingAction {
             MissingAction::Did => "DID",
             MissingAction::Onboarding => "Onboarding",
             MissingAction::Credentials => "Credentials",
-            _ => "Unknown"
+            _ => "Unknown",
         };
         write!(f, "{}", s)
     }
@@ -88,5 +88,5 @@ impl Display for MissingAction {
 pub enum BadFormat {
     Sent,
     Received,
-    Unknown
+    Unknown,
 }

@@ -1,6 +1,6 @@
 [package]
 name = "ymir"
-version = "0.1.0"
+version = "0.6.2"
 edition = "2024"
 
 [dependencies]
@@ -26,3 +26,4 @@ uuid = { version = "1.8.0", features = ["serde", "default", "v4"] }
 urn = { version = "0.7.0", features = ["serde"] }
 serde_urlencoded = "0.7.1"
 openssl = "0.10.76"
+json-canon = "0.1.3"

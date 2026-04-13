@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,11 @@ use crate::types::vcs::{VcModel, W3cDataModelVersion};
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct VcConfig {
     pub vc_model: VcModel,
-    pub w3c_data_model: Option<W3cDataModelVersion>
+    pub w3c_data_model: Option<W3cDataModelVersion>,
 }
 
 impl VcConfigTrait for VcConfig {
-    fn vc_config(&self) -> &VcConfig { self }
+    fn vc_config(&self) -> &VcConfig {
+        self
+    }
 }

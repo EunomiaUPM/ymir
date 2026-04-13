@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 - Universidad Politécnica de Madrid - UPM
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ pub struct Client4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub class_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<Value>
+    pub display: Option<Value>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -38,7 +38,7 @@ pub struct Key4GR {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub jwk: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cert: Option<String>
+    pub cert: Option<String>,
 }
 
 impl Key4GR {
@@ -47,11 +47,18 @@ impl Key4GR {
             None
         } else {
             let jwk = jwk.ok_or_else(|| {
-                Errors::crazy("Cannot send a request if neither a cert nor a key are present", None)
+                Errors::crazy(
+                    "Cannot send a request if neither a cert nor a key are present",
+                    None,
+                )
             })?;
             Some(jwk)
         };
-        Ok(Key4GR { proof: proof.to_string(), jwk, cert })
+        Ok(Key4GR {
+            proof: proof.to_string(),
+            jwk,
+            cert,
+        })
     }
 }
 
@@ -59,7 +66,7 @@ pub enum KeyProof {
     HttpSig,
     Mtls,
     Jwsd,
-    Jws
+    Jws,
 }
 
 impl Display for KeyProof {
@@ -93,8 +100,8 @@ impl FromStr for KeyProof {
             method => Err(Errors::format(
                 BadFormat::Received,
                 format!("Invalid proof format {}", method),
-                None
-            ))
+                None,
+            )),
         }
     }
 }
