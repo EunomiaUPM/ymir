@@ -41,8 +41,8 @@ impl TermsAndConditionsCredSub {
     pub fn random(id: impl Into<String>) -> TermsAndConditionsCredSub {
         TermsAndConditionsCredSub {
             id: id.into(),
-            uri: "uri_to_stuff".to_string(),
-            hash: "kk".to_string(),
+            uri: "https://gaia-x.eu/.well-known/terms-and-conditions.json#cs".to_string(),
+            hash: "067dcac5efd18c1927deb1ffed3feab6d0ad044c0a9a263e6d5d8bdc43224515".to_string(),
         }
     }
 }

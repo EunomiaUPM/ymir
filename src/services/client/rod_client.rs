@@ -35,7 +35,7 @@ pub struct ClientService {
 
 impl Default for ClientService {
     fn default() -> Self {
-        Self::new(10, 10, 1)
+        Self::new(10, 10, 0)
     }
 }
 

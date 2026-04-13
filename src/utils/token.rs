@@ -15,13 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::errors::{BadFormat, Errors, Outcome};
+use crate::utils::parse_from_slice;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use jsonwebtoken::{EncodingKey, Header, encode};
 use rand::Rng;
 use serde::Serialize;
-
-use crate::errors::{BadFormat, Errors, Outcome};
+use serde_json::Value;
 
 pub fn create_opaque_token() -> String {
     let mut bytes = [0u8; 32]; // 256 bits
@@ -37,4 +38,28 @@ pub fn sign_token<T: Serialize>(header: &Header, claims: &T, key: &EncodingKey) 
             Some(Box::new(e)),
         )
     })
+}
+
+pub fn decode_jwt_payload(jwt: &str) -> Outcome<Value> {
+    let parts: Vec<&str> = jwt.splitn(3, '.').collect();
+
+    if parts.len() < 2 {
+        return Err(Errors::format(
+            BadFormat::Received,
+            "Error decoding jwt payload",
+            None,
+        ));
+    }
+
+    let payload = parts[1];
+    let decoded = URL_SAFE_NO_PAD.decode(payload).map_err(|e| {
+        Errors::format(
+            BadFormat::Received,
+            "Error decoding jwt payload",
+            Some(Box::new(e)),
+        )
+    })?;
+    let value: Value = parse_from_slice(&decoded)?;
+
+    Ok(value)
 }

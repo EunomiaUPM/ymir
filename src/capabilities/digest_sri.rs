@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::Outcome;
+use crate::errors::{Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::utils::ResponseExt;
 use base64::{Engine, engine::general_purpose};
@@ -35,6 +35,14 @@ impl DigestSRI {
 
     pub fn validate_json_sri(value: &Value, sri: impl Into<String>) -> Outcome<bool> {
         let sri = sri.into();
+
+        if !sri.starts_with("sha256-") {
+            return Err(Errors::not_impl(
+                "Digest SRI only accepts sha 256 right now",
+                None,
+            ));
+        }
+
         let computed = Self::digest(value)?;
         Ok(computed == sri)
     }

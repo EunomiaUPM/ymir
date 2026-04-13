@@ -74,7 +74,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             vc_type: ActiveValue::Set(self.vc_type),
             cert: ActiveValue::Set(self.cert),
             interact_method: ActiveValue::Set(self.interact_method),
-            vpt: ActiveValue::Set(None),
+            vpt: ActiveValue::Set(self.vpt),
             vc_uri: ActiveValue::Set(self.vc_uri),
             status: ActiveValue::Set(self.status),
             is_vc_issued: ActiveValue::Set(self.is_vc_issued),
