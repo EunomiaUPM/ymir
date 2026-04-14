@@ -179,7 +179,13 @@ impl Display for Errors {
             Errors::ModuleNotActiveError { info, .. } => write!(f, "{}\n", info.message),
             Errors::ReadError { info, .. } => write!(f, "{}\n", info.message),
             Errors::WriteError { info, .. } => write!(f, "{}\n", info.message),
-            Errors::ParseError { info, .. } => write!(f, "{}\n", info.message),
+            Errors::ParseError { info, reason, .. } => {
+                if f.alternate() {
+                    write!(f, "{}: {}", info.message, reason)
+                } else {
+                    write!(f, "{}", info.message)
+                }
+            }
             Errors::VaultError { info, .. } => write!(f, "{}\n", info.message),
             Errors::CrazyError { info, .. } => write!(f, "{\n}", info.message),
         }
