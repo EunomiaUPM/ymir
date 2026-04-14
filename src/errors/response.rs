@@ -24,7 +24,10 @@ impl IntoResponse for Errors {
     fn into_response(self) -> Response {
         self.log();
 
-        let info = self.info();
+        let mut info = self.info().clone();
+        if info.details.is_none() {
+            info.details = Some(self.reason().to_string());
+        }
         let status = info.status_code;
 
         (status, Json(info)).into_response()

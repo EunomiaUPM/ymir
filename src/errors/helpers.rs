@@ -266,6 +266,31 @@ impl Errors {
         format!("{} \n{} \n{} \n", reason, source, backtrace)
     }
 
+    pub fn reason(&self) -> &str {
+        match self {
+            Errors::PetitionError { reason, .. }
+            | Errors::WalletError { reason, .. }
+            | Errors::ProviderError { reason, .. }
+            | Errors::ConsumerError { reason, .. }
+            | Errors::AuthorityError { reason, .. }
+            | Errors::MissingActionError { reason, .. }
+            | Errors::MissingResourceError { reason, .. }
+            | Errors::ReadError { reason, .. }
+            | Errors::WriteError { reason, .. }
+            | Errors::FormatError { reason, .. }
+            | Errors::UnauthorizedError { reason, .. }
+            | Errors::ForbiddenError { reason, .. }
+            | Errors::SecurityError { reason, .. }
+            | Errors::DatabaseError { reason, .. }
+            | Errors::FeatureNotImplError { reason, .. }
+            | Errors::EnvVarError { reason, .. }
+            | Errors::ModuleNotActiveError { reason, .. }
+            | Errors::ParseError { reason, .. }
+            | Errors::VaultError { reason, .. }
+            | Errors::CrazyError { reason, .. } => reason.as_str(),
+        }
+    }
+
     pub fn log(&self) {
         error!(
             "Error occurred: {}{}{}{}{}{}{}",
