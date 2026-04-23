@@ -275,6 +275,7 @@ impl WalletTrait for WaltIdService {
             participant_type: "Agent".to_string(),
             base_url: self.config.hosts().get_host(HostType::Http),
             token: None,
+            extra_fields: None,
             is_me: true,
         })
     }

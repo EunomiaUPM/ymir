@@ -47,6 +47,11 @@ impl MigrationTrait for Migration {
                             .date_time()
                             .not_null(),
                     )
+                    .col(
+                        ColumnDef::new(Mates::ExtraFields)
+                            .json_binary()
+                            .default(serde_json::json!({})),
+                    )
                     .col(ColumnDef::new(Mates::IsMe).boolean().not_null())
                     .to_owned(),
             )
@@ -70,5 +75,6 @@ pub enum Mates {
     Token,
     SavedAt,
     LastInteraction,
+    ExtraFields,
     IsMe,
 }

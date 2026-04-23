@@ -349,20 +349,6 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn validation<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
-        let reason = reason.into();
-        Errors::ParseError {
-            info: ErrorInfo {
-                message: "Error validating connector template".to_string(),
-                error_code: 5531,
-                status_code: StatusCode::BAD_REQUEST,
-                details: Some(reason.clone()),
-            },
-            reason,
-            source,
-            backtrace: Backtrace::capture()
-        }
-    }
     pub fn vault<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
         Errors::VaultError {
             info: ErrorInfo {

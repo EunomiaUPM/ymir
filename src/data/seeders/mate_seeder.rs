@@ -42,6 +42,7 @@ impl MateSeeder {
             token: ActiveValue::Set(None),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
             last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            extra_fields: ActiveValue::Set(serde_json::json!({})),
             is_me: ActiveValue::Set(true),
         }
         .insert(db)

@@ -33,16 +33,18 @@ pub struct Model {
     pub token: Option<String>,                   // REQUEST
     pub saved_at: chrono::NaiveDateTime,         // DEFAULT
     pub last_interaction: chrono::NaiveDateTime, // DEFAULT
-    pub is_me: bool,                             // REQUEST
+    pub extra_fields: serde_json::Value,
+    pub is_me: bool, // REQUEST
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NewModel {
     pub participant_id: String,
     pub participant_slug: String,
     pub participant_type: String,
     pub base_url: String,
     pub token: Option<String>,
+    pub extra_fields: Option<serde_json::Value>,
     pub is_me: bool,
 }
 
@@ -56,6 +58,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
             last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            extra_fields: ActiveValue::Set(self.extra_fields.unwrap_or(serde_json::json!({}))),
             is_me: ActiveValue::Set(self.is_me),
         }
     }
@@ -71,6 +74,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(self.saved_at),
             last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            extra_fields: ActiveValue::Set(self.extra_fields),
             is_me: ActiveValue::Set(self.is_me),
         }
     }
