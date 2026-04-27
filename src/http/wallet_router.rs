@@ -23,12 +23,11 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
-use serde_json::Value;
 
 use crate::core_traits::CoreWalletTrait;
 use crate::errors::AppResult;
-use crate::types::dids::dids_info::DidsInfo;
-use crate::types::wallet::{KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
+use crate::types::dids::{DidService, DidsInfo};
+use crate::types::wallet::{IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
 use crate::utils::extract_payload;
 
 pub struct WalletRouter {
@@ -47,11 +46,11 @@ impl WalletRouter {
             .route("/logout", post(Self::logout))
             .route("/onboard", post(Self::onboard))
             .route("/partial-onboard", post(Self::partial_onboard))
+            .route("/is-linked", get(Self::is_linked))
             .route("/link", post(Self::link))
             .route("/key", post(Self::register_key))
             .route("/did", post(Self::register_did))
             .route("/key", delete(Self::delete_key))
-            .route("/did.json", get(Self::did_json))
             .route("/did", delete(Self::delete_did))
             .route("/did", get(Self::get_wallet_did))
             .route("/info", get(Self::get_wallet_info))
@@ -61,10 +60,21 @@ impl WalletRouter {
             .with_state(self.holder)
     }
 
-    pub fn well_known(&self) -> Router {
-        Router::new()
-            .route("/.well-known/did.json", get(Self::did_json))
-            .with_state(self.holder.clone())
+    pub fn well_known(&self, services: Option<Vec<DidService>>) -> Router {
+        let services = services.clone();
+        let holder = self.holder.clone();
+
+        Router::new().route(
+            "/.well-known/did.json",
+            get(move || {
+                let holder = holder.clone();
+                let services = services.clone();
+                async move {
+                    let doc = holder.get_did_doc(services.as_deref()).await?;
+                    AppResult::Ok(Json(doc))
+                }
+            }),
+        )
     }
 
     async fn register(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<StatusCode> {
@@ -93,6 +103,12 @@ impl WalletRouter {
         holder.link().await
     }
 
+    async fn is_linked(
+        State(holder): State<Arc<dyn CoreWalletTrait>>,
+    ) -> AppResult<Json<IsLinked>> {
+        Ok(Json(holder.is_linked().await))
+    }
+
     async fn register_key(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<StatusCode> {
         holder.register_key().await?;
         Ok(StatusCode::CREATED)
@@ -117,11 +133,6 @@ impl WalletRouter {
     ) -> AppResult<()> {
         let payload = extract_payload(payload)?;
         holder.delete_did(payload).await
-    }
-
-    async fn did_json(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<Json<Value>> {
-        let doc = holder.get_did_doc().await?;
-        Ok(Json(doc))
     }
 
     async fn process_oidc4vci(

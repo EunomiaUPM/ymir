@@ -18,7 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::traits::DidConfigTrait;
-use crate::types::dids::did_type::DidType;
+use crate::types::dids::DidType;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DidConfig {

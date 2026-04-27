@@ -8,24 +8,22 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 use serde::{Deserialize, Serialize};
 
-use crate::types::dids::DidsInfo;
-#[derive(Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
-pub struct WalletInfo {
-    pub id: String,
-    pub name: String,
-    #[serde(rename = "createdOn")]
-    pub created_on: String,
-    #[serde(rename = "addedOn")]
-    pub added_on: String,
-    pub permission: String, // TODO
-    pub dids: Vec<DidsInfo>,
+#[derive(Serialize, Deserialize)]
+pub struct IsLinked {
+    is_linked: bool,
+}
+
+impl IsLinked {
+    pub fn new(is_linked: bool) -> Self {
+        Self { is_linked }
+    }
 }

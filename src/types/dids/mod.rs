@@ -15,5 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod did_type;
-pub mod dids_info;
+mod did_service;
+mod did_type;
+mod dids_info;
+
+pub use did_service::*;
+pub use did_type::*;
+pub use dids_info::*;

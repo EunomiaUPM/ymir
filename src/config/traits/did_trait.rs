@@ -16,7 +16,7 @@
  */
 
 use crate::config::types::{DidConfig, DidWebOptions};
-use crate::types::dids::did_type::DidType;
+use crate::types::dids::DidType;
 
 pub trait DidConfigTrait {
     fn did_config(&self) -> &DidConfig;

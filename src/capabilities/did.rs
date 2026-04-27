@@ -24,7 +24,7 @@ use tracing::info;
 
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
-use crate::types::dids::did_type::DidType;
+use crate::types::dids::{DidService, DidType};
 use crate::utils::{
     ResponseExt, decode_url_safe_no_pad, json_headers, parse_from_slice, parse_from_value,
 };
@@ -118,6 +118,7 @@ impl DidResolver {
             DidType::Other
         }
     }
+
     pub fn parse_domain(domain: &str) -> String {
         let parts: Vec<&str> = domain.split(':').collect();
 
@@ -128,6 +129,15 @@ impl DidResolver {
                 format!("https://{}/{}/did.json", domain, path)
             }
             _ => String::new(),
+        }
+    }
+
+    pub fn insert_services(doc: &mut Value, services: &[DidService]) {
+        if let Some(doc_obj) = doc.as_object_mut() {
+            doc_obj.insert(
+                "service".to_string(),
+                serde_json::to_value(services).unwrap_or_default(),
+            );
         }
     }
 }

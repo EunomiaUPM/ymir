@@ -21,7 +21,7 @@ use serde_json::Value;
 
 use crate::data::entities::{mates, minions};
 use crate::errors::Outcome;
-use crate::types::dids::dids_info::DidsInfo;
+use crate::types::dids::DidsInfo;
 use crate::types::vcs::VPDef;
 use crate::types::wallet::{
     CredentialOfferResponse, KeyDefinition, MatchingVCs, WalletCredentials, WalletInfo,

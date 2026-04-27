@@ -20,11 +20,12 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use serde_json::Value;
 
+use crate::capabilities::DidResolver;
 use crate::errors::Outcome;
 use crate::services::repo::subtraits::{MatesTrait, MinionsTrait};
 use crate::services::wallet::WalletTrait;
-use crate::types::dids::dids_info::DidsInfo;
-use crate::types::wallet::{KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
+use crate::types::dids::{DidService, DidsInfo};
+use crate::types::wallet::{IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
 
 #[async_trait]
 pub trait CoreWalletTrait: Send + Sync + 'static {
@@ -65,8 +66,16 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
             false => self.onboard().await,
         }
     }
-    async fn get_did_doc(&self) -> Outcome<Value> {
-        self.wallet().get_did_doc().await
+    async fn is_linked(&self) -> IsLinked {
+        IsLinked::new(self.wallet().has_onboarded().await)
+    }
+    async fn get_did_doc(&self, service: Option<&[DidService]>) -> Outcome<Value> {
+        let mut doc = self.wallet().get_did_doc().await?;
+        match service {
+            Some(data) => DidResolver::insert_services(&mut doc, data),
+            None => {}
+        }
+        Ok(doc)
     }
     async fn register_key(&self) -> Outcome<()> {
         self.wallet().register_key().await

@@ -18,7 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::WalletInfo;
-use crate::types::dids::dids_info::DidsInfo;
+use crate::types::dids::DidsInfo;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WalletInfoResponse {
