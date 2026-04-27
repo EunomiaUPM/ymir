@@ -103,7 +103,9 @@ impl WalletRouter {
         holder.link().await
     }
 
-    async fn is_linked(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<Json<IsLinked>> {
+    async fn is_linked(
+        State(holder): State<Arc<dyn CoreWalletTrait>>,
+    ) -> AppResult<Json<IsLinked>> {
         Ok(Json(holder.is_linked().await))
     }
 

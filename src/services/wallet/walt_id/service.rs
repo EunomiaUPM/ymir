@@ -211,7 +211,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to logout from Wallet failed",
         )
-            .await?;
+        .await?;
 
         info!("Wallet logout successful");
         let mut wallet_session = self.wallet_session.lock().await;
@@ -511,7 +511,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to register key failed",
         )
-            .await?;
+        .await?;
 
         info!("Key registered successfully");
         Ok(())
@@ -563,7 +563,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to register key failed",
         )
-            .await
+        .await
     }
 
     async fn reg_did_web(&self) -> Outcome<Response> {
@@ -589,7 +589,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to register key failed",
         )
-            .await
+        .await
     }
 
     async fn set_default_did(&self, did: Option<&str>) -> Outcome<()> {
@@ -611,7 +611,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to set did as default failed",
         )
-            .await?;
+        .await?;
 
         info!("Did has been set as default");
         Ok(())
@@ -633,7 +633,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete key failed",
         )
-            .await?;
+        .await?;
 
         info!("Key deleted successfully from web wallet");
         let mut keys_data = self.key_data.lock().await;
@@ -656,7 +656,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete key failed",
         )
-            .await?;
+        .await?;
 
         info!("Did deleted successfully from web wallet");
         let mut wallet_session = self.first_wallet_mut().await?;
@@ -792,7 +792,7 @@ impl WalletTrait for WaltIdService {
                 .map_err(|e| Errors::parse("Unable to decode vpd", Some(Box::new(e))))?
                 .as_ref(),
         )
-            .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
+        .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
 
         let vpd_json = get_query_param(&url, "presentation_definition")?;
 

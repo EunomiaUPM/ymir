@@ -16,6 +16,7 @@
  */
 
 mod cred_offer_resp;
+mod is_linked;
 mod key_definition;
 mod matching_vcs;
 mod oidc_uri;
@@ -25,9 +26,9 @@ mod wallet_info_response;
 mod wallet_login_response;
 mod wallet_session;
 mod wallet_vc;
-mod is_linked;
 
 pub use cred_offer_resp::*;
+pub use is_linked::IsLinked;
 pub use key_definition::KeyDefinition;
 pub use matching_vcs::*;
 pub use oidc_uri::OidcUri;
@@ -37,4 +38,3 @@ pub use wallet_info_response::WalletInfoResponse;
 pub use wallet_login_response::WalletLoginResponse;
 pub use wallet_session::WalletSession;
 pub use wallet_vc::*;
-pub use is_linked::IsLinked;
