@@ -34,6 +34,7 @@ pub struct Model {
     pub auto: bool,
     pub assigned_id: Option<String>, // RESPONSE
     pub vc_uri: Option<String>,
+    pub verification_uri: Option<String>,
     pub status: String,                          // DEFAULT
     pub created_at: chrono::NaiveDateTime,       // DEFAULT
     pub ended_at: Option<chrono::NaiveDateTime>, // COMPLETION
@@ -60,6 +61,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             auto: ActiveValue::Set(self.auto.unwrap_or(false)),
             assigned_id: ActiveValue::Set(None),
             vc_uri: ActiveValue::Set(None),
+            verification_uri: ActiveValue::Set(None),
             status: ActiveValue::Set("Processing".to_string()),
             created_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
             ended_at: ActiveValue::Set(None),
@@ -78,9 +80,10 @@ impl IntoActiveSet<ActiveModel> for Model {
             auto: ActiveValue::Set(self.auto),
             assigned_id: ActiveValue::Set(self.assigned_id),
             vc_uri: ActiveValue::Set(self.vc_uri),
+            verification_uri: ActiveValue::Set(self.verification_uri),
             status: ActiveValue::Set(self.status),
             created_at: ActiveValue::Set(self.created_at),
-            ended_at: ActiveValue::Set(self.ended_at),
+            ended_at: ActiveValue::Set(Some(chrono::Utc::now().naive_utc())),
         }
     }
 }

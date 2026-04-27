@@ -39,6 +39,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(ReqVc::Auto).boolean().not_null())
                     .col(ColumnDef::new(ReqVc::AssignedId).string())
                     .col(ColumnDef::new(ReqVc::VcUri).string())
+                    .col(ColumnDef::new(ReqVc::VerificationUri).string())
                     .col(ColumnDef::new(ReqVc::Status).string().not_null())
                     .col(ColumnDef::new(ReqVc::CreatedAt).date_time().not_null())
                     .col(ColumnDef::new(ReqVc::EndedAt).date_time())
@@ -65,6 +66,7 @@ pub enum ReqVc {
     Auto,
     AssignedId,
     VcUri,
+    VerificationUri,
     Status,
     CreatedAt,
     EndedAt,

@@ -23,6 +23,9 @@ pub trait VerifyReqConfigTrait {
     fn is_cert_allowed(&self) -> bool {
         self.verify_req_config().is_cert_allowed
     }
+    fn auto_approve_cert(&self) -> bool {
+        self.verify_req_config().auto_approve_cert
+    }
     fn get_requested_vcs(&self) -> &[VcType] {
         &self.verify_req_config().vcs_requested
     }

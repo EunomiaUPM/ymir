@@ -24,6 +24,7 @@ use crate::types::vcs::VcType;
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct VerifyReqConfig {
     pub is_cert_allowed: bool,
+    pub auto_approve_cert: bool,
     #[serde(deserialize_with = "deserialize_vc_type_vec")]
     pub vcs_requested: Vec<VcType>,
 }
