@@ -30,6 +30,7 @@ pub struct Model {
     pub provider_id: String,    // REQUEST
     pub provider_slug: String,  // REQUEST
     pub grant_endpoint: String, // REQUEST
+    pub verification_uri: Option<String>,
     pub auto: bool,
     pub assigned_id: Option<String>,             // RESPONSE
     pub token: Option<String>,                   // COMPLETION
@@ -54,6 +55,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             provider_id: ActiveValue::Set(self.provider_id),
             provider_slug: ActiveValue::Set(self.provider_slug),
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
+            verification_uri: ActiveValue::Set(None),
             auto: ActiveValue::Set(self.auto.unwrap_or(false)),
             assigned_id: ActiveValue::Set(None),
             token: ActiveValue::Set(None),
@@ -71,6 +73,7 @@ impl IntoActiveSet<ActiveModel> for Model {
             provider_id: ActiveValue::Set(self.provider_id),
             provider_slug: ActiveValue::Set(self.provider_slug),
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
+            verification_uri: ActiveValue::Set(self.verification_uri),
             auto: ActiveValue::Set(self.auto),
             assigned_id: ActiveValue::Set(self.assigned_id),
             token: ActiveValue::Set(self.token),
