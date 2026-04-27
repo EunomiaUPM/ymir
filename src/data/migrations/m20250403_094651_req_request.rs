@@ -44,11 +44,7 @@ impl MigrationTrait for Migration {
                             .string()
                             .not_null(),
                     )
-                    .col(
-                        ColumnDef::new(ReqRequest::VerificationUri)
-                            .string()
-                        ,
-                    )
+                    .col(ColumnDef::new(ReqRequest::VerificationUri).string())
                     .col(ColumnDef::new(ReqRequest::Auto).boolean().not_null())
                     .col(ColumnDef::new(ReqRequest::AssignedId).string())
                     .col(ColumnDef::new(ReqRequest::Token).string())

@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 use crate::data::entities::{issuing, recv_interaction};
-use crate::errors::{Outcome};
+use crate::errors::Outcome;
 use crate::types::gnap::credential_res::CredentialResponse;
 use crate::types::gnap::grant_request::InteractStart;
 use crate::types::gnap::grant_response::{
