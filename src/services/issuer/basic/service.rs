@@ -74,11 +74,13 @@ impl IssuerTrait for BasicIssuerService {
             false => host,
         };
 
+        let uri = self.generate_issuing_uri(&model.id, None);
         issuing::NewModel {
             id: model.id.clone(),
             name: model.participant_slug.clone(),
             vc_type: model.vc_type.clone(),
             aud,
+            uri,
         }
     }
 

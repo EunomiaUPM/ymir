@@ -32,7 +32,7 @@ pub struct Model {
     pub tx_code: String,
     pub step: bool,
     pub vc_type: String,
-    pub uri: Option<String>,
+    pub uri: String,
     pub token: String,
     pub aud: String,
     pub holder_did: Option<String>,
@@ -48,6 +48,7 @@ pub struct NewModel {
     pub name: String,
     pub vc_type: String,
     pub aud: String,
+    pub uri: String,
 }
 
 impl IntoActiveSet<ActiveModel> for NewModel {
@@ -63,7 +64,7 @@ impl IntoActiveSet<ActiveModel> for NewModel {
             tx_code: ActiveValue::Set(tx_code),
             step: ActiveValue::Set(true),
             vc_type: ActiveValue::Set(self.vc_type),
-            uri: ActiveValue::Set(None),
+            uri: ActiveValue::Set(self.uri),
             token: ActiveValue::Set(token),
             aud: ActiveValue::Set(self.aud),
             holder_did: ActiveValue::Set(None),

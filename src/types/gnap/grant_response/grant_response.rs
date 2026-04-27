@@ -14,10 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 
-use crate::data::entities::recv_interaction;
+use crate::data::entities::{issuing, recv_interaction};
+use crate::errors::{Outcome};
 use crate::types::gnap::credential_res::CredentialResponse;
 use crate::types::gnap::grant_request::InteractStart;
 use crate::types::gnap::grant_response::{
@@ -46,16 +47,17 @@ pub struct GrantResponse {
 }
 
 impl GrantResponse {
-    pub fn vc_approved(uri: &str, vc_type: &VcType) -> Self {
-        Self {
+    pub fn vc_approved(model: &issuing::Model) -> Outcome<Self> {
+        let vc_type = VcType::from_str(&model.vc_type)?;
+        Ok(Self {
             r#continue: None,
             access_token: None,
-            credential_response: Some(CredentialResponse::new(uri, vc_type)),
+            credential_response: Some(CredentialResponse::new(&model.uri, &vc_type)),
             interact: None,
             subject: None,
             instance_id: None,
             error: None,
-        }
+        })
     }
     pub fn pending(
         option: &InteractStart,
