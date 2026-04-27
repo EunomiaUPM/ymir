@@ -27,7 +27,7 @@ use axum::{Json, Router};
 use crate::core_traits::CoreWalletTrait;
 use crate::errors::AppResult;
 use crate::types::dids::{DidService, DidsInfo};
-use crate::types::wallet::{KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
+use crate::types::wallet::{IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
 use crate::utils::extract_payload;
 
 pub struct WalletRouter {
@@ -46,6 +46,7 @@ impl WalletRouter {
             .route("/logout", post(Self::logout))
             .route("/onboard", post(Self::onboard))
             .route("/partial-onboard", post(Self::partial_onboard))
+            .route("/is-linked", get(Self::is_linked))
             .route("/link", post(Self::link))
             .route("/key", post(Self::register_key))
             .route("/did", post(Self::register_did))
@@ -100,6 +101,10 @@ impl WalletRouter {
 
     async fn link(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<()> {
         holder.link().await
+    }
+
+    async fn is_linked(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<Json<IsLinked>> {
+        Ok(Json(holder.is_linked().await))
     }
 
     async fn register_key(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<StatusCode> {

@@ -25,7 +25,7 @@ use crate::errors::Outcome;
 use crate::services::repo::subtraits::{MatesTrait, MinionsTrait};
 use crate::services::wallet::WalletTrait;
 use crate::types::dids::{DidService, DidsInfo};
-use crate::types::wallet::{KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
+use crate::types::wallet::{IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
 
 #[async_trait]
 pub trait CoreWalletTrait: Send + Sync + 'static {
@@ -65,6 +65,9 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
             true => self.partial_onboard().await,
             false => self.onboard().await,
         }
+    }
+    async fn is_linked(&self) -> IsLinked {
+        IsLinked::new(self.wallet().has_onboarded().await)
     }
     async fn get_did_doc(&self, service: Option<&[DidService]>) -> Outcome<Value> {
         let mut doc = self.wallet().get_did_doc().await?;
