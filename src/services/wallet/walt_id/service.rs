@@ -681,7 +681,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete vc failed",
         )
-            .await?;
+        .await?;
 
         info!("Credential deleted successfully from web wallet");
         Ok(())

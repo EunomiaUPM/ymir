@@ -15,9 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use reqwest::Response;
-use serde_json::Value;
 use crate::data::entities::{mates, minions};
 use crate::errors::Outcome;
 use crate::types::dids::DidsInfo;
@@ -26,6 +23,9 @@ use crate::types::wallet::{
     CredentialOfferResponse, KeyDefinition, MatchingVCs, WalletCredentials, WalletInfo,
     WalletSession,
 };
+use async_trait::async_trait;
+use reqwest::Response;
+use serde_json::Value;
 
 #[async_trait]
 pub trait WalletTrait: Send + Sync + 'static {
