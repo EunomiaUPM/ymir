@@ -18,7 +18,6 @@
 use async_trait::async_trait;
 use reqwest::Response;
 use serde_json::Value;
-
 use crate::data::entities::{mates, minions};
 use crate::errors::Outcome;
 use crate::types::dids::DidsInfo;
@@ -60,6 +59,7 @@ pub trait WalletTrait: Send + Sync + 'static {
     // DELETE STUFF FROM WALLET
     async fn delete_key(&self, key: KeyDefinition) -> Outcome<()>;
     async fn delete_did(&self, did_info: DidsInfo) -> Outcome<()>;
+    async fn delete_vc(&self, id: &str) -> Outcome<()>;
     // DO STUFF IN WALLET
     async fn resolve_credential_offer(&self, uri: &str) -> Outcome<CredentialOfferResponse>;
     async fn resolve_credential_issuer(

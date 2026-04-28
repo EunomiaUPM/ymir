@@ -474,7 +474,7 @@ impl WalletTrait for WaltIdService {
         info!("Retrieving credentials from web wallet");
 
         let wallet = self.get_wallet().await?;
-        let path = format!("/wallet/{}/credentials", wallet.id);
+        let path = format!("/wallet/{}/credentials?showDeleted=false", wallet.id);
 
         let res = self
             .request(
@@ -664,6 +664,26 @@ impl WalletTrait for WaltIdService {
 
         wallet.dids.retain(|did| *did != did_info);
         info!("Did deleted successfully from internal data");
+        Ok(())
+    }
+
+    async fn delete_vc(&self, id: &str) -> Outcome<()> {
+        info!("Deleting credential from web wallet");
+
+        let wallet = self.get_wallet().await?;
+        let path = format!("/wallet/{}/credentials/{}", wallet.id, id);
+
+        self.request(
+            "DELETE",
+            &path,
+            Body::None,
+            true,
+            false,
+            "Petition to delete vc failed",
+        )
+            .await?;
+
+        info!("Credential deleted successfully from web wallet");
         Ok(())
     }
 

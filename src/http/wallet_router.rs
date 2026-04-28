@@ -17,7 +17,7 @@
 
 use std::sync::Arc;
 
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::extract::rejection::JsonRejection;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect};
@@ -53,6 +53,7 @@ impl WalletRouter {
             .route("/key", delete(Self::delete_key))
             .route("/did", delete(Self::delete_did))
             .route("/did", get(Self::get_wallet_did))
+            .route("/credential/{id}", delete(Self::delete_credential))
             .route("/info", get(Self::get_wallet_info))
             .route("/vcs", get(Self::get_wallet_credentials))
             .route("/oidc4vci", post(Self::process_oidc4vci))
@@ -157,6 +158,12 @@ impl WalletRouter {
 
     async fn get_wallet_did(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<String> {
         Ok(holder.get_wallet_did().await?)
+    }
+
+    async fn delete_credential(
+        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        Path(id): Path<String>, ) -> AppResult {
+        Ok(holder.delete_credential(&id).await?.into_response())
     }
 
     async fn get_wallet_info(

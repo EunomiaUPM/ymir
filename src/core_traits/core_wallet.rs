@@ -102,6 +102,9 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
     async fn get_wallet_did(&self) -> Outcome<String> {
         self.wallet().get_did().await
     }
+    async fn delete_credential(&self, id: &str) -> Outcome<()> {
+        self.wallet().delete_vc(id).await
+    }
     async fn get_wallet_credentials(&self) -> Outcome<Vec<WalletCredentials>> {
         self.wallet().retrieve_wallet_credentials().await
     }
