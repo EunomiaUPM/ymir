@@ -43,6 +43,7 @@ impl DidService {
 pub enum DidServiceType {
     AuthorizationServer,
     CredentialIssuer,
+    FederatedCatalog,
 }
 
 impl Display for DidServiceType {
@@ -50,6 +51,7 @@ impl Display for DidServiceType {
         let s = match self {
             DidServiceType::AuthorizationServer => "AuthorizationServer",
             DidServiceType::CredentialIssuer => "CredentialIssuer",
+            DidServiceType::FederatedCatalog => "FederatedCatalog",
         };
 
         write!(f, "{s}")
@@ -63,6 +65,7 @@ impl FromStr for DidServiceType {
         match s {
             "AuthorizationServer" => Ok(DidServiceType::AuthorizationServer),
             "CredentialIssuer" => Ok(DidServiceType::CredentialIssuer),
+            "FederatedCatalog" => Ok(DidServiceType::FederatedCatalog),
             format => Err(Errors::parse(
                 format!("Unknown service type: {}", format),
                 None,
