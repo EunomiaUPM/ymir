@@ -280,7 +280,7 @@ impl IssuerTrait for BasicIssuerService {
             participant_id: did,
             participant_slug: req_model.participant_slug.clone(),
             vc_uri: req_model.vc_uri.clone(),
-            participant_type: "Minion".to_string(),
+            participant_type: "Agent".to_string(),
             base_url: Some(base_url),
             is_vc_issued: true,
             is_me: false,
