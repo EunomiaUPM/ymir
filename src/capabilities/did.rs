@@ -65,7 +65,7 @@ impl Did {
             let w = WebDid::new(did, kid, domain.to_owned(), path, port, key_id);
 
             Ok(Did::Web(w))
-        } else if let Some(rest) = kid.strip_prefix("did:jwk:") {
+        } else if let Some(rest) = did.strip_prefix("did:jwk:") {
             let j = JwkDid::new(did, kid, rest.to_owned(), key_id);
 
             Ok(Did::Jwk(j))
