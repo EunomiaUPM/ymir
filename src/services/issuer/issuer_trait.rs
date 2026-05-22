@@ -16,16 +16,16 @@
  */
 
 use async_trait::async_trait;
-use jsonwebtoken::TokenData;
 use serde_json::Value;
 
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
 use crate::errors::Outcome;
 use crate::types::issuing::{
-    AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
-    TokenRequest, VCCredOffer, WellKnownJwks,
+    AuthServerMetadata, CredentialRequest, GiveVC, IssuerMetadata, IssuingToken, TokenRequest,
+    VCCredOffer, WellKnownJwks,
 };
 use crate::types::vcs::VcType;
+use crate::types::wallet::fafnir::SigningCtx;
 
 #[async_trait]
 pub trait IssuerTrait: Send + Sync + 'static {
@@ -40,7 +40,6 @@ pub trait IssuerTrait: Send + Sync + 'static {
     ) -> AuthServerMetadata;
     fn get_token(&self, model: &issuing::Model) -> IssuingToken;
     fn validate_token_req(&self, model: &issuing::Model, payload: &TokenRequest) -> Outcome<()>;
-    async fn issue_cred(&self, claims: &Value, did: Option<&str>) -> Outcome<GiveVC>;
     async fn validate_cred_req(
         &self,
         model: &mut issuing::Model,
@@ -48,7 +47,7 @@ pub trait IssuerTrait: Send + Sync + 'static {
         token: &str,
         did: Option<&str>,
     ) -> Outcome<()>;
-    fn validate_did_possession(&self, token: &TokenData<DidPossession>, kid: &str) -> Outcome<()>;
+    async fn issue_cred(&self, claims: &Value, sig_ctx: &SigningCtx) -> Outcome<GiveVC>;
     fn end(
         &self,
         req_model: &vc_request::Model,

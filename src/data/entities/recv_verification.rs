@@ -14,9 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
+use rand::distributions::Alphanumeric;
 use rand::Rng;
-use rand_distr::Alphanumeric;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 
@@ -49,12 +48,12 @@ pub struct NewModel {
 
 impl IntoActiveSet<ActiveModel> for NewModel {
     fn to_active(self) -> ActiveModel {
-        let state: String = rand::rng()
+        let state: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)
             .take(12)
             .map(char::from)
             .collect();
-        let nonce: String = rand::rng()
+        let nonce: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)
             .take(12)
             .map(char::from)

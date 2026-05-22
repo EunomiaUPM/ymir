@@ -15,13 +15,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
+use crate::capabilities::Did;
+use crate::types::keys::Key;
 
-use super::wallet_info::WalletInfo;
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WalletSession {
-    pub account_id: Option<String>,
-    pub token: Option<String>,
-    pub token_exp: Option<u64>,
-    pub wallets: Vec<WalletInfo>,
+pub struct SigningCtx {
+    did: Did,
+    key: Key,
+}
+
+impl SigningCtx {
+    pub fn new(did: Did, key: Key) -> Self {
+        SigningCtx { did, key }
+    }
+    pub fn did(&self) -> &Did {
+        &self.did
+    }
+    pub fn key(&self) -> &Key {
+        &self.key
+    }
 }

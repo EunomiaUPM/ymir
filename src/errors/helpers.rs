@@ -18,7 +18,7 @@
 use axum::http::StatusCode;
 use tracing::error;
 
-use super::{BadFormat, ErrorInfo, Errors, HttpContext};
+use super::{ErrorInfo, Errors, HttpContext};
 
 impl Errors {
     pub fn build_ctx<R: Into<String>, S: Into<String>>(
@@ -307,7 +307,7 @@ impl Errors {
 
 impl From<serde_json::Error> for Errors {
     fn from(e: serde_json::Error) -> Self {
-        Errors::format(BadFormat::Received, e.to_string(), Some(Box::new(e)))
+        Errors::parse(e.to_string(), Some(Box::new(e)))
     }
 }
 

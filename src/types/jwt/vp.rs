@@ -8,41 +8,32 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use crate::types::vps::VpDocument;
 
-use crate::types::vcs::vc_issuer::VCIssuer;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct VCClaimsV2 {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub exp: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub jti: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub iat: Option<usize>,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VPJwtClaims {
+    pub aud: String,
+    pub nonce: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub iss: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sub: Option<String>,
-    #[serde(rename = "@context")]
-    pub context: Vec<String>,
-    pub r#type: Vec<String>,
-    pub id: String,
-    #[serde(rename = "CredentialSubject")]
-    pub credential_subject: Value,
-    pub issuer: VCIssuer,
-    #[serde(rename = "validFrom", skip_serializing_if = "Option::is_none")]
-    pub valid_from: Option<DateTime<Utc>>,
-    #[serde()]
-    #[serde(rename = "validUntil", skip_serializing_if = "Option::is_none")]
-    pub valid_until: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub jti: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nbf: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exp: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub iat: Option<i64>,
+    #[serde(flatten)]
+    pub vp: VpDocument,
 }

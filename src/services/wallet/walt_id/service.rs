@@ -35,24 +35,19 @@ use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
 use crate::services::vault::global::VaultService;
-use crate::types::dids::{DidType, DidsInfo};
+use crate::types::dids::{DidType};
 use crate::types::http::Body;
-use crate::types::jwt::AuthJwtClaims;
 use crate::types::secrets::{SemiWalletSecrets, StringHelper};
 use crate::types::vcs::VPDef;
-use crate::types::wallet::{
-    CredentialOfferResponse, KeyDefinition, MatchVCsRequest, MatchingVCs, RedirectResponse,
-    WalletCredentials, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession,
+use crate::types::wallet::waltid::{
+    DidsInfo, CredentialOfferResponse, KeyDefinition, MatchVCsRequest, MatchingVCs, RedirectResponse,
+    WalletCredentials, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession, AuthJwtClaims,
 };
-use crate::utils::{
-    ParseHeaderExt, ResponseExt, decode_url_safe_no_pad, expect_from_env, get_query_param,
-    json_headers, parse_from_slice, parse_from_str, parse_text_resp, parse_to_value,
-};
+use crate::utils::{ParseHeaderExt, ResponseExt, decode_url_safe_no_pad, expect_from_env, get_query_param, json_headers, parse_text_resp, http_client};
 
 pub struct WaltIdService {
     wallet_session: Arc<Mutex<WalletSession>>,
     key_data: Arc<Mutex<Vec<KeyDefinition>>>,
-    client: Arc<dyn ClientTrait>,
     vault: Arc<VaultService>,
     config: WaltIdConfig,
 }
@@ -60,7 +55,6 @@ pub struct WaltIdService {
 impl WaltIdService {
     pub fn new(
         config: WaltIdConfig,
-        client: Arc<dyn ClientTrait>,
         vault: Arc<VaultService>,
     ) -> WaltIdService {
         WaltIdService {
@@ -72,7 +66,6 @@ impl WaltIdService {
             })),
             key_data: Arc::new(Mutex::new(Vec::new())),
             config,
-            client,
             vault,
         }
     }
@@ -102,9 +95,9 @@ impl WaltIdService {
         }
 
         let res = match method {
-            "GET" => self.client.get(&url, Some(headers)).await?,
-            "POST" => self.client.post(&url, Some(headers), body).await?,
-            "DELETE" => self.client.delete(&url, Some(headers), body).await?,
+            "GET" => http_client().get(&url, Some(headers)).await?,
+            "POST" => http_client().post(&url, Some(headers), body).await?,
+            "DELETE" => http_client().delete(&url, Some(headers), body).await?,
             _ => return Err(Errors::not_impl(format!("Method {}", method), None)),
         };
 
@@ -134,8 +127,7 @@ impl WalletTrait for WaltIdService {
         let db_path = expect_from_env("VAULT_APP_WALLET");
         let body = self.vault.read(None, &db_path).await?;
 
-        let res = self
-            .client
+        let res = http_client()
             .post(&url, Some(json_headers()), Body::Json(body))
             .await?;
 
@@ -193,7 +185,7 @@ impl WalletTrait for WaltIdService {
         }
 
         let decoded = decode_url_safe_no_pad(jwt_parts[1])?;
-        let claims: AuthJwtClaims = parse_from_slice(&decoded)?;
+        let claims: AuthJwtClaims = serde_json::from_slice(&decoded)?;
         wallet_session.token_exp = Some(claims.exp);
         wallet_session.token = Some(jwt);
 
@@ -211,7 +203,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to logout from Wallet failed",
         )
-        .await?;
+            .await?;
 
         info!("Wallet logout successful");
         let mut wallet_session = self.wallet_session.lock().await;
@@ -364,7 +356,7 @@ impl WalletTrait for WaltIdService {
             .ok_or_else(|| {
                 Errors::missing_action(MissingAction::Did, "No dids found in wallet", None)
             })?;
-        parse_from_str(&did)
+        serde_json::from_str(&did).map_err(|e| Errors::parse(e.to_string(), Some(Box::new(e))))
     }
 
     async fn get_key(&self) -> Outcome<KeyDefinition> {
@@ -511,7 +503,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to register key failed",
         )
-        .await?;
+            .await?;
 
         info!("Key registered successfully");
         Ok(())
@@ -523,7 +515,6 @@ impl WalletTrait for WaltIdService {
         let res = match self.config.get_did_type() {
             DidType::Web => self.reg_did_web().await?,
             DidType::Jwk => self.reg_did_jwk().await?,
-            DidType::Other => return Err(Errors::not_impl("Other did type", None)),
         };
         if res.status().is_success() {
             info!("Did registered successfully");
@@ -563,7 +554,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to register key failed",
         )
-        .await
+            .await
     }
 
     async fn reg_did_web(&self) -> Outcome<Response> {
@@ -589,7 +580,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to register key failed",
         )
-        .await
+            .await
     }
 
     async fn set_default_did(&self, did: Option<&str>) -> Outcome<()> {
@@ -611,7 +602,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to set did as default failed",
         )
-        .await?;
+            .await?;
 
         info!("Did has been set as default");
         Ok(())
@@ -633,7 +624,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete key failed",
         )
-        .await?;
+            .await?;
 
         info!("Key deleted successfully from web wallet");
         let mut keys_data = self.key_data.lock().await;
@@ -656,7 +647,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete key failed",
         )
-        .await?;
+            .await?;
 
         info!("Did deleted successfully from web wallet");
         let mut wallet_session = self.first_wallet_mut().await?;
@@ -681,7 +672,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete vc failed",
         )
-        .await?;
+            .await?;
 
         info!("Credential deleted successfully from web wallet");
         Ok(())
@@ -705,8 +696,7 @@ impl WalletTrait for WaltIdService {
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
         let url = format!("{}/wallet-api{}", self.config.get_wallet_api_url(), path);
-        let res = self
-            .client
+        let res = http_client()
             .post(&url, Some(headers), Body::Raw(uri.to_string()))
             .await?;
 
@@ -812,11 +802,11 @@ impl WalletTrait for WaltIdService {
                 .map_err(|e| Errors::parse("Unable to decode vpd", Some(Box::new(e))))?
                 .as_ref(),
         )
-        .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
+            .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
 
         let vpd_json = get_query_param(&url, "presentation_definition")?;
 
-        parse_from_str(&vpd_json)
+        Ok(serde_json::from_str(&vpd_json)?)
     }
 
     async fn get_matching_vcs(&self, vpd: &VPDef) -> Outcome<Vec<String>> {
@@ -827,7 +817,7 @@ impl WalletTrait for WaltIdService {
                 id: "temporal_id".to_string(),
                 input_descriptors: vec![descriptor.clone()],
             };
-            let vcs = self.match_vc4vp(parse_to_value(&n_vpd)?).await?;
+            let vcs = self.match_vc4vp(serde_json::to_value(&n_vpd)?).await?;
             let vc_id = vcs.first().map(|data| data.id.clone()).ok_or_else(|| {
                 Errors::missing_action(
                     MissingAction::Credentials,

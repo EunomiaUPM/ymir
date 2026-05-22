@@ -15,8 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod claims_v1;
-pub mod claims_v2;
+pub mod doc;
 mod gaia_vc;
 mod input_descriptor;
 pub mod vc_decision_approval;

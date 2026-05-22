@@ -15,17 +15,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
+//! Cryptographic data types embedded in VDS / VAR / VC / VP documents.
+//!
+//! - [`Proof`] — a W3C Data Integrity Proof entry (`type`, `cryptosuite`,
+//!   `verificationMethod`, `proofValue`). Serializable to JSON, embedded
+//!   in the `proof` array of signed documents.
+//! - [`Canon`] — newtype around the JCS-canonicalised string form of a
+//!   `serde_json::Value`. The only constructor is `TryFrom<&Value>`, so
+//!   having a `Canon` is a compile-time guarantee that the bytes are
+//!   canonical. Callers that take `&Canon` cannot accidentally receive
+//!   non-canonical data.
 
-use crate::types::dids::DidsInfo;
-#[derive(Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
-pub struct WalletInfo {
-    pub id: String,
-    pub name: String,
-    #[serde(rename = "createdOn")]
-    pub created_on: String,
-    #[serde(rename = "addedOn")]
-    pub added_on: String,
-    pub permission: String, // TODO
-    pub dids: Vec<DidsInfo>,
-}
+mod proof;
+mod canon;
+
+pub use proof::Proof;
+pub use canon::Canon;

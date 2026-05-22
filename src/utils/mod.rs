@@ -19,8 +19,12 @@ mod http;
 mod parse;
 mod token;
 mod validations;
+mod client;
+mod hasid;
 
 pub use http::*;
 pub use parse::*;
 pub use token::*;
 pub use validations::*;
+pub use client::http_client;
+pub use hasid::HasId;

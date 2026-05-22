@@ -15,14 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
+mod vc_claim_v1;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AuthJwtClaims {
-    pub sub: String,
-    pub exp: u64,
-    pub iat: u64,
-    pub jti: String,
-    pub iss: String,
-    pub aud: String,
-}
+mod vp;
+
+mod vc_claims_v2;
+mod jwt;
+mod header;
+mod vc_claims;
+
+pub use vc_claim_v1::VCJwtClaimsV1;
+pub use vc_claims_v2::VCJwtClaimsV2;
+pub use vp::VPJwtClaims;
+pub use jwt::*;
+pub use header::*;
+pub use vc_claims::*;

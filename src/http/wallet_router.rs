@@ -26,8 +26,8 @@ use axum::{Json, Router};
 
 use crate::core_traits::CoreWalletTrait;
 use crate::errors::AppResult;
-use crate::types::dids::{DidService, DidsInfo};
-use crate::types::wallet::{IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
+use crate::types::dids::{DidService};
+use crate::types::wallet::waltid::{DidsInfo, IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
 use crate::utils::extract_payload;
 
 pub struct WalletRouter {

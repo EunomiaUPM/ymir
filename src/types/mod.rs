@@ -25,3 +25,6 @@ pub mod secrets;
 pub mod vcs;
 pub mod verifying;
 pub mod wallet;
+pub mod keys;
+pub mod crypto;
+pub mod vps;

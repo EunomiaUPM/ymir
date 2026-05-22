@@ -15,21 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::collections::HashSet;
-use std::fmt::Debug;
-use std::sync::Arc;
 
 use chrono::Utc;
-use jsonwebtoken::{TokenData, Validation};
-use serde::Serialize;
-use serde::de::DeserializeOwned;
 use serde_json::Value;
-use tracing::{debug, info};
 
-use crate::capabilities::DidResolver;
 use crate::errors::{BadFormat, Errors, Outcome};
-use crate::services::client::ClientTrait;
-use crate::utils::get_from_opt;
 
 pub fn validate_data(node: &Value, field: &str) -> Outcome<String> {
     node.as_str()
@@ -61,48 +51,48 @@ pub fn has_expired(exp: u64) -> Outcome<()> {
     }
 }
 
-pub async fn validate_token<T>(
-    token: &str,
-    audience: Option<&str>,
-    client: Arc<dyn ClientTrait>,
-) -> Outcome<(TokenData<T>, String)>
-where
-    T: Serialize + DeserializeOwned + Debug,
-{
-    info!("Validating token");
-    debug!("{}", token);
-    let header = jsonwebtoken::decode_header(&token).map_err(|e| {
-        Errors::format(
-            BadFormat::Received,
-            format!("Unable to decode token header: {}", token),
-            Some(Box::new(e)),
-        )
-    })?;
-    let kid_str = get_from_opt(header.kid.as_ref(), "kid")?;
-    let alg = header.alg;
-
-    let key = DidResolver::get_key(&kid_str, client).await?;
-    let (kid, _) = DidResolver::split_did_id(&kid_str);
-
-    let mut val = Validation::new(alg);
-
-    val.required_spec_claims = HashSet::new();
-    val.validate_exp = false;
-    val.validate_nbf = true;
-
-    match audience {
-        Some(data) => {
-            val.validate_aud = true;
-            val.set_audience(&[&(data)]);
-        }
-        None => {
-            val.validate_aud = false;
-        }
-    };
-
-    let token_data = jsonwebtoken::decode::<T>(&token, &key, &val)
-        .map_err(|e| Errors::security("Token signature is incorrect", Some(Box::new(e))))?;
-
-    info!("Token signature is correct");
-    Ok((token_data, kid.to_string()))
-}
+// pub async fn validate_token<T>(
+//     token: &str,
+//     audience: Option<&str>,
+//     client: Arc<dyn ClientTrait>,
+// ) -> Outcome<(TokenData<T>, String)>
+// where
+//     T: Serialize + DeserializeOwned + Debug,
+// {
+//     info!("Validating token");
+//     debug!("{}", token);
+//     let header = jsonwebtoken::decode_header(&token).map_err(|e| {
+//         Errors::format(
+//             BadFormat::Received,
+//             format!("Unable to decode token header: {}", token),
+//             Some(Box::new(e)),
+//         )
+//     })?;
+//     let kid_str = get_from_opt(header.kid.as_ref(), "kid")?;
+//     let alg = header.alg;
+//
+//     let key = Did::get_key(&kid_str, client).await?;
+//     let (kid, _) = Did::split_did_id(&kid_str);
+//
+//     let mut val = Validation::new(alg);
+//
+//     val.required_spec_claims = HashSet::new();
+//     val.validate_exp = false;
+//     val.validate_nbf = true;
+//
+//     match audience {
+//         Some(data) => {
+//             val.validate_aud = true;
+//             val.set_audience(&[&(data)]);
+//         }
+//         None => {
+//             val.validate_aud = false;
+//         }
+//     };
+//
+//     let token_data = jsonwebtoken::decode::<T>(&token, &key, &val)
+//         .map_err(|e| Errors::security("Token signature is incorrect", Some(Box::new(e))))?;
+//
+//     info!("Token signature is correct");
+//     Ok((token_data, kid.to_string()))
+// }

@@ -27,12 +27,12 @@ pub struct CredentialRequestsss {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CredentialRequest {
     pub format: String,
-    pub proof: Proof,
+    pub proof: CredReqProof,
     pub credential_definition: CredentialDefinition,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Proof {
+pub struct CredReqProof {
     pub proof_type: String,
     pub jwt: String,
 }

@@ -17,8 +17,8 @@
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use rand::distributions::Alphanumeric;
 use rand::Rng;
-use rand_distr::Alphanumeric;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use sha2::{Digest, Sha256};
@@ -63,17 +63,17 @@ pub struct NewModel {
 
 impl IntoActiveSet<ActiveModel> for NewModel {
     fn to_active(self) -> ActiveModel {
-        let as_nonce: String = rand::rng()
+        let as_nonce: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)
             .take(36)
             .map(char::from)
             .collect();
-        let interact_ref: String = rand::rng()
+        let interact_ref: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)
             .take(16)
             .map(char::from)
             .collect();
-        let continue_id: String = rand::rng()
+        let continue_id: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)
             .take(12)
             .map(char::from)

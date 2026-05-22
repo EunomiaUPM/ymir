@@ -34,7 +34,7 @@ use crate::config::traits::DatabaseConfigTrait;
 use crate::errors::{Errors, Outcome};
 use crate::services::vault::VaultTrait;
 use crate::types::secrets::{DbSecrets, StringHelper};
-use crate::utils::{expect_from_env, parse_from_value, parse_to_value, read, read_json};
+use crate::utils::{expect_from_env, read, read_json};
 
 pub struct RealVaultService {
     client: Arc<VaultClient>,
@@ -73,7 +73,8 @@ impl VaultTrait for RealVaultService {
         let basic_mount = expect_from_env("VAULT_MOUNT");
         let mount = mount.unwrap_or(&basic_mount);
         let secret = self.basic_read(mount, path).await?;
-        parse_from_value(secret)
+        serde_json::from_value(secret)
+            .map_err(|e| Errors::parse("Unable to parse from value", Some(Box::new(e))))
     }
     async fn basic_read(&self, mount: &str, path: &str) -> Outcome<Value> {
         let secret = kv2::read(&*self.client, mount, path)
@@ -200,7 +201,7 @@ impl RealVaultService {
     {
         let vault_path = expect_from_env(env);
         let data = read(to_read)?;
-        let data = parse_to_value(&StringHelper::new(data))?;
+        let data = serde_json::to_value(&StringHelper::new(data))?;
         mapa.insert(vault_path, data);
         Ok(())
     }

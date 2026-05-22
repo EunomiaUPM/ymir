@@ -8,31 +8,98 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 use std::fmt;
-
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
+use crate::errors::Errors;
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DidType {
-    Web,
     Jwk,
-    Other,
+    Web,
 }
 
-impl fmt::Display for DidType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for DidType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
-            DidType::Web => "did:web",
-            DidType::Jwk => "did:jwk",
-            DidType::Other => "other",
+            DidType::Jwk => "Jwk",
+            DidType::Web => "Web",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
+    }
+}
+
+impl FromStr for DidType {
+    type Err = Errors;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Jwk" => Ok(DidType::Jwk),
+            "Web" => Ok(DidType::Web),
+            did => Err(Errors::not_impl(
+                format!("DidType {did} not supported"),
+                None,
+            )),
+        }
+    }
+}
+
+pub struct JwkDid {
+    id: String,
+    jwk: String,
+}
+
+
+impl JwkDid {
+    pub fn new(id: String, jwk: String) -> JwkDid {
+        JwkDid {
+            id,
+            jwk,
+        }
+    }
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    pub fn jwk(&self) -> &str {
+        &self.jwk
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WebDid {
+    id: String,
+    domain: String,
+    path: Option<String>,
+    port: Option<String>,
+}
+
+impl WebDid {
+    pub fn new(id: String, domain: String, path: Option<String>, port: Option<String>) -> WebDid {
+        WebDid {
+            id,
+            domain,
+            path,
+            port,
+        }
+    }
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    pub fn domain(&self) -> &str {
+        &self.domain
+    }
+    pub fn path(&self) -> &Option<String> {
+        &self.path
+    }
+    pub fn port(&self) -> &Option<String> {
+        &self.port
     }
 }

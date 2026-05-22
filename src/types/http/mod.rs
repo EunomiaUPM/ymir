@@ -21,7 +21,6 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::errors::{Errors, Outcome};
-use crate::utils::parse_to_value;
 
 #[derive(Clone)]
 pub enum Body {
@@ -46,7 +45,7 @@ impl From<HashMap<String, String>> for Body {
 
 impl Body {
     pub fn json<T: Serialize>(value: &T) -> Outcome<Body> {
-        let body = parse_to_value(value)?;
+        let body = serde_json::to_value(value)?;
         Ok(Body::Json(body))
     }
 

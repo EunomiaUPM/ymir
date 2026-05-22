@@ -20,27 +20,18 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use serde_json::Value;
 
-use crate::capabilities::DidResolver;
+use crate::capabilities::Did;
 use crate::errors::Outcome;
 use crate::services::repo::subtraits::{MatesTrait, MinionsTrait};
 use crate::services::wallet::WalletTrait;
-use crate::types::dids::{DidService, DidsInfo};
-use crate::types::wallet::{IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
+use crate::types::dids::{DidService};
+use crate::types::wallet::waltid::{DidsInfo, IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
 
 #[async_trait]
 pub trait CoreWalletTrait: Send + Sync + 'static {
     fn wallet(&self) -> Arc<dyn WalletTrait>;
     fn mate(&self) -> Option<Arc<dyn MatesTrait>>;
     fn minion(&self) -> Option<Arc<dyn MinionsTrait>>;
-    async fn register(&self) -> Outcome<()> {
-        self.wallet().register().await
-    }
-    async fn login(&self) -> Outcome<()> {
-        self.wallet().login().await
-    }
-    async fn logout(&self) -> Outcome<()> {
-        self.wallet().logout().await
-    }
     async fn onboard(&self) -> Outcome<()> {
         let (mate, minion) = match self.wallet().has_onboarded().await {
             true => self.wallet().partial_onboard().await?,
@@ -66,13 +57,11 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
             false => self.onboard().await,
         }
     }
-    async fn is_linked(&self) -> IsLinked {
-        IsLinked::new(self.wallet().has_onboarded().await)
-    }
+
     async fn get_did_doc(&self, service: Option<&[DidService]>) -> Outcome<Value> {
         let mut doc = self.wallet().get_did_doc().await?;
         match service {
-            Some(data) => DidResolver::insert_services(&mut doc, data),
+            Some(data) => Did::insert_services(&mut doc, data),
             None => {}
         }
         Ok(doc)

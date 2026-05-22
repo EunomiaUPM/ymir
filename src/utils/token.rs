@@ -16,28 +16,15 @@
  */
 
 use crate::errors::{BadFormat, Errors, Outcome};
-use crate::utils::parse_from_slice;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use jsonwebtoken::{EncodingKey, Header, encode};
 use rand::Rng;
-use serde::Serialize;
 use serde_json::Value;
 
 pub fn create_opaque_token() -> String {
     let mut bytes = [0u8; 32]; // 256 bits
-    rand::rng().fill(&mut bytes);
+    rand::thread_rng().fill(&mut bytes);
     URL_SAFE_NO_PAD.encode(&bytes)
-}
-
-pub fn sign_token<T: Serialize>(header: &Header, claims: &T, key: &EncodingKey) -> Outcome<String> {
-    encode(&header, &claims, &key).map_err(|e| {
-        Errors::format(
-            BadFormat::Received,
-            "Unable to sign token",
-            Some(Box::new(e)),
-        )
-    })
 }
 
 pub fn decode_jwt_payload(jwt: &str) -> Outcome<Value> {
@@ -59,7 +46,7 @@ pub fn decode_jwt_payload(jwt: &str) -> Outcome<Value> {
             Some(Box::new(e)),
         )
     })?;
-    let value: Value = parse_from_slice(&decoded)?;
+    let value: Value = serde_json::from_slice(&decoded)?;
 
     Ok(value)
 }

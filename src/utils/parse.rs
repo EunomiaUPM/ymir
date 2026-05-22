@@ -21,7 +21,6 @@ use std::{env, fs};
 use axum::http::HeaderValue;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use jsonwebtoken::EncodingKey;
 use reqwest::Response;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -57,41 +56,6 @@ pub async fn parse_text_resp(response: Response) -> Outcome<String> {
         .text()
         .await
         .map_err(|e| Errors::parse("Unable to parse text response", Some(Box::new(e))))
-}
-
-pub fn parse_from_value<T: DeserializeOwned>(value: Value) -> Outcome<T> {
-    serde_json::from_value(value)
-        .map_err(|e| Errors::parse("Unable to parse from value", Some(Box::new(e))))
-}
-
-pub fn parse_from_str<T: DeserializeOwned>(data: &str) -> Outcome<T> {
-    serde_json::from_str(data)
-        .map_err(|e| Errors::parse("Unable to parse from value", Some(Box::new(e))))
-}
-
-pub fn parse_from_slice<T: DeserializeOwned>(data: &[u8]) -> Outcome<T> {
-    serde_json::from_slice(data).map_err(|e| {
-        Errors::format(
-            BadFormat::Received,
-            "Unable to parse from slice",
-            Some(Box::new(e)),
-        )
-    })
-}
-
-pub fn parse_to_value<T: Serialize>(value: &T) -> Outcome<Value> {
-    serde_json::to_value(value)
-        .map_err(|e| Errors::parse("Unable to serialize value", Some(Box::new(e))))
-}
-
-pub fn parse_to_string<T: Serialize>(value: &T) -> Outcome<String> {
-    serde_json::to_string(value)
-        .map_err(|e| Errors::parse("Unable to parse to string", Some(Box::new(e))))
-}
-
-pub fn get_rsa_key(key: &str) -> Outcome<EncodingKey> {
-    EncodingKey::from_rsa_pem(key.as_bytes())
-        .map_err(|e| Errors::parse("Unable to decode RSA key", Some(Box::new(e))))
 }
 
 pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {

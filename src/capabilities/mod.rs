@@ -17,8 +17,10 @@
 
 mod did;
 mod digest_sri;
-mod httpsig;
+mod verifier;
+mod signer;
 
-pub use did::DidResolver;
-pub use digest_sri::DigestSRI;
-pub use httpsig::HttpSig;
+pub use did::*;
+pub use digest_sri::*;
+pub use verifier::*;
+pub use signer::*;
