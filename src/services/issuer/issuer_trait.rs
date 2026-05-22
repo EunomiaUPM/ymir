@@ -17,7 +17,6 @@
 
 use async_trait::async_trait;
 use serde_json::Value;
-
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
 use crate::errors::Outcome;
 use crate::types::issuing::{
@@ -45,8 +44,9 @@ pub trait IssuerTrait: Send + Sync + 'static {
         model: &mut issuing::Model,
         cred_req: &CredentialRequest,
         token: &str,
-        did: Option<&str>,
+        did: &str,
     ) -> Outcome<()>;
+    async fn get_sig_context(&self, did: &str) -> Outcome<SigningCtx>;
     async fn issue_cred(&self, claims: &Value, sig_ctx: &SigningCtx) -> Outcome<GiveVC>;
     fn end(
         &self,

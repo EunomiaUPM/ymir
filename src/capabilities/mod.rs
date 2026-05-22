@@ -19,8 +19,10 @@ mod did;
 mod digest_sri;
 mod signer;
 mod verifier;
+mod http_sig;
 
 pub use did::*;
 pub use digest_sri::*;
 pub use signer::*;
 pub use verifier::*;
+pub use http_sig::*;

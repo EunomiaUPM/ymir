@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::{Crv, Key, Kty, SerialKey};
+use super::{Crv, Kty};
 use crate::errors::{BadFormat, Errors, Outcome};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;

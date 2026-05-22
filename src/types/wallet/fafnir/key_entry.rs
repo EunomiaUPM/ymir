@@ -19,7 +19,6 @@ use crate::errors::Errors;
 use crate::types::keys::{Crv, Key, KeyData, Kty};
 use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[derive(Serialize, Deserialize)]
 pub struct KeyEntryReq {

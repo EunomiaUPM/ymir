@@ -22,20 +22,20 @@ use serde_json::Value;
 #[derive(Serialize, Deserialize)]
 pub struct VcEntryReq {
     pub id: String,
-    pub r#type: VCType,
+    pub r#type: VcBodyType,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct VcEntry {
     pub id: String,
-    pub r#type: VCType,
+    pub r#type: VcBodyType,
     #[serde(rename = "parsedDocument")]
     pub parsed_document: Value,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum VCType {
+pub enum VcBodyType {
     Jwt(String),
     Value(Value),
 }

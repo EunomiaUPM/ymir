@@ -23,10 +23,9 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
-
 use crate::core_traits::CoreWalletTrait;
 use crate::errors::AppResult;
-use crate::types::dids::{DidService};
+use crate::types::dids::DidDocument;
 use crate::types::wallet::waltid::{DidsInfo, IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
 use crate::utils::extract_payload;
 
@@ -41,18 +40,10 @@ impl WalletRouter {
 
     pub fn router(self) -> Router {
         Router::new()
-            .route("/register", post(Self::register))
-            .route("/login", post(Self::login))
-            .route("/logout", post(Self::logout))
-            .route("/onboard", post(Self::onboard))
-            .route("/partial-onboard", post(Self::partial_onboard))
             .route("/is-linked", get(Self::is_linked))
             .route("/link", post(Self::link))
-            .route("/key", post(Self::register_key))
-            .route("/did", post(Self::register_did))
-            .route("/key", delete(Self::delete_key))
-            .route("/did", delete(Self::delete_did))
-            .route("/did", get(Self::get_wallet_did))
+            .route("/key", post(Self::register_key).delete(Self::delete_key))
+            .route("/did", get(Self::get_wallet_did).post(Self::register_did).delete(Self::delete_did))
             .route("/credential/{id}", delete(Self::delete_credential))
             .route("/info", get(Self::get_wallet_info))
             .route("/vcs", get(Self::get_wallet_credentials))
@@ -61,43 +52,10 @@ impl WalletRouter {
             .with_state(self.holder)
     }
 
-    pub fn well_known(&self, services: Option<Vec<DidService>>) -> Router {
-        let services = services.clone();
-        let holder = self.holder.clone();
-
-        Router::new().route(
-            "/.well-known/did.json",
-            get(move || {
-                let holder = holder.clone();
-                let services = services.clone();
-                async move {
-                    let doc = holder.get_did_doc(services.as_deref()).await?;
-                    AppResult::Ok(Json(doc))
-                }
-            }),
-        )
-    }
-
-    async fn register(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<StatusCode> {
-        holder.register().await?;
-        Ok(StatusCode::CREATED)
-    }
-
-    async fn login(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<()> {
-        holder.login().await
-    }
-
-    async fn logout(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<()> {
-        holder.logout().await
-    }
-
-    async fn onboard(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<StatusCode> {
-        holder.onboard().await?;
-        Ok(StatusCode::CREATED)
-    }
-
-    async fn partial_onboard(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<()> {
-        holder.partial_onboard().await
+    pub fn well_known(&self) -> Router {
+        Router::new()
+            .route("/.well-known/did.json", get(Self::get_did_doc))
+            .with_state(self.holder.clone())
     }
 
     async fn link(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<()> {
@@ -158,6 +116,10 @@ impl WalletRouter {
 
     async fn get_wallet_did(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<String> {
         Ok(holder.get_wallet_did().await?)
+    }
+
+    async fn get_did_doc(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<Json<DidDocument>> {
+        Ok(Json(holder.get_did_doc().await?))
     }
 
     async fn delete_credential(

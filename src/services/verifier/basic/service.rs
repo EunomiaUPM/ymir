@@ -33,10 +33,10 @@ use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::types::gnap::ApprovedCallbackBody;
 use crate::types::http::Body;
-use crate::types::jwt::{Jwt, VCJwtClaimsV1, VCJwtClaimsV2, VPJwtClaims};
+use crate::types::jwt::{Jwt, VcJwtClaimsV1, VcJwtClaimsV2, VPJwtClaims};
 use crate::types::vcs::doc::VcDocument;
 use crate::types::vcs::{VPDef, W3cDataModelVersion};
-use crate::utils::json_headers;
+use crate::utils::{json_headers, HasId};
 
 pub struct BasicVerifierService {
     client: Arc<dyn ClientTrait>,
@@ -248,7 +248,7 @@ fn validate_holder(model: &Model, claims: &VPJwtClaims) -> Outcome<()> {
 fn validate_vc_issuer(vc: &VcDocument, iss: Option<&str>, kid: &str) -> Outcome<()> {
     info!("Validating VC issuer");
     check_eq_opt(iss, kid, "VCT iss & kid")?;
-    if vc.issuer.id != kid {
+    if vc.issuer.id() != kid {
         return Err(Errors::security(
             "VCT token issuer & kid does not match",
             None,
@@ -336,11 +336,11 @@ fn parse_vc_claims(
 ) -> Outcome<(Option<String>, Option<String>, Option<String>, VcDocument)> {
     match model {
         W3cDataModelVersion::V1 => {
-            let c: VCJwtClaimsV1 = jwt.claims()?;
+            let c: VcJwtClaimsV1 = jwt.claims()?;
             Ok((c.iss, c.sub, c.jti, c.vc))
         }
         W3cDataModelVersion::V2 => {
-            let c: VCJwtClaimsV2 = jwt.claims()?;
+            let c: VcJwtClaimsV2 = jwt.claims()?;
             Ok((c.iss, c.sub, c.jti, c.vc))
         }
     }

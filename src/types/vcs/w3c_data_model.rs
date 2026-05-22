@@ -29,6 +29,15 @@ pub enum W3cDataModelVersion {
     V2,
 }
 
+impl W3cDataModelVersion {
+    pub fn context(&self) -> &'static str {
+        match self {
+            W3cDataModelVersion::V1 => { "https://www.w3.org/ns/credentials/v1" }
+            W3cDataModelVersion::V2 => { "https://www.w3.org/ns/credentials/v2" }
+        }
+    }
+}
+
 impl FromStr for W3cDataModelVersion {
     type Err = Errors;
 

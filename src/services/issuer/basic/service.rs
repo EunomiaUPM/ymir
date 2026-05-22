@@ -26,18 +26,18 @@ use urlencoding;
 
 use super::super::IssuerTrait;
 use super::config::{BasicIssuerConfig, BasicIssuerConfigTrait};
-use crate::capabilities::{Signer, Verifier};
-use crate::config::traits::{DidConfigTrait, HostsConfigTrait};
+use crate::capabilities::{Did, Signer, Verifier};
+use crate::config::traits::{HostsConfigTrait};
 use crate::config::types::HostType;
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
 use crate::errors::{BadFormat, Errors, Outcome};
-use crate::services::client::ClientTrait;
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
     TokenRequest, VCCredOffer, WellKnownJwks,
 };
 use crate::types::jwt::Jwt;
+use crate::types::keys::Key;
 use crate::types::secrets::StringHelper;
 use crate::types::vcs::VcType;
 use crate::types::wallet::fafnir::SigningCtx;
@@ -45,19 +45,16 @@ use crate::utils::{expect_from_env, get_from_opt, has_expired, trim_4_base};
 
 pub struct BasicIssuerService {
     config: BasicIssuerConfig,
-    client: Arc<dyn ClientTrait>,
     vault: Arc<VaultService>,
 }
 
 impl BasicIssuerService {
     pub fn new(
         config: BasicIssuerConfig,
-        client: Arc<dyn ClientTrait>,
         vault: Arc<VaultService>,
     ) -> Self {
         Self {
             config,
-            client,
             vault,
         }
     }
@@ -67,7 +64,7 @@ impl BasicIssuerService {
 impl IssuerTrait for BasicIssuerService {
     fn start_vci(&self, model: &vc_request::Model) -> issuing::NewModel {
         info!("Starting OIDC4VCI");
-        let aud = self.host_url();
+        let aud = self.config.get_host(HostType::Http);
         let uri = self.generate_issuing_uri(&model.id, None);
         issuing::NewModel {
             id: model.id.clone(),
@@ -81,18 +78,18 @@ impl IssuerTrait for BasicIssuerService {
     fn generate_issuing_uri(&self, id: &str, path: Option<&str>) -> String {
         let path = path.unwrap_or("issuer");
         let api_path = self.config.get_api_path();
-        let semi_host = self.localize(format!(
+        let semi_host = format!(
             "{}{}/{}",
             self.config.get_host_without_protocol(HostType::Http),
             api_path,
             path
-        ));
-        let host = self.localize(format!(
+        );
+        let host = format!(
             "{}{}/{}",
             self.config.get_host(HostType::Http),
             api_path,
             path
-        ));
+        );
 
         let credential_offer_endpoint = format!("{}/credentialOffer?id={}", host, id);
         let encoded = urlencoding::encode(credential_offer_endpoint.as_str());
@@ -106,7 +103,7 @@ impl IssuerTrait for BasicIssuerService {
 
     fn get_cred_offer_data(&self, model: &issuing::Model) -> Outcome<VCCredOffer> {
         info!("Retrieving credential offer data");
-        VCCredOffer::new(self.host_url(), &model.pre_auth_code, &model.vc_type)
+        VCCredOffer::new(self.config.get_host(HostType::Http), &model.pre_auth_code, &model.vc_type)
     }
 
     fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata {
@@ -150,7 +147,7 @@ impl IssuerTrait for BasicIssuerService {
         model: &mut issuing::Model,
         cred_req: &CredentialRequest,
         token: &str,
-        did: Option<&str>,
+        did: &str,
     ) -> Outcome<()> {
         info!("Validating credential request");
 
@@ -175,7 +172,6 @@ impl IssuerTrait for BasicIssuerService {
             ));
         }
 
-        let did = did.unwrap_or(self.config.get_did());
 
         let proof_jwt = Jwt::parse(cred_req.proof.jwt.clone())?;
         Verifier::verify_enveloped(&proof_jwt, Some(&model.aud)).await?;
@@ -189,6 +185,15 @@ impl IssuerTrait for BasicIssuerService {
         model.holder_did = Some(kid);
         model.issuer_did = Some(did.to_string());
         Ok(())
+    }
+
+    async fn get_sig_context(&self, did: &str) -> Outcome<SigningCtx> {
+        let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
+        let priv_key: StringHelper = self.vault.read(None, &priv_key).await?;
+        let key = Key::try_weird_from("#0", priv_key.data())?;
+        let did = Did::parse(did)?;
+
+        Ok(SigningCtx::new(did, key))
     }
 
     async fn issue_cred(&self, claims: &Value, sig_ctx: &SigningCtx) -> Outcome<GiveVC> {
@@ -232,42 +237,21 @@ impl IssuerTrait for BasicIssuerService {
 // ===== Internal helpers ======================================================
 
 impl BasicIssuerService {
-    /// Host base con el reemplazo `127.0.0.1 → host.docker.internal` cuando
-    /// `is_local()` está activo. Centraliza el patrón que antes aparecía en
-    /// seis sitios.
-    fn host_url(&self) -> String {
-        self.localize(self.config.get_host(HostType::Http))
-    }
-
-    fn localize(&self, s: String) -> String {
-        if self.config.is_local() {
-            s.replace("127.0.0.1", "host.docker.internal")
-        } else {
-            s
-        }
-    }
-
-    /// Construye `(base_host, host_path)` para los endpoints `.well-known`
-    /// de metadata. Antes se duplicaba palabra-por-palabra en
-    /// `get_issuer_data` y `get_oauth_server_data`.
     fn metadata_hosts(&self, path: Option<&str>) -> (String, String) {
         let path = path.unwrap_or("/issuer");
         let full_path = format!("{}{}", self.config.get_api_path(), path);
-        let base_host = self.host_url();
-        let host_path = self.localize(format!(
+        let base_host = self.config.get_host(HostType::Http);
+        let host_path = format!(
             "{}{}",
             self.config.get_host(HostType::Http),
             full_path
-        ));
+        );
         (base_host, host_path)
     }
 }
 
 // ===== Free helpers ==========================================================
 
-/// Prueba de posesión del DID (OID4VCI §7.2.1): el `iss`, el `sub` del proof
-/// JWT y el `kid` de la cabecera deben coincidir todos. Si alguno difiere,
-/// el holder no demostró control de la clave asociada al DID.
 fn validate_did_possession(claims: &DidPossession, kid: &str) -> Outcome<()> {
     info!("Validating did possession");
     if claims.iss != claims.sub || claims.sub != kid {

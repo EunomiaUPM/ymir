@@ -15,18 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod vc_claim_v1;
 
 mod vp;
 
 mod header;
 mod jwt;
 mod vc_claims;
-mod vc_claims_v2;
+mod w3c_vc;
 
 pub use header::*;
 pub use jwt::*;
-pub use vc_claim_v1::VCJwtClaimsV1;
 pub use vc_claims::*;
-pub use vc_claims_v2::VCJwtClaimsV2;
+pub use w3c_vc::*;
 pub use vp::VPJwtClaims;

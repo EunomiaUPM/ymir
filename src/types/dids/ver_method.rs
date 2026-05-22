@@ -41,6 +41,10 @@ pub enum VerificationMaterial {
         #[serde(rename = "publicKeyJwk")]
         public_key_jwk: Value,
     },
+    JsonWebKey2020 {
+        #[serde(rename = "publicKeyJwk")]
+        public_key_jwk: Value,
+    },
     Multikey {
         #[serde(rename = "publicKeyMultibase")]
         public_key_multibase: String,

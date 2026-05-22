@@ -18,30 +18,30 @@
 use super::{DidService, VerificationMethod};
 use crate::capabilities::Did;
 use crate::types::keys::Key;
-use crate::utils::HasId;
+use crate::utils::{HasId, StringOrArr};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DidDocument {
     #[serde(rename = "@context")]
-    pub context: String,
+    pub context: StringOrArr,
     pub id: String,
-    pub controller: Option<String>, // TODO
+    pub controller: Option<StringOrArr>, // TODO
     #[serde(rename = "alsoKnownAs")]
-    pub also_known_as: Option<String>, // TODO
+    pub also_known_as: Option<StringOrArr>, // TODO
     pub service: Option<Vec<DidService>>,
     #[serde(rename = "verificationMethod")]
     pub verification_method: Vec<VerificationMethod>,
-    pub authentication: Option<String>, // TODO
+    pub authentication: Option<StringOrArr>, // TODO
     #[serde(rename = "assertionMethod")]
-    pub assertion_method: Option<String>, // TODO
+    pub assertion_method: Option<StringOrArr>, // TODO
     #[serde(rename = "keyAgreement")]
-    pub key_agreement: Option<String>, // TODO
+    pub key_agreement: Option<StringOrArr>, // TODO
     #[serde(rename = "capabilityInvocation")]
-    pub capability_invocation: Option<String>, // TODO
+    pub capability_invocation: Option<StringOrArr>, // TODO
     #[serde(rename = "capabilityDelegation")]
-    pub capability_delegation: Option<String>, // TODO
+    pub capability_delegation: Option<StringOrArr>, // TODO
 }
 
 impl DidDocument {
@@ -52,7 +52,7 @@ impl DidDocument {
             .collect();
 
         DidDocument {
-            context: "https://www.w3.org/ns/did/v1.1".to_string(),
+            context: StringOrArr::Arr(vec!("https://www.w3.org/ns/did/v1.1".to_string())),
             id: did.id().to_string(),
             controller: None,
             also_known_as: None,

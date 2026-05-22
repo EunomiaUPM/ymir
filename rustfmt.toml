@@ -2,7 +2,7 @@
 # Run:   cargo fmt
 # Check: cargo fmt --check
 
-edition = "2021"
+edition = "2024"
 
 # ── width ─────────────────────────────────────────────────────────────────────
 max_width            = 100

@@ -35,7 +35,7 @@ use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
 use crate::services::vault::global::VaultService;
-use crate::types::dids::DidType;
+use crate::types::dids::{DidDocument, DidService, DidType};
 use crate::types::http::Body;
 use crate::types::secrets::{SemiWalletSecrets, StringHelper};
 use crate::types::vcs::VPDef;
@@ -52,12 +52,13 @@ use crate::utils::{
 pub struct WaltIdService {
     wallet_session: Arc<Mutex<WalletSession>>,
     key_data: Arc<Mutex<Vec<KeyDefinition>>>,
+    services: Vec<DidService>,
     vault: Arc<VaultService>,
     config: WaltIdConfig,
 }
 
 impl WaltIdService {
-    pub fn new(config: WaltIdConfig, vault: Arc<VaultService>) -> WaltIdService {
+    pub fn new(config: WaltIdConfig, vault: Arc<VaultService>, services: Vec<DidService>) -> WaltIdService {
         WaltIdService {
             wallet_session: Arc::new(Mutex::new(WalletSession {
                 account_id: None,
@@ -68,6 +69,7 @@ impl WaltIdService {
             key_data: Arc::new(Mutex::new(Vec::new())),
             config,
             vault,
+            services,
         }
     }
 
@@ -119,98 +121,6 @@ impl WaltIdService {
 #[async_trait]
 impl WalletTrait for WaltIdService {
     // BASIC -------------------------------------------------------------------------------------->
-    async fn register(&self) -> Outcome<()> {
-        info!("Registering in web wallet");
-        let url = format!(
-            "{}/wallet-api/auth/register",
-            self.config.get_wallet_api_url()
-        );
-        let db_path = expect_from_env("VAULT_APP_WALLET");
-        let body = self.vault.read(None, &db_path).await?;
-
-        let res = http_client()
-            .post(&url, Some(json_headers()), Body::Json(body))
-            .await?;
-
-        if res.status().is_success() {
-            info!("Wallet account registration successful");
-        } else {
-            if res.status().as_u16() == 409 {
-                warn!("Wallet account has already registered");
-            } else {
-                return Err(Errors::wallet(
-                    &url,
-                    "POST",
-                    Some(res.status()),
-                    "Petition to register Wallet failed",
-                    None,
-                ));
-            }
-        }
-
-        Ok(())
-    }
-
-    async fn login(&self) -> Outcome<()> {
-        info!("Login into web wallet");
-
-        let db_path = expect_from_env("VAULT_APP_WALLET");
-        let body: SemiWalletSecrets = self.vault.read(None, &db_path).await?;
-
-        let res = self
-            .request(
-                "POST",
-                "/auth/login",
-                Body::json(&body)?,
-                false,
-                true,
-                "Petition to login into Wallet failed",
-            )
-            .await?;
-
-        info!("Wallet login successful");
-
-        let json_res: WalletLoginResponse = res.parse_json().await?;
-
-        let mut wallet_session = self.wallet_session.lock().await;
-        wallet_session.account_id = Some(json_res.id);
-
-        let jwt = json_res.token;
-        let jwt_parts: Vec<&str> = jwt.split('.').collect();
-        if jwt_parts.len() != 3 {
-            return Err(Errors::format(
-                BadFormat::Sent,
-                "The jwt does not have the correct format",
-                None,
-            ));
-        }
-
-        let decoded = decode_url_safe_no_pad(jwt_parts[1])?;
-        let claims: AuthJwtClaims = serde_json::from_slice(&decoded)?;
-        wallet_session.token_exp = Some(claims.exp);
-        wallet_session.token = Some(jwt);
-
-        info!("Login data saved successfully");
-        Ok(())
-    }
-
-    async fn logout(&self) -> Outcome<()> {
-        info!("Login out of web wallet");
-        self.request(
-            "POST",
-            "/auth/logout",
-            Body::None,
-            false,
-            true,
-            "Petition to logout from Wallet failed",
-        )
-        .await?;
-
-        info!("Wallet logout successful");
-        let mut wallet_session = self.wallet_session.lock().await;
-        wallet_session.token = None;
-        Ok(())
-    }
 
     async fn onboard(&self) -> Outcome<(mates::NewModel, minions::NewModel)> {
         info!("Onboarding into web wallet");
@@ -346,18 +256,21 @@ impl WalletTrait for WaltIdService {
         })
     }
 
-    async fn get_did_doc(&self) -> Outcome<Value> {
+    async fn get_did_doc(&self) -> Outcome<DidDocument> {
         info!("Getting Did Document");
 
         let wallet = self.get_wallet().await?;
-        let did = wallet
+        let doc = wallet
             .dids
             .first()
             .map(|data| data.document.clone())
             .ok_or_else(|| {
                 Errors::missing_action(MissingAction::Did, "No dids found in wallet", None)
             })?;
-        serde_json::from_str(&did).map_err(|e| Errors::parse(e.to_string(), Some(Box::new(e))))
+
+        let value: DidDocument = serde_json::from_str(&doc)?;
+
+        Ok(value.add_services(self.services.clone()))
     }
 
     async fn get_key(&self) -> Outcome<KeyDefinition> {
@@ -504,7 +417,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to register key failed",
         )
-        .await?;
+            .await?;
 
         info!("Key registered successfully");
         Ok(())
@@ -555,7 +468,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to register key failed",
         )
-        .await
+            .await
     }
 
     async fn reg_did_web(&self) -> Outcome<Response> {
@@ -581,7 +494,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to register key failed",
         )
-        .await
+            .await
     }
 
     async fn set_default_did(&self, did: Option<&str>) -> Outcome<()> {
@@ -603,7 +516,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to set did as default failed",
         )
-        .await?;
+            .await?;
 
         info!("Did has been set as default");
         Ok(())
@@ -625,7 +538,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete key failed",
         )
-        .await?;
+            .await?;
 
         info!("Key deleted successfully from web wallet");
         let mut keys_data = self.key_data.lock().await;
@@ -648,7 +561,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete key failed",
         )
-        .await?;
+            .await?;
 
         info!("Did deleted successfully from web wallet");
         let mut wallet_session = self.first_wallet_mut().await?;
@@ -673,7 +586,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete vc failed",
         )
-        .await?;
+            .await?;
 
         info!("Credential deleted successfully from web wallet");
         Ok(())
@@ -803,7 +716,7 @@ impl WalletTrait for WaltIdService {
                 .map_err(|e| Errors::parse("Unable to decode vpd", Some(Box::new(e))))?
                 .as_ref(),
         )
-        .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
+            .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
 
         let vpd_json = get_query_param(&url, "presentation_definition")?;
 
@@ -898,5 +811,100 @@ impl WalletTrait for WaltIdService {
         let vpd = self.get_vpd(uri).await?;
         let vcs_id = self.get_matching_vcs(&vpd).await?;
         self.present_vp(uri, vcs_id).await
+    }
+}
+
+impl WaltIdService {
+    async fn register(&self) -> Outcome<()> {
+        info!("Registering in web wallet");
+        let url = format!(
+            "{}/wallet-api/auth/register",
+            self.config.get_wallet_api_url()
+        );
+        let db_path = expect_from_env("VAULT_APP_WALLET");
+        let body = self.vault.read(None, &db_path).await?;
+
+        let res = http_client()
+            .post(&url, Some(json_headers()), Body::Json(body))
+            .await?;
+
+        if res.status().is_success() {
+            info!("Wallet account registration successful");
+        } else {
+            if res.status().as_u16() == 409 {
+                warn!("Wallet account has already registered");
+            } else {
+                return Err(Errors::wallet(
+                    &url,
+                    "POST",
+                    Some(res.status()),
+                    "Petition to register Wallet failed",
+                    None,
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn login(&self) -> Outcome<()> {
+        info!("Login into web wallet");
+
+        let db_path = expect_from_env("VAULT_APP_WALLET");
+        let body: SemiWalletSecrets = self.vault.read(None, &db_path).await?;
+
+        let res = self
+            .request(
+                "POST",
+                "/auth/login",
+                Body::json(&body)?,
+                false,
+                true,
+                "Petition to login into Wallet failed",
+            )
+            .await?;
+
+        info!("Wallet login successful");
+
+        let json_res: WalletLoginResponse = res.parse_json().await?;
+
+        let mut wallet_session = self.wallet_session.lock().await;
+        wallet_session.account_id = Some(json_res.id);
+
+        let jwt = json_res.token;
+        let jwt_parts: Vec<&str> = jwt.split('.').collect();
+        if jwt_parts.len() != 3 {
+            return Err(Errors::format(
+                BadFormat::Sent,
+                "The jwt does not have the correct format",
+                None,
+            ));
+        }
+
+        let decoded = decode_url_safe_no_pad(jwt_parts[1])?;
+        let claims: AuthJwtClaims = serde_json::from_slice(&decoded)?;
+        wallet_session.token_exp = Some(claims.exp);
+        wallet_session.token = Some(jwt);
+
+        info!("Login data saved successfully");
+        Ok(())
+    }
+
+    async fn _logout(&self) -> Outcome<()> {
+        info!("Login out of web wallet");
+        self.request(
+            "POST",
+            "/auth/logout",
+            Body::None,
+            false,
+            true,
+            "Petition to logout from Wallet failed",
+        )
+            .await?;
+
+        info!("Wallet logout successful");
+        let mut wallet_session = self.wallet_session.lock().await;
+        wallet_session.token = None;
+        Ok(())
     }
 }

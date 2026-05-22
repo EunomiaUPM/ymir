@@ -17,7 +17,7 @@
 
 use std::marker::PhantomData;
 
-use crate::config::traits::{DidConfigTrait, HostsConfigTrait};
+use crate::config::traits::{HostsConfigTrait};
 use crate::config::types::{CommonHostsConfig, DidConfig};
 use crate::services::issuer::basic::config::config_trait::BasicIssuerConfigTrait;
 use crate::types::present::{Missing, Present};
@@ -26,7 +26,6 @@ pub struct BasicIssuerConfig {
     hosts: CommonHostsConfig,
     is_local: bool,
     api_path: String,
-    did_config: DidConfig,
 }
 
 impl HostsConfigTrait for BasicIssuerConfig {
@@ -35,11 +34,6 @@ impl HostsConfigTrait for BasicIssuerConfig {
     }
 }
 
-impl DidConfigTrait for BasicIssuerConfig {
-    fn did_config(&self) -> &DidConfig {
-        &self.did_config
-    }
-}
 
 impl BasicIssuerConfigTrait for BasicIssuerConfig {
     fn is_local(&self) -> bool {
@@ -122,7 +116,6 @@ impl BasicIssuerConfigBuilder<Present, Present, Present, Present> {
             hosts: self.hosts.unwrap(),
             is_local: self.is_local.unwrap(),
             api_path: self.api_path.unwrap(),
-            did_config: self.did_config.unwrap(),
         }
     }
 }

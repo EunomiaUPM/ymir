@@ -15,10 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::{BaseIssuer, TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus};
+use super::{TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::types::vcs::VcIssuer;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VcDocument {
@@ -28,7 +29,7 @@ pub struct VcDocument {
     pub r#type: Vec<String>,
     pub name: Option<String>,
     pub description: Option<String>,
-    pub issuer: BaseIssuer,
+    pub issuer: VcIssuer,
     #[serde(rename = "credentialSubject")]
     pub credential_subject: Value, // This is specific for each type of VC
     #[serde(rename = "validFrom", skip_serializing_if = "Option::is_none")]

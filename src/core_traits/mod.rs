@@ -15,6 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod core_waltid;
+mod core_wallet;
 
-pub use core_waltid::CoreWalletTrait;
+pub use core_wallet::CoreWalletTrait;

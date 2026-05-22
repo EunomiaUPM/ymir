@@ -25,13 +25,11 @@ use crate::types::wallet::waltid::{
 use async_trait::async_trait;
 use reqwest::Response;
 use serde_json::Value;
+use crate::types::dids::DidDocument;
 
 #[async_trait]
 pub trait WalletTrait: Send + Sync + 'static {
     // BASIC
-    async fn register(&self) -> Outcome<()>;
-    async fn login(&self) -> Outcome<()>;
-    async fn logout(&self) -> Outcome<()>;
     async fn onboard(&self) -> Outcome<(mates::NewModel, minions::NewModel)>;
     async fn partial_onboard(&self) -> Outcome<(mates::NewModel, minions::NewModel)>;
     async fn get_self_mate(&self) -> Outcome<mates::NewModel>;
@@ -42,7 +40,7 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn first_wallet_mut(&self) -> Outcome<tokio::sync::MutexGuard<'_, WalletSession>>;
     async fn get_did(&self) -> Outcome<String>;
     async fn get_token(&self) -> Outcome<String>;
-    async fn get_did_doc(&self) -> Outcome<Value>;
+    async fn get_did_doc(&self) -> Outcome<DidDocument>;
     async fn get_key(&self) -> Outcome<KeyDefinition>;
     // RETRIEVE FROM WALLET
     async fn retrieve_wallet_info(&self) -> Outcome<()>;

@@ -7,47 +7,29 @@
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * but WISSTHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABISSLISSTY or FISSTNESS FOR A PARTISSCULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  ISSf not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::{BaseIssuer, TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus};
+use super::super::{VcIssuer, VcType, W3cDataModelVersion};
+use super::{TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus, VcDocument};
 use crate::types::present::{Missing, Present};
 use chrono::{DateTime, Utc};
 use serde_json::Value;
 use std::marker::PhantomData;
-use uuid::Uuid;
 
 #[derive(Debug, Clone)]
-pub struct VcDocument {
+pub struct VcDocumentBuilder<ID, ISS, CS> {
     pub context: Vec<String>,
-    pub id: String,
+    pub id: Option<String>,
     pub r#type: Vec<String>,
     pub name: Option<String>,
     pub description: Option<String>,
-    pub issuer: BaseIssuer,
-    pub credential_subject: Value,
-    pub valid_from: Option<DateTime<Utc>>,
-    pub valid_until: Option<DateTime<Utc>>,
-    pub credential_status: Option<VCStatus>,
-    pub credential_schema: Option<Vec<VCSchema>>,
-    pub refresh_service: Option<VCRefreshService>,
-    pub terms_of_use: Option<TermsOfUse>,
-    pub evidence: Option<Vec<VCEvidence>>,
-}
-
-#[derive(Debug, Clone)]
-pub struct VcDocumentBuilder<I, CS> {
-    pub context: Vec<String>,
-    pub id: String,
-    pub r#type: Vec<String>,
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub issuer: Option<BaseIssuer>,
+    pub issuer: Option<VcIssuer>,
     pub credential_subject: Option<Value>,
     pub valid_from: Option<DateTime<Utc>>,
     pub valid_until: Option<DateTime<Utc>>,
@@ -56,19 +38,15 @@ pub struct VcDocumentBuilder<I, CS> {
     pub refresh_service: Option<VCRefreshService>,
     pub terms_of_use: Option<TermsOfUse>,
     pub evidence: Option<Vec<VCEvidence>>,
-    _marker: PhantomData<(I, CS)>,
+    _marker: PhantomData<(ID, ISS, CS)>,
 }
 
-impl VcDocumentBuilder<Missing, Missing> {
-    pub fn new() -> Self {
-        let credential_id = format!("urn:uuid:{}", Uuid::new_v4());
+impl VcDocumentBuilder<Missing, Missing, Missing> {
+    pub fn new(vc_type: &VcType, model: &W3cDataModelVersion) -> Self {
         VcDocumentBuilder {
-            context: vec!["https://www.w3.org/ns/credentials/v2".to_string()],
-            id: credential_id,
-            r#type: vec![
-                "VerifiableCredential".to_string(),
-                "DataSpaceParticipant".to_string(),
-            ],
+            context: vec![model.context().to_string()],
+            id: None,
+            r#type: vec!["VerifiableCredential".to_string(), vc_type.to_string()],
             name: None,
             description: None,
             issuer: None,
@@ -85,8 +63,27 @@ impl VcDocumentBuilder<Missing, Missing> {
     }
 }
 
-impl<I, CS> VcDocumentBuilder<I, CS> {
-    pub fn issuer(self, issuer: BaseIssuer) -> VcDocumentBuilder<Present, CS> {
+impl<ID, ISS, CS> VcDocumentBuilder<ID, ISS, CS> {
+    pub fn id(self, id: impl Into<String>) -> VcDocumentBuilder<Present, ISS, CS> {
+        VcDocumentBuilder {
+            context: self.context,
+            id: Some(id.into()),
+            r#type: self.r#type,
+            name: self.name,
+            description: self.description,
+            issuer: self.issuer,
+            credential_subject: self.credential_subject,
+            valid_from: self.valid_from,
+            valid_until: self.valid_until,
+            credential_status: self.credential_status,
+            credential_schema: self.credential_schema,
+            refresh_service: self.refresh_service,
+            terms_of_use: self.terms_of_use,
+            evidence: self.evidence,
+            _marker: PhantomData,
+        }
+    }
+    pub fn issuer(self, issuer: VcIssuer) -> VcDocumentBuilder<ID, Present, CS> {
         VcDocumentBuilder {
             context: self.context,
             id: self.id,
@@ -106,7 +103,7 @@ impl<I, CS> VcDocumentBuilder<I, CS> {
         }
     }
 
-    pub fn credential_subject(self, credential_subject: Value) -> VcDocumentBuilder<I, Present> {
+    pub fn credential_subject(self, credential_subject: Value) -> VcDocumentBuilder<ID, ISS, Present> {
         VcDocumentBuilder {
             context: self.context,
             id: self.id,
@@ -172,11 +169,11 @@ impl<I, CS> VcDocumentBuilder<I, CS> {
     }
 }
 
-impl VcDocumentBuilder<Present, Present> {
+impl VcDocumentBuilder<Present, Present, Present> {
     pub fn build(self) -> VcDocument {
         VcDocument {
             context: self.context,
-            id: self.id,
+            id: self.id.unwrap(),
             r#type: self.r#type,
             name: self.name,
             description: self.description,

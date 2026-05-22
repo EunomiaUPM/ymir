@@ -14,21 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-//! Verifiable Credential types following the W3C VC Data Model 2.0.
-//!
-//! The central type is [`VcDocument`]. The remaining types model optional
-//! fields of a VC:
-//!
-//! - [`TermsOfUse`] — links the credential to a governing VDS via
-//!   `digestSRI`. This is the integration point with the VDS protocol.
-//! - [`VCSchema`], [`VCStatus`], [`VCEvidence`], [`VCRefreshService`] —
-//!   standard W3C VC fields.
-//! - [`DSParticipantCredSub`] — the `credentialSubject` shape for a
-//!   Data Space Participant credential (specific to the paper's example).
-//! - [`VDSCredentialType`] — the schema entry declared inside a VDS's
-//!   `credentialTypes` list.
 
-mod base_issuer;
 mod evidence;
 mod refresh_service;
 mod schema;
@@ -37,10 +23,10 @@ mod terms_of_use;
 mod vc_builder;
 mod vc_doc;
 
-pub use base_issuer::BaseIssuer;
 pub use evidence::VCEvidence;
 pub use refresh_service::VCRefreshService;
 pub use schema::*;
 pub use status::VCStatus;
 pub use terms_of_use::TermsOfUse;
 pub use vc_doc::VcDocument;
+pub use vc_builder::VcDocumentBuilder;

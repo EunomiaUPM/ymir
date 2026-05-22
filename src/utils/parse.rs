@@ -22,7 +22,7 @@ use axum::http::HeaderValue;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use reqwest::Response;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
@@ -81,6 +81,14 @@ where
         )
     })
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum StringOrArr {
+    String(String),
+    Arr(Vec<String>),
+}
+
 
 pub fn read_json<T, P>(path: P) -> Outcome<T>
 where

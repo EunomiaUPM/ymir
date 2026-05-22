@@ -84,3 +84,15 @@ impl TryFrom<SerialKey> for Key {
         Ok(Key { id: value.id, data })
     }
 }
+
+impl Key { // TODO
+    pub fn try_weird_from(id: impl Into<String>, pem: &str) -> Outcome<Key> {
+        let data = match KeyData::build_rsa(pem) {
+            Ok(key) => { key }
+            Err(_) => {
+                KeyData::build_ed25519(pem)?
+            }
+        };
+        Ok(Key { id: id.into(), data })
+    }
+}

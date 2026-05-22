@@ -131,6 +131,9 @@ impl Did {
             VerificationMaterial::JsonWebKey { public_key_jwk } => {
                 Self::resolve_value(&public_key_jwk)
             }
+            VerificationMaterial::JsonWebKey2020 { public_key_jwk } => {
+                Self::resolve_value(&public_key_jwk)
+            }
             VerificationMaterial::Multikey { .. } => {
                 Err(Errors::not_impl(
                     "Multikey type for verification method not implemented",

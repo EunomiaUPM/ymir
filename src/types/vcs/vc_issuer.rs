@@ -8,18 +8,48 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 use serde::{Deserialize, Serialize};
+use crate::utils::HasId;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct VCIssuer {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum VcIssuer {
+    Did(String),
+    Object(BaseIssuer),
+}
+
+impl VcIssuer {
+    pub fn new(id: impl Into<String>, name: Option<impl Into<String>>) -> VcIssuer {
+        match name {
+            Some(name) => {
+                VcIssuer::Object(BaseIssuer {
+                    id: id.into(),
+                    name: name.into(),
+                })
+            }
+            None => { VcIssuer::Did(id.into()) }
+        }
+    }
+}
+
+impl HasId for VcIssuer {
+    fn id(&self) -> &str {
+        match self {
+            VcIssuer::Did(did) => { did }
+            VcIssuer::Object(doc) => { &doc.id }
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BaseIssuer {
     pub id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    pub name: String,
 }

@@ -30,3 +30,4 @@ pub use input_descriptor::InputDescriptor;
 pub use vc_type::VcType;
 pub use vpd::VPDef;
 pub use w3c_data_model::*;
+pub use vc_issuer::*;
