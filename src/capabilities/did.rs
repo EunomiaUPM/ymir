@@ -38,7 +38,8 @@ impl HasId for Did {
 }
 
 impl Did {
-    pub fn parse(did: &str) -> Outcome<Did> {
+    pub fn parse_from_kid(kid: &str) -> Outcome<Did> {
+        let (did, key_id) = kid.split_once('#').map(|(did, key_id)| (did, Some(key_id.to_string()))).unwrap_or((kid, None));
         if let Some(rest) = did.strip_prefix("did:web:") {
             let parts: Vec<&str> = rest.split(':').collect();
 
@@ -61,16 +62,16 @@ impl Did {
                 Some((domain, port)) => (domain, Some(port.to_owned())),
                 None => (domain, None),
             };
-            let w = WebDid::new(did.to_string(), domain.to_owned(), path, port);
+            let w = WebDid::new(did, kid, domain.to_owned(), path, port, key_id);
 
             Ok(Did::Web(w))
-        } else if let Some(rest) = did.strip_prefix("did:jwk:") {
-            let j = JwkDid::new(did.to_string(), rest.to_owned());
+        } else if let Some(rest) = kid.strip_prefix("did:jwk:") {
+            let j = JwkDid::new(did, kid, rest.to_owned(), key_id);
 
             Ok(Did::Jwk(j))
         } else {
             Err(Errors::not_impl(
-                format!("Did format {did} not supported"),
+                format!("Did format {kid} not supported"),
                 None,
             ))
         }
@@ -115,7 +116,7 @@ impl Did {
         let method = did_doc
             .verification_method
             .iter()
-            .find(|m| m.id == web_did.id())
+            .find(|m| m.id == web_did.key_id())
             .ok_or_else(|| {
                 Errors::format(
                     BadFormat::Received,
@@ -188,7 +189,7 @@ impl Did {
             DidBuilder::Jwk(pem) => {
                 let key = KeyData::build_rsa(&pem)?;
                 let did = key.to_did_jwk()?;
-                Did::parse(&did)
+                Did::parse_from_kid(&did)
             }
             DidBuilder::Web(web) => Ok(Did::Web(web)),
         }

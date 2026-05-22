@@ -27,7 +27,7 @@ use urlencoding;
 use super::super::IssuerTrait;
 use super::config::{BasicIssuerConfig, BasicIssuerConfigTrait};
 use crate::capabilities::{Did, Signer, Verifier};
-use crate::config::traits::{HostsConfigTrait};
+use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
 use crate::errors::{BadFormat, Errors, Outcome};
@@ -49,14 +49,8 @@ pub struct BasicIssuerService {
 }
 
 impl BasicIssuerService {
-    pub fn new(
-        config: BasicIssuerConfig,
-        vault: Arc<VaultService>,
-    ) -> Self {
-        Self {
-            config,
-            vault,
-        }
+    pub fn new(config: BasicIssuerConfig, vault: Arc<VaultService>) -> Self {
+        Self { config, vault }
     }
 }
 
@@ -103,7 +97,11 @@ impl IssuerTrait for BasicIssuerService {
 
     fn get_cred_offer_data(&self, model: &issuing::Model) -> Outcome<VCCredOffer> {
         info!("Retrieving credential offer data");
-        VCCredOffer::new(self.config.get_host(HostType::Http), &model.pre_auth_code, &model.vc_type)
+        VCCredOffer::new(
+            self.config.get_host(HostType::Http),
+            &model.pre_auth_code,
+            &model.vc_type,
+        )
     }
 
     fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata {
@@ -172,7 +170,6 @@ impl IssuerTrait for BasicIssuerService {
             ));
         }
 
-
         let proof_jwt = Jwt::parse(cred_req.proof.jwt.clone())?;
         Verifier::verify_enveloped(&proof_jwt, Some(&model.aud)).await?;
         let kid = proof_jwt.expect_kid()?.to_string();
@@ -191,7 +188,7 @@ impl IssuerTrait for BasicIssuerService {
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
         let priv_key: StringHelper = self.vault.read(None, &priv_key).await?;
         let key = Key::try_weird_from("", priv_key.data())?;
-        let did = Did::parse(did)?;
+        let did = Did::parse_from_kid(did)?;
 
         Ok(SigningCtx::new(did, key))
     }
@@ -241,11 +238,7 @@ impl BasicIssuerService {
         let path = path.unwrap_or("/issuer");
         let full_path = format!("{}{}", self.config.get_api_path(), path);
         let base_host = self.config.get_host(HostType::Http);
-        let host_path = format!(
-            "{}{}",
-            self.config.get_host(HostType::Http),
-            full_path
-        );
+        let host_path = format!("{}{}", self.config.get_host(HostType::Http), full_path);
         (base_host, host_path)
     }
 }

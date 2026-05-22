@@ -61,7 +61,7 @@ impl Verifier {
         Ok(())
     }
     async fn verify_single_proof(value: &Canon, proof: &Proof) -> Outcome<()> {
-        let did = Did::parse(&proof.verification_method)?;
+        let did = Did::parse_from_kid(&proof.verification_method)?;
         let key = did.get_key().await?;
         match proof.cryptosuite.as_str() {
             "eddsa-jcs-2022" => {}
@@ -109,7 +109,7 @@ impl Verifier {
     pub async fn verify_enveloped(jwt: &Jwt, expected_aud: Option<&str>) -> Outcome<()> {
         let kid = jwt.expect_kid()?;
 
-        let did = Did::parse(kid)?;
+        let did = Did::parse_from_kid(kid)?;
         let key = did.get_key().await?;
 
         key.verify_bytes(jwt.signing_input(), jwt.signature())?;

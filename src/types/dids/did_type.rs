@@ -54,12 +54,14 @@ impl FromStr for DidType {
 
 pub struct JwkDid {
     id: String,
+    complete: String,
     jwk: String,
+    key_id: Option<String>,
 }
 
 impl JwkDid {
-    pub fn new(id: String, jwk: String) -> JwkDid {
-        JwkDid { id, jwk }
+    pub fn new(id: impl Into<String>, complete: impl Into<String>, jwk: impl Into<String>, key_id: Option<String>) -> JwkDid {
+        JwkDid { id: id.into(), jwk: jwk.into(), key_id: key_id.into(), complete: complete.into() }
     }
     pub fn id(&self) -> &str {
         &self.id
@@ -72,21 +74,28 @@ impl JwkDid {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WebDid {
     id: String,
+    complete: String,
     domain: String,
     path: Option<String>,
     port: Option<String>,
+    key_id: Option<String>,
 }
 
 impl WebDid {
-    pub fn new(id: String, domain: String, path: Option<String>, port: Option<String>) -> WebDid {
+    pub fn new(id: impl Into<String>, complete: impl Into<String>, domain: impl Into<String>, path: Option<String>, port: Option<String>, key_id: Option<String>) -> WebDid {
         WebDid {
-            id,
-            domain,
+            id: id.into(),
+            complete: complete.into(),
+            domain: domain.into(),
             path,
             port,
+            key_id,
         }
     }
     pub fn id(&self) -> &str {
+        &self.id
+    }
+    pub fn key_id(&self) -> &str {
         &self.id
     }
     pub fn domain(&self) -> &str {
