@@ -170,7 +170,11 @@ impl IssuerTrait for BasicIssuerService {
             ));
         }
 
+        println!("{:#?}", cred_req);
         let proof_jwt = Jwt::parse(cred_req.proof.jwt.clone())?;
+        println!("{:#?}", proof_jwt);
+        println!("{:#?}", model.aud);
+
         Verifier::verify_enveloped(&proof_jwt, Some(&model.aud)).await?;
         let kid = proof_jwt.expect_kid()?.to_string();
         let claims: DidPossession = proof_jwt.claims()?;

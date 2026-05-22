@@ -19,8 +19,10 @@ use super::JwtHeader;
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::utils::{decode_url_safe_no_pad, get_claim, get_opt_claim};
 use serde::de::DeserializeOwned;
+use serde::Deserialize;
 use serde_json::Value;
 
+#[derive(Debug)]
 pub struct Jwt {
     raw: String,
     header: JwtHeader,
