@@ -18,7 +18,10 @@
 use crate::data::entities::{mates, minions};
 use crate::errors::Outcome;
 use crate::types::vcs::VPDef;
-use crate::types::wallet::waltid::{CredentialOfferResponse, DidsInfo, KeyDefinition, MatchingVCs, WalletCredentials, WalletInfo, WalletSession};
+use crate::types::wallet::waltid::{
+    CredentialOfferResponse, DidsInfo, KeyDefinition, MatchingVCs, WalletCredentials, WalletInfo,
+    WalletSession,
+};
 use async_trait::async_trait;
 use reqwest::Response;
 use serde_json::Value;

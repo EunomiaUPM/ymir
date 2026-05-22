@@ -26,8 +26,8 @@
 //!   canonical. Callers that take `&Canon` cannot accidentally receive
 //!   non-canonical data.
 
-mod proof;
 mod canon;
+mod proof;
 
-pub use proof::Proof;
 pub use canon::Canon;
+pub use proof::Proof;

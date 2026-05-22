@@ -137,10 +137,7 @@ impl VerifierTrait for BasicVerifierService {
                     .await?;
                 Ok(None)
             }
-            other => Err(Errors::not_impl(
-                format!("Interact method '{other}'"),
-                None,
-            )),
+            other => Err(Errors::not_impl(format!("Interact method '{other}'"), None)),
         }
     }
 }
@@ -157,11 +154,7 @@ impl BasicVerifierService {
         }
     }
 
-    async fn verify_vp(
-        &self,
-        model: &mut Model,
-        vp_token: &str,
-    ) -> Outcome<(Vec<String>, String)> {
+    async fn verify_vp(&self, model: &mut Model, vp_token: &str) -> Outcome<(Vec<String>, String)> {
         info!("Verifying vp");
         model.vpt = Some(vp_token.to_string());
 
@@ -240,9 +233,11 @@ fn validate_holder(model: &Model, claims: &VPJwtClaims) -> Outcome<()> {
         .holder
         .as_deref()
         .ok_or_else(|| Errors::security("Holder not set in model", None))?;
-    let actual = claims.vp.holder.as_deref().ok_or_else(|| {
-        Errors::format(BadFormat::Received, "vp.holder missing", None)
-    })?;
+    let actual = claims
+        .vp
+        .holder
+        .as_deref()
+        .ok_or_else(|| Errors::format(BadFormat::Received, "vp.holder missing", None))?;
     if expected != actual {
         return Err(Errors::security("Invalid holder, it does not match", None));
     }

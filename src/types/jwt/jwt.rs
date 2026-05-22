@@ -15,11 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::de::DeserializeOwned;
 use super::JwtHeader;
-use serde_json::Value;
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::utils::{decode_url_safe_no_pad, get_claim, get_opt_claim};
+use serde::de::DeserializeOwned;
+use serde_json::Value;
 
 pub struct Jwt {
     raw: String,
@@ -33,7 +33,11 @@ impl Jwt {
         let raw = jwt.into();
         let parts: Vec<&str> = raw.split('.').collect();
         if parts.len() != 3 {
-            return Err(Errors::format(BadFormat::Received, "JWT has wrong format", None));
+            return Err(Errors::format(
+                BadFormat::Received,
+                "JWT has wrong format",
+                None,
+            ));
         }
 
         let header_bytes = decode_url_safe_no_pad(parts[0])?;
@@ -44,21 +48,40 @@ impl Jwt {
         let payload: Value = serde_json::from_slice(&payload_bytes)?;
         let signing_input_len = parts[0].len() + 1 + parts[1].len();
 
-        Ok(Self { raw, header, payload, signature, signing_input_len })
+        Ok(Self {
+            raw,
+            header,
+            payload,
+            signature,
+            signing_input_len,
+        })
     }
 
-    pub fn header(&self) -> &JwtHeader { &self.header }
-    pub fn payload(&self) -> &Value { &self.payload }
-    pub fn signature(&self) -> &[u8] { &self.signature }
-    pub fn signing_input(&self) -> &[u8] { self.raw[..self.signing_input_len].as_bytes() }
-    pub fn as_str(&self) -> &str { &self.raw }
+    pub fn header(&self) -> &JwtHeader {
+        &self.header
+    }
+    pub fn payload(&self) -> &Value {
+        &self.payload
+    }
+    pub fn signature(&self) -> &[u8] {
+        &self.signature
+    }
+    pub fn signing_input(&self) -> &[u8] {
+        self.raw[..self.signing_input_len].as_bytes()
+    }
+    pub fn as_str(&self) -> &str {
+        &self.raw
+    }
 
     pub fn claims<T: DeserializeOwned>(&self) -> Outcome<T> {
         serde_json::from_value(self.payload.clone())
             .map_err(|e| Errors::parse("claims shape mismatch", Some(Box::new(e))))
     }
     pub fn expect_kid(&self) -> Outcome<&str> {
-        self.header.kid.as_deref().ok_or_else(|| Errors::format(BadFormat::Received, "kid missing in JWS header", None))
+        self.header
+            .kid
+            .as_deref()
+            .ok_or_else(|| Errors::format(BadFormat::Received, "kid missing in JWS header", None))
     }
 
     pub fn claim(&self, path: &[&str]) -> Outcome<String> {
@@ -77,6 +100,7 @@ impl std::fmt::Display for Jwt {
 }
 
 impl AsRef<str> for Jwt {
-    fn as_ref(&self) -> &str { &self.raw }
+    fn as_ref(&self) -> &str {
+        &self.raw
+    }
 }
-

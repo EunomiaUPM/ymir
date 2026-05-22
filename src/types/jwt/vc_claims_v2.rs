@@ -15,8 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
 use crate::types::vcs::doc::VcDocument;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VCJwtClaimsV2 {
@@ -35,4 +35,3 @@ pub struct VCJwtClaimsV2 {
     #[serde(flatten)]
     pub vc: VcDocument,
 }
-

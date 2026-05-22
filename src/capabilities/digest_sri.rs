@@ -16,9 +16,9 @@
  */
 
 use crate::errors::{Errors, Outcome};
+use crate::types::crypto::Canon;
 use base64::{Engine, engine::general_purpose};
 use sha2::{Digest, Sha256};
-use crate::types::crypto::Canon;
 
 pub struct DigestSRI;
 

@@ -15,19 +15,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 mod alg;
 mod crv;
+mod key;
+mod key_data;
 mod kty;
 mod retrieved_key;
-mod key;
 mod serial_key;
-mod key_data;
 
 pub use alg::Alg;
 pub use crv::Crv;
+pub use key::Key;
+pub use key_data::KeyData;
 pub use kty::Kty;
 pub use retrieved_key::{RetrievedKey, RetrievedKeyData};
 pub use serial_key::SerialKey;
-pub use key::{Key};
-pub use key_data::KeyData;

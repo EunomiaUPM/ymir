@@ -31,15 +31,9 @@ pub struct VcDocument {
     pub issuer: BaseIssuer,
     #[serde(rename = "credentialSubject")]
     pub credential_subject: Value, // This is specific for each type of VC
-    #[serde(
-        rename = "validFrom",
-        skip_serializing_if = "Option::is_none",
-    )]
+    #[serde(rename = "validFrom", skip_serializing_if = "Option::is_none")]
     pub valid_from: Option<DateTime<Utc>>,
-    #[serde(
-        rename = "validUntil",
-        skip_serializing_if = "Option::is_none",
-    )]
+    #[serde(rename = "validUntil", skip_serializing_if = "Option::is_none")]
     pub valid_until: Option<DateTime<Utc>>,
     #[serde(rename = "credentialStatus", skip_serializing_if = "Option::is_none")]
     pub credential_status: Option<VCStatus>,

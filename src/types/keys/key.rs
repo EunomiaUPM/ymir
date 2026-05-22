@@ -15,11 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::str::FromStr;
-use serde_json::{Value};
+use super::{Crv, KeyData, Kty, SerialKey};
 use crate::errors::{Errors, Outcome};
 use crate::utils::HasId;
-use super::{Kty, Crv, SerialKey, KeyData};
+use serde_json::Value;
+use std::str::FromStr;
 
 pub struct Key {
     id: String,
@@ -66,12 +66,8 @@ impl TryFrom<SerialKey> for Key {
         let crv = value.crv.map(|c| Crv::from_str(&c).unwrap());
 
         let data = match (&kty, crv.as_ref()) {
-            (Kty::Okp, Some(Crv::Ed25519)) => {
-                KeyData::build_rsa(&value.pem)?
-            }
-            (Kty::Rsa, _) => {
-                KeyData::build_ed25519(&value.pem)?
-            }
+            (Kty::Okp, Some(Crv::Ed25519)) => KeyData::build_rsa(&value.pem)?,
+            (Kty::Rsa, _) => KeyData::build_ed25519(&value.pem)?,
             _ => {
                 let crv = if let Some(crv) = crv {
                     crv.to_string()
@@ -85,10 +81,6 @@ impl TryFrom<SerialKey> for Key {
             }
         };
 
-        Ok(Key {
-            id: value.id,
-            data,
-        })
+        Ok(Key { id: value.id, data })
     }
 }
-

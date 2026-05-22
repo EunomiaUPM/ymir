@@ -18,8 +18,8 @@
 use super::Did;
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::crypto::{Canon, Proof};
-use serde_json::Value;
 use crate::types::jwt::Jwt;
+use serde_json::Value;
 
 pub struct Verifier;
 
@@ -75,10 +75,7 @@ impl Verifier {
 
         // proofValue is multibase z-base58btc (W3C VC Data Integrity).
         let b58 = proof.proof_value.strip_prefix('z').ok_or_else(|| {
-            Errors::parse(
-                "proofValue must start with 'z' (multibase base58btc)",
-                None,
-            )
+            Errors::parse("proofValue must start with 'z' (multibase base58btc)", None)
         })?;
         let sig = bs58::decode(b58)
             .into_vec()

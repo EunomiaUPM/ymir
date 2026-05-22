@@ -18,7 +18,6 @@
 use serde::Deserialize;
 use serde_json::Value;
 
-
 #[derive(Debug, Clone, Deserialize)]
 pub struct JwtHeader {
     pub alg: String,

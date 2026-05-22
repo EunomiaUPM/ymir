@@ -19,14 +19,14 @@ mod vc_claim_v1;
 
 mod vp;
 
-mod vc_claims_v2;
-mod jwt;
 mod header;
+mod jwt;
 mod vc_claims;
+mod vc_claims_v2;
 
+pub use header::*;
+pub use jwt::*;
 pub use vc_claim_v1::VCJwtClaimsV1;
+pub use vc_claims::*;
 pub use vc_claims_v2::VCJwtClaimsV2;
 pub use vp::VPJwtClaims;
-pub use jwt::*;
-pub use header::*;
-pub use vc_claims::*;

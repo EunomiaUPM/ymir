@@ -35,15 +35,19 @@ use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
 use crate::services::vault::global::VaultService;
-use crate::types::dids::{DidType};
+use crate::types::dids::DidType;
 use crate::types::http::Body;
 use crate::types::secrets::{SemiWalletSecrets, StringHelper};
 use crate::types::vcs::VPDef;
 use crate::types::wallet::waltid::{
-    DidsInfo, CredentialOfferResponse, KeyDefinition, MatchVCsRequest, MatchingVCs, RedirectResponse,
-    WalletCredentials, WalletInfo, WalletInfoResponse, WalletLoginResponse, WalletSession, AuthJwtClaims,
+    AuthJwtClaims, CredentialOfferResponse, DidsInfo, KeyDefinition, MatchVCsRequest, MatchingVCs,
+    RedirectResponse, WalletCredentials, WalletInfo, WalletInfoResponse, WalletLoginResponse,
+    WalletSession,
 };
-use crate::utils::{ParseHeaderExt, ResponseExt, decode_url_safe_no_pad, expect_from_env, get_query_param, json_headers, parse_text_resp, http_client};
+use crate::utils::{
+    ParseHeaderExt, ResponseExt, decode_url_safe_no_pad, expect_from_env, get_query_param,
+    http_client, json_headers, parse_text_resp,
+};
 
 pub struct WaltIdService {
     wallet_session: Arc<Mutex<WalletSession>>,
@@ -53,10 +57,7 @@ pub struct WaltIdService {
 }
 
 impl WaltIdService {
-    pub fn new(
-        config: WaltIdConfig,
-        vault: Arc<VaultService>,
-    ) -> WaltIdService {
+    pub fn new(config: WaltIdConfig, vault: Arc<VaultService>) -> WaltIdService {
         WaltIdService {
             wallet_session: Arc::new(Mutex::new(WalletSession {
                 account_id: None,
@@ -203,7 +204,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to logout from Wallet failed",
         )
-            .await?;
+        .await?;
 
         info!("Wallet logout successful");
         let mut wallet_session = self.wallet_session.lock().await;
@@ -503,7 +504,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to register key failed",
         )
-            .await?;
+        .await?;
 
         info!("Key registered successfully");
         Ok(())
@@ -554,7 +555,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to register key failed",
         )
-            .await
+        .await
     }
 
     async fn reg_did_web(&self) -> Outcome<Response> {
@@ -580,7 +581,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to register key failed",
         )
-            .await
+        .await
     }
 
     async fn set_default_did(&self, did: Option<&str>) -> Outcome<()> {
@@ -602,7 +603,7 @@ impl WalletTrait for WaltIdService {
             true,
             "Petition to set did as default failed",
         )
-            .await?;
+        .await?;
 
         info!("Did has been set as default");
         Ok(())
@@ -624,7 +625,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete key failed",
         )
-            .await?;
+        .await?;
 
         info!("Key deleted successfully from web wallet");
         let mut keys_data = self.key_data.lock().await;
@@ -647,7 +648,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete key failed",
         )
-            .await?;
+        .await?;
 
         info!("Did deleted successfully from web wallet");
         let mut wallet_session = self.first_wallet_mut().await?;
@@ -672,7 +673,7 @@ impl WalletTrait for WaltIdService {
             false,
             "Petition to delete vc failed",
         )
-            .await?;
+        .await?;
 
         info!("Credential deleted successfully from web wallet");
         Ok(())
@@ -802,7 +803,7 @@ impl WalletTrait for WaltIdService {
                 .map_err(|e| Errors::parse("Unable to decode vpd", Some(Box::new(e))))?
                 .as_ref(),
         )
-            .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
+        .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
 
         let vpd_json = get_query_param(&url, "presentation_definition")?;
 

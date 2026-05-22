@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use crate::utils::HasId;
 
 #[derive(Serialize, Deserialize)]
 pub struct VcEntryReq {

@@ -17,10 +17,10 @@
 
 mod did;
 mod digest_sri;
-mod verifier;
 mod signer;
+mod verifier;
 
 pub use did::*;
 pub use digest_sri::*;
-pub use verifier::*;
 pub use signer::*;
+pub use verifier::*;

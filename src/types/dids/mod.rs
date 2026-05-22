@@ -15,14 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod did_doc;
-mod ver_method;
-mod did_type;
-mod did_service;
 mod did_builder;
+mod did_doc;
+mod did_service;
+mod did_type;
+mod ver_method;
 
-pub use did_doc::DidDocument;
-pub use ver_method::*;
-pub use did_type::*;
-pub use did_service::*;
 pub use did_builder::*;
+pub use did_doc::DidDocument;
+pub use did_service::*;
+pub use did_type::*;
+pub use ver_method::*;

@@ -60,10 +60,13 @@ impl RetrievedKeyData {
             .as_str()
             .ok_or_else(|| Errors::format(BadFormat::Received, "JWK Ed25519 missing x", None))?;
         let raw = decode_url_safe_no_pad(x_b64)?;
-        let arr: [u8; 32] = raw
-            .as_slice()
-            .try_into()
-            .map_err(|_| Errors::format(BadFormat::Received, "Ed25519 public key must be 32 bytes", None))?;
+        let arr: [u8; 32] = raw.as_slice().try_into().map_err(|_| {
+            Errors::format(
+                BadFormat::Received,
+                "Ed25519 public key must be 32 bytes",
+                None,
+            )
+        })?;
         let vk = EdVerifyingKey::from_bytes(&arr)
             .map_err(|e| Errors::forbidden("invalid Ed25519 verifying key", Some(Box::new(e))))?;
         Ok(RetrievedKeyData::Ed25519 { vk })

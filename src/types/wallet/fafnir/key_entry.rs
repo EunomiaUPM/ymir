@@ -15,11 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::str::FromStr;
-use serde::{Deserialize, Serialize};
 use crate::errors::Errors;
 use crate::types::keys::{Crv, Key, KeyData, Kty};
 use crate::utils::HasId;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[derive(Serialize, Deserialize)]
 pub struct KeyEntryReq {
@@ -49,12 +49,8 @@ impl TryInto<Key> for KeyEntry {
 
     fn try_into(self) -> Result<Key, Self::Error> {
         let data = match (&self.kty, self.crv.as_ref()) {
-            (Kty::Okp, Some(Crv::Ed25519)) => {
-                KeyData::build_ed25519(&self.pem)?
-            }
-            (Kty::Rsa, _) => {
-                KeyData::build_rsa(&self.pem)?
-            }
+            (Kty::Okp, Some(Crv::Ed25519)) => KeyData::build_ed25519(&self.pem)?,
+            (Kty::Rsa, _) => KeyData::build_rsa(&self.pem)?,
             _ => {
                 let crv = if let Some(crv) = &self.crv.as_ref() {
                     crv.to_string()

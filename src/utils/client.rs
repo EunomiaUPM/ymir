@@ -15,12 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
-use std::sync::LazyLock;
 use crate::services::client::ClientService;
+use std::sync::LazyLock;
 
-static CLIENT_SERVICE: LazyLock<ClientService> =
-    LazyLock::new(|| ClientService::new(10, 10, 0));
+static CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| ClientService::new(10, 10, 0));
 
 pub fn http_client() -> &'static ClientService {
     &CLIENT_SERVICE

@@ -16,11 +16,11 @@
  */
 
 use super::{BaseIssuer, TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus};
-use chrono::{DateTime, Utc};
-use std::marker::PhantomData;
-use serde_json::Value;
-use uuid::Uuid;
 use crate::types::present::{Missing, Present};
+use chrono::{DateTime, Utc};
+use serde_json::Value;
+use std::marker::PhantomData;
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct VcDocument {
@@ -106,10 +106,7 @@ impl<I, CS> VcDocumentBuilder<I, CS> {
         }
     }
 
-    pub fn credential_subject(
-        self,
-        credential_subject: Value,
-    ) -> VcDocumentBuilder<I, Present> {
+    pub fn credential_subject(self, credential_subject: Value) -> VcDocumentBuilder<I, Present> {
         VcDocumentBuilder {
             context: self.context,
             id: self.id,

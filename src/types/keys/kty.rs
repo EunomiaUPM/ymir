@@ -15,10 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub enum Kty {
     /// Elliptic Curve — RFC 7518 §6.2

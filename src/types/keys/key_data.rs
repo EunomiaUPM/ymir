@@ -15,6 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::{Crv, Key, Kty, SerialKey};
+use crate::errors::{BadFormat, Errors, Outcome};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use ed25519_dalek::{Signer, SigningKey as EdSigningKey, VerifyingKey as EdVerifyingKey};
@@ -22,11 +24,8 @@ use rsa::pkcs8::DecodePrivateKey;
 use rsa::pss::{SigningKey as RsaSigningKey, VerifyingKey as RsaVerifyingKey};
 use rsa::signature::{Keypair, RandomizedSigner, SignatureEncoding};
 use rsa::traits::PublicKeyParts;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sha2::Sha256;
-use crate::errors::{BadFormat, Errors, Outcome};
-use super::{Kty, Crv, SerialKey, Key};
-
 
 pub enum KeyData {
     Rsa {
@@ -94,15 +93,25 @@ impl KeyData {
         }
     }
     pub fn build_rsa(pem: &str) -> Outcome<Self> {
-        let key = rsa::RsaPrivateKey::from_pkcs8_pem(pem)
-            .map_err(|e| Errors::format(BadFormat::Received, "invalid RSA PKCS#8 PEM", Some(Box::new(e))))?;
+        let key = rsa::RsaPrivateKey::from_pkcs8_pem(pem).map_err(|e| {
+            Errors::format(
+                BadFormat::Received,
+                "invalid RSA PKCS#8 PEM",
+                Some(Box::new(e)),
+            )
+        })?;
         let sk: RsaSigningKey<Sha256> = RsaSigningKey::from(key);
         let vk = sk.verifying_key();
         Ok(KeyData::Rsa { sk, vk })
     }
     pub fn build_ed25519(pem: &str) -> Outcome<Self> {
-        let sk = EdSigningKey::from_pkcs8_pem(pem)
-            .map_err(|e| Errors::format(BadFormat::Received, "invalid Ed25519 PKCS#8 PEM", Some(Box::new(e))))?;
+        let sk = EdSigningKey::from_pkcs8_pem(pem).map_err(|e| {
+            Errors::format(
+                BadFormat::Received,
+                "invalid Ed25519 PKCS#8 PEM",
+                Some(Box::new(e)),
+            )
+        })?;
         let vk = sk.verifying_key();
 
         Ok(KeyData::Ed25519 { sk, vk })

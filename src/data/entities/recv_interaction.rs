@@ -17,8 +17,8 @@
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use rand::distributions::Alphanumeric;
 use rand::Rng;
+use rand::distributions::Alphanumeric;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use sha2::{Digest, Sha256};

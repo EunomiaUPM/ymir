@@ -24,4 +24,3 @@ pub struct SerialKey {
     pub crv: Option<String>,
     pub id: String,
 }
-

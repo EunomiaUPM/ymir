@@ -24,8 +24,10 @@ use crate::capabilities::Did;
 use crate::errors::Outcome;
 use crate::services::repo::subtraits::{MatesTrait, MinionsTrait};
 use crate::services::wallet::WalletTrait;
-use crate::types::dids::{DidService};
-use crate::types::wallet::waltid::{DidsInfo, IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo};
+use crate::types::dids::DidService;
+use crate::types::wallet::waltid::{
+    DidsInfo, IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo,
+};
 
 #[async_trait]
 pub trait CoreWalletTrait: Send + Sync + 'static {

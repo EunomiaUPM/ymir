@@ -15,12 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod sig_ctx;
 mod did_entry;
 mod key_entry;
+mod sig_ctx;
 mod vc_entry;
 
-pub use sig_ctx::SigningCtx;
-pub use key_entry::*;
 pub use did_entry::*;
+pub use key_entry::*;
+pub use sig_ctx::SigningCtx;
 pub use vc_entry::*;

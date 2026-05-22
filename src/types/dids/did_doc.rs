@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use rayon::prelude::*;
 use super::{DidService, VerificationMethod};
 use crate::capabilities::Did;
 use crate::types::keys::Key;
-use serde::{Deserialize, Serialize};
 use crate::utils::HasId;
+use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DidDocument {
@@ -46,9 +46,10 @@ pub struct DidDocument {
 
 impl DidDocument {
     pub fn base(did: &Did, key: &[Key]) -> DidDocument {
-        let vms: Vec<VerificationMethod> = key.par_iter().map(
-            |key| VerificationMethod::new(did, key)
-        ).collect();
+        let vms: Vec<VerificationMethod> = key
+            .par_iter()
+            .map(|key| VerificationMethod::new(did, key))
+            .collect();
 
         DidDocument {
             context: "https://www.w3.org/ns/did/v1.1".to_string(),

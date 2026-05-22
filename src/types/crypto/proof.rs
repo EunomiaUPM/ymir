@@ -34,7 +34,11 @@ impl Proof {
     /// Decode the multibase z-base58btc proofValue into raw signature bytes.
     pub fn signature(&self) -> Outcome<Vec<u8>> {
         let b58 = self.proof_value.strip_prefix('z').ok_or_else(|| {
-            Errors::format(BadFormat::Received, "proofValue must start with 'z' (multibase base58btc)", None)
+            Errors::format(
+                BadFormat::Received,
+                "proofValue must start with 'z' (multibase base58btc)",
+                None,
+            )
         })?;
         bs58::decode(b58)
             .into_vec()

@@ -15,13 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::{Outcome};
+use crate::errors::Outcome;
 use crate::types::crypto::{Canon, Proof};
-use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
-use serde_json::Value;
 use crate::types::jwt::Jwt;
 use crate::types::wallet::fafnir::SigningCtx;
 use crate::utils::HasId;
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+use serde_json::Value;
 
 pub struct Signer;
 
@@ -38,7 +38,6 @@ impl Signer {
             proof_value,
         })
     }
-
 
     pub fn sign_enveloped(typ: &str, cty: &str, value: &Value, ctx: &SigningCtx) -> Outcome<Jwt> {
         let alg = &ctx.key().jws_alg();

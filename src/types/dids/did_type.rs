@@ -15,11 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::errors::Errors;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
-use crate::errors::Errors;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DidType {
@@ -57,13 +57,9 @@ pub struct JwkDid {
     jwk: String,
 }
 
-
 impl JwkDid {
     pub fn new(id: String, jwk: String) -> JwkDid {
-        JwkDid {
-            id,
-            jwk,
-        }
+        JwkDid { id, jwk }
     }
     pub fn id(&self) -> &str {
         &self.id
