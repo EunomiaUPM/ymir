@@ -190,7 +190,7 @@ impl IssuerTrait for BasicIssuerService {
     async fn get_sig_context(&self, did: &str) -> Outcome<SigningCtx> {
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
         let priv_key: StringHelper = self.vault.read(None, &priv_key).await?;
-        let key = Key::try_weird_from("#0", priv_key.data())?;
+        let key = Key::try_weird_from("", priv_key.data())?;
         let did = Did::parse(did)?;
 
         Ok(SigningCtx::new(did, key))
