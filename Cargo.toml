@@ -37,7 +37,7 @@ json-canon = "0.1.3"                                   # JCS canonicalisation (R
 
 # ─── HTTP client for did:web resolution ───────────────────────────────
 # rustls-tls avoids the OpenSSL system dependency; pure Rust TLS stack.
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.13.3", default-features = false, features = ["json", "rustls"]}
 # `executor` gives futures::executor::block_on — used by the bench to run
 # the (local, for did:jwk) async resolution once in setup without tokio.
 futures = { version = "0.3.32", features = ["executor"] }
