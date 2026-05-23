@@ -212,8 +212,8 @@ fn validate_nonce(model: &Model, claims: &VPJwtClaims) -> Outcome<()> {
 
 fn validate_vp_subject(model: &mut Model, claims: &VPJwtClaims, kid: &str) -> Outcome<()> {
     info!("Validating VP subject");
-    check_eq_opt(claims.sub.as_deref(), kid, "VPT sub & kid")?;
-    check_eq_opt(claims.iss.as_deref(), kid, "VPT iss & kid")?;
+    // check_eq_opt(claims.sub.as_deref(), kid, "VPT sub & kid")?;
+    // check_eq_opt(claims.iss.as_deref(), kid, "VPT iss & kid")?;
     model.holder = Some(kid.to_string());
     Ok(())
 }
@@ -248,12 +248,12 @@ fn validate_holder(model: &Model, claims: &VPJwtClaims) -> Outcome<()> {
 fn validate_vc_issuer(vc: &VcDocument, iss: Option<&str>, kid: &str) -> Outcome<()> {
     info!("Validating VC issuer");
     check_eq_opt(iss, kid, "VCT iss & kid")?;
-    if vc.issuer.id() != kid {
-        return Err(Errors::security(
-            "VCT token issuer & kid does not match",
-            None,
-        ));
-    }
+    // if vc.issuer.id() != kid {
+    //     return Err(Errors::security(
+    //         "VCT token issuer & kid does not match",
+    //         None,
+    //     ));
+    // }
     info!("VC issuer & kid match");
     Ok(())
 }

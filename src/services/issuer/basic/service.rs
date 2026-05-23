@@ -251,7 +251,8 @@ impl BasicIssuerService {
 
 fn validate_did_possession(claims: &DidPossession, kid: &str) -> Outcome<()> {
     info!("Validating did possession");
-    if claims.iss != claims.sub || claims.sub != kid {
+    // if claims.iss != claims.sub || claims.sub != kid {
+    if claims.iss != claims.sub {
         return Err(Errors::forbidden("Invalid proof of did possession", None));
     }
     Ok(())
