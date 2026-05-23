@@ -18,7 +18,7 @@
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
 use crate::types::dids::{DidBuilder, DidDocument, DidType, JwkDid, VerificationMaterial, WebDid};
-use crate::types::keys::{Alg, Crv, KeyData, Kty, RetrievedKey, RetrievedKeyData};
+use crate::types::keys::{Crv, Key, KeyData, Kty, RetrievedKey, RetrievedKeyData};
 use crate::utils::{HasId, ResponseExt, decode_url_safe_no_pad, http_client};
 use serde_json::Value;
 use std::str::FromStr;
@@ -184,11 +184,17 @@ impl Did {
             format!("https://{}{}/.well-known/did.json", did.domain(), port)
         }
     }
-    pub fn create(builder: DidBuilder) -> Outcome<Did> {
+    pub fn create(builder: DidBuilder, keys: &[Key]) -> Outcome<Did> {
         match builder {
-            DidBuilder::Jwk(pem) => {
-                let key = KeyData::build_rsa(&pem)?;
-                let did = key.to_did_jwk()?;
+            DidBuilder::Jwk => {
+                let key = keys.first().ok_or_else(|| {
+                    Errors::format(
+                        BadFormat::Sent,
+                        "did:jwk requires at least one key",
+                        None,
+                    )
+                })?;
+                let did = key.data().to_did_jwk()?;
                 Did::parse_from_kid(&did)
             }
             DidBuilder::Web(web) => Ok(Did::Web(web)),

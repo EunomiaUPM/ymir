@@ -27,20 +27,23 @@ pub struct DidDocument {
     #[serde(rename = "@context")]
     pub context: StringOrArr,
     pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub controller: Option<StringOrArr>, // TODO
-    #[serde(rename = "alsoKnownAs")]
+    #[serde(rename = "alsoKnownAs", skip_serializing_if = "Option::is_none")]
     pub also_known_as: Option<StringOrArr>, // TODO
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub service: Option<Vec<DidService>>,
     #[serde(rename = "verificationMethod")]
     pub verification_method: Vec<VerificationMethod>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub authentication: Option<StringOrArr>, // TODO
-    #[serde(rename = "assertionMethod")]
+    #[serde(rename = "assertionMethod", skip_serializing_if = "Option::is_none")]
     pub assertion_method: Option<StringOrArr>, // TODO
-    #[serde(rename = "keyAgreement")]
+    #[serde(rename = "keyAgreement", skip_serializing_if = "Option::is_none")]
     pub key_agreement: Option<StringOrArr>, // TODO
-    #[serde(rename = "capabilityInvocation")]
+    #[serde(rename = "capabilityInvocation", skip_serializing_if = "Option::is_none")]
     pub capability_invocation: Option<StringOrArr>, // TODO
-    #[serde(rename = "capabilityDelegation")]
+    #[serde(rename = "capabilityDelegation", skip_serializing_if = "Option::is_none")]
     pub capability_delegation: Option<StringOrArr>, // TODO
 }
 

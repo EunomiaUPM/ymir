@@ -20,6 +20,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum DidBuilder {
-    Jwk(String),
+    Jwk,
     Web(WebDid),
 }

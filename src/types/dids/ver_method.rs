@@ -16,7 +16,7 @@
  */
 
 use crate::capabilities::Did;
-use crate::types::keys::{Key, KeyData};
+use crate::types::keys::Key;
 use crate::utils::HasId;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -55,15 +55,8 @@ impl VerificationMethod {
     pub fn new(did: &Did, key: &Key) -> Self {
         let controller = did.id().to_string();
 
-        let material = match key.data() {
-            KeyData::Ed25519 { .. } => VerificationMaterial::Multikey {
-                public_key_multibase: key
-                    .public_multibase()
-                    .expect("Ed25519 always has multibase"),
-            },
-            KeyData::Rsa { .. } => VerificationMaterial::JsonWebKey {
-                public_key_jwk: key.public_jwk(),
-            },
+        let material = VerificationMaterial::JsonWebKey {
+            public_key_jwk: key.public_jwk(),
         };
 
         Self {
