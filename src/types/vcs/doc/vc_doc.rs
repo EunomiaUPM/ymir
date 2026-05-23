@@ -27,7 +27,9 @@ pub struct VcDocument {
     pub context: Vec<String>,
     pub id: String,
     pub r#type: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub issuer: VcIssuer,
     #[serde(rename = "credentialSubject")]
@@ -44,5 +46,6 @@ pub struct VcDocument {
     pub refresh_service: Option<VCRefreshService>,
     #[serde(rename = "termsOfUse", skip_serializing_if = "Option::is_none")]
     pub terms_of_use: Option<TermsOfUse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub evidence: Option<Vec<VCEvidence>>,
 }

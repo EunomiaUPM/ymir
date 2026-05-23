@@ -24,6 +24,7 @@ use crate::types::vcs::W3cDataModelVersion;
 use super::{VcJwtClaimsV1, VcJwtClaimsV2};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
 pub enum VCJwtClaims {
     V1(VcJwtClaimsV1),
     V2(VcJwtClaimsV2),
