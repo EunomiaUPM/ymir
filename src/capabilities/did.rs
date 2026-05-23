@@ -18,7 +18,7 @@
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
 use crate::types::dids::{DidBuilder, DidDocument, DidType, JwkDid, VerificationMaterial, WebDid};
-use crate::types::keys::{Crv, KeyData, Kty, RetrievedKey, RetrievedKeyData};
+use crate::types::keys::{Alg, Crv, KeyData, Kty, RetrievedKey, RetrievedKeyData};
 use crate::utils::{HasId, ResponseExt, decode_url_safe_no_pad, http_client};
 use serde_json::Value;
 use std::str::FromStr;

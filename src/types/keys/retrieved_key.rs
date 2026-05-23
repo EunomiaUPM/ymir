@@ -23,7 +23,7 @@ use rsa::{BigUint, RsaPublicKey};
 use serde_json::Value;
 use sha2::Sha256;
 
-// Importamos los verificadores y firmas
+// Importamos los verificadores y firmas de ambos esquemas
 use rsa::pss::{Signature as PssSignature, VerifyingKey as PssVerifyingKey};
 use rsa::pkcs1v15::{Signature as PkcsSignature, VerifyingKey as PkcsVerifyingKey};
 
@@ -50,29 +50,29 @@ impl RetrievedKey {
     }
 }
 
-// Representa el esquema RSA específico configurado tras leer el JWK
-pub enum RsaScheme {
-    Pss(PssVerifyingKey<Sha256>),
-    Pkcs1v15(PkcsVerifyingKey<Sha256>),
+// Estructura que guarda ambos esquemas RSA precomputados
+pub struct RsaScheme {
+    pss_vk: PssVerifyingKey<Sha256>,
+    pkcs_vk: PkcsVerifyingKey<Sha256>,
 }
 
 impl RsaScheme {
     pub fn verify(&self, msg: &[u8], sig: &[u8]) -> Result<(), rsa::signature::Error> {
-        match self {
-            RsaScheme::Pss(vk) => {
-                let signature = PssSignature::try_from(sig)?;
-                vk.verify(msg, &signature)
-            }
-            RsaScheme::Pkcs1v15(vk) => {
-                let signature = PkcsSignature::try_from(sig)?;
-                vk.verify(msg, &signature)
+        // 1. Intentamos verificar usando PKCS#1 v1.5 (ej. RS256, el más común)
+        if let Ok(pkcs_sig) = PkcsSignature::try_from(sig) {
+            if self.pkcs_vk.verify(msg, &pkcs_sig).is_ok() {
+                return Ok(());
             }
         }
+
+        // 2. Si falla o no se pudo parsear como PKCS#1 v1.5, intentamos con PSS (ej. PS256)
+        let pss_sig = PssSignature::try_from(sig)?;
+        self.pss_vk.verify(msg, &pss_sig)
     }
 }
 
 pub enum RetrievedKeyData {
-    // vk sigue existiendo aquí para mantener la compatibilidad hacia atrás
+    // vk es de tipo RsaScheme, lo que mantiene la compatibilidad
     Rsa { vk: RsaScheme },
     Ed25519 { vk: EdVerifyingKey },
 }
@@ -101,17 +101,6 @@ impl RetrievedKeyData {
                 format!("Unsupported OKP curve: {}", crv),
                 None,
             ));
-        }
-
-        // 3. Validamos el algoritmo "alg" de forma opcional (si el JWK lo incluye)
-        if let Some(alg) = value["alg"].as_str() {
-            if alg != "EdDSA" {
-                return Err(Errors::format(
-                    BadFormat::Received,
-                    format!("Unsupported OKP algorithm: {}", alg),
-                    None,
-                ));
-            }
         }
 
         // 4. Decodificamos y construimos la clave
@@ -147,28 +136,16 @@ impl RetrievedKeyData {
             .as_str()
             .ok_or_else(|| Errors::format(BadFormat::Received, "JWK RSA missing e", None))?;
 
-        // Validamos el algoritmo "alg" de forma estricta
-        let alg = jwk["alg"]
-            .as_str()
-            .ok_or_else(|| Errors::format(BadFormat::Received, "JWK RSA missing alg", None))?;
-
         let n = decode_url_safe_no_pad(n_b64)?;
         let e = decode_url_safe_no_pad(e_b64)?;
         let pub_key = RsaPublicKey::new(BigUint::from_bytes_be(&n), BigUint::from_bytes_be(&e))
             .map_err(|err| Errors::forbidden("invalid RSA public key", Some(Box::new(err))))?;
 
-        // Construimos únicamente el esquema esperado por el JWK
-        let vk = match alg {
-            "RS256" => RsaScheme::Pkcs1v15(PkcsVerifyingKey::<Sha256>::new(pub_key)),
-            "PS256" => RsaScheme::Pss(PssVerifyingKey::<Sha256>::new(pub_key)),
-            other => {
-                return Err(Errors::format(
-                    BadFormat::Received,
-                    format!("Unsupported RSA algorithm: {}", other),
-                    None,
-                ));
-            }
-        };
+        // Inicializamos ambos verificadores RSA
+        let pss_vk = PssVerifyingKey::<Sha256>::new(pub_key.clone());
+        let pkcs_vk = PkcsVerifyingKey::<Sha256>::new(pub_key);
+
+        let vk = RsaScheme { pss_vk, pkcs_vk };
 
         Ok(RetrievedKeyData::Rsa { vk })
     }
