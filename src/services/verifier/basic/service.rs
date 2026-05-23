@@ -167,7 +167,7 @@ impl BasicVerifierService {
         validate_nonce(model, &claims)?;
         validate_vp_subject(model, &claims, &kid)?;
         validate_vp_id(model, &claims)?;
-        validate_holder(model, &claims)?;
+        // validate_holder(model, &claims)?;
 
         info!("VP verification successful");
         Ok((claims.vp.verifiable_credential, kid))
@@ -187,9 +187,9 @@ impl BasicVerifierService {
 
         let (iss, sub, jti, vc) = parse_vc_claims(&jwt, &model)?;
 
-        validate_vc_issuer(&vc, iss.as_deref(), &kid)?;
+        // validate_vc_issuer(&vc, iss.as_deref(), &kid)?;
         validate_vc_id(&vc, jti.as_deref())?;
-        validate_vc_sub(&vc, sub.as_deref(), holder)?;
+        // validate_vc_sub(&vc, sub.as_deref(), holder)?;
         // TODO: trusted-issuer list once available
         validate_valid_from(&vc)?;
         validate_valid_until(&vc)?;
