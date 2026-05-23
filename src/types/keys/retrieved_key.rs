@@ -18,11 +18,14 @@
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::utils::decode_url_safe_no_pad;
 use ed25519_dalek::{Signature as EdSignature, VerifyingKey as EdVerifyingKey};
-use rsa::pss::{Signature as RsaSignature, VerifyingKey as RsaVerifyingKey};
 use rsa::signature::Verifier;
 use rsa::{BigUint, RsaPublicKey};
 use serde_json::Value;
 use sha2::Sha256;
+
+// Importamos los verificadores y firmas
+use rsa::pss::{Signature as PssSignature, VerifyingKey as PssVerifyingKey};
+use rsa::pkcs1v15::{Signature as PkcsSignature, VerifyingKey as PkcsVerifyingKey};
 
 pub struct RetrievedKey {
     pub did: String,
@@ -33,9 +36,7 @@ impl RetrievedKey {
     pub fn verify_bytes(&self, data: &[u8], sig: &[u8]) -> Outcome<()> {
         match &self.data {
             RetrievedKeyData::Rsa { vk } => {
-                let signature = RsaSignature::try_from(sig)
-                    .map_err(|e| Errors::parse("error parsing RSA signature", Some(Box::new(e))))?;
-                vk.verify(data, &signature)
+                vk.verify(data, sig)
                     .map_err(|e| Errors::forbidden("Invalid Signature", Some(Box::new(e))))
             }
             RetrievedKeyData::Ed25519 { vk } => {
@@ -49,13 +50,71 @@ impl RetrievedKey {
     }
 }
 
+// Representa el esquema RSA específico configurado tras leer el JWK
+pub enum RsaScheme {
+    Pss(PssVerifyingKey<Sha256>),
+    Pkcs1v15(PkcsVerifyingKey<Sha256>),
+}
+
+impl RsaScheme {
+    pub fn verify(&self, msg: &[u8], sig: &[u8]) -> Result<(), rsa::signature::Error> {
+        match self {
+            RsaScheme::Pss(vk) => {
+                let signature = PssSignature::try_from(sig)?;
+                vk.verify(msg, &signature)
+            }
+            RsaScheme::Pkcs1v15(vk) => {
+                let signature = PkcsSignature::try_from(sig)?;
+                vk.verify(msg, &signature)
+            }
+        }
+    }
+}
+
 pub enum RetrievedKeyData {
-    Rsa { vk: RsaVerifyingKey<Sha256> },
+    // vk sigue existiendo aquí para mantener la compatibilidad hacia atrás
+    Rsa { vk: RsaScheme },
     Ed25519 { vk: EdVerifyingKey },
 }
 
 impl RetrievedKeyData {
     pub fn build_ed25519_data(value: &Value) -> Outcome<RetrievedKeyData> {
+        // 1. Validamos que el tipo de clave sea OKP (Octet Key Pair)
+        if let Some(kty) = value["kty"].as_str() {
+            if kty != "OKP" {
+                return Err(Errors::format(
+                    BadFormat::Received,
+                    "JWK kty is not OKP for Ed25519",
+                    None
+                ));
+            }
+        }
+
+        // 2. Validamos la curva (crv) de forma obligatoria
+        let crv = value["crv"]
+            .as_str()
+            .ok_or_else(|| Errors::format(BadFormat::Received, "JWK Ed25519 missing crv", None))?;
+
+        if crv != "Ed25519" {
+            return Err(Errors::format(
+                BadFormat::Received,
+                format!("Unsupported OKP curve: {}", crv),
+                None,
+            ));
+        }
+
+        // 3. Validamos el algoritmo "alg" de forma opcional (si el JWK lo incluye)
+        if let Some(alg) = value["alg"].as_str() {
+            if alg != "EdDSA" {
+                return Err(Errors::format(
+                    BadFormat::Received,
+                    format!("Unsupported OKP algorithm: {}", alg),
+                    None,
+                ));
+            }
+        }
+
+        // 4. Decodificamos y construimos la clave
         let x_b64 = value["x"]
             .as_str()
             .ok_or_else(|| Errors::format(BadFormat::Received, "JWK Ed25519 missing x", None))?;
@@ -69,21 +128,48 @@ impl RetrievedKeyData {
         })?;
         let vk = EdVerifyingKey::from_bytes(&arr)
             .map_err(|e| Errors::forbidden("invalid Ed25519 verifying key", Some(Box::new(e))))?;
+
         Ok(RetrievedKeyData::Ed25519 { vk })
     }
 
     pub fn build_rsa_data(jwk: &Value) -> Outcome<RetrievedKeyData> {
+        // Validamos el tipo de clave
+        if let Some(kty) = jwk["kty"].as_str() {
+            if kty != "RSA" {
+                return Err(Errors::format(BadFormat::Received, "JWK kty is not RSA", None));
+            }
+        }
+
         let n_b64 = jwk["n"]
             .as_str()
             .ok_or_else(|| Errors::format(BadFormat::Received, "JWK RSA missing n", None))?;
         let e_b64 = jwk["e"]
             .as_str()
             .ok_or_else(|| Errors::format(BadFormat::Received, "JWK RSA missing e", None))?;
+
+        // Validamos el algoritmo "alg" de forma estricta
+        let alg = jwk["alg"]
+            .as_str()
+            .ok_or_else(|| Errors::format(BadFormat::Received, "JWK RSA missing alg", None))?;
+
         let n = decode_url_safe_no_pad(n_b64)?;
         let e = decode_url_safe_no_pad(e_b64)?;
         let pub_key = RsaPublicKey::new(BigUint::from_bytes_be(&n), BigUint::from_bytes_be(&e))
             .map_err(|err| Errors::forbidden("invalid RSA public key", Some(Box::new(err))))?;
-        let vk = RsaVerifyingKey::<Sha256>::new(pub_key);
+
+        // Construimos únicamente el esquema esperado por el JWK
+        let vk = match alg {
+            "RS256" => RsaScheme::Pkcs1v15(PkcsVerifyingKey::<Sha256>::new(pub_key)),
+            "PS256" => RsaScheme::Pss(PssVerifyingKey::<Sha256>::new(pub_key)),
+            other => {
+                return Err(Errors::format(
+                    BadFormat::Received,
+                    format!("Unsupported RSA algorithm: {}", other),
+                    None,
+                ));
+            }
+        };
+
         Ok(RetrievedKeyData::Rsa { vk })
     }
 }

@@ -20,7 +20,7 @@ use crate::errors::{BadFormat, Errors, Outcome};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use ed25519_dalek::{Signer, SigningKey as EdSigningKey, VerifyingKey as EdVerifyingKey};
-use rsa::pkcs8::DecodePrivateKey;
+use rsa::pkcs8::{DecodePrivateKey};
 use rsa::pss::{SigningKey as RsaSigningKey, VerifyingKey as RsaVerifyingKey};
 use rsa::signature::{Keypair, RandomizedSigner, SignatureEncoding};
 use rsa::traits::PublicKeyParts;
