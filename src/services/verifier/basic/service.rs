@@ -54,7 +54,7 @@ impl VerifierTrait for BasicVerifierService {
     fn start_vp(&self, id: &str) -> Outcome<NewModel> {
         info!("Managing OIDC4VP");
 
-        let host_url = self.host_url();
+        let host_url = self.config.get_host(HostType::Http);
         let client_id = format!("{}{}/verifier/verify", host_url, self.config.get_api_path());
         let requested_vcs = self.config.get_requested_vcs();
         if requested_vcs.is_empty() {
@@ -74,7 +74,7 @@ impl VerifierTrait for BasicVerifierService {
     fn generate_verification_uri(&self, model: &Model) -> String {
         info!("Generating verification exchange URI");
 
-        let host_url = format!("{}{}/verifier", self.host_url(), self.config.get_api_path());
+        let host_url = format!("{}{}/verifier", self.config.get_host(HostType::Http), self.config.get_api_path());
         let pd_uri = format!("{}/pd/{}", host_url, model.state);
         let response_uri = format!("{}/verify/{}", host_url, model.state);
 
@@ -145,15 +145,6 @@ impl VerifierTrait for BasicVerifierService {
 // ===== Internal helpers ======================================================
 
 impl BasicVerifierService {
-    fn host_url(&self) -> String {
-        let host = self.config.get_host(HostType::Http);
-        if self.config.is_local() {
-            host.replace("127.0.0.1", "host.docker.internal")
-        } else {
-            host
-        }
-    }
-
     async fn verify_vp(&self, model: &mut Model, vp_token: &str) -> Outcome<(Vec<String>, String)> {
         info!("Verifying vp");
         model.vpt = Some(vp_token.to_string());

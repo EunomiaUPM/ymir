@@ -16,6 +16,7 @@
  */
 
 mod wallet_trait;
+pub mod fafnir;
 pub mod walt_id;
 
 pub use wallet_trait::WalletTrait;

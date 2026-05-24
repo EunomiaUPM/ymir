@@ -33,7 +33,7 @@ pub use cred_offer_resp::*;
 pub use dids_info::*;
 pub use is_linked::IsLinked;
 pub use jwt::AuthJwtClaims;
-pub use key_definition::KeyDefinition;
+pub use key_definition::{KeyDefinition, KeyInfo};
 pub use matching_vcs::*;
 pub use oidc_uri::OidcUri;
 pub use other::*;

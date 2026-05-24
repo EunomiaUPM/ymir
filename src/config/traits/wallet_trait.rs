@@ -17,10 +17,14 @@
 
 use crate::config::traits::SingleHostTrait;
 use crate::config::types::WalletConfig;
+use crate::types::wallet::WalletInstance;
 
 pub trait WalletConfigTrait {
     fn wallet_config(&self) -> &WalletConfig;
     fn get_wallet_api_url(&self) -> String {
         self.wallet_config().api.get_host()
+    }
+    fn get_wallet(&self) -> &WalletInstance {
+        &self.wallet_config().wallet
     }
 }

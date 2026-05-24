@@ -8,21 +8,16 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
+use crate::config::traits::{HostsConfigTrait, WalletConfigTrait};
 
-pub mod fafnir;
-pub mod waltid;
-
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub enum WalletInstance {
-    #[default]
-    Fafnir,
-    WaltId,
-}
+/// Marker trait que agrupa los traits de config que `FafnirService`
+/// necesita: hosts (para el self-mate/minion) y wallet (URL de la
+/// fafnir-wallet remota).
+pub trait FafnirConfigTrait: HostsConfigTrait + WalletConfigTrait {}

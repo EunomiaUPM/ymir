@@ -47,7 +47,19 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
         Ok(())
     }
     async fn partial_onboard(&self) -> Outcome<()> {
-        self.wallet().partial_onboard().await?;
+        // Importante: aunque la wallet ya esté onboardeada, la BD local
+        // del agente puede estar vacía (p.ej. reiniciamos solo el
+        // ds-agent pero la wallet sigue con su DID en disco). Tenemos
+        // que upsertear el mate/minion también aquí; si no, el
+        // siguiente GET /mates/myself del boot revienta con
+        // "Unable to find model with column 'myself' with value myself".
+        let (mate, minion) = self.wallet().partial_onboard().await?;
+        if let Some(mater) = self.mate() {
+            mater.force_create(mate).await?;
+        }
+        if let Some(gru) = self.minion() {
+            gru.force_create(minion).await?;
+        }
         Ok(())
     }
     async fn link(&self) -> Outcome<()> {
