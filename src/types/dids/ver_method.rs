@@ -60,7 +60,11 @@ impl VerificationMethod {
         };
 
         Self {
-            id: key.id().to_string(),
+            // `<did>#<key.id()>` — identificador del VM dentro del DID
+            // document. Coincide con el `kid` que `Signer::sign_enveloped`
+            // pone en los JWS firmados, así que `Did::resolve_web` puede
+            // localizar el VM al verificar.
+            id: format!("{}#{}", did.id(), key.id()),
             controller,
             material,
             expires: None,

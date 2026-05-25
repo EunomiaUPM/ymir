@@ -18,13 +18,14 @@
 use std::marker::PhantomData;
 
 use super::FafnirConfigTrait;
-use crate::config::traits::{HostsConfigTrait, WalletConfigTrait};
-use crate::config::types::{CommonHostsConfig, WalletConfig};
+use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
+use crate::config::types::{CommonHostsConfig, DidConfig, WalletConfig};
 use crate::types::present::{Missing, Present};
 
 pub struct FafnirConfig {
     hosts: CommonHostsConfig,
     wallet: WalletConfig,
+    did: DidConfig,
 }
 
 impl HostsConfigTrait for FafnirConfig {
@@ -39,52 +40,72 @@ impl WalletConfigTrait for FafnirConfig {
     }
 }
 
-impl FafnirConfigTrait for FafnirConfig {}
-
-pub struct FafnirConfigBuilder<H, W> {
-    hosts: Option<CommonHostsConfig>,
-    wallet: Option<WalletConfig>,
-    _marker: PhantomData<(H, W)>,
+impl DidConfigTrait for FafnirConfig {
+    fn did_config(&self) -> &DidConfig {
+        &self.did
+    }
 }
 
-impl FafnirConfigBuilder<Missing, Missing> {
+impl FafnirConfigTrait for FafnirConfig {}
+
+pub struct FafnirConfigBuilder<H, W, D> {
+    hosts: Option<CommonHostsConfig>,
+    wallet: Option<WalletConfig>,
+    did: Option<DidConfig>,
+    _marker: PhantomData<(H, W, D)>,
+}
+
+impl FafnirConfigBuilder<Missing, Missing, Missing> {
     pub fn new() -> Self {
         Self {
             hosts: None,
             wallet: None,
+            did: None,
             _marker: PhantomData,
         }
     }
 }
 
-impl<H, W> FafnirConfigBuilder<H, W> {
-    pub fn hosts(self, hosts: CommonHostsConfig) -> FafnirConfigBuilder<Present, W> {
+impl<H, W, D> FafnirConfigBuilder<H, W, D> {
+    pub fn hosts(self, hosts: CommonHostsConfig) -> FafnirConfigBuilder<Present, W, D> {
         FafnirConfigBuilder {
             hosts: Some(hosts),
             wallet: self.wallet,
+            did: self.did,
             _marker: PhantomData,
         }
     }
 
-    pub fn wallet(self, wallet: WalletConfig) -> FafnirConfigBuilder<H, Present> {
+    pub fn wallet(self, wallet: WalletConfig) -> FafnirConfigBuilder<H, Present, D> {
         FafnirConfigBuilder {
             hosts: self.hosts,
             wallet: Some(wallet),
+            did: self.did,
+            _marker: PhantomData,
+        }
+    }
+
+    pub fn did(self, did: DidConfig) -> FafnirConfigBuilder<H, W, Present> {
+        FafnirConfigBuilder {
+            hosts: self.hosts,
+            wallet: self.wallet,
+            did: Some(did),
             _marker: PhantomData,
         }
     }
 }
 
-impl FafnirConfigBuilder<Present, Present> {
+impl FafnirConfigBuilder<Present, Present, Present> {
     pub fn build(self) -> FafnirConfig {
         FafnirConfig {
             hosts: self.hosts.unwrap(),
             wallet: self.wallet.unwrap(),
+            did: self.did.unwrap(),
         }
     }
 }
 
-impl Default for FafnirConfigBuilder<Missing, Missing> {
+impl Default for FafnirConfigBuilder<Missing, Missing, Missing> {
     fn default() -> Self {
         Self::new()
     }

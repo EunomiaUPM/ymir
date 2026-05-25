@@ -95,8 +95,10 @@ impl WebDid {
     pub fn id(&self) -> &str {
         &self.id
     }
-    pub fn key_id(&self) -> &str {
-        &self.id
+    /// Fragment del DID (`#xxx`), si el kid lo traía. `None` cuando se
+    /// resuelve un did:web pelado.
+    pub fn key_id(&self) -> Option<&str> {
+        self.key_id.as_deref()
     }
     pub fn domain(&self) -> &str {
         &self.domain

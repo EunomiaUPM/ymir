@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::{HostsConfigTrait, WalletConfigTrait};
+use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 
 /// Marker trait que agrupa los traits de config que `FafnirService`
-/// necesita: hosts (para el self-mate/minion) y wallet (URL de la
-/// fafnir-wallet remota).
-pub trait FafnirConfigTrait: HostsConfigTrait + WalletConfigTrait {}
+/// necesita: hosts (para el self-mate/minion), wallet (URL de la
+/// fafnir-wallet remota) y did (tipo de DID + opciones did:web).
+pub trait FafnirConfigTrait: HostsConfigTrait + WalletConfigTrait + DidConfigTrait {}

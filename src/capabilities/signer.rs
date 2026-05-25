@@ -44,7 +44,11 @@ impl Signer {
 
         let header = serde_json::json!({
             "alg": alg,
-            "kid": ctx.did().id(),
+            // `kid` apunta al verificationMethod concreto dentro del DID
+            // document (formato `<did>#<key-id>`). El verifier hace
+            // `Did::parse_from_kid` y luego busca el VM por ese mismo
+            // id en el doc resuelto.
+            "kid": format!("{}#{}", ctx.did().id(), ctx.key().id()),
             "typ": typ,
             "cty": cty,
         });

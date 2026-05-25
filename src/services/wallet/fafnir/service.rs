@@ -26,14 +26,14 @@ use tracing::{debug, info};
 use urlencoding::decode;
 
 use super::config::FafnirConfig;
-use crate::config::traits::{HostsConfigTrait, WalletConfigTrait};
+use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::HostType;
 use crate::data::entities::{mates, minions};
 use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::services::wallet::WalletTrait;
-use crate::types::dids::{DidBuilder, DidDocument};
+use crate::types::dids::{DidBuilder, DidDocument, DidType, WebDid};
 use crate::types::http::Body;
 use crate::types::issuing::VCCredOffer;
 use crate::types::keys::{Crv, KeyData, Kty};
@@ -140,11 +140,17 @@ impl WalletTrait for FafnirService {
             .await?;
         debug!("FafnirService: key creada (id={})", key_entry.id);
 
-        // 2) POST /dids/new — did:jwk derivado de la key recién creada.
+        // 2) POST /dids/new — el tipo de DID viene del config
+        //    (`did_config.r#type`), mimando lo que hace `WaltIdService`
+        //    en su `register_did`.
         let did_url = format!("{}/dids/new", self.wallet_base());
+        let did_builder = match self.config.get_did_type() {
+            DidType::Jwk => DidBuilder::Jwk,
+            DidType::Web => DidBuilder::Web(build_web_did(&self.config)?),
+        };
         let did_req = DidEntryReq {
             alias: "default".to_string(),
-            r#type: DidBuilder::Jwk,
+            r#type: did_builder,
             keys: vec![key_entry.id.clone()],
             service: None,
         };
@@ -557,6 +563,34 @@ fn key_entry_to_definition(key: &KeyEntry) -> KeyDefinition {
         key_pair: Value::Null,
         keyset_handle: None,
     }
+}
+
+/// Construye un `WebDid` a partir de la `DidConfig` cuando el operador
+/// pide `did:web` como tipo de DID. El id se compone con el formato
+/// estándar `did:web:<domain>[:<path-con-:-separando-segmentos>]`.
+fn build_web_did(config: &FafnirConfig) -> Outcome<WebDid> {
+    let domain = config.get_did_web_domain().ok_or_else(|| {
+        Errors::format(
+            BadFormat::Sent,
+            "did:web requested but config.did.did_web_options.domain is missing",
+            None,
+        )
+    })?;
+    let path = config.get_did_web_path().map(|p| p.to_string());
+
+    let did_id = match path.as_deref().filter(|p| !p.is_empty()) {
+        Some(p) => format!("did:web:{}:{}", domain, p),
+        None => format!("did:web:{}", domain),
+    };
+
+    Ok(WebDid::new(
+        did_id.clone(),
+        did_id,
+        domain.to_string(),
+        path,
+        None,
+        None,
+    ))
 }
 
 /// Decide `(kty, crv)` para mandarlos al endpoint `POST /keys/new` de
