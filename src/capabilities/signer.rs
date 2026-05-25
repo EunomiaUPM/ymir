@@ -42,13 +42,15 @@ impl Signer {
     pub fn sign_enveloped(typ: &str, cty: &str, value: &Value, ctx: &SigningCtx) -> Outcome<Jwt> {
         let alg = &ctx.key().jws_alg();
 
+        // El `kid` se emite siempre como el did pelado, sin fragment.
+        // Como `Did::resolve_web` ignora el id del VM y toma el primero,
+        // no necesitamos `<did>#<key-id>` para localizar la clave. Y
+        // mantener el kid limpio evita que el `holder_did` que guardan
+        // heimdall/ds-agent (a partir del kid del proof JWT) lleve
+        // un `#<uuid-interno>` colgando.
         let header = serde_json::json!({
             "alg": alg,
-            // `kid` apunta al verificationMethod concreto dentro del DID
-            // document (formato `<did>#<key-id>`). El verifier hace
-            // `Did::parse_from_kid` y luego busca el VM por ese mismo
-            // id en el doc resuelto.
-            "kid": format!("{}#{}", ctx.did().id(), ctx.key().id()),
+            "kid": ctx.did().id(),
             "typ": typ,
             "cty": cty,
         });

@@ -59,12 +59,17 @@ impl VerificationMethod {
             public_key_jwk: key.public_jwk(),
         };
 
+        // VM.id alineado con el `kid` que emite `Signer::sign_enveloped`:
+        // con fragment si la `Key` tiene id estable, sin fragment en
+        // caso contrario. Evita generar `<did>#` colgando cuando la
+        // key se construye con id `""`.
+        let vm_id = if key.id().is_empty() {
+            did.id().to_string()
+        } else {
+            format!("{}#{}", did.id(), key.id())
+        };
         Self {
-            // `<did>#<key.id()>` — identificador del VM dentro del DID
-            // document. Coincide con el `kid` que `Signer::sign_enveloped`
-            // pone en los JWS firmados, así que `Did::resolve_web` puede
-            // localizar el VM al verificar.
-            id: format!("{}#{}", did.id(), key.id()),
+            id: vm_id,
             controller,
             material,
             expires: None,

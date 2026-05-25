@@ -183,7 +183,14 @@ impl IssuerTrait for BasicIssuerService {
         // is_active(claims.iat)?;
         has_expired(claims.exp)?;
 
-        model.holder_did = Some(kid);
+        // Defensa en profundidad: si el firmante mete fragment en el
+        // `kid` (`<did>#<key-id>`), guardamos solo el did pelado como
+        // holder. Si no lo recortásemos, el `sub` y
+        // `credentialSubject.id` de la VC emitida acabarían con
+        // `#<uuid-interno>` y la identidad del holder en heimdall/
+        // ds-agent quedaría atada a un identificador efímero.
+        let holder_did = kid.split('#').next().unwrap_or(&kid).to_string();
+        model.holder_did = Some(holder_did);
         model.issuer_did = Some(did.to_string());
         Ok(())
     }
