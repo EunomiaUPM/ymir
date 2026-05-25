@@ -113,25 +113,21 @@ impl Did {
 
         let did_doc: DidDocument = resp.parse_json().await?;
 
-        // El JWT firmado lleva `kid = <did>#<fragment>`, así que aquí
-        // construimos el id completo del VM a buscar. Si por algún
-        // motivo el kid llegó pelado (sin fragment), caemos a buscar
-        // por el did entero como compat — algunos docs (single-VM)
-        // usan ese formato.
-        let target_id = match web_did.key_id() {
-            Some(frag) => format!("{}#{}", web_did.id(), frag),
-            None => web_did.id().to_string(),
-        };
+        // TEMPORAL: en vez de localizar el VM por `<did>#<fragment>`
+        // (que algunos firmantes hoy generan con fragment vacío, p.ej.
+        // `BasicIssuerService::get_sig_context` que construye la `Key`
+        // con id `""`), cogemos el primer VM del doc. Suficiente para
+        // docs single-VM; revisitar cuando el `kid` lleve fragment
+        // estable.
         let method = did_doc
             .verification_method
-            .iter()
-            .find(|m| m.id == target_id)
+            .first()
             .ok_or_else(|| {
                 Errors::format(
                     BadFormat::Received,
                     format!(
-                        "no verificationMethod with id={} in DID document",
-                        target_id
+                        "DID document for {} has no verificationMethod",
+                        web_did.id()
                     ),
                     None,
                 )
