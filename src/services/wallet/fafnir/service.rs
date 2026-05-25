@@ -33,7 +33,7 @@ use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::services::wallet::WalletTrait;
-use crate::types::dids::{DidBuilder, DidDocument, DidType, WebDid};
+use crate::types::dids::{DidBuilder, DidDocument, DidService, DidType, WebDid};
 use crate::types::http::Body;
 use crate::types::issuing::VCCredOffer;
 use crate::types::keys::{Crv, KeyData, Kty};
@@ -61,6 +61,11 @@ pub struct FafnirService {
     client: Arc<dyn ClientTrait>,
     config: FafnirConfig,
     vault: Arc<VaultService>,
+    /// Services que se inyectan en el `did_document` durante el
+    /// onboarding (CredentialIssuer, AuthorizationServer, etc.).
+    /// Vienen del builder de la aplicación (heimdall / ds-agent) y se
+    /// pasan tal cual a `POST /dids/new` en el campo `service`.
+    services: Vec<DidService>,
     /// El trait `WalletTrait::first_wallet_mut` exige devolver un
     /// `MutexGuard<WalletSession>`. Como en fafnir local no hay sesión
     /// real, mantenemos uno sintético para cumplir la firma.
@@ -72,11 +77,13 @@ impl FafnirService {
         config: FafnirConfig,
         client: Arc<dyn ClientTrait>,
         vault: Arc<VaultService>,
+        services: Vec<DidService>,
     ) -> Self {
         Self {
             config,
             client,
             vault,
+            services,
             wallet_session: Arc::new(Mutex::new(WalletSession {
                 account_id: Some("fafnir-local".to_string()),
                 token: None,
@@ -148,11 +155,16 @@ impl WalletTrait for FafnirService {
             DidType::Jwk => DidBuilder::Jwk,
             DidType::Web => DidBuilder::Web(build_web_did(&self.config)?),
         };
+        let services = if self.services.is_empty() {
+            None
+        } else {
+            Some(self.services.clone())
+        };
         let did_req = DidEntryReq {
             alias: "default".to_string(),
             r#type: did_builder,
             keys: vec![key_entry.id.clone()],
-            service: None,
+            service: services,
         };
         let did_entry: DidEntry = self
             .client
