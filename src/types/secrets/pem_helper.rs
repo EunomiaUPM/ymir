@@ -15,7 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod config;
-mod config_trait;
-pub use config::*;
-pub use config_trait::WaltIdConfigTrait;
+use serde::{Deserialize, Serialize};
+use crate::types::keys::{Alg, Crv, Kty};
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct PemHelper {
+    pem: String,
+    crv: Option<Crv>,
+    alg: Alg,
+    kty: Kty,
+}
+
+impl PemHelper {
+    pub fn new(pem: String, crv: Option<Crv>, alg: Alg, kty: Kty) -> Self {
+        Self { pem, crv, alg, kty }
+    }
+    pub fn pem(&self) -> &str {
+        &self.pem
+    }
+    pub fn alg(&self) -> &Alg {
+        &self.alg
+    }
+    pub fn kty(&self) -> &Kty {
+        &self.kty
+    }
+    pub fn crv(&self) -> Option<&Crv> {
+        self.crv.as_ref()
+    }
+}

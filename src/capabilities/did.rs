@@ -17,192 +17,51 @@
 
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
-use crate::types::dids::{DidBuilder, DidDocument, DidType, JwkDid, VerificationMaterial, WebDid};
-use crate::types::keys::{Crv, Key, KeyData, Kty, RetrievedKey, RetrievedKeyData};
-use crate::utils::{HasId, ResponseExt, decode_url_safe_no_pad, http_client};
+use crate::types::dids::{DidDocument, DidType, JwkDid, VerificationMaterial, VerificationMethod, WebDid};
+use crate::utils::{decode_url_safe_no_pad, http_client, ResponseExt, StringOrArr};
 use serde_json::Value;
-use std::str::FromStr;
 
+#[derive(Debug, Clone)]
 pub enum Did {
     Jwk(JwkDid),
     Web(WebDid),
 }
 
-impl HasId for Did {
-    fn id(&self) -> &str {
-        match self {
-            Did::Jwk(j) => &j.id(),
-            Did::Web(w) => &w.id(),
-        }
-    }
-}
 
 impl Did {
-    pub fn parse_from_kid(kid: &str) -> Outcome<Did> {
-        let (did, key_id) = kid.split_once('#').map(|(did, key_id)| (did, Some(key_id.to_string()))).unwrap_or((kid, None));
+    pub fn parse(did: &str) -> Outcome<Did> {
+        let did = did.split_once('#')
+            .map(|(did, _)| did)
+            .unwrap_or(did);
+
         if let Some(rest) = did.strip_prefix("did:web:") {
             let parts: Vec<&str> = rest.split(':').collect();
-
-            let (domain, path) = match parts.as_slice() {
-                [domain] => (domain.to_owned(), None),
-                [domain, path @ ..] => {
-                    let path = path.join("/");
-                    (domain.to_owned(), Some(path))
-                }
-                _ => {
-                    return Err(Errors::format(
-                        BadFormat::Received,
-                        "Invalid DID format",
-                        None,
-                    ));
-                }
+            let (host, path) = match parts.as_slice() {
+                [host] => (*host, None),
+                [host, path @ ..] => (*host, Some(path.join("/"))),
+                _ => return Err(Errors::format(BadFormat::Received, "Invalid DID format", None)),
             };
-
-            let (domain, port) = match domain.split_once("%3A") {
-                Some((domain, port)) => (domain, Some(port.to_owned())),
-                None => (domain, None),
+            let (domain, port) = match host.split_once("%3A") {
+                Some((domain, port)) => (domain.to_owned(), Some(port.to_owned())),
+                None => (host.to_owned(), None),
             };
-            let w = WebDid::new(did, kid, domain.to_owned(), path, port, key_id);
-
-            Ok(Did::Web(w))
+            Ok(Did::Web(WebDid::new(did, domain, path, port)))
         } else if let Some(rest) = did.strip_prefix("did:jwk:") {
-            let j = JwkDid::new(did, kid, rest.to_owned(), key_id);
+            let j = JwkDid::new(did, rest.to_owned());
 
             Ok(Did::Jwk(j))
         } else {
             Err(Errors::not_impl(
-                format!("Did format {kid} not supported"),
+                format!("Did format {did} not supported"),
                 None,
             ))
         }
     }
 
-    pub async fn get_key(&self) -> Outcome<RetrievedKey> {
-        let data = match self {
-            Did::Jwk(jwk) => Self::resolve_jwk(&jwk)?,
-            Did::Web(web) => Self::resolve_web(&web).await?,
-        };
-
-        Ok(RetrievedKey {
-            did: self.id().to_string(),
-            data,
-        })
-    }
-
-    fn resolve_jwk(jwk_did: &JwkDid) -> Outcome<RetrievedKeyData> {
-        let jwk_bytes = decode_url_safe_no_pad(&jwk_did.jwk())?;
-        let jwk_json: Value = serde_json::from_slice(&jwk_bytes)?;
-        Self::resolve_value(&jwk_json)
-    }
-
-    async fn resolve_web(web_did: &WebDid) -> Outcome<RetrievedKeyData> {
-        let url = Self::get_web_url(web_did);
-
-        let resp = http_client().get(&url, None).await?;
-
-        if !resp.status().is_success() {
-            return Err(Errors::petition(
-                &url,
-                "GET",
-                Some(resp.status().clone()),
-                PetitionFailure::HttpStatus(resp.status()),
-                "Error retrieving did:web document",
-                None,
-            ));
-        }
-
-        let did_doc: DidDocument = resp.parse_json().await?;
-
-        // TEMPORAL: en vez de localizar el VM por `<did>#<fragment>`
-        // (que algunos firmantes hoy generan con fragment vacío, p.ej.
-        // `BasicIssuerService::get_sig_context` que construye la `Key`
-        // con id `""`), cogemos el primer VM del doc. Suficiente para
-        // docs single-VM; revisitar cuando el `kid` lleve fragment
-        // estable.
-        let method = did_doc
-            .verification_method
-            .first()
-            .ok_or_else(|| {
-                Errors::format(
-                    BadFormat::Received,
-                    format!(
-                        "DID document for {} has no verificationMethod",
-                        web_did.id()
-                    ),
-                    None,
-                )
-            })?;
-
-        match &method.material {
-            VerificationMaterial::JsonWebKey { public_key_jwk } => {
-                Self::resolve_value(&public_key_jwk)
-            }
-            VerificationMaterial::JsonWebKey2020 { public_key_jwk } => {
-                Self::resolve_value(&public_key_jwk)
-            }
-            VerificationMaterial::Multikey { .. } => {
-                Err(Errors::not_impl(
-                    "Multikey type for verification method not implemented",
-                    None,
-                ))
-                // todo!()
-            }
-        }
-    }
-
-    fn resolve_value(value: &Value) -> Outcome<RetrievedKeyData> {
-        let kty_str = value["kty"]
-            .as_str()
-            .ok_or_else(|| Errors::parse("JWK missing kty", None))?;
-        let Ok(kty) = Kty::from_str(kty_str);
-
-        let crv = value
-            .get("crv")
-            .and_then(|v| v.as_str())
-            .map(|s| Crv::from_str(s).unwrap());
-
-        match (&kty, crv.as_ref()) {
-            (Kty::Okp, Some(Crv::Ed25519)) => RetrievedKeyData::build_ed25519_data(&value),
-            (Kty::Rsa, _) => RetrievedKeyData::build_rsa_data(&value),
-            _ => {
-                let crv = if let Some(crv) = crv {
-                    crv.to_string()
-                } else {
-                    "".to_string()
-                };
-                Err(Errors::not_impl(
-                    format!("unsupported JWK: kty={} crv={:?}", kty, crv),
-                    None,
-                ))
-            }
-        }
-    }
-
-    fn get_web_url(did: &WebDid) -> String {
-        let port = match did.port().as_ref() {
-            Some(port) => format!(":{port}"),
-            None => "".to_string(),
-        };
-        if let Some(path) = &did.path() {
-            format!("https://{}{}/{}/did.json", did.domain(), port, path)
-        } else {
-            format!("https://{}{}/.well-known/did.json", did.domain(), port)
-        }
-    }
-    pub fn create(builder: DidBuilder, keys: &[Key]) -> Outcome<Did> {
-        match builder {
-            DidBuilder::Jwk => {
-                let key = keys.first().ok_or_else(|| {
-                    Errors::format(
-                        BadFormat::Sent,
-                        "did:jwk requires at least one key",
-                        None,
-                    )
-                })?;
-                let did = key.data().to_did_jwk()?;
-                Did::parse_from_kid(&did)
-            }
-            DidBuilder::Web(web) => Ok(Did::Web(web)),
+    pub fn id(&self) -> &str {
+        match self {
+            Did::Jwk(j) => &j.id(),
+            Did::Web(w) => &w.id(),
         }
     }
     pub fn r#type(&self) -> DidType {
@@ -210,5 +69,101 @@ impl Did {
             Did::Jwk(_) => DidType::Jwk,
             Did::Web(_) => DidType::Web,
         }
+    }
+
+    // pub fn create(builder: DidBuilder, keys: &[Key]) -> Outcome<Did> {
+    //     match builder {
+    //         DidBuilder::Jwk => {
+    //             let key = keys.first().ok_or_else(|| {
+    //                 Errors::format(
+    //                     BadFormat::Sent,
+    //                     "did:jwk requires at least one key",
+    //                     None,
+    //                 )
+    //             })?;
+    //             let did = key.data().to_did_jwk()?;
+    //             Did::parse_from_kid(&did)
+    //         }
+    //         DidBuilder::Web(web) => Ok(Did::Web(web)),
+    //     }
+    // }
+
+    pub async fn resolve(&self) -> Outcome<DidDocument> {
+        match self {
+            Did::Jwk(j) => Self::resolve_jwk(j),
+            Did::Web(w) => Self::resolve_web(w).await,
+        }
+    }
+    fn resolve_jwk(did: &JwkDid) -> Outcome<DidDocument> {
+        let jwk_bytes = decode_url_safe_no_pad(did.jwk())?;
+
+        let jwk: Value = serde_json::from_slice(&jwk_bytes)
+            .map_err(|e| Errors::format(
+                BadFormat::Received,
+                format!("Invalid JWK JSON in did:jwk: {e}"),
+                None,
+            ))?;
+
+        let vm_id = format!("{}#0", did.id());
+
+        let vm = VerificationMethod {
+            id: vm_id.clone(),
+            controller: did.id().to_string(),
+            material: VerificationMaterial::JsonWebKey2020 {
+                public_key_jwk: jwk.clone(),
+            },
+            expires: None,
+            revoked: None,
+        };
+
+        Ok(DidDocument {
+            context: StringOrArr::Arr(vec![
+                "https://www.w3.org/ns/did/v1.1".to_string()
+            ]),
+            id: did.id().to_string(),
+            controller: None,
+            also_known_as: None,
+            service: None,
+            verification_method: vec![vm],
+            authentication: None,
+            assertion_method: None,
+            key_agreement: None,
+            capability_invocation: None,
+            capability_delegation: None,
+        })
+    }
+
+    async fn resolve_web(did: &WebDid) -> Outcome<DidDocument> {
+        let url = did.get_web_url();
+
+        let res = http_client().get(&url, None).await?;
+
+
+        if !res.status().is_success() {
+            return Err(Errors::petition(
+                url,
+                "GET",
+                Some(res.status()),
+                PetitionFailure::HttpStatus(res.status()),
+                "did:web resolution failed",
+                None),
+            );
+        }
+
+        let doc: DidDocument = res.parse_json().await?;
+
+        if doc.id != did.id() {
+            return Err(Errors::format(
+                BadFormat::Received,
+                format!(
+                    "DID Document id mismatch: expected {}, got {}",
+                    did.id(),
+                    doc.id
+                ),
+                None,
+            ));
+        }
+
+        Ok(doc)
     }
 }

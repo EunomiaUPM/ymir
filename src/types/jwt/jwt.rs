@@ -17,9 +17,8 @@
 
 use super::JwtHeader;
 use crate::errors::{BadFormat, Errors, Outcome};
-use crate::utils::{decode_url_safe_no_pad, get_claim, get_opt_claim};
+use crate::utils::{decode_url_safe_no_pad};
 use serde::de::DeserializeOwned;
-use serde::Deserialize;
 use serde_json::Value;
 
 #[derive(Debug)]
@@ -31,8 +30,8 @@ pub struct Jwt {
     signing_input_len: usize,
 }
 impl Jwt {
-    pub fn parse(jwt: impl Into<String>) -> Outcome<Self> {
-        let raw = jwt.into();
+    pub fn parse(jwt: &str) -> Outcome<Self> {
+        let raw = jwt.to_string();
         let parts: Vec<&str> = raw.split('.').collect();
         if parts.len() != 3 {
             return Err(Errors::format(
@@ -62,7 +61,7 @@ impl Jwt {
     pub fn header(&self) -> &JwtHeader {
         &self.header
     }
-    pub fn payload(&self) -> &Value {
+    pub fn unverified_payload(&self) -> &Value {
         &self.payload
     }
     pub fn signature(&self) -> &[u8] {
@@ -75,23 +74,9 @@ impl Jwt {
         &self.raw
     }
 
-    pub fn claims<T: DeserializeOwned>(&self) -> Outcome<T> {
+    pub fn unsafe_claims<T: DeserializeOwned>(&self) -> Outcome<T> {
         serde_json::from_value(self.payload.clone())
             .map_err(|e| Errors::parse("claims shape mismatch", Some(Box::new(e))))
-    }
-    pub fn expect_kid(&self) -> Outcome<&str> {
-        self.header
-            .kid
-            .as_deref()
-            .ok_or_else(|| Errors::format(BadFormat::Received, "kid missing in JWS header", None))
-    }
-
-    pub fn claim(&self, path: &[&str]) -> Outcome<String> {
-        get_claim(self.payload(), path)
-    }
-
-    pub fn claim_opt(&self, path: &[&str]) -> Outcome<Option<String>> {
-        get_opt_claim(self.payload(), path)
     }
 }
 

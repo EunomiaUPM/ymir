@@ -16,21 +16,25 @@
  */
 
 use crate::capabilities::Did;
-use crate::types::keys::Key;
+use crate::types::keys::PrivateKey;
 
 pub struct SigningCtx {
     did: Did,
-    key: Key,
+    key: PrivateKey,
+    key_id: String,
 }
 
 impl SigningCtx {
-    pub fn new(did: Did, key: Key) -> Self {
-        SigningCtx { did, key }
+    pub fn new(did: Did, key: PrivateKey, key_id: impl Into<String>) -> Self {
+        SigningCtx { did, key, key_id: key_id.into() }
     }
     pub fn did(&self) -> &Did {
         &self.did
     }
-    pub fn key(&self) -> &Key {
+    pub fn key(&self) -> &PrivateKey {
         &self.key
+    }
+    pub fn key_id(&self) -> &str {
+        &self.key_id
     }
 }

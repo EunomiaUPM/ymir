@@ -15,7 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod config;
-mod config_trait;
-pub use config::*;
-pub use config_trait::FafnirConfigTrait;
+use crate::capabilities::Did;
+use crate::types::dids::DidDocument;
+
+pub struct Identity {
+    did: Did,
+    did_doc: DidDocument,
+    keys: Vec<(String, String)>,
+}
+
+impl Identity {
+    pub fn new(did: Did, did_doc: DidDocument, keys: Vec<(String, String)>) -> Self {
+        Self {
+            did,
+            did_doc,
+            keys,
+
+        }
+    }
+    pub fn did(&self) -> &Did {
+        &self.did
+    }
+    pub fn did_doc(&self) -> &DidDocument {
+        &self.did_doc
+    }
+    pub fn keys(&self) -> &[(String, String)] {
+        &self.keys
+    }
+}

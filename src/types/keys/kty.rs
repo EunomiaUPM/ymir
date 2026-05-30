@@ -15,11 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Kty {
     /// Elliptic Curve — RFC 7518 §6.2
     Ec,
@@ -35,25 +35,7 @@ pub enum Kty {
     Other(String),
 }
 
-impl Serialize for Kty {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
 
-impl<'de> Deserialize<'de> for Kty {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let Ok(kty) = Kty::from_str(&s);
-        Ok(kty)
-    }
-}
 impl Display for Kty {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
@@ -82,3 +64,5 @@ impl FromStr for Kty {
         })
     }
 }
+
+impl_serde_via_str!(Kty);

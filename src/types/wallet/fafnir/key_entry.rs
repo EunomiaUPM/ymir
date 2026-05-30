@@ -16,7 +16,7 @@
  */
 
 use crate::errors::Errors;
-use crate::types::keys::{Crv, Key, KeyData, Kty};
+use crate::types::keys::{Crv, PrivateKey, Kty, Alg};
 use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +25,7 @@ pub struct KeyEntryReq {
     pub alias: String,
     pub kty: Kty,
     pub crv: Option<Crv>,
+    pub alg: Alg,
     pub pem: String,
 }
 
@@ -34,6 +35,7 @@ pub struct KeyEntry {
     pub alias: String,
     pub kty: Kty,
     pub crv: Option<Crv>,
+    pub alg: Alg,
     pub pem: String,
 }
 
@@ -43,26 +45,10 @@ impl HasId for KeyEntry {
     }
 }
 
-impl TryInto<Key> for KeyEntry {
+impl TryInto<PrivateKey> for KeyEntry {
     type Error = Errors;
 
-    fn try_into(self) -> Result<Key, Self::Error> {
-        let data = match (&self.kty, self.crv.as_ref()) {
-            (Kty::Okp, Some(Crv::Ed25519)) => KeyData::build_ed25519(&self.pem)?,
-            (Kty::Rsa, _) => KeyData::build_rsa(&self.pem)?,
-            _ => {
-                let crv = if let Some(crv) = &self.crv.as_ref() {
-                    crv.to_string()
-                } else {
-                    "".to_string()
-                };
-                return Err(Errors::not_impl(
-                    format!("unsupported JWK: kty={} crv={:?}", &self.kty, crv),
-                    None,
-                ));
-            }
-        };
-
-        Ok(Key::new(self.id, data))
+    fn try_into(self) -> Result<PrivateKey, Self::Error> {
+        PrivateKey::try_from_pkcs8_pem(&self.pem, &self.kty, self.crv.as_ref(), &self.alg)
     }
 }

@@ -67,6 +67,10 @@ pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
     })
 }
 
+pub fn encode_url_safe_no_pad(data: impl AsRef<[u8]>) -> String {
+    URL_SAFE_NO_PAD.encode(data)
+}
+
 pub fn read<P>(path: P) -> Outcome<String>
 where
     P: AsRef<Path>,

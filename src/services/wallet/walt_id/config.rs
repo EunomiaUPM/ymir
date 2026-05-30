@@ -17,7 +17,6 @@
 
 use std::marker::PhantomData;
 
-use super::WaltIdConfigTrait;
 use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::DidConfig;
 use crate::config::types::{CommonHostsConfig, WalletConfig};
@@ -47,7 +46,6 @@ impl DidConfigTrait for WaltIdConfig {
     }
 }
 
-impl WaltIdConfigTrait for WaltIdConfig {}
 
 pub struct WaltIdConfigBuilder<H, W, D> {
     hosts: Option<CommonHostsConfig>,

@@ -16,8 +16,8 @@
  */
 
 use serde::{Deserialize, Serialize};
+use crate::types::wallet::wallet_info::WalletInfo;
 
-use crate::types::wallet::waltid::wallet_info::WalletInfo;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WalletSession {
     pub account_id: Option<String>,

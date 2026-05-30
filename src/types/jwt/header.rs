@@ -15,18 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use crate::types::keys::Alg;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JwtHeader {
-    pub alg: String,
+    pub alg: Alg,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub typ: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cty: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kid: Option<String>,
+    pub kid: String,
     #[serde(flatten)]
     pub extra: serde_json::Map<String, Value>,
 }

@@ -23,6 +23,6 @@ pub struct DidPossession {
     pub sub: String,
     pub aud: String,
     pub jti: String,
-    pub iat: u64,
-    pub exp: u64,
+    pub iat: i64,
+    pub exp: i64,
 }

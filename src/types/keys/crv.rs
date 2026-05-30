@@ -15,11 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Crv {
     // EC family
     P256,
@@ -36,25 +36,6 @@ pub enum Crv {
     Other(String),
 }
 
-impl Serialize for Crv {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
-
-impl<'de> Deserialize<'de> for Crv {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let Ok(kty) = Crv::from_str(&s);
-        Ok(kty)
-    }
-}
 
 impl Display for Crv {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -90,3 +71,5 @@ impl FromStr for Crv {
         })
     }
 }
+
+impl_serde_via_str!(Crv);

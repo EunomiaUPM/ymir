@@ -15,6 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
+use serde::{Deserialize, Serialize};
+use crate::types::wallet::waltid::DidsInfo;
 
-pub trait WaltIdConfigTrait: HostsConfigTrait + WalletConfigTrait + DidConfigTrait {}
+#[derive(Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
+pub struct WalletInfo {
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "createdOn")]
+    pub created_on: String,
+    #[serde(rename = "addedOn")]
+    pub added_on: String,
+    pub permission: String, // TODO
+    pub dids: Vec<DidsInfo>,
+}

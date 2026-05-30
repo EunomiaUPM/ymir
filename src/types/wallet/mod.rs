@@ -19,6 +19,11 @@ use serde::{Deserialize, Serialize};
 
 pub mod fafnir;
 pub mod waltid;
+mod identity;
+mod wallet_info;
+
+pub use identity::Identity;
+pub use wallet_info::WalletInfo;
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub enum WalletInstance {

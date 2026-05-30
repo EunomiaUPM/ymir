@@ -17,13 +17,13 @@
 
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::crypto::Canon;
-use crate::types::keys::RetrievedKey;
+use crate::types::keys::{Cryptosuite, PublicKey};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Proof {
     pub r#type: String,
-    pub cryptosuite: String,
+    pub cryptosuite: Cryptosuite,
     #[serde(rename = "verificationMethod")]
     pub verification_method: String,
     #[serde(rename = "proofValue")]
@@ -31,7 +31,6 @@ pub struct Proof {
 }
 
 impl Proof {
-    /// Decode the multibase z-base58btc proofValue into raw signature bytes.
     pub fn signature(&self) -> Outcome<Vec<u8>> {
         let b58 = self.proof_value.strip_prefix('z').ok_or_else(|| {
             Errors::format(
@@ -45,21 +44,8 @@ impl Proof {
             .map_err(|e| Errors::parse("base58 decode of proofValue failed", Some(Box::new(e))))
     }
 
-    /// Ensure the declared cryptosuite is one we support.
-    pub fn ensure_supported_cryptosuite(&self) -> Outcome<()> {
-        match self.cryptosuite.as_str() {
-            "eddsa-jcs-2022" => Ok(()),
-            other => Err(Errors::not_impl(
-                format!("Cryptosuite {other} not implemented"),
-                None,
-            )),
-        }
-    }
 
-    /// Verify this proof against canonical bytes with an already-resolved key.
-    /// Pure: no DID resolution, no IO. Cryptosuite check + decode + verify.
-    pub fn verify_with(&self, key: &RetrievedKey, canon: &Canon) -> Outcome<()> {
-        self.ensure_supported_cryptosuite()?;
+    pub fn verify_with(&self, key: &PublicKey, canon: &Canon) -> Outcome<()> {
         let sig = self.signature()?;
         key.verify_bytes(canon.as_ref(), &sig)
     }

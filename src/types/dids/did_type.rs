@@ -52,16 +52,15 @@ impl FromStr for DidType {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct JwkDid {
     id: String,
-    complete: String,
     jwk: String,
-    key_id: Option<String>,
 }
 
 impl JwkDid {
-    pub fn new(id: impl Into<String>, complete: impl Into<String>, jwk: impl Into<String>, key_id: Option<String>) -> JwkDid {
-        JwkDid { id: id.into(), jwk: jwk.into(), key_id: key_id.into(), complete: complete.into() }
+    pub fn new(id: impl Into<String>, jwk: impl Into<String>) -> JwkDid {
+        JwkDid { id: id.into(), jwk: jwk.into() }
     }
     pub fn id(&self) -> &str {
         &self.id
@@ -74,31 +73,22 @@ impl JwkDid {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WebDid {
     id: String,
-    complete: String,
     domain: String,
     path: Option<String>,
     port: Option<String>,
-    key_id: Option<String>,
 }
 
 impl WebDid {
-    pub fn new(id: impl Into<String>, complete: impl Into<String>, domain: impl Into<String>, path: Option<String>, port: Option<String>, key_id: Option<String>) -> WebDid {
+    pub fn new(id: impl Into<String>, domain: impl Into<String>, path: Option<String>, port: Option<String>) -> WebDid {
         WebDid {
             id: id.into(),
-            complete: complete.into(),
             domain: domain.into(),
             path,
             port,
-            key_id,
         }
     }
     pub fn id(&self) -> &str {
         &self.id
-    }
-    /// Fragment del DID (`#xxx`), si el kid lo traía. `None` cuando se
-    /// resuelve un did:web pelado.
-    pub fn key_id(&self) -> Option<&str> {
-        self.key_id.as_deref()
     }
     pub fn domain(&self) -> &str {
         &self.domain
@@ -108,5 +98,17 @@ impl WebDid {
     }
     pub fn port(&self) -> &Option<String> {
         &self.port
+    }
+
+    pub fn get_web_url(&self) -> String {
+        let port = match self.port().as_ref() {
+            Some(port) => format!(":{port}"),
+            None => "".to_string(),
+        };
+        if let Some(path) = &self.path() {
+            format!("https://{}{}/{}/did.json", self.domain(), port, path)
+        } else {
+            format!("https://{}{}/.well-known/did.json", self.domain(), port)
+        }
     }
 }

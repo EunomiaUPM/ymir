@@ -15,8 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::Arc;
-
 use async_trait::async_trait;
 use chrono::Utc;
 use tracing::info;
@@ -24,7 +22,7 @@ use urlencoding::encode;
 
 use super::super::VerifierTrait;
 use super::config::{BasicVerifierConfig, BasicVerifierConfigTrait};
-use crate::capabilities::Verifier;
+use crate::capabilities::{Did, Kid, Verifier};
 use crate::config::traits::{HostsConfigTrait, VcConfigTrait};
 use crate::config::types::HostType;
 use crate::data::entities::recv_interaction;
@@ -33,19 +31,17 @@ use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::types::gnap::ApprovedCallbackBody;
 use crate::types::http::Body;
-use crate::types::jwt::{Jwt, VcJwtClaimsV1, VcJwtClaimsV2, VPJwtClaims};
-use crate::types::vcs::doc::VcDocument;
-use crate::types::vcs::{VPDef, W3cDataModelVersion};
-use crate::utils::{json_headers, HasId};
+use crate::types::jwt::{Jwt, VPJwtClaims, VCJwtClaims};
+use crate::types::vcs::{VPDef};
+use crate::utils::{has_expired, http_client, is_active, json_headers, HasId};
 
 pub struct BasicVerifierService {
-    client: Arc<dyn ClientTrait>,
     config: BasicVerifierConfig,
 }
 
 impl BasicVerifierService {
-    pub fn new(client: Arc<dyn ClientTrait>, config: BasicVerifierConfig) -> Self {
-        Self { client, config }
+    pub fn new(config: BasicVerifierConfig) -> Self {
+        Self { config }
     }
 }
 
@@ -109,9 +105,9 @@ impl VerifierTrait for BasicVerifierService {
 
     async fn verify_all(&self, ver_model: &mut Model, vp_token: &str) -> Outcome<()> {
         info!("Verifying all");
-        let (vcs, holder) = self.verify_vp(ver_model, vp_token).await?;
+        let (vcs, holder_did) = self.verify_vp(ver_model, vp_token).await?;
         for vc in vcs {
-            self.verify_vc(&vc, &holder).await?;
+            self.verify_vc(&vc, &holder_did).await?;
         }
         info!("VP & VC validated successfully");
         Ok(())
@@ -132,7 +128,7 @@ impl VerifierTrait for BasicVerifierService {
                     interact_ref: model.interact_ref.clone(),
                     hash: model.hash.clone(),
                 };
-                self.client
+                http_client()
                     .post(&model.uri, Some(json_headers()), Body::json(&body)?)
                     .await?;
                 Ok(None)
@@ -145,45 +141,34 @@ impl VerifierTrait for BasicVerifierService {
 // ===== Internal helpers ======================================================
 
 impl BasicVerifierService {
-    async fn verify_vp(&self, model: &mut Model, vp_token: &str) -> Outcome<(Vec<String>, String)> {
+    async fn verify_vp(&self, model: &mut Model, vp_token: &str) -> Outcome<(Vec<String>, Did)> {
         info!("Verifying vp");
         model.vpt = Some(vp_token.to_string());
 
         let jwt = Jwt::parse(vp_token)?;
-        Verifier::verify_enveloped(&jwt, Some(&model.audience)).await?;
+        let (holder_kid, claims) = Verifier::verify_enveloped::<VPJwtClaims>(&jwt, Some(&model.audience)).await?;
 
-        let kid = jwt.expect_kid()?.to_string();
-        let claims: VPJwtClaims = jwt.claims()?;
+        validate_vp_holder(&claims, &holder_kid)?;
+        validate_vp_id(&claims, model)?;
+        validate_nonce(&claims, model)?;
 
-        validate_nonce(model, &claims)?;
-        validate_vp_subject(model, &claims, &kid)?;
-        validate_vp_id(model, &claims)?;
-        // validate_holder(model, &claims)?;
-
+        model.holder = Some(holder_kid.did().id().to_string());
         info!("VP verification successful");
-        Ok((claims.vp.verifiable_credential, kid))
+        Ok((claims.vp.verifiable_credential, holder_kid.did().to_owned()))
     }
 
-    async fn verify_vc(&self, vc_token: &str, holder: &str) -> Outcome<()> {
+    async fn verify_vc(&self, vc_token: &str, holder_did: &Did) -> Outcome<()> {
         info!("Verifying vc");
 
         let jwt = Jwt::parse(vc_token)?;
-        Verifier::verify_enveloped(&jwt, None).await?;
+        let (iss_kid, claims) = Verifier::verify_enveloped::<VCJwtClaims>(&jwt, None).await?;
 
-        let kid = jwt.expect_kid()?.to_string();
-        let model = self
-            .config
-            .get_w3c_data_model()
-            .ok_or_else(|| Errors::not_active("W3c data model", None))?;
-
-        let (iss, sub, jti, vc) = parse_vc_claims(&jwt, &model)?;
-
-        // validate_vc_issuer(&vc, iss.as_deref(), &kid)?;
-        validate_vc_id(&vc, jti.as_deref())?;
-        // validate_vc_sub(&vc, sub.as_deref(), holder)?;
+        validate_vc_issuer(&claims, &iss_kid)?;
+        validate_vc_id(&claims)?;
+        validate_vc_sub(&claims, holder_did)?;
         // TODO: trusted-issuer list once available
-        validate_valid_from(&vc)?;
-        validate_valid_until(&vc)?;
+        validate_valid_from(&claims)?;
+        validate_valid_until(&claims)?;
 
         info!("VC verification successful");
         Ok(())
@@ -192,7 +177,7 @@ impl BasicVerifierService {
 
 // ===== Free validators (pure logic, no `self`) ===============================
 
-fn validate_nonce(model: &Model, claims: &VPJwtClaims) -> Outcome<()> {
+fn validate_nonce(claims: &VPJwtClaims, model: &Model) -> Outcome<()> {
     info!("Validating nonce");
     if model.nonce != claims.nonce {
         return Err(Errors::security("Invalid nonce, it does not match", None));
@@ -201,15 +186,15 @@ fn validate_nonce(model: &Model, claims: &VPJwtClaims) -> Outcome<()> {
     Ok(())
 }
 
-fn validate_vp_subject(model: &mut Model, claims: &VPJwtClaims, kid: &str) -> Outcome<()> {
+fn validate_vp_holder(claims: &VPJwtClaims, holder_kid: &Kid) -> Outcome<()> {
     info!("Validating VP subject");
-    // check_eq_opt(claims.sub.as_deref(), kid, "VPT sub & kid")?;
-    // check_eq_opt(claims.iss.as_deref(), kid, "VPT iss & kid")?;
-    model.holder = Some(kid.to_string());
+    check_eq_opt(claims.sub.as_deref(), holder_kid.did().id(), "VPT sub & kid")?;
+    check_eq_opt(claims.iss.as_deref(), holder_kid.did().id(), "VPT iss & kid")?;
+    check_eq_opt(claims.vp.holder.as_deref(), holder_kid.did().id(), "VP holder & kid")?;
     Ok(())
 }
 
-fn validate_vp_id(model: &Model, claims: &VPJwtClaims) -> Outcome<()> {
+fn validate_vp_id(claims: &VPJwtClaims, model: &Model) -> Outcome<()> {
     info!("Validating vp id");
     if model.id != claims.vp.id {
         return Err(Errors::security("Invalid id, it does not match", None));
@@ -218,52 +203,28 @@ fn validate_vp_id(model: &Model, claims: &VPJwtClaims) -> Outcome<()> {
     Ok(())
 }
 
-fn validate_holder(model: &Model, claims: &VPJwtClaims) -> Outcome<()> {
-    info!("Validating holder");
-    let expected = model
-        .holder
-        .as_deref()
-        .ok_or_else(|| Errors::security("Holder not set in model", None))?;
-    let actual = claims
-        .vp
-        .holder
-        .as_deref()
-        .ok_or_else(|| Errors::format(BadFormat::Received, "vp.holder missing", None))?;
-    if expected != actual {
-        return Err(Errors::security("Invalid holder, it does not match", None));
-    }
-    info!("vp holder matches");
-    Ok(())
-}
 
-fn validate_vc_issuer(vc: &VcDocument, iss: Option<&str>, kid: &str) -> Outcome<()> {
+fn validate_vc_issuer(claims: &VCJwtClaims, issuer_did: &Kid) -> Outcome<()> {
     info!("Validating VC issuer");
-    check_eq_opt(iss, kid, "VCT iss & kid")?;
-    // if vc.issuer.id() != kid {
-    //     return Err(Errors::security(
-    //         "VCT token issuer & kid does not match",
-    //         None,
-    //     ));
-    // }
+    check_eq_opt(claims.iss(), issuer_did.did().id(), "VCT iss & kid")?;
+    if claims.vc_doc().issuer.id() != issuer_did.did().id() {
+        return Err(Errors::security(
+            "VCT token issuer & kid does not match",
+            None,
+        ));
+    }
     info!("VC issuer & kid match");
     Ok(())
 }
 
-fn validate_vc_id(vc: &VcDocument, jti: Option<&str>) -> Outcome<()> {
+fn validate_vc_id(claims: &VCJwtClaims) -> Outcome<()> {
     info!("Validating VC id");
-    if let Some(jti) = jti {
-        if jti != vc.id {
-            return Err(Errors::security("Invalid id, it does not match", None));
-        }
-        info!("VCT jti & VC id match");
-    }
-    Ok(())
+    check_eq_opt(claims.jti(), &claims.vc_doc().id, "VCT jti and vc id")
 }
 
-fn validate_vc_sub(vc: &VcDocument, sub: Option<&str>, holder: &str) -> Outcome<()> {
+fn validate_vc_sub(claims: &VCJwtClaims, holder_did: &Did) -> Outcome<()> {
     info!("Validating VC subject");
-    let cred_sub = vc
-        .credential_subject
+    let cred_sub_id = claims.vc_doc().credential_subject
         .get("id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| {
@@ -274,12 +235,8 @@ fn validate_vc_sub(vc: &VcDocument, sub: Option<&str>, holder: &str) -> Outcome<
             )
         })?;
 
-    if let Some(sub) = sub {
-        if sub != holder {
-            return Err(Errors::security("VCT sub does not match holder", None));
-        }
-    }
-    if cred_sub != holder {
+    check_eq_opt(claims.sub(), holder_did.id(), "VCT sub & and holder from vp")?;
+    if cred_sub_id != holder_did.id() {
         return Err(Errors::security(
             "VC credentialSubject does not match holder",
             None,
@@ -289,9 +246,15 @@ fn validate_vc_sub(vc: &VcDocument, sub: Option<&str>, holder: &str) -> Outcome<
     Ok(())
 }
 
-fn validate_valid_from(vc: &VcDocument) -> Outcome<()> {
+fn validate_valid_from(claims: &VCJwtClaims) -> Outcome<()> {
     info!("Validating issuance date");
-    if let Some(valid_from) = vc.valid_from {
+    if let Some(nbf) = claims.nbf() {
+        is_active(nbf)?;
+    }
+    if let Some(iat) = claims.iat() {
+        is_active(iat)?;
+    }
+    if let Some(valid_from) = claims.vc_doc().valid_from {
         if valid_from > Utc::now() {
             return Err(Errors::security("VC is not valid yet", None));
         }
@@ -300,9 +263,12 @@ fn validate_valid_from(vc: &VcDocument) -> Outcome<()> {
     Ok(())
 }
 
-fn validate_valid_until(vc: &VcDocument) -> Outcome<()> {
+fn validate_valid_until(claims: &VCJwtClaims) -> Outcome<()> {
     info!("Validating expiration date");
-    if let Some(valid_until) = vc.valid_until {
+    if let Some(exp) = claims.exp() {
+        has_expired(exp)?;
+    }
+    if let Some(valid_until) = claims.vc_doc().valid_until {
         if Utc::now() > valid_until {
             return Err(Errors::security("VC has expired", None));
         }
@@ -319,20 +285,4 @@ fn check_eq_opt(actual: Option<&str>, expected: &str, ctx: &str) -> Outcome<()> 
         info!("{ctx} match");
     }
     Ok(())
-}
-
-fn parse_vc_claims(
-    jwt: &Jwt,
-    model: &W3cDataModelVersion,
-) -> Outcome<(Option<String>, Option<String>, Option<String>, VcDocument)> {
-    match model {
-        W3cDataModelVersion::V1 => {
-            let c: VcJwtClaimsV1 = jwt.claims()?;
-            Ok((c.iss, c.sub, c.jti, c.vc))
-        }
-        W3cDataModelVersion::V2 => {
-            let c: VcJwtClaimsV2 = jwt.claims()?;
-            Ok((c.iss, c.sub, c.jti, c.vc))
-        }
-    }
 }

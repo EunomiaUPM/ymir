@@ -44,9 +44,8 @@ pub trait IssuerTrait: Send + Sync + 'static {
         model: &mut issuing::Model,
         cred_req: &CredentialRequest,
         token: &str,
-        did: &str,
     ) -> Outcome<()>;
-    async fn get_sig_context(&self, did: &str) -> Outcome<SigningCtx>;
+    async fn get_sig_context(&self) -> Outcome<SigningCtx>;
     async fn issue_cred(&self, claims: &Value, sig_ctx: &SigningCtx) -> Outcome<GiveVC>;
     fn end(
         &self,

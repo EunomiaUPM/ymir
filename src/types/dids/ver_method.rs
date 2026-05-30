@@ -16,7 +16,7 @@
  */
 
 use crate::capabilities::Did;
-use crate::types::keys::Key;
+use crate::types::keys::PrivateKey;
 use crate::utils::HasId;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -52,26 +52,13 @@ pub enum VerificationMaterial {
 }
 
 impl VerificationMethod {
-    pub fn new(did: &Did, key: &Key) -> Self {
-        let controller = did.id().to_string();
-
-        let material = VerificationMaterial::JsonWebKey {
-            public_key_jwk: key.public_jwk(),
-        };
-
-        // VM.id alineado con el `kid` que emite `Signer::sign_enveloped`:
-        // con fragment si la `Key` tiene id estable, sin fragment en
-        // caso contrario. Evita generar `<did>#` colgando cuando la
-        // key se construye con id `""`.
-        let vm_id = if key.id().is_empty() {
-            did.id().to_string()
-        } else {
-            format!("{}#{}", did.id(), key.id())
-        };
+    pub fn new(did: &Did, key: &PrivateKey, key_id: &str) -> Self {
         Self {
-            id: vm_id,
-            controller,
-            material,
+            id: format!("{}#{}", did.id(), key_id),
+            controller: did.id().to_string(),
+            material: VerificationMaterial::JsonWebKey {
+                public_key_jwk: key.public_jwk(),
+            },
             expires: None,
             revoked: None,
         }

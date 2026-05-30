@@ -18,14 +18,14 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::traits::WalletConfigTrait;
-use crate::config::types::HostConfig;
+use crate::config::types::{CommonHostsConfig};
 use crate::types::wallet::WalletInstance;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct WalletConfig {
     #[serde(default)]
     pub wallet: WalletInstance,
-    pub api: HostConfig,
+    pub api: CommonHostsConfig,
 }
 
 impl WalletConfigTrait for WalletConfig {

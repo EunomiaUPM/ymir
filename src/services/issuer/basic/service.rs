@@ -26,31 +26,33 @@ use urlencoding;
 
 use super::super::IssuerTrait;
 use super::config::{BasicIssuerConfig, BasicIssuerConfigTrait};
-use crate::capabilities::{Did, Signer, Verifier};
+use crate::capabilities::{Kid, Signer, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
-use crate::errors::{BadFormat, Errors, Outcome};
+use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::vault::{VaultService, VaultTrait};
+use crate::types::dids::DidDocument;
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
     TokenRequest, VCCredOffer, WellKnownJwks,
 };
 use crate::types::jwt::Jwt;
-use crate::types::keys::Key;
-use crate::types::secrets::StringHelper;
+use crate::types::keys::PrivateKey;
+use crate::types::secrets::{PemHelper, StringHelper};
 use crate::types::vcs::VcType;
 use crate::types::wallet::fafnir::SigningCtx;
-use crate::utils::{expect_from_env, get_from_opt, has_expired, trim_4_base};
+use crate::utils::{expect_from_env, get_from_opt, has_expired, is_active, trim_4_base};
 
 pub struct BasicIssuerService {
     config: BasicIssuerConfig,
+    did_doc: DidDocument,
     vault: Arc<VaultService>,
 }
 
 impl BasicIssuerService {
-    pub fn new(config: BasicIssuerConfig, vault: Arc<VaultService>) -> Self {
-        Self { config, vault }
+    pub fn new(config: BasicIssuerConfig, vault: Arc<VaultService>, did_doc: DidDocument) -> Self {
+        Self { config, vault, did_doc }
     }
 }
 
@@ -145,7 +147,6 @@ impl IssuerTrait for BasicIssuerService {
         model: &mut issuing::Model,
         cred_req: &CredentialRequest,
         token: &str,
-        did: &str,
     ) -> Outcome<()> {
         info!("Validating credential request");
 
@@ -170,43 +171,32 @@ impl IssuerTrait for BasicIssuerService {
             ));
         }
 
-        println!("{:#?}", cred_req);
-        let proof_jwt = Jwt::parse(cred_req.proof.jwt.clone())?;
-        println!("{:#?}", proof_jwt);
-        println!("{:#?}", model.aud);
+        let proof_jwt = Jwt::parse(&cred_req.proof.jwt)?;
 
-        Verifier::verify_enveloped(&proof_jwt, Some(&model.aud)).await?;
-        let kid = proof_jwt.expect_kid()?.to_string();
-        let claims: DidPossession = proof_jwt.claims()?;
+        let (kid, claims) = Verifier::verify_enveloped::<DidPossession>(&proof_jwt, Some(&model.aud)).await?;
 
         validate_did_possession(&claims, &kid)?;
-        // is_active(claims.iat)?;
+        is_active(claims.iat)?;
         has_expired(claims.exp)?;
 
-        // Defensa en profundidad: si el firmante mete fragment en el
-        // `kid` (`<did>#<key-id>`), guardamos solo el did pelado como
-        // holder. Si no lo recortásemos, el `sub` y
-        // `credentialSubject.id` de la VC emitida acabarían con
-        // `#<uuid-interno>` y la identidad del holder en heimdall/
-        // ds-agent quedaría atada a un identificador efímero.
-        let holder_did = kid.split('#').next().unwrap_or(&kid).to_string();
-        model.holder_did = Some(holder_did);
-        model.issuer_did = Some(did.to_string());
+        model.holder_did = Some(kid.did().id().to_string());
+        model.issuer_did = Some(self.did_doc.id.clone());
         Ok(())
     }
 
-    async fn get_sig_context(&self, did: &str) -> Outcome<SigningCtx> {
+    async fn get_sig_context(&self) -> Outcome<SigningCtx> {
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
-        let priv_key: StringHelper = self.vault.read(None, &priv_key).await?;
-        let key = Key::try_weird_from("", priv_key.data())?;
-        let did = Did::parse_from_kid(did)?;
+        let pem_helper: PemHelper = self.vault.read(None, &priv_key).await?;
+        let key = PrivateKey::try_from(pem_helper)?;
+        let did = self.did_doc.get_did()?;
+        let keys_id = self.did_doc.get_key_ids().first().copied().ok_or_else(|| Errors::missing_action(MissingAction::Key, "No key within did Document", None))?;
 
-        Ok(SigningCtx::new(did, key))
+        Ok(SigningCtx::new(did, key, keys_id))
     }
 
     async fn issue_cred(&self, claims: &Value, sig_ctx: &SigningCtx) -> Outcome<GiveVC> {
         info!("Issuing credential");
-        let vc_jwt = Signer::sign_enveloped("vc+ld+json+jwt", "vc+ld+json", claims, sig_ctx)?;
+        let vc_jwt = Signer::sign_enveloped(sig_ctx, "vc+ld+json+jwt", "vc+ld+json", claims)?;
         Ok(GiveVC {
             format: "jwt_vc_json".to_string(),
             credential: vc_jwt.to_string(),
@@ -256,10 +246,9 @@ impl BasicIssuerService {
 
 // ===== Free helpers ==========================================================
 
-fn validate_did_possession(claims: &DidPossession, kid: &str) -> Outcome<()> {
+fn validate_did_possession(claims: &DidPossession, kid: &Kid) -> Outcome<()> {
     info!("Validating did possession");
-    // if claims.iss != claims.sub || claims.sub != kid {
-    if claims.iss != claims.sub {
+    if claims.iss != kid.did().id() || claims.sub != kid.did().id() {
         return Err(Errors::forbidden("Invalid proof of did possession", None));
     }
     Ok(())

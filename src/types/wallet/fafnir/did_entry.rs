@@ -16,7 +16,7 @@
  */
 
 use crate::types::dids::{DidBuilder, DidDocument, DidService, DidType};
-use crate::types::keys::Key;
+use crate::types::keys::PrivateKey;
 use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
 
@@ -30,18 +30,18 @@ pub struct DidEntryReq {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DidEntry {
-    pub id: String,
+    pub did_id: String,
     pub did: String,
     pub alias: String,
     pub r#default: bool,
     pub r#type: DidType,
-    pub keys: Vec<String>,
+    pub keys: Vec<(String, String)>,
     pub did_document: DidDocument,
 }
 
 impl HasId for DidEntry {
     fn id(&self) -> &str {
-        &self.id
+        &self.did_id
     }
 }
 
@@ -49,6 +49,6 @@ pub struct PreDidEntry {
     pub alias: String,
     pub r#type: DidBuilder,
     pub keys_id: Vec<String>,
-    pub keys: Vec<Key>,
+    pub keys: Vec<PrivateKey>,
     pub service: Option<Vec<DidService>>,
 }

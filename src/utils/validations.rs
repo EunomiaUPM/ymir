@@ -32,8 +32,8 @@ pub fn validate_data(node: &Value, field: &str) -> Outcome<String> {
         .map(|s| s.to_string())
 }
 
-pub fn is_active(iat: u64) -> Outcome<()> {
-    let now = Utc::now().timestamp() as u64;
+pub fn is_active(iat: i64) -> Outcome<()> {
+    let now = Utc::now().timestamp();
     if now >= iat {
         Ok(())
     } else {
@@ -41,57 +41,11 @@ pub fn is_active(iat: u64) -> Outcome<()> {
     }
 }
 
-pub fn has_expired(exp: u64) -> Outcome<()> {
-    let now = Utc::now().timestamp() as u64;
+pub fn has_expired(exp: i64) -> Outcome<()> {
+    let now = Utc::now().timestamp();
     if now <= exp {
         Ok(())
     } else {
         Err(Errors::forbidden("Token has expired", None))
     }
 }
-
-// pub async fn validate_token<T>(
-//     token: &str,
-//     audience: Option<&str>,
-//     client: Arc<dyn ClientTrait>,
-// ) -> Outcome<(TokenData<T>, String)>
-// where
-//     T: Serialize + DeserializeOwned + Debug,
-// {
-//     info!("Validating token");
-//     debug!("{}", token);
-//     let header = jsonwebtoken::decode_header(&token).map_err(|e| {
-//         Errors::format(
-//             BadFormat::Received,
-//             format!("Unable to decode token header: {}", token),
-//             Some(Box::new(e)),
-//         )
-//     })?;
-//     let kid_str = get_from_opt(header.kid.as_ref(), "kid")?;
-//     let alg = header.alg;
-//
-//     let key = Did::get_key(&kid_str, client).await?;
-//     let (kid, _) = Did::split_did_id(&kid_str);
-//
-//     let mut val = Validation::new(alg);
-//
-//     val.required_spec_claims = HashSet::new();
-//     val.validate_exp = false;
-//     val.validate_nbf = true;
-//
-//     match audience {
-//         Some(data) => {
-//             val.validate_aud = true;
-//             val.set_audience(&[&(data)]);
-//         }
-//         None => {
-//             val.validate_aud = false;
-//         }
-//     };
-//
-//     let token_data = jsonwebtoken::decode::<T>(&token, &key, &val)
-//         .map_err(|e| Errors::security("Token signature is incorrect", Some(Box::new(e))))?;
-//
-//     info!("Token signature is correct");
-//     Ok((token_data, kid.to_string()))
-// }

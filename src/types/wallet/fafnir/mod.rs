@@ -19,6 +19,7 @@ mod did_entry;
 mod key_entry;
 mod sig_ctx;
 mod vc_entry;
+mod wallet_info;
 
 pub use did_entry::*;
 pub use key_entry::*;

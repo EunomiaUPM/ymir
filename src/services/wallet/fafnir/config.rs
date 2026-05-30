@@ -17,7 +17,6 @@
 
 use std::marker::PhantomData;
 
-use super::FafnirConfigTrait;
 use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::{CommonHostsConfig, DidConfig, WalletConfig};
 use crate::types::present::{Missing, Present};
@@ -46,7 +45,6 @@ impl DidConfigTrait for FafnirConfig {
     }
 }
 
-impl FafnirConfigTrait for FafnirConfig {}
 
 pub struct FafnirConfigBuilder<H, W, D> {
     hosts: Option<CommonHostsConfig>,

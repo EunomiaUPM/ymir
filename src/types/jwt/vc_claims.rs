@@ -14,13 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-use std::marker::PhantomData;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use crate::types::present::{Missing, Present};
 use crate::types::vcs::doc::VcDocument;
-use crate::types::vcs::W3cDataModelVersion;
 use super::{VcJwtClaimsV1, VcJwtClaimsV2};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -30,101 +26,51 @@ pub enum VCJwtClaims {
     V2(VcJwtClaimsV2),
 }
 
-pub struct VcJwtClaimsBuilder<VC> {
-    w3c_data_model_version: W3cDataModelVersion,
-    iss: Option<String>,
-    sub: Option<String>,
-    jti: Option<String>,
-    nbf: Option<i64>,
-    exp: Option<i64>,
-    iat: Option<i64>,
-    vc: Option<VcDocument>,
-    _marker: PhantomData<VC>,
-}
+impl VCJwtClaims {
+    pub fn iss(&self) -> Option<&str> {
+        match self {
+            VCJwtClaims::V1(claims) => { claims.iss.as_deref() }
+            VCJwtClaims::V2(claims) => { claims.iss.as_deref() }
+        }
+    }
+    pub fn sub(&self) -> Option<&str> {
+        match self {
+            VCJwtClaims::V1(claims) => { claims.sub.as_deref() }
+            VCJwtClaims::V2(claims) => { claims.sub.as_deref() }
+        }
+    }
+    pub fn jti(&self) -> Option<&str> {
+        match self {
+            VCJwtClaims::V1(claims) => { claims.jti.as_deref() }
+            VCJwtClaims::V2(claims) => { claims.jti.as_deref() }
+        }
+    }
+    pub fn nbf(&self) -> Option<i64> {
+        match self {
+            VCJwtClaims::V1(claims) => { claims.nbf }
+            VCJwtClaims::V2(claims) => { claims.nbf }
+        }
+    }
+    pub fn exp(&self) -> Option<i64> {
+        match self {
+            VCJwtClaims::V1(claims) => { claims.exp }
+            VCJwtClaims::V2(claims) => { claims.exp }
+        }
+    }
+    pub fn iat(&self) -> Option<i64> {
+        match self {
+            VCJwtClaims::V1(claims) => { claims.iat }
+            VCJwtClaims::V2(claims) => { claims.iat }
+        }
+    }
 
-impl VcJwtClaimsBuilder<Missing> {
-    pub fn new(w3c_data_model_version: &W3cDataModelVersion) -> Self {
-        VcJwtClaimsBuilder {
-            w3c_data_model_version: w3c_data_model_version.clone(),
-            iss: None,
-            sub: None,
-            jti: None,
-            nbf: None,
-            exp: None,
-            iat: None,
-            vc: None,
-            _marker: PhantomData,
+
+
+    pub fn vc_doc(&self) -> &VcDocument {
+        match self {
+            VCJwtClaims::V1(claims) => { &claims.vc }
+            VCJwtClaims::V2(claims) => { &claims.vc }
         }
     }
 }
 
-impl<VC> VcJwtClaimsBuilder<VC> {
-    pub fn vc(self, vc_document: VcDocument) -> VcJwtClaimsBuilder<Present> {
-        VcJwtClaimsBuilder {
-            w3c_data_model_version: self.w3c_data_model_version,
-            iss: self.iss,
-            sub: self.sub,
-            jti: self.jti,
-            nbf: self.nbf,
-            exp: self.exp,
-            iat: self.iat,
-            vc: Some(vc_document),
-            _marker: PhantomData,
-        }
-    }
-    pub fn iss(mut self, iss: impl Into<String>) -> Self {
-        self.iss = Some(iss.into());
-        self
-    }
-
-    pub fn sub(mut self, sub: impl Into<String>) -> Self {
-        self.sub = Some(sub.into());
-        self
-    }
-
-    pub fn jti(mut self, jti: impl Into<String>) -> Self {
-        self.jti = Some(jti.into());
-        self
-    }
-
-    pub fn nbf(mut self, nbf: DateTime<Utc>) -> Self {
-        self.nbf = Some(nbf.timestamp());
-        self
-    }
-
-    pub fn exp(mut self, exp: DateTime<Utc>) -> Self {
-        self.exp = Some(exp.timestamp());
-        self
-    }
-
-    pub fn iat(mut self, iat: DateTime<Utc>) -> Self {
-        self.iat = Some(iat.timestamp());
-        self
-    }
-}
-
-impl VcJwtClaimsBuilder<Present> {
-    pub fn build(self) -> VCJwtClaims {
-        match self.w3c_data_model_version {
-            W3cDataModelVersion::V1 => VCJwtClaims::V1(VcJwtClaimsV1 {
-                iss: self.iss,
-                sub: self.sub,
-                jti: self.jti,
-                nbf: self.nbf,
-                exp: self.exp,
-                iat: self.iat,
-                vc: self.vc.unwrap(),
-            }),
-
-            W3cDataModelVersion::V2 => VCJwtClaims::V2(VcJwtClaimsV2 {
-                iss: self.iss,
-                sub: self.sub,
-                jti: self.jti,
-                nbf: self.nbf,
-                exp: self.exp,
-                iat: self.iat,
-                vc: self.vc.unwrap(),
-            }),
-        }
-    }
-}

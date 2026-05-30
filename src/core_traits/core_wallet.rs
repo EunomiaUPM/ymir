@@ -21,89 +21,74 @@ use async_trait::async_trait;
 use crate::errors::Outcome;
 use crate::services::repo::subtraits::{MatesTrait, MinionsTrait};
 use crate::services::wallet::WalletTrait;
-use crate::types::dids::{DidDocument};
-use crate::types::wallet::waltid::{
-    DidsInfo, IsLinked, KeyDefinition, OidcUri, WalletCredentials, WalletInfo,
-};
+use crate::types::dids::{DidBuilder, DidDocument};
+use crate::types::secrets::PemHelper;
+use crate::types::wallet::WalletInfo;
+use crate::types::wallet::fafnir::{DidEntry, KeyEntry, VcEntry};
+use crate::types::wallet::waltid::{IsLinked, OidcUri};
 
 #[async_trait]
 pub trait CoreWalletTrait: Send + Sync + 'static {
     fn wallet(&self) -> Arc<dyn WalletTrait>;
     fn mate(&self) -> Option<Arc<dyn MatesTrait>>;
     fn minion(&self) -> Option<Arc<dyn MinionsTrait>>;
-    async fn onboard(&self) -> Outcome<()> {
-        let (mate, minion) = match self.wallet().has_onboarded().await {
-            true => self.wallet().partial_onboard().await?,
-            false => self.wallet().onboard().await?,
-        };
-        if let Some(mater) = self.mate() {
-            mater.force_create(mate).await?;
-        }
 
-        if let Some(gru) = self.minion() {
-            gru.force_create(minion).await?;
-        }
-
-        Ok(())
-    }
-    async fn partial_onboard(&self) -> Outcome<()> {
-        // Importante: aunque la wallet ya esté onboardeada, la BD local
-        // del agente puede estar vacía (p.ej. reiniciamos solo el
-        // ds-agent pero la wallet sigue con su DID en disco). Tenemos
-        // que upsertear el mate/minion también aquí; si no, el
-        // siguiente GET /mates/myself del boot revienta con
-        // "Unable to find model with column 'myself' with value myself".
-        let (mate, minion) = self.wallet().partial_onboard().await?;
-        if let Some(mater) = self.mate() {
-            mater.force_create(mate).await?;
-        }
-        if let Some(gru) = self.minion() {
-            gru.force_create(minion).await?;
-        }
-        Ok(())
-    }
     async fn link(&self) -> Outcome<()> {
-        match self.wallet().has_onboarded().await {
-            true => self.partial_onboard().await,
-            false => self.onboard().await,
+        let (mate, minion) = self.wallet().link().await?;
+        if let Some(mater) = self.mate() {
+            mater.force_create(mate).await?;
         }
+        if let Some(gru) = self.minion() {
+            gru.force_create(minion).await?;
+        }
+        Ok(())
     }
+
     async fn is_linked(&self) -> IsLinked {
-        IsLinked::new(self.wallet().has_onboarded().await)
+        IsLinked::new(self.wallet().get_did().is_ok())
     }
 
     async fn get_did_doc(&self) -> Outcome<DidDocument> {
-        self.wallet().get_did_doc().await
+        self.wallet().get_did_doc()
     }
-    async fn register_key(&self) -> Outcome<()> {
-        self.wallet().register_key().await
+
+    async fn register_key(&self, pem_helper: PemHelper, alias: Option<String>) -> Outcome<KeyEntry> {
+        self.wallet().register_key(&pem_helper, alias).await
     }
-    async fn register_did(&self) -> Outcome<()> {
-        self.wallet().register_did().await?;
-        Ok(())
+
+    async fn register_did(&self, did_builder: DidBuilder, keys_id: Vec<String>, alias: Option<String>) -> Outcome<DidEntry> {
+        self.wallet().register_did(&did_builder, keys_id, alias).await
     }
-    async fn delete_key(&self, key: KeyDefinition) -> Outcome<()> {
-        self.wallet().delete_key(key).await
+
+    async fn delete_key(&self, id: &str) -> Outcome<()> {
+        self.wallet().delete_key(id).await
     }
-    async fn delete_did(&self, did_info: DidsInfo) -> Outcome<()> {
-        self.wallet().delete_did(did_info).await
+
+    async fn delete_did(&self, id: &str) -> Outcome<()> {
+        self.wallet().delete_did(id).await
     }
-    async fn process_oidc4vci(&self, payload: OidcUri) -> Outcome<()> {
-        self.wallet().process_oidc4vci(&payload.uri).await
-    }
-    async fn process_oidc4vp(&self, payload: OidcUri) -> Outcome<Option<String>> {
-        self.wallet().process_oidc4vp(&payload.uri).await
-    }
-    async fn get_wallet_info(&self) -> Outcome<WalletInfo> {
-        self.wallet().get_wallet().await
-    }
-    async fn get_wallet_did(&self) -> Outcome<String> {
-        self.wallet().get_did().await
-    }
+
     async fn delete_credential(&self, id: &str) -> Outcome<()> {
         self.wallet().delete_vc(id).await
     }
-    async fn get_wallet_credentials(&self) -> Outcome<Vec<WalletCredentials>> {
-        self.wallet().retrieve_wallet_credentials().await
+
+    async fn process_oidc4vci(&self, payload: OidcUri) -> Outcome<()> {
+        self.wallet().process_oid4vci(&payload.uri).await
+    }
+
+    async fn process_oidc4vp(&self, payload: OidcUri) -> Outcome<()> {
+        self.wallet().process_oid4vp(&payload.uri).await
+    }
+
+    async fn get_wallet_info(&self) -> Outcome<WalletInfo> {
+        self.wallet().get_wallet().await
+    }
+
+    async fn get_wallet_did(&self) -> Outcome<String> {
+        Ok(self.wallet().get_did()?.id().to_string())
+    }
+
+    async fn get_wallet_credentials(&self) -> Outcome<Vec<VcEntry>> {
+        self.wallet().retrieve_all_vcs().await
     }
 }

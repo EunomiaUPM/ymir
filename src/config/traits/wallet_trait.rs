@@ -15,14 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::SingleHostTrait;
-use crate::config::types::WalletConfig;
+use crate::config::traits::{HostsConfigTrait};
+use crate::config::types::{HostType, WalletConfig};
 use crate::types::wallet::WalletInstance;
 
 pub trait WalletConfigTrait {
     fn wallet_config(&self) -> &WalletConfig;
-    fn get_wallet_api_url(&self) -> String {
-        self.wallet_config().api.get_host()
+    fn get_wallet_api_url(&self, host: HostType) -> String {
+        self.wallet_config().api.get_host(host)
     }
     fn get_wallet(&self) -> &WalletInstance {
         &self.wallet_config().wallet

@@ -17,10 +17,10 @@
 
 use super::{DidService, VerificationMethod};
 use crate::capabilities::Did;
-use crate::types::keys::Key;
-use crate::utils::{HasId, StringOrArr};
-use rayon::prelude::*;
+use crate::types::keys::PrivateKey;
+use crate::utils::{StringOrArr};
 use serde::{Deserialize, Serialize};
+use crate::errors::Outcome;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DidDocument {
@@ -48,10 +48,10 @@ pub struct DidDocument {
 }
 
 impl DidDocument {
-    pub fn base(did: &Did, key: &[Key]) -> DidDocument {
-        let vms: Vec<VerificationMethod> = key
-            .par_iter()
-            .map(|key| VerificationMethod::new(did, key))
+    pub fn base(did: &Did, map: &[(PrivateKey, &str)]) -> DidDocument {
+        let vms: Vec<VerificationMethod> = map
+            .iter()
+            .map(|(key, key_id)| VerificationMethod::new(did, key, key_id))
             .collect();
 
         DidDocument {
@@ -68,6 +68,17 @@ impl DidDocument {
             capability_delegation: None,
         }
     }
+
+    pub fn get_did(&self) -> Outcome<Did> {
+        Did::parse(&self.id)
+    }
+    pub fn get_key_ids(&self) -> Vec<&str> {
+        self.verification_method
+            .iter()
+            .filter_map(|vm| vm.id.rsplit_once('#').map(|(_, frag)| frag))
+            .collect()
+    }
+
     pub fn add_services(mut self, services: Vec<DidService>) -> Self {
         self.service = Some(services);
         self

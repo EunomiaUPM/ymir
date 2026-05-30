@@ -15,11 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::Errors;
+use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
+use crate::errors::Outcome;
+use super::Cryptosuite;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Alg {
     // HMAC con SHA-2 (simétrico) — RFC 7518 §3.2
     Hs256,
@@ -49,6 +51,24 @@ pub enum Alg {
     Other(String),
 }
 
+impl Alg {
+    pub fn from_cryptosuite(suite: &Cryptosuite) -> Self {
+        match suite {
+            Cryptosuite::EddsaRdfc2022
+            | Cryptosuite::EddsaJcs2022 => Alg::EdDsa,
+
+            Cryptosuite::EcdsaRdfc2019
+            | Cryptosuite::EcdsaJcs2019 => Alg::Es256,
+
+            Cryptosuite::RsaSignature2018 => Alg::Rs256,
+
+            Cryptosuite::BbsRdfc2023 => Alg::Other("BBS".to_string()),
+
+            Cryptosuite::Other(s) => Alg::Other(s.clone()),
+        }
+    }
+}
+
 impl Display for Alg {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
@@ -73,7 +93,7 @@ impl Display for Alg {
 }
 
 impl FromStr for Alg {
-    type Err = Errors;
+    type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s {
@@ -95,3 +115,5 @@ impl FromStr for Alg {
         })
     }
 }
+
+impl_serde_via_str!(Alg);

@@ -15,22 +15,50 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
+use serde::de::Error;
+use serde::{Deserialize, Deserializer};
+use serde_json::Value;
 
 use crate::config::traits::DidConfigTrait;
-use crate::types::dids::DidType;
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct DidConfig {
-    pub did: String,
-    pub r#type: DidType,
-    pub did_web_options: Option<DidWebOptions>,
+#[derive(Clone, Debug)]
+pub enum DidConfig {
+    Jwk,
+    Web {
+        web_config: DidWebConfig,
+    },
+    Other(String),
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct DidWebOptions {
+impl<'de> Deserialize<'de> for DidConfig {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = Value::deserialize(deserializer)?;
+
+        let tag = value
+            .get("type")
+            .and_then(Value::as_str)
+            .ok_or_else(|| <D::Error as Error>::missing_field("type"))?;
+
+        Ok(match tag {
+            "Jwk" => DidConfig::Jwk,
+            "Web" => {
+                let web_config =
+                    DidWebConfig::deserialize(&value).map_err(<D::Error as Error>::custom)?;
+                DidConfig::Web { web_config }
+            }
+            other => DidConfig::Other(other.to_string()),
+        })
+    }
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct DidWebConfig {
     pub domain: String,
     pub path: Option<String>,
+    pub port: Option<String>,
 }
 
 impl DidConfigTrait for DidConfig {
@@ -38,3 +66,5 @@ impl DidConfigTrait for DidConfig {
         self
     }
 }
+
+
