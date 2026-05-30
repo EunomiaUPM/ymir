@@ -18,39 +18,30 @@
 use std::sync::{Arc, RwLock};
 
 use async_trait::async_trait;
-use reqwest::{Response, Url};
 use serde::de::DeserializeOwned;
-use serde::Serialize;
-use serde_json::Value;
-use tokio::sync::{Mutex, MutexGuard};
-use tracing::{debug, info};
-use urlencoding::decode;
+use tracing::{info};
 use crate::capabilities::Did;
 use super::config::FafnirConfig;
 use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::{DidConfig, HostType};
 use crate::data::entities::{mates, minions};
-use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
+use crate::errors::{Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::services::wallet::WalletTrait;
-use crate::types::dids::{DidBuilder, DidDocument, DidService, DidType, WebDid};
+use crate::types::dids::{DidBuilder, DidDocument, DidService};
 use crate::types::http::Body;
-use crate::types::issuing::VCCredOffer;
-use crate::types::keys::{Crv, Kty, PrivateKey};
-use crate::types::secrets::{PemHelper, StringHelper};
-use crate::types::vcs::VPDef;
+use crate::types::secrets::{PemHelper};
 use crate::types::wallet::fafnir::{
-    DidEntry, DidEntryReq, KeyEntry, KeyEntryReq, VcBodyType, VcEntry,
+    DidEntry, DidEntryReq, KeyEntry, KeyEntryReq, VcEntry,
 };
 use crate::types::wallet::{Identity, WalletInfo};
-use crate::types::wallet::waltid::{CredentialOfferResponse, DidsInfo, KeyDefinition, KeyInfo, MatchingVCs, OidcUri, WalletCredentials, WalletSession};
-use crate::utils::{expect_from_env, get_query_param, http_client, json_headers, HasId, ResponseExt};
+use crate::types::wallet::waltid::{DidsInfo, OidcUri};
+use crate::utils::{expect_from_env, http_client, json_headers, HasId, ResponseExt};
 
 pub struct FafnirService {
     config: FafnirConfig,
     identity: RwLock<Identity>,
-    vault: Arc<VaultService>,
     services: Vec<DidService>,
 }
 
@@ -60,13 +51,13 @@ impl FafnirService {
         vault: Arc<VaultService>,
         services: Vec<DidService>,
     ) -> Outcome<Self> {
-        let (did_doc, keys) = Self::bootstrap(&config, vault.clone(), &services).await?;
+        let (did_doc, keys) = Self::bootstrap(&config, vault, &services).await?;
         let did = Did::parse(&did_doc.id)?;
         let identity = Identity::new(did, did_doc, keys);
         Ok(Self {
             config,
             identity: RwLock::new(identity),
-            vault,
+
             services,
         })
     }
