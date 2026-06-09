@@ -42,7 +42,4 @@ impl Canon {
     pub fn as_str(&self) -> &str {
         &self.value
     }
-    pub fn as_bytes(&self) -> &[u8] {
-        self.value.as_bytes()
-    }
 }

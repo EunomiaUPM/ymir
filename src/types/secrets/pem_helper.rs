@@ -16,7 +16,8 @@
  */
 
 use serde::{Deserialize, Serialize};
-use crate::types::keys::{Alg, Crv, Kty};
+use crate::errors::Outcome;
+use crate::types::keys::{Alg, Crv, Kty, PrivateKey};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct PemHelper {
@@ -29,6 +30,11 @@ pub struct PemHelper {
 impl PemHelper {
     pub fn new(pem: String, crv: Option<Crv>, alg: Alg, kty: Kty) -> Self {
         Self { pem, crv, alg, kty }
+    }
+
+    pub fn try_from_pem(pem: String) -> Outcome<Self> {
+        let key = PrivateKey::try_from_pkcs8_pem(&pem)?;
+        Ok(Self { pem, crv: key.crv(), alg: key.alg(), kty: key.kty() })
     }
     pub fn pem(&self) -> &str {
         &self.pem

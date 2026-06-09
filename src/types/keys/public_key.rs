@@ -26,6 +26,7 @@ use crate::types::dids::{VerificationMaterial, VerificationMethod};
 use crate::types::keys::{Alg, Crv, Kty};
 use rsa::pkcs1v15::{Signature as PkcsSignature, VerifyingKey as PkcsVerifyingKey};
 use rsa::pss::{Signature as PssSignature, VerifyingKey as PssVerifyingKey};
+use rsa::RsaPublicKey;
 
 pub enum PublicKey {
     RsaRs256 { vk: PkcsVerifyingKey<Sha256> },

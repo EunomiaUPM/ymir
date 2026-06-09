@@ -15,13 +15,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod did_entry;
-mod key_entry;
-mod sig_ctx;
-mod vc_entry;
-mod wallet_info;
+use crate::capabilities::Did;
+use crate::types::keys::PrivateKey;
 
-pub use did_entry::*;
-pub use key_entry::*;
-pub use sig_ctx::SigningCtx;
-pub use vc_entry::*;
+pub struct SigningCtx {
+    did: Did,
+    key: PrivateKey,
+    keys_frag: String,
+}
+
+impl SigningCtx {
+    pub fn new(did: Did, key: PrivateKey, keys_frag: String) -> Self {
+        SigningCtx { did, key, keys_frag }
+    }
+    pub fn did(&self) -> &Did {
+        &self.did
+    }
+    pub fn key(&self) -> &PrivateKey {
+        &self.key
+    }
+    pub fn keys_frag(&self) -> &String {
+        &self.keys_frag
+    }
+}

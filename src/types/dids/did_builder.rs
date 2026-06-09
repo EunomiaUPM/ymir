@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::WebDid;
 use crate::capabilities::Did;
 use crate::errors::{Errors, Outcome};
 use crate::types::keys::PrivateKey;
@@ -55,7 +54,7 @@ impl DidBuilder {
     pub fn build(&self) -> Outcome<Did> {
         let did = match self {
             DidBuilder::Jwk(JwkDidConfig { pem }) => {
-                let key = PrivateKey::from_pkcs8_pem(pem)?;
+                let key = PrivateKey::try_from_pkcs8_pem(pem)?;
                 let jwk = serde_json::to_vec(&key.public_jwk())?;
                 format!("did:jwk:{}", encode_url_safe_no_pad(jwk))
             }

@@ -15,33 +15,40 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::errors::Errors;
+use crate::types::keys::{Crv, PrivateKey, Kty, Alg};
 use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 #[derive(Serialize, Deserialize)]
-pub struct VcEntryReq {
+pub struct NewKeyModel {
+    pub alias: String,
+    pub kty: Kty,
+    pub crv: Option<Crv>,
+    pub alg: Alg,
+    pub pem: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct KeyModel {
     pub id: String,
-    pub r#type: VcBodyType,
+    pub alias: String,
+    pub kty: Kty,
+    pub crv: Option<Crv>,
+    pub alg: Alg,
+    pub pem: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct VcEntry {
-    pub id: String,
-    pub r#type: VcBodyType,
-    #[serde(rename = "parsedDocument")]
-    pub parsed_document: Value,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum VcBodyType {
-    Jwt(String),
-    Value(Value),
-}
-
-impl HasId for VcEntry {
+impl HasId for KeyModel {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl TryInto<PrivateKey> for KeyModel {
+    type Error = Errors;
+
+    fn try_into(self) -> Result<PrivateKey, Self::Error> {
+        PrivateKey::try_from_pkcs8_pem_data(&self.pem, &self.kty, self.crv.as_ref(), &self.alg)
     }
 }

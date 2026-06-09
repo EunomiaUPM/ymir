@@ -26,6 +26,7 @@ mod jwk;
 mod public_key;
 mod serial_key;
 mod crypto_suite;
+mod sig_ctx;
 
 pub use alg::Alg;
 pub use crv::Crv;
@@ -34,3 +35,4 @@ pub use kty::Kty;
 pub use public_key::{PublicKey};
 pub use serial_key::SerialKey;
 pub use crypto_suite::Cryptosuite;
+pub use sig_ctx::SigningCtx;

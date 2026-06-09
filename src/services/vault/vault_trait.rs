@@ -31,15 +31,33 @@ pub trait VaultTrait: Send + Sync + 'static {
     async fn read<T>(&self, mount: Option<&str>, path: &str) -> Outcome<T>
     where
         T: DeserializeOwned + Send;
-    async fn basic_read(&self, mount: &str, path: &str) -> Outcome<Value>;
+    async fn basic_read(&self, mount: Option<&str>, path: &str) -> Outcome<Value>;
     async fn write<T>(&self, mount: Option<&str>, path: &str, secret: &T) -> Outcome<()>
     where
         T: Serialize + Send + Sync;
+    /// Push secrets to the vault.
+    ///
+    /// Real impl: copies the full local secret set (including vault TLS material)
+    /// to the remote vault, honoring `map` if provided. Use during bootstrap of a
+    /// production deployment.
+    ///
+    /// Fake impl: ignores `map` and re-packages the local `.pem` files into JSON
+    /// blobs at their configured paths inside `VAULT_PATH`, because the Fake
+    /// vault is the local filesystem itself.
     async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()>;
+
+    /// Push only the application secrets (no vault TLS material).
+    ///
+    /// Real impl: writes the application secret subset (db.json, wallet.json,
+    /// private/public keys, cert) to the remote vault, honoring `map` if
+    /// provided.
+    ///
+    /// Fake impl: same behavior as `write_all_secrets` — `map` is ignored and
+    /// the local `.pem` files are re-packaged as JSON.
     async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()>;
     async fn check_mount(&self) -> Outcome<()>;
 
-    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
+    async fn get_db_connection<T>(&self, config: &T) -> Outcome<DatabaseConnection>
     where
         T: DatabaseConfigTrait + Send + Sync;
 }

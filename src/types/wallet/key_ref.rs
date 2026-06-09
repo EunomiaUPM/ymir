@@ -15,40 +15,26 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::Errors;
-use crate::types::keys::{Crv, PrivateKey, Kty, Alg};
-use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-pub struct KeyEntryReq {
-    pub alias: String,
-    pub kty: Kty,
-    pub crv: Option<Crv>,
-    pub alg: Alg,
-    pub pem: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyRef {
+    internal: String,
+    fragment: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct KeyEntry {
-    pub id: String,
-    pub alias: String,
-    pub kty: Kty,
-    pub crv: Option<Crv>,
-    pub alg: Alg,
-    pub pem: String,
-}
-
-impl HasId for KeyEntry {
-    fn id(&self) -> &str {
-        &self.id
+impl KeyRef {
+    pub fn new(internal: impl Into<String>, fragment: impl Into<String>) -> Self {
+        Self {
+            internal: internal.into(),
+            fragment: fragment.into(),
+        }
+    }
+    pub fn internal(&self) -> &str {
+        &self.internal
+    }
+    pub fn fragment(&self) -> &str {
+        &self.fragment
     }
 }
 
-impl TryInto<PrivateKey> for KeyEntry {
-    type Error = Errors;
-
-    fn try_into(self) -> Result<PrivateKey, Self::Error> {
-        PrivateKey::try_from_pkcs8_pem(&self.pem, &self.kty, self.crv.as_ref(), &self.alg)
-    }
-}

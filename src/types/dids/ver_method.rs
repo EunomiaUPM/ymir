@@ -17,7 +17,6 @@
 
 use crate::capabilities::Did;
 use crate::types::keys::PrivateKey;
-use crate::utils::HasId;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -52,9 +51,9 @@ pub enum VerificationMaterial {
 }
 
 impl VerificationMethod {
-    pub fn new(did: &Did, key: &PrivateKey, key_id: &str) -> Self {
+    pub fn new(did: &Did, key: &PrivateKey, vm_frag: &str) -> Self {
         Self {
-            id: format!("{}#{}", did.id(), key_id),
+            id: format!("{}#{}", did.id(), vm_frag),
             controller: did.id().to_string(),
             material: VerificationMaterial::JsonWebKey {
                 public_key_jwk: key.public_jwk(),

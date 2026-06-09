@@ -21,14 +21,14 @@ use crate::types::keys::{Alg, PublicKey};
 use crate::capabilities::Did;
 
 pub struct Kid {
-    key_id: String,
+    frag_id: String,
     did: Did,
 }
 
 
 impl Kid {
     pub fn parse(kid: &str) -> Outcome<Kid> {
-        let (did, key_id) = kid.split_once('#').ok_or_else(|| {
+        let (did, frag_id) = kid.split_once('#').ok_or_else(|| {
             Errors::format(
                 BadFormat::Received,
                 format!("Kid '{kid}' must include a fragment"),
@@ -36,7 +36,7 @@ impl Kid {
             )
         })?;
 
-        if key_id.is_empty() {
+        if frag_id.is_empty() {
             return Err(Errors::format(
                 BadFormat::Received,
                 format!("Kid '{kid}' has an empty fragment"),
@@ -45,7 +45,7 @@ impl Kid {
         }
 
         Ok(Kid {
-            key_id: key_id.to_string(),
+            frag_id: frag_id.to_string(),
             did: Did::parse(did)?,
         })
     }
@@ -70,7 +70,7 @@ impl Kid {
             .find(|vm| {
                 vm.id
                     .rsplit_once('#')
-                    .map(|(_, frag)| frag == self.key_id)
+                    .map(|(_, frag)| frag == self.frag_id)
                     .unwrap_or(false)
             })
             .ok_or_else(|| {
@@ -78,7 +78,7 @@ impl Kid {
                     BadFormat::Received,
                     format!(
                         "Verification method '{}' not found in DID Document for {}",
-                        self.key_id,
+                        self.frag_id,
                         self.did.id()
                     ),
                     None,

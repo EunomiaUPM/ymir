@@ -43,8 +43,7 @@ impl Proof {
             .into_vec()
             .map_err(|e| Errors::parse("base58 decode of proofValue failed", Some(Box::new(e))))
     }
-
-
+    
     pub fn verify_with(&self, key: &PublicKey, canon: &Canon) -> Outcome<()> {
         let sig = self.signature()?;
         key.verify_bytes(canon.as_ref(), &sig)

@@ -33,34 +33,40 @@ use vaultrs::sys::mount;
 use crate::config::traits::DatabaseConfigTrait;
 use crate::errors::{Errors, Outcome};
 use crate::services::vault::VaultTrait;
-use crate::types::secrets::{DbSecrets, StringHelper};
+use crate::types::secrets::{DbSecrets, PemHelper, StringHelper};
 use crate::utils::{expect_from_env, read, read_json};
 
 pub struct RealVaultService {
     client: Arc<VaultClient>,
+    mount: String,
+    vault_path: PathBuf,
+    db_path: String,
 }
 
 impl RealVaultService {
-    pub fn new() -> Self {
+    pub fn new() -> Outcome<Self> {
         let settings = VaultClientSettingsBuilder::default()
             .build()
-            .map_err(|e| {
-                Errors::vault("Error building vault", Some(Box::new(e)));
-            })
-            .expect("Error creating vault settings");
+            .map_err(|e| Errors::vault("Error creating vault settings", Some(Box::new(e))))?;
 
         Self::custom(settings)
     }
-    pub fn custom(settings: VaultClientSettings) -> Self {
+    pub fn custom(settings: VaultClientSettings) -> Outcome<Self> {
+        let mount = std::env::var("VAULT_MOUNT")
+            .map_err(|e| Errors::vault("VAULT_MOUNT env var not set", Some(Box::new(e))))?;
+        let vault_path = PathBuf::from(std::env::var("VAULT_PATH")
+            .map_err(|e| Errors::vault("VAULT_PATH env var not set", Some(Box::new(e))))?);
+        let db_path = std::env::var("VAULT_APP_DB")
+            .map_err(|e| Errors::vault("VAULT_APP_DB env var not set", Some(Box::new(e))))?;
         let client = VaultClient::new(settings)
-            .map_err(|e| {
-                Errors::vault("Error building custom vault", Some(Box::new(e)));
-            })
-            .expect("Error creating the client vault");
+            .map_err(|e| Errors::vault("Error building custom vault", Some(Box::new(e))))?;
 
-        Self {
+        Ok(Self {
             client: Arc::new(client),
-        }
+            mount,
+            vault_path,
+            db_path,
+        })
     }
 }
 
@@ -70,110 +76,76 @@ impl VaultTrait for RealVaultService {
     where
         T: DeserializeOwned,
     {
-        let basic_mount = expect_from_env("VAULT_MOUNT");
-        let mount = mount.unwrap_or(&basic_mount);
         let secret = self.basic_read(mount, path).await?;
-        serde_json::from_value(secret)
-            .map_err(|e| Errors::parse("Unable to parse from value", Some(Box::new(e))))
+        Ok(serde_json::from_value(secret)?)
     }
-    async fn basic_read(&self, mount: &str, path: &str) -> Outcome<Value> {
-        let secret = kv2::read(&*self.client, mount, path)
+    async fn basic_read(&self, mount: Option<&str>, path: &str) -> Outcome<Value> {
+        let mount = mount.unwrap_or(&self.mount);
+        kv2::read(&*self.client, mount, path)
             .await
-            .map_err(|e| Errors::vault("Error reading from vault", Some(Box::new(e))))?;
-
-        Ok(secret)
+            .map_err(|e| Errors::vault(format!("Error reading from vault at {mount}/{path}"), Some(Box::new(e))))
     }
     async fn write<T>(&self, mount: Option<&str>, path: &str, secret: &T) -> Outcome<()>
     where
         T: Serialize + Send + Sync,
     {
-        let basic_mount = expect_from_env("VAULT_MOUNT");
-        let mount = mount.unwrap_or(&basic_mount);
+        let mount = mount.unwrap_or(&self.mount);
         kv2::set(&*self.client, mount, path, secret)
             .await
-            .map_err(|e| Errors::vault("Error writing to vault", Some(Box::new(e))))?;
+            .map_err(|e| Errors::vault(format!("Error writing to vault at {mount}/{path}"), Some(Box::new(e))))?;
 
         Ok(())
     }
 
     async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()> {
-        self.check_mount().await?;
-
-        let mount_name = expect_from_env("VAULT_MOUNT");
-        match map {
-            Some(map) => {
-                for (path, secret) in map {
-                    self.write(Some(&mount_name), &path, &secret).await?
-                }
-            }
-            None => {
-                for (path, secret) in Self::secrets()? {
-                    self.write(Some(&mount_name), &path, &secret).await?
-                }
-            }
-        }
-
-        Ok(())
+        let to_write = match map {
+            Some(m) => m,
+            None => self.secrets()?,
+        };
+        self.write_secrets_internal(to_write).await
     }
 
     async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()> {
-        self.check_mount().await?;
-
-        let mount_name = expect_from_env("VAULT_MOUNT");
-        match map {
-            Some(map) => {
-                for (path, secret) in map {
-                    self.write(Some(&mount_name), &path, &secret).await?
-                }
-            }
-            None => {
-                for (path, secret) in Self::local_secrets()? {
-                    self.write(Some(&mount_name), &path, &secret).await?
-                }
-            }
-        }
-
-        Ok(())
+        let to_write = match map {
+            Some(m) => m,
+            None => self.local_secrets()?,
+        };
+        self.write_secrets_internal(to_write).await
     }
 
     async fn check_mount(&self) -> Outcome<()> {
-        let mount_name = expect_from_env("VAULT_MOUNT");
-
         let existing_mounts = mount::list(&*self.client)
             .await
             .map_err(|e| Errors::vault("Error listing mounts", Some(Box::new(e))))?;
 
-        let mount_path = format!("{}/", mount_name);
+        let mount_path = format!("{}/", self.mount);
         if !existing_mounts.contains_key(&mount_path) {
             let mut opts = HashMap::new();
             opts.insert("version".to_string(), "2".to_string());
             let mut data = EnableEngineRequestBuilder::default();
             let data = data.options(opts);
 
-            mount::enable(&*self.client, &mount_name, "kv", Some(data))
+            mount::enable(&*self.client, &self.mount, "kv", Some(data))
                 .await
-                .map_err(|e| Errors::vault("Error creating vault", Some(Box::new(e))))?;
+                .map_err(|e| Errors::vault(format!("Error creating mount '{}'", self.mount), Some(Box::new(e))))?;
 
-            info!("Mount '{}' created successfully", mount_name);
+            info!("Mount '{}' created successfully", self.mount);
         } else {
-            info!("Mount '{}' already exists, omitting step", mount_name);
+            info!("Mount '{}' already exists, omitting step", self.mount);
         }
         Ok(())
     }
 
-    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
+    async fn get_db_connection<T>(&self, config: &T) -> Outcome<DatabaseConnection>
     where
         T: DatabaseConfigTrait + Send + Sync,
     {
-        let db_path = expect_from_env("VAULT_APP_DB");
-
         let db_secrets: DbSecrets = self
-            .read(None, &db_path)
+            .read(None, &self.db_path)
             .await
-            .expect("Not able to retrieve env files");
+            .map_err(|e| Errors::vault("Not able to retrieve env files", Some(Box::new(e))))?;
         Database::connect(config.get_full_db_url(&db_secrets))
-            .await
-            .expect("Database can't connect")
+            .await.map_err(|e| Errors::db("Error connecting to database", Some(Box::new(e))))
     }
 }
 
@@ -205,74 +177,47 @@ impl RealVaultService {
         mapa.insert(vault_path, data);
         Ok(())
     }
-    fn local_secrets() -> Outcome<HashMap<String, Value>> {
-        let mut map: HashMap<String, Value> = HashMap::new();
 
-        let secret_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("secrets");
+    fn insert_priv_pem<T>(mapa: &mut HashMap<String, Value>, to_read: T, env: &str) -> Outcome<()>
+    where
+        T: AsRef<Path>,
+    {
+        let vault_path = expect_from_env(env);
+        let pem = read(to_read)?;
+        let helper = PemHelper::try_from_pem(pem)?;
+        let value = serde_json::to_value(&helper)?;
+        mapa.insert(vault_path, value);
+        Ok(())
+    }
+
+    async fn write_secrets_internal(&self, map: HashMap<String, Value>) -> Outcome<()> {
+        self.check_mount().await?;
+        for (path, secret) in map {
+            self.write(None, &path, &secret).await?;
+        }
+        Ok(())
+    }
+
+    fn local_secrets(&self) -> Outcome<HashMap<String, Value>> {
+        let mut map: HashMap<String, Value> = HashMap::new();
+        let secret_path = self.vault_path.join("secrets");
 
         Self::insert_json(&mut map, secret_path.join("db.json"), "VAULT_APP_DB", true)?;
-        Self::insert_json(
-            &mut map,
-            secret_path.join("wallet.json"),
-            "VAULT_APP_WALLET",
-            false,
-        )?;
-
-        Self::insert_pem(
-            &mut map,
-            secret_path.join("private_key.pem"),
-            "VAULT_APP_PRIV_KEY",
-        )?;
-        Self::insert_pem(
-            &mut map,
-            secret_path.join("public_key.pem"),
-            "VAULT_APP_PUB_PKEY",
-        )?;
+        Self::insert_json(&mut map, secret_path.join("wallet.json"), "VAULT_APP_WALLET", false)?;
+        Self::insert_priv_pem(&mut map, secret_path.join("private_key.pem"), "VAULT_APP_PRIV_KEY")?;
+        Self::insert_pem(&mut map, secret_path.join("public_key.pem"), "VAULT_APP_PUB_PKEY")?;
         Self::insert_pem(&mut map, secret_path.join("cert.pem"), "VAULT_APP_CERT")?;
 
         Ok(map)
     }
-    fn secrets() -> Outcome<HashMap<String, Value>> {
-        let mut map: HashMap<String, Value> = HashMap::new();
 
-        let secret_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("secrets");
-        let config_path = PathBuf::from(expect_from_env("VAULT_PATH")).join("config");
+    fn secrets(&self) -> Outcome<HashMap<String, Value>> {
+        let mut map = self.local_secrets()?;
+        let config_path = self.vault_path.join("config");
 
-        Self::insert_json(&mut map, secret_path.join("db.json"), "VAULT_APP_DB", true)?;
-        Self::insert_json(
-            &mut map,
-            secret_path.join("wallet.json"),
-            "VAULT_APP_WALLET",
-            false,
-        )?;
-
-        Self::insert_pem(
-            &mut map,
-            secret_path.join("private_key.pem"),
-            "VAULT_APP_PRIV_KEY",
-        )?;
-        Self::insert_pem(
-            &mut map,
-            secret_path.join("public_key.pem"),
-            "VAULT_APP_PUB_PKEY",
-        )?;
-        Self::insert_pem(&mut map, secret_path.join("cert.pem"), "VAULT_APP_CERT")?;
-
-        Self::insert_pem(
-            &mut map,
-            config_path.join("vault-cert.pem"),
-            "VAULT_APP_CLIENT_CERT",
-        )?;
-        Self::insert_pem(
-            &mut map,
-            config_path.join("vault-key.pem"),
-            "VAULT_APP_CLIENT_KEY",
-        )?;
-        Self::insert_pem(
-            &mut map,
-            config_path.join("vault-ca.pem"),
-            "VAULT_APP_ROOT_CLIENT_KEY",
-        )?;
+        Self::insert_pem(&mut map, config_path.join("vault-cert.pem"), "VAULT_APP_CLIENT_CERT")?;
+        Self::insert_pem(&mut map, config_path.join("vault-key.pem"), "VAULT_APP_CLIENT_KEY")?;
+        Self::insert_pem(&mut map, config_path.join("vault-ca.pem"), "VAULT_APP_ROOT_CLIENT_KEY")?;
 
         Ok(map)
     }

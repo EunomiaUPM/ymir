@@ -25,20 +25,23 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use crate::config::traits::DatabaseConfigTrait;
-use crate::errors::Outcome;
+use crate::errors::{Errors, Outcome};
 use crate::services::vault::VaultTrait;
-use crate::types::secrets::{DbSecrets, StringHelper};
+use crate::types::secrets::{DbSecrets, PemHelper, StringHelper};
 use crate::utils::{expect_from_env, read, read_json, write_json};
 
 pub struct FakeVaultService {
     path: PathBuf,
+    db_path: String,
 }
 
 impl FakeVaultService {
-    pub fn new() -> FakeVaultService {
-        let path = PathBuf::from(expect_from_env("VAULT_PATH"));
-
-        FakeVaultService { path }
+    pub fn new() -> Outcome<Self> {
+        let path = std::env::var("VAULT_PATH")
+            .map_err(|e| Errors::vault("VAULT_PATH env var not set", Some(Box::new(e))))?;
+        let db_path = std::env::var("VAULT_APP_DB")
+            .map_err(|e| Errors::vault("VAULT_APP_DB env var not set", Some(Box::new(e))))?;
+        Ok(FakeVaultService { path: PathBuf::from(path), db_path })
     }
 }
 
@@ -52,16 +55,17 @@ impl VaultTrait for FakeVaultService {
         read_json(path)
     }
 
-    async fn basic_read(&self, _mount: &str, path: &str) -> Outcome<Value> {
+    async fn basic_read(&self, _mount: Option<&str>, path: &str) -> Outcome<Value> {
         let path = self.path.join(path);
         read_json(path)
     }
 
-    async fn write<T>(&self, _mount: Option<&str>, _path: &str, _secret: &T) -> Outcome<()>
+    async fn write<T>(&self, _mount: Option<&str>, path: &str, secret: &T) -> Outcome<()>
     where
         T: Serialize + Send + Sync,
     {
-        Ok(())
+        let path = self.path.join(path);
+        write_json(path, secret)
     }
 
     async fn write_all_secrets(&self, _map: Option<HashMap<String, Value>>) -> Outcome<()> {
@@ -76,17 +80,15 @@ impl VaultTrait for FakeVaultService {
         Ok(())
     }
 
-    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
+    async fn get_db_connection<T>(&self, config: &T) -> Outcome<DatabaseConnection>
     where
         T: DatabaseConfigTrait + Send + Sync,
     {
-        let db_path = expect_from_env("VAULT_APP_DB");
-        let path = self.path.join(db_path);
+        let path = self.path.join(&self.db_path);
 
-        let db_secrets: DbSecrets = read_json(path).expect("VAULT_app secret can't be read");
+        let db_secrets: DbSecrets = read_json(path)?;
         Database::connect(config.get_full_db_url(&db_secrets))
-            .await
-            .expect("Database can't connect")
+            .await.map_err(|e| Errors::db("Error connecting to database", Some(Box::new(e))))
     }
 }
 
@@ -96,12 +98,12 @@ impl FakeVaultService {
         let pub_key = expect_from_env("VAULT_APP_PUB_PKEY");
         let cert = expect_from_env("VAULT_APP_CERT");
 
-        self.write_pem(&priv_key)?;
+        self.write_priv_key_pem(&priv_key)?;
         self.write_pem(&pub_key)?;
         self.write_pem(&cert)
     }
     fn write_pem(&self, json_file: &str) -> Outcome<()> {
-        let pem_file = Self::pem_to_json_extension(&json_file);
+        let pem_file = Self::json_to_pem_extension(&json_file);
         let path = self.path.join(pem_file);
         let pem = read(path)?;
 
@@ -109,7 +111,14 @@ impl FakeVaultService {
 
         write_json(self.path.join(json_file), &value)
     }
-    pub fn pem_to_json_extension(s: &str) -> String {
+    fn write_priv_key_pem(&self, json_file: &str) -> Outcome<()> {
+        let pem_file = Self::json_to_pem_extension(json_file);
+        let path = self.path.join(pem_file);
+        let pem = read(path)?;
+        let value = PemHelper::try_from_pem(pem)?;
+        write_json(self.path.join(json_file), &value)
+    }
+    pub fn json_to_pem_extension(s: &str) -> String {
         s.replace(".json", ".pem")
     }
 }

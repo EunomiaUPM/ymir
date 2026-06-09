@@ -15,17 +15,36 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use chrono::{DateTime, Utc};
+use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
-use crate::types::wallet::waltid::DidsInfo;
+use serde_json::Value;
 
-#[derive(Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
-pub struct WalletInfo {
+#[derive(Serialize, Deserialize)]
+pub struct NewVcModel {
     pub id: String,
-    pub name: String,
-    #[serde(rename = "createdOn")]
-    pub created_on: String,
-    #[serde(rename = "addedOn")]
-    pub added_on: String,
-    pub permission: String, // TODO
-    pub dids: Vec<DidsInfo>,
+    pub r#type: VcBodyType,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct VcModel {
+    pub id: String,
+    pub r#type: VcBodyType,
+    #[serde(rename = "parsedDocument")]
+    pub parsed_document: Value,
+    #[serde(rename = "addedOn", default, skip_serializing_if = "Option::is_none")]
+    pub added_on: Option<DateTime<Utc>>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum VcBodyType {
+    Jwt(String),
+    Value(Value),
+}
+
+impl HasId for VcModel {
+    fn id(&self) -> &str {
+        &self.id
+    }
 }

@@ -17,12 +17,19 @@
 
 use serde::{Deserialize, Serialize};
 
-pub mod fafnir;
 pub mod waltid;
+mod did_entry;
 mod identity;
+mod key_entry;
+mod key_ref;
+mod vc_entry;
 mod wallet_info;
 
+pub use did_entry::*;
 pub use identity::Identity;
+pub use key_entry::*;
+pub use key_ref::KeyRef;
+pub use vc_entry::*;
 pub use wallet_info::WalletInfo;
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]

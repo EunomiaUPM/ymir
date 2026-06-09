@@ -21,7 +21,7 @@ use async_trait::async_trait;
 use crate::capabilities::Did;
 use crate::types::dids::{DidBuilder, DidDocument};
 use crate::types::secrets::PemHelper;
-use crate::types::wallet::fafnir::{DidEntry, KeyEntry, VcEntry};
+use crate::types::wallet::{DidModel, KeyModel, VcModel};
 use crate::types::wallet::WalletInfo;
 
 #[async_trait]
@@ -33,16 +33,16 @@ pub trait WalletTrait: Send + Sync + 'static {
     fn get_did(&self) -> Outcome<Did>;
     fn get_did_doc(&self) -> Outcome<DidDocument>;
     // RETRIEVE FROM WALLET
-    async fn retrieve_did(&self, id: &str) -> Outcome<DidEntry>;
-    async fn retrieve_default_did(&self) -> Outcome<DidEntry>;
-    async fn retrieve_all_dids(&self) -> Outcome<Vec<DidEntry>>;
-    async fn retrieve_key(&self, id: &str) -> Outcome<KeyEntry>;
-    async fn retrieve_all_keys(&self) -> Outcome<Vec<KeyEntry>>;
-    async fn retrieve_vc(&self, id: &str) -> Outcome<VcEntry>;
-    async fn retrieve_all_vcs(&self) -> Outcome<Vec<VcEntry>>;
+    async fn retrieve_did(&self, id: &str) -> Outcome<DidModel>;
+    async fn retrieve_default_did(&self) -> Outcome<DidModel>;
+    async fn retrieve_all_dids(&self) -> Outcome<Vec<DidModel>>;
+    async fn retrieve_key(&self, id: &str) -> Outcome<KeyModel>;
+    async fn retrieve_all_keys(&self) -> Outcome<Vec<KeyModel>>;
+    async fn retrieve_vc(&self, id: &str) -> Outcome<VcModel>;
+    async fn retrieve_all_vcs(&self) -> Outcome<Vec<VcModel>>;
     // REGISTER STUFF IN WALLET
-    async fn register_key(&self, pem_helper: &PemHelper, alias: Option<String>) -> Outcome<KeyEntry>;
-    async fn register_did(&self, did_builder: &DidBuilder, keys_id: Vec<String>, alias: Option<String>) -> Outcome<DidEntry>;
+    async fn register_key(&self, pem_helper: &PemHelper, alias: Option<String>) -> Outcome<KeyModel>;
+    async fn register_did(&self, did_builder: &DidBuilder, keys_id: Vec<String>, alias: Option<String>) -> Outcome<DidModel>;
     async fn set_default_did(&self, did: Did) -> Outcome<()>;
     // DELETE STUFF FROM WALLET
     async fn delete_key(&self, id: &str) -> Outcome<()>;

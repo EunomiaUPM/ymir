@@ -18,7 +18,6 @@
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
-use crate::errors::Outcome;
 use super::Cryptosuite;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

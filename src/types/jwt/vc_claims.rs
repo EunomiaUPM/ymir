@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-use chrono::{DateTime, Utc};
+
 use serde::{Deserialize, Serialize};
 use crate::types::vcs::doc::VcDocument;
 use super::{VcJwtClaimsV1, VcJwtClaimsV2};

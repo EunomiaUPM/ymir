@@ -20,16 +20,16 @@ use crate::types::crypto::{Canon, Proof};
 use crate::types::jwt::{Jwt, JwtHeader};
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde_json::Value;
-use crate::types::wallet::fafnir::SigningCtx;
+use crate::types::keys::SigningCtx;
 
 pub struct Signer;
 
 impl Signer {
-    pub fn sign_embed(sigctx: &SigningCtx, canonical: &Canon) -> Outcome<Proof> {
-        let cryptosuite = sigctx.key().cryptosuite()?;
-        let sig_bytes = sigctx.key().sign_bytes(canonical.as_ref())?;
+    pub fn sign_embed(sig_ctx: &SigningCtx, canonical: &Canon) -> Outcome<Proof> {
+        let cryptosuite = sig_ctx.key().cryptosuite()?;
+        let sig_bytes = sig_ctx.key().sign_bytes(canonical.as_ref())?;
         let proof_value = format!("z{}", bs58::encode(&sig_bytes).into_string());
-        let verification_method = format!("{}#{}", sigctx.did().id(), sigctx.key_id());
+        let verification_method = format!("{}#{}", sig_ctx.did().id(), sig_ctx.keys_frag());
 
         Ok(Proof {
             r#type: "DataIntegrityProof".to_string(),
@@ -39,10 +39,10 @@ impl Signer {
         })
     }
 
-    pub fn sign_enveloped(sigctx: &SigningCtx, typ: &str, cty: &str, value: &Value) -> Outcome<Jwt> {
-        let kid = format!("{}#{}", sigctx.did().id(), sigctx.key_id());
+    pub fn sign_enveloped(sig_ctx: &SigningCtx, typ: &str, cty: &str, value: &Value) -> Outcome<Jwt> {
+        let kid = format!("{}#{}", sig_ctx.did().id(), sig_ctx.keys_frag());
         let header = JwtHeader {
-            alg: sigctx.key().alg(),
+            alg: sig_ctx.key().alg(),
             typ: Some(typ.to_string()),
             cty: Some(cty.to_string()),
             kid,
@@ -57,7 +57,7 @@ impl Signer {
         let payload_b64 = URL_SAFE_NO_PAD.encode(&payload_bytes);
 
         let signing_input = format!("{header_b64}.{payload_b64}");
-        let sig_bytes = sigctx.key().sign_bytes(signing_input.as_bytes())?;
+        let sig_bytes = sig_ctx.key().sign_bytes(signing_input.as_bytes())?;
         let sig_b64 = URL_SAFE_NO_PAD.encode(&sig_bytes);
 
         let jwt = format!("{signing_input}.{sig_b64}");

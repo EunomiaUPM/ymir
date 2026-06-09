@@ -28,7 +28,7 @@ use crate::errors::AppResult;
 use crate::types::dids::{DidBuilder, DidDocument};
 use crate::types::secrets::PemHelper;
 use crate::types::wallet::WalletInfo;
-use crate::types::wallet::fafnir::VcEntry;
+use crate::types::wallet::VcModel;
 use crate::types::wallet::waltid::{IsLinked, OidcUri};
 use crate::utils::extract_payload;
 
@@ -158,7 +158,7 @@ impl WalletRouter {
 
     async fn get_wallet_credentials(
         State(holder): State<Arc<dyn CoreWalletTrait>>,
-    ) -> AppResult<Json<Vec<VcEntry>>> {
+    ) -> AppResult<Json<Vec<VcModel>>> {
         Ok(Json(holder.get_wallet_credentials().await?))
     }
 }

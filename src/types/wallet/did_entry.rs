@@ -15,13 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::KeyRef;
 use crate::types::dids::{DidBuilder, DidDocument, DidService, DidType};
 use crate::types::keys::PrivateKey;
 use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DidEntryReq {
+pub struct NewDidModel {
     pub alias: String,
     pub r#type: DidBuilder,
     pub keys: Vec<String>,
@@ -29,17 +30,17 @@ pub struct DidEntryReq {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DidEntry {
+pub struct DidModel {
     pub did_id: String,
     pub did: String,
     pub alias: String,
     pub r#default: bool,
     pub r#type: DidType,
-    pub keys: Vec<(String, String)>,
+    pub keys: Vec<KeyRef>,
     pub did_document: DidDocument,
 }
 
-impl HasId for DidEntry {
+impl HasId for DidModel {
     fn id(&self) -> &str {
         &self.did_id
     }

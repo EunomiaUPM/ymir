@@ -22,6 +22,7 @@ use ed25519_dalek::{SigningKey as Ed25519SigningKey};
 use rsa::pkcs8::{DecodePrivateKey};
 use rsa::pss::{SigningKey as PssSigningKey};
 use rsa::pkcs1v15::{SigningKey as PkcsSigningKey};
+use rsa::RsaPrivateKey;
 use rsa::signature::{Keypair, RandomizedSigner, SignatureEncoding};
 use rsa::signature::Signer;
 use serde_json::Value;
@@ -41,18 +42,18 @@ pub enum PrivateKey {
 }
 
 impl PrivateKey {
-    pub fn from_pkcs8_pem(pem: &str) -> Outcome<Self> {
+    pub fn try_from_pkcs8_pem(pem: &str) -> Outcome<Self> {
         if let Ok(sk) = Ed25519SigningKey::from_pkcs8_pem(pem) {
             return Ok(PrivateKey::Ed25519 { sk });
         }
-        if let Ok(key) = rsa::RsaPrivateKey::from_pkcs8_pem(pem) {
+        if let Ok(key) = RsaPrivateKey::from_pkcs8_pem(pem) {
             return Ok(PrivateKey::RsaRs256 { sk: PkcsSigningKey::<Sha256>::new(key) });
         }
         Err(Errors::format(BadFormat::Received,
                            "PEM is not a supported Ed25519/RSA PKCS#8", None))
     }
 
-    pub fn try_from_pkcs8_pem(
+    pub fn try_from_pkcs8_pem_data(
         pem: &str,
         kty: &Kty,
         crv: Option<&Crv>,
@@ -158,7 +159,7 @@ impl TryFrom<PemHelper> for PrivateKey {
     type Error = Errors;
 
     fn try_from(helper: PemHelper) -> Result<Self, Self::Error> {
-        Self::try_from_pkcs8_pem(helper.pem(), helper.kty(), helper.crv(), helper.alg())
+        Self::try_from_pkcs8_pem_data(helper.pem(), helper.kty(), helper.crv(), helper.alg())
     }
 }
 

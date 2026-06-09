@@ -32,27 +32,26 @@ use crate::config::types::HostType;
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
 use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::vault::{VaultService, VaultTrait};
-use crate::types::dids::DidDocument;
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
     TokenRequest, VCCredOffer, WellKnownJwks,
 };
 use crate::types::jwt::Jwt;
-use crate::types::keys::PrivateKey;
+use crate::types::keys::{PrivateKey, SigningCtx};
 use crate::types::secrets::{PemHelper, StringHelper};
 use crate::types::vcs::VcType;
-use crate::types::wallet::fafnir::SigningCtx;
+use crate::types::wallet::Identity;
 use crate::utils::{expect_from_env, get_from_opt, has_expired, is_active, trim_4_base};
 
 pub struct BasicIssuerService {
     config: BasicIssuerConfig,
-    did_doc: DidDocument,
+    identity: Identity,
     vault: Arc<VaultService>,
 }
 
 impl BasicIssuerService {
-    pub fn new(config: BasicIssuerConfig, vault: Arc<VaultService>, did_doc: DidDocument) -> Self {
-        Self { config, vault, did_doc }
+    pub fn new(config: BasicIssuerConfig, vault: Arc<VaultService>, identity: Identity) -> Self {
+        Self { config, vault, identity }
     }
 }
 
@@ -180,23 +179,21 @@ impl IssuerTrait for BasicIssuerService {
         has_expired(claims.exp)?;
 
         model.holder_did = Some(kid.did().id().to_string());
-        model.issuer_did = Some(self.did_doc.id.clone());
+        model.issuer_did = Some(self.identity.did().id().to_string());
         Ok(())
     }
 
-    async fn get_sig_context(&self) -> Outcome<SigningCtx> {
+    async fn issue_cred(&self, claims: &Value) -> Outcome<GiveVC> {
+        info!("Issuing credential");
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
         let pem_helper: PemHelper = self.vault.read(None, &priv_key).await?;
         let key = PrivateKey::try_from(pem_helper)?;
-        let did = self.did_doc.get_did()?;
-        let keys_id = self.did_doc.get_key_ids().first().copied().ok_or_else(|| Errors::missing_action(MissingAction::Key, "No key within did Document", None))?;
+        let did = self.identity.did().clone();
+        let keys_id = self.identity.keys_id().first().cloned().ok_or_else(|| Errors::missing_action(MissingAction::Key, "No key within did Document", None))?;
 
-        Ok(SigningCtx::new(did, key, keys_id))
-    }
+        let sig_ctx = SigningCtx::new(did, key, keys_id.fragment().to_string());
 
-    async fn issue_cred(&self, claims: &Value, sig_ctx: &SigningCtx) -> Outcome<GiveVC> {
-        info!("Issuing credential");
-        let vc_jwt = Signer::sign_enveloped(sig_ctx, "vc+ld+json+jwt", "vc+ld+json", claims)?;
+        let vc_jwt = Signer::sign_enveloped(&sig_ctx, "vc+ld+json+jwt", "vc+ld+json", claims)?;
         Ok(GiveVC {
             format: "jwt_vc_json".to_string(),
             credential: vc_jwt.to_string(),

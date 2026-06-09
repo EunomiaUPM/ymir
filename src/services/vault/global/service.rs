@@ -46,7 +46,7 @@ impl VaultTrait for VaultService {
         }
     }
 
-    async fn basic_read(&self, mount: &str, path: &str) -> Outcome<Value> {
+    async fn basic_read(&self, mount: Option<&str>, path: &str) -> Outcome<Value> {
         match self {
             VaultService::Real(v) => v.basic_read(mount, path).await,
             VaultService::Fake(v) => v.basic_read(mount, path).await,
@@ -84,7 +84,7 @@ impl VaultTrait for VaultService {
         }
     }
 
-    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
+    async fn get_db_connection<T>(&self, config: &T) -> Outcome<DatabaseConnection>
     where
         T: DatabaseConfigTrait + Send + Sync,
     {

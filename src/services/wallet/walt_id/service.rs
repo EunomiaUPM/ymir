@@ -25,6 +25,8 @@ use serde_json::Value;
 use tokio::sync::Mutex;
 use tracing::{debug, info, warn};
 use urlencoding::decode;
+use chrono::{DateTime, Utc};
+use std::str::FromStr;
 
 use crate::capabilities::Did;
 use super::config::WaltIdConfig;
@@ -36,11 +38,12 @@ use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
 use crate::services::vault::global::VaultService;
-use crate::types::dids::{DidBuilder, DidDocument, DidService};
+use crate::types::dids::{DidBuilder, DidDocument, DidService, DidType};
+use crate::types::keys::{Alg, Crv, Kty};
 use crate::types::http::Body;
-use crate::types::secrets::{PemHelper, SemiWalletSecrets, StringHelper};
+use crate::types::secrets::{PemHelper, SemiWalletSecrets};
 use crate::types::vcs::VPDef;
-use crate::types::wallet::fafnir::{DidEntry, KeyEntry, VcEntry};
+use crate::types::wallet::{DidModel, KeyModel, KeyRef, VcBodyType, VcModel};
 use crate::types::wallet::{Identity, WalletInfo};
 use crate::types::wallet::waltid::{
     AuthJwtClaims, CredentialOfferResponse, DidsInfo, KeyDefinition, MatchVCsRequest, MatchingVCs,
@@ -131,40 +134,103 @@ impl WalletTrait for WaltIdService {
             .ok_or_else(|| Errors::missing_action(MissingAction::Did, "wallet not linked yet", None))
     }
 
-    async fn retrieve_did(&self, _id: &str) -> Outcome<DidEntry> {
-        Err(Errors::not_impl("walt-id retrieve_did: walt-id<->fafnir type mapping pending", None))
+    async fn retrieve_did(&self, id: &str) -> Outcome<DidModel> {
+        let wallet = self.get_wallet().await?;
+        let path = format!("/wallet/{}/dids/{}", wallet.id, id);
+        let res = self.request("GET", &path, Body::None, true, true, "Petition to retrieve did failed").await?;
+        let info: DidsInfo = res.parse_json().await?;
+        dids_info_to_did_model(info)
     }
 
-    async fn retrieve_default_did(&self) -> Outcome<DidEntry> {
-        Err(Errors::not_impl("walt-id retrieve_default_did: walt-id<->fafnir type mapping pending", None))
+    async fn retrieve_default_did(&self) -> Outcome<DidModel> {
+        let wallet = self.get_wallet().await?;
+        let info = wallet.dids.iter().find(|d| d.default).cloned()
+            .ok_or_else(|| Errors::missing_action(MissingAction::Did, "No default did", None))?;
+        dids_info_to_did_model(info)
     }
 
-    async fn retrieve_all_dids(&self) -> Outcome<Vec<DidEntry>> {
-        Err(Errors::not_impl("walt-id retrieve_all_dids: walt-id<->fafnir type mapping pending", None))
+    async fn retrieve_all_dids(&self) -> Outcome<Vec<DidModel>> {
+        let wallet = self.get_wallet().await?;
+        wallet.dids.into_iter().map(dids_info_to_did_model).collect()
     }
 
-    async fn retrieve_key(&self, _id: &str) -> Outcome<KeyEntry> {
-        Err(Errors::not_impl("walt-id retrieve_key: walt-id<->fafnir type mapping pending", None))
+    async fn retrieve_key(&self, id: &str) -> Outcome<KeyModel> {
+        let wallet = self.get_wallet().await?;
+        let path = format!("/wallet/{}/keys/{}", wallet.id, id);
+        let res = self.request("GET", &path, Body::None, true, true, "Petition to retrieve key failed").await?;
+        let key: KeyDefinition = res.parse_json().await?;
+        Ok(key_def_to_key_model(key))
     }
 
-    async fn retrieve_all_keys(&self) -> Outcome<Vec<KeyEntry>> {
-        Err(Errors::not_impl("walt-id retrieve_all_keys: walt-id<->fafnir type mapping pending", None))
+    async fn retrieve_all_keys(&self) -> Outcome<Vec<KeyModel>> {
+        let keys = self.key_data.lock().await;
+        Ok(keys.iter().cloned().map(key_def_to_key_model).collect())
     }
 
-    async fn retrieve_vc(&self, _id: &str) -> Outcome<VcEntry> {
-        Err(Errors::not_impl("walt-id retrieve_vc: walt-id<->fafnir type mapping pending", None))
+    async fn retrieve_vc(&self, id: &str) -> Outcome<VcModel> {
+        let wallet = self.get_wallet().await?;
+        let path = format!("/wallet/{}/credentials/{}", wallet.id, id);
+        let res = self.request("GET", &path, Body::None, true, true, "Petition to retrieve credential failed").await?;
+        let wc: WalletCredentials = res.parse_json().await?;
+        Ok(wc_to_vc(wc))
     }
 
-    async fn retrieve_all_vcs(&self) -> Outcome<Vec<VcEntry>> {
-        Err(Errors::not_impl("walt-id retrieve_all_vcs: walt-id<->fafnir type mapping pending", None))
+    async fn retrieve_all_vcs(&self) -> Outcome<Vec<VcModel>> {
+        let wallet = self.get_wallet().await?;
+        let path = format!("/wallet/{}/credentials?showDeleted=false", wallet.id);
+        let res = self.request("GET", &path, Body::None, true, true, "Petition to retrieve credentials failed").await?;
+        let creds: Vec<WalletCredentials> = res.parse_json().await?;
+        Ok(creds.into_iter().map(wc_to_vc).collect())
     }
 
-    async fn register_key(&self, _pem_helper: &PemHelper, _alias: Option<String>) -> Outcome<KeyEntry> {
-        Err(Errors::not_impl("walt-id register_key: returns fafnir KeyEntry, type mapping pending", None))
+    async fn register_key(&self, pem_helper: &PemHelper, alias: Option<String>) -> Outcome<KeyModel> {
+        let wallet = self.get_wallet().await?;
+        let path = format!("/wallet/{}/keys/import", wallet.id);
+        self.request("POST", &path, Body::Raw(pem_helper.pem().to_string()), true, false, "Petition to register key failed").await?;
+        self.retrieve_wallet_keys().await?;
+        let keys = self.key_data.lock().await;
+        let last = keys.last().cloned().ok_or_else(|| {
+            Errors::missing_action(MissingAction::Key, "Key register failed", None)
+        })?;
+        Ok(KeyModel {
+            id: last.key_id.id,
+            alias: alias.unwrap_or_default(),
+            kty: pem_helper.kty().clone(),
+            crv: pem_helper.crv().cloned(),
+            alg: pem_helper.alg().clone(),
+            pem: pem_helper.pem().to_string(),
+        })
     }
 
-    async fn register_did(&self, _did_builder: &DidBuilder, _keys_id: Vec<String>, _alias: Option<String>) -> Outcome<DidEntry> {
-        Err(Errors::not_impl("walt-id register_did: returns fafnir DidEntry, type mapping pending", None))
+    async fn register_did(&self, _did_builder: &DidBuilder, _keys_id: Vec<String>, alias: Option<String>) -> Outcome<DidModel> {
+        let res = match self.config.did_config() {
+            DidConfig::Web { web_config } => {
+                self.reg_did_web(&web_config.domain, web_config.path.as_deref().unwrap_or("")).await?
+            }
+            DidConfig::Jwk => self.reg_did_jwk().await?,
+            DidConfig::Other(s) => {
+                return Err(Errors::not_impl(format!("did type {s} not supported"), None));
+            }
+        };
+        if !res.status().is_success() {
+            return Err(Errors::wallet("register_did", "POST", Some(res.status()), "Register did failed", None));
+        }
+        let did_str = res.parse_text().await?;
+        let did_str = did_str.trim().to_string();
+        self.retrieve_wallet_dids().await?;
+        let wallet = self.get_wallet().await?;
+        let info = wallet
+            .dids
+            .iter()
+            .find(|d| d.did == did_str)
+            .cloned()
+            .or_else(|| wallet.dids.last().cloned())
+            .ok_or_else(|| Errors::missing_action(MissingAction::Did, "Just-registered did not found", None))?;
+        let mut entry = dids_info_to_did_model(info)?;
+        if let Some(a) = alias {
+            entry.alias = a;
+        }
+        Ok(entry)
     }
 
     async fn set_default_did(&self, did: Did) -> Outcome<()> {
@@ -389,11 +455,11 @@ impl WaltIdService {
     async fn register_key_internal(&self) -> Outcome<()> {
         let wallet = self.get_wallet().await?;
         let priv_key_path = expect_from_env("VAULT_APP_PRIV_KEY");
-        let priv_key: StringHelper = self.vault.read(None, &priv_key_path).await?;
+        let priv_key: PemHelper = self.vault.read(None, &priv_key_path).await?;
 
         let path = format!("/wallet/{}/keys/import", wallet.id);
 
-        self.request("POST", &path, Body::Raw(priv_key.data().to_string()), true, false, "Petition to register key failed")
+        self.request("POST", &path, Body::Raw(priv_key.pem().to_string()), true, false, "Petition to register key failed")
             .await?;
         Ok(())
     }
@@ -636,5 +702,65 @@ impl WaltIdService {
             Ok(Some(data)) => Ok(Some(data.redirect_uri)),
             _ => Ok(None),
         }
+    }
+}
+
+fn wc_to_vc(wc: WalletCredentials) -> VcModel {
+    let added_on = DateTime::parse_from_rfc3339(&wc.added_on)
+        .map(|d| d.with_timezone(&Utc))
+        .ok();
+    let r#type = if wc.format.contains("jwt") {
+        VcBodyType::Jwt(wc.document)
+    } else {
+        match serde_json::from_str::<Value>(&wc.document) {
+            Ok(v) => VcBodyType::Value(v),
+            Err(_) => VcBodyType::Jwt(wc.document),
+        }
+    };
+    VcModel {
+        id: wc.id,
+        r#type,
+        parsed_document: wc.parsed_document,
+        added_on,
+    }
+}
+
+fn dids_info_to_did_model(d: DidsInfo) -> Outcome<DidModel> {
+    let did_document: DidDocument = serde_json::from_str(&d.document)?;
+    let did_type = if d.did.starts_with("did:web:") {
+        DidType::Web
+    } else if d.did.starts_with("did:jwk:") {
+        DidType::Jwk
+    } else {
+        return Err(Errors::not_impl(format!("Did method {} not supported", d.did), None))
+    };
+    let keys = did_document.verification_method.iter()
+        .map(|vm| KeyRef::new(d.key_id.clone(), vm.id.clone())).collect::<Vec<KeyRef>>();
+    Ok(DidModel {
+        did_id: d.did.clone(),
+        did: d.did,
+        alias: d.alias,
+        default: d.default,
+        r#type: did_type,
+        keys,
+        did_document,
+    })
+}
+
+fn key_def_to_key_model(k: KeyDefinition) -> KeyModel {
+    let Ok(alg) = Alg::from_str(&k.algorithm);
+    let (kty, crv) = match &alg {
+        Alg::EdDsa => (Kty::Okp, Some(Crv::Ed25519)),
+        Alg::Rs256 | Alg::Ps256 => (Kty::Rsa, None),
+        Alg::Es256 => (Kty::Ec, Some(Crv::P256)),
+        _ => (Kty::Other(String::new()), None),
+    };
+    KeyModel {
+        id: k.key_id.id,
+        alias: String::new(),
+        kty,
+        crv,
+        alg,
+        pem: String::new(),
     }
 }

@@ -24,7 +24,7 @@ use crate::services::wallet::WalletTrait;
 use crate::types::dids::{DidBuilder, DidDocument};
 use crate::types::secrets::PemHelper;
 use crate::types::wallet::WalletInfo;
-use crate::types::wallet::fafnir::{DidEntry, KeyEntry, VcEntry};
+use crate::types::wallet::{DidModel, KeyModel, VcModel};
 use crate::types::wallet::waltid::{IsLinked, OidcUri};
 
 #[async_trait]
@@ -52,11 +52,11 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
         self.wallet().get_did_doc()
     }
 
-    async fn register_key(&self, pem_helper: PemHelper, alias: Option<String>) -> Outcome<KeyEntry> {
+    async fn register_key(&self, pem_helper: PemHelper, alias: Option<String>) -> Outcome<KeyModel> {
         self.wallet().register_key(&pem_helper, alias).await
     }
 
-    async fn register_did(&self, did_builder: DidBuilder, keys_id: Vec<String>, alias: Option<String>) -> Outcome<DidEntry> {
+    async fn register_did(&self, did_builder: DidBuilder, keys_id: Vec<String>, alias: Option<String>) -> Outcome<DidModel> {
         self.wallet().register_did(&did_builder, keys_id, alias).await
     }
 
@@ -88,7 +88,7 @@ pub trait CoreWalletTrait: Send + Sync + 'static {
         Ok(self.wallet().get_did()?.id().to_string())
     }
 
-    async fn get_wallet_credentials(&self) -> Outcome<Vec<VcEntry>> {
+    async fn get_wallet_credentials(&self) -> Outcome<Vec<VcModel>> {
         self.wallet().retrieve_all_vcs().await
     }
 }

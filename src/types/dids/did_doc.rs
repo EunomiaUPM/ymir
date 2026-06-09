@@ -51,7 +51,7 @@ impl DidDocument {
     pub fn base(did: &Did, map: &[(PrivateKey, &str)]) -> DidDocument {
         let vms: Vec<VerificationMethod> = map
             .iter()
-            .map(|(key, key_id)| VerificationMethod::new(did, key, key_id))
+            .map(|(key, vm_frag)| VerificationMethod::new(did, key, vm_frag))
             .collect();
 
         DidDocument {
@@ -71,12 +71,6 @@ impl DidDocument {
 
     pub fn get_did(&self) -> Outcome<Did> {
         Did::parse(&self.id)
-    }
-    pub fn get_key_ids(&self) -> Vec<&str> {
-        self.verification_method
-            .iter()
-            .filter_map(|vm| vm.id.rsplit_once('#').map(|(_, frag)| frag))
-            .collect()
     }
 
     pub fn add_services(mut self, services: Vec<DidService>) -> Self {

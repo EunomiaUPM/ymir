@@ -18,13 +18,12 @@
 use async_trait::async_trait;
 use serde_json::Value;
 use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
-use crate::errors::Outcome;
+use crate::errors::{Outcome};
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, GiveVC, IssuerMetadata, IssuingToken, TokenRequest,
     VCCredOffer, WellKnownJwks,
 };
 use crate::types::vcs::VcType;
-use crate::types::wallet::fafnir::SigningCtx;
 
 #[async_trait]
 pub trait IssuerTrait: Send + Sync + 'static {
@@ -45,8 +44,7 @@ pub trait IssuerTrait: Send + Sync + 'static {
         cred_req: &CredentialRequest,
         token: &str,
     ) -> Outcome<()>;
-    async fn get_sig_context(&self) -> Outcome<SigningCtx>;
-    async fn issue_cred(&self, claims: &Value, sig_ctx: &SigningCtx) -> Outcome<GiveVC>;
+    async fn issue_cred(&self, claims: &Value) -> Outcome<GiveVC>;
     fn end(
         &self,
         req_model: &vc_request::Model,
