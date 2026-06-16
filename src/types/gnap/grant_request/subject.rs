@@ -19,11 +19,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Subject4GR {
+pub struct SubjectRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sub_id_formats: Option<Vec<String>>, // REQUIRED if Subject Identifiers are requested
+    pub sub_id_formats: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub assertion_formats: Option<Vec<String>>, // REQUIRED if assertions are requested
+    pub assertion_formats: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sub_ids: Option<Value>, // If omitted assume that subject information requests are about the current user
+    pub sub_ids: Option<Value>,
 }

@@ -21,19 +21,13 @@ use serde::{Deserialize, Serialize};
 pub struct DataSpaceParticipant {
     pub id: String,
     pub nickname: String,
-    pub dataspace_id: String,
 }
 
 impl DataSpaceParticipant {
-    pub fn new(
-        id: impl Into<String>,
-        nick: impl Into<String>,
-        dataspace_id: impl Into<String>,
-    ) -> DataSpaceParticipant {
+    pub fn new(id: impl Into<String>, nick: impl Into<String>) -> DataSpaceParticipant {
         DataSpaceParticipant {
             id: id.into(),
             nickname: nick.into(),
-            dataspace_id: dataspace_id.into(),
         }
     }
 }

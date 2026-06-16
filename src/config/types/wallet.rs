@@ -18,7 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::config::traits::WalletConfigTrait;
-use crate::config::types::{CommonHostsConfig};
+use crate::config::types::CommonHostsConfig;
 use crate::types::wallet::WalletInstance;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

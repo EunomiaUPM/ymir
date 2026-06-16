@@ -15,9 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
-use crate::types::vcs::doc::VcDocument;
 use super::{VcJwtClaimsV1, VcJwtClaimsV2};
+use crate::types::vcs::doc::VcDocument;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
@@ -29,48 +29,45 @@ pub enum VCJwtClaims {
 impl VCJwtClaims {
     pub fn iss(&self) -> Option<&str> {
         match self {
-            VCJwtClaims::V1(claims) => { claims.iss.as_deref() }
-            VCJwtClaims::V2(claims) => { claims.iss.as_deref() }
+            VCJwtClaims::V1(claims) => claims.iss.as_deref(),
+            VCJwtClaims::V2(claims) => claims.iss.as_deref(),
         }
     }
     pub fn sub(&self) -> Option<&str> {
         match self {
-            VCJwtClaims::V1(claims) => { claims.sub.as_deref() }
-            VCJwtClaims::V2(claims) => { claims.sub.as_deref() }
+            VCJwtClaims::V1(claims) => claims.sub.as_deref(),
+            VCJwtClaims::V2(claims) => claims.sub.as_deref(),
         }
     }
     pub fn jti(&self) -> Option<&str> {
         match self {
-            VCJwtClaims::V1(claims) => { claims.jti.as_deref() }
-            VCJwtClaims::V2(claims) => { claims.jti.as_deref() }
+            VCJwtClaims::V1(claims) => claims.jti.as_deref(),
+            VCJwtClaims::V2(claims) => claims.jti.as_deref(),
         }
     }
     pub fn nbf(&self) -> Option<i64> {
         match self {
-            VCJwtClaims::V1(claims) => { claims.nbf }
-            VCJwtClaims::V2(claims) => { claims.nbf }
+            VCJwtClaims::V1(claims) => claims.nbf,
+            VCJwtClaims::V2(claims) => claims.nbf,
         }
     }
     pub fn exp(&self) -> Option<i64> {
         match self {
-            VCJwtClaims::V1(claims) => { claims.exp }
-            VCJwtClaims::V2(claims) => { claims.exp }
+            VCJwtClaims::V1(claims) => claims.exp,
+            VCJwtClaims::V2(claims) => claims.exp,
         }
     }
     pub fn iat(&self) -> Option<i64> {
         match self {
-            VCJwtClaims::V1(claims) => { claims.iat }
-            VCJwtClaims::V2(claims) => { claims.iat }
+            VCJwtClaims::V1(claims) => claims.iat,
+            VCJwtClaims::V2(claims) => claims.iat,
         }
     }
-
-
 
     pub fn vc_doc(&self) -> &VcDocument {
         match self {
-            VCJwtClaims::V1(claims) => { &claims.vc }
-            VCJwtClaims::V2(claims) => { &claims.vc }
+            VCJwtClaims::V1(claims) => &claims.vc,
+            VCJwtClaims::V2(claims) => &claims.vc,
         }
     }
 }
-

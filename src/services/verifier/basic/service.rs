@@ -21,19 +21,19 @@ use tracing::info;
 use urlencoding::encode;
 
 use super::super::VerifierTrait;
-use super::config::{BasicVerifierConfig, BasicVerifierConfigTrait};
+use super::BasicVerifierConfig;
 use crate::capabilities::{Did, Kid, Verifier};
-use crate::config::traits::{HostsConfigTrait, VcConfigTrait};
+use crate::config::traits::{HostsConfigTrait};
 use crate::config::types::HostType;
-use crate::data::entities::recv_interaction;
-use crate::data::entities::recv_verification::{Model, NewModel};
+use crate::data::entities::received::verification::{Plan, Model};
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::types::gnap::ApprovedCallbackBody;
-use crate::types::http::Body;
-use crate::types::jwt::{Jwt, VPJwtClaims, VCJwtClaims};
-use crate::types::vcs::{VPDef};
-use crate::utils::{has_expired, http_client, is_active, json_headers, HasId};
+use crate::types::http::HttpBody;
+use crate::types::jwt::{Jwt, VCJwtClaims, VPJwtClaims};
+use crate::types::vcs::{VPDef, W3cDataModelVersion};
+use crate::types::verifying::VerificationStatus;
+use crate::utils::{has_expired, http_client, is_active, json_headers};
 
 pub struct BasicVerifierService {
     config: BasicVerifierConfig,
@@ -47,7 +47,7 @@ impl BasicVerifierService {
 
 #[async_trait]
 impl VerifierTrait for BasicVerifierService {
-    fn start_vp(&self, id: &str) -> Outcome<NewModel> {
+    fn build_vp_plan(&self, id: &str) -> Outcome<Plan> {
         info!("Managing OIDC4VP");
 
         let host_url = self.config.get_host(HostType::Http);
@@ -60,17 +60,21 @@ impl VerifierTrait for BasicVerifierService {
             ));
         }
 
-        Ok(NewModel {
+        Ok(Plan {
             id: id.to_string(),
             audience: client_id,
-            vc_type: requested_vcs.iter().map(|s| s.to_string()).collect(),
+            vc_type: requested_vcs.to_vec(),
         })
     }
 
     fn generate_verification_uri(&self, model: &Model) -> String {
         info!("Generating verification exchange URI");
 
-        let host_url = format!("{}{}/verifier", self.config.get_host(HostType::Http), self.config.get_api_path());
+        let host_url = format!(
+            "{}{}/verifier",
+            self.config.get_host(HostType::Http),
+            self.config.get_api_path()
+        );
         let pd_uri = format!("{}/pd/{}", host_url, model.state);
         let response_uri = format!("{}/verify/{}", host_url, model.state);
 
@@ -92,49 +96,32 @@ impl VerifierTrait for BasicVerifierService {
         uri
     }
 
-    fn generate_vpd(&self, ver_model: &Model) -> Outcome<VPDef> {
+    fn generate_vpd(&self, verification: &Model) -> Outcome<VPDef> {
         info!("Generating VP definition");
-        let model = self
-            .config
-            .get_w3c_data_model()
-            .ok_or_else(|| Errors::not_active("W3c data model", None))?;
 
-        let vc_types: Vec<&str> = ver_model.vc_type.iter().map(String::as_str).collect();
-        Ok(VPDef::new(&ver_model.id, &vc_types, model))
+        Ok(VPDef::new(&verification.id, &verification.vc_type, W3cDataModelVersion::default()))
     }
 
-    async fn verify_all(&self, ver_model: &mut Model, vp_token: &str) -> Outcome<()> {
+    async fn verify_all(&self, model: &mut Model, vp_token: &str) -> Outcome<()> {
         info!("Verifying all");
-        let (vcs, holder_did) = self.verify_vp(ver_model, vp_token).await?;
-        for vc in vcs {
-            self.verify_vc(&vc, &holder_did).await?;
-        }
-        info!("VP & VC validated successfully");
-        Ok(())
-    }
 
-    async fn end_verification(&self, model: &recv_interaction::Model) -> Outcome<Option<String>> {
-        info!("Ending verification");
-        match model.method.as_str() {
-            "redirect" => {
-                let uri = format!(
-                    "{}?hash={}&interact_ref={}",
-                    model.uri, model.hash, model.interact_ref
-                );
-                Ok(Some(uri))
+        let result: Outcome<()> = async {
+            let (vcs, holder_did) = self.verify_vp(model, vp_token).await?;
+            for vc in vcs {
+                self.verify_vc(&vc, &holder_did).await?;
             }
-            "push" => {
-                let body = ApprovedCallbackBody {
-                    interact_ref: model.interact_ref.clone(),
-                    hash: model.hash.clone(),
-                };
-                http_client()
-                    .post(&model.uri, Some(json_headers()), Body::json(&body)?)
-                    .await?;
-                Ok(None)
+            Ok(())
+        }.await;
+
+        model.status = match &result {
+            Ok(()) => {
+                info!("VP & VC validated successfully");
+                VerificationStatus::Verified
             }
-            other => Err(Errors::not_impl(format!("Interact method '{other}'"), None)),
-        }
+            Err(_) => VerificationStatus::Failed,
+        };
+
+        result
     }
 }
 
@@ -146,13 +133,14 @@ impl BasicVerifierService {
         model.vpt = Some(vp_token.to_string());
 
         let jwt = Jwt::parse(vp_token)?;
-        let (holder_kid, claims) = Verifier::verify_enveloped::<VPJwtClaims>(&jwt, Some(&model.audience)).await?;
+        let (holder_kid, claims) =
+            Verifier::verify_enveloped::<VPJwtClaims>(&jwt, Some(&model.audience)).await?;
 
         validate_vp_holder(&claims, &holder_kid)?;
+        model.holder = Some(holder_kid.did().id().to_string());
         validate_vp_id(&claims, model)?;
         validate_nonce(&claims, model)?;
 
-        model.holder = Some(holder_kid.did().id().to_string());
         info!("VP verification successful");
         Ok((claims.vp.verifiable_credential, holder_kid.did().to_owned()))
     }
@@ -188,9 +176,21 @@ fn validate_nonce(claims: &VPJwtClaims, model: &Model) -> Outcome<()> {
 
 fn validate_vp_holder(claims: &VPJwtClaims, holder_kid: &Kid) -> Outcome<()> {
     info!("Validating VP subject");
-    check_eq_opt(claims.sub.as_deref(), holder_kid.did().id(), "VPT sub & kid")?;
-    check_eq_opt(claims.iss.as_deref(), holder_kid.did().id(), "VPT iss & kid")?;
-    check_eq_opt(claims.vp.holder.as_deref(), holder_kid.did().id(), "VP holder & kid")?;
+    check_eq_opt(
+        claims.sub.as_deref(),
+        holder_kid.did().id(),
+        "VPT sub & kid",
+    )?;
+    check_eq_opt(
+        claims.iss.as_deref(),
+        holder_kid.did().id(),
+        "VPT iss & kid",
+    )?;
+    check_eq_opt(
+        claims.vp.holder.as_deref(),
+        holder_kid.did().id(),
+        "VP holder & kid",
+    )?;
     Ok(())
 }
 
@@ -202,7 +202,6 @@ fn validate_vp_id(claims: &VPJwtClaims, model: &Model) -> Outcome<()> {
     info!("Exchange is valid");
     Ok(())
 }
-
 
 fn validate_vc_issuer(claims: &VCJwtClaims, issuer_did: &Kid) -> Outcome<()> {
     info!("Validating VC issuer");
@@ -224,7 +223,9 @@ fn validate_vc_id(claims: &VCJwtClaims) -> Outcome<()> {
 
 fn validate_vc_sub(claims: &VCJwtClaims, holder_did: &Did) -> Outcome<()> {
     info!("Validating VC subject");
-    let cred_sub_id = claims.vc_doc().credential_subject
+    let cred_sub_id = claims
+        .vc_doc()
+        .credential_subject
         .get("id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| {
@@ -235,7 +236,11 @@ fn validate_vc_sub(claims: &VCJwtClaims, holder_did: &Did) -> Outcome<()> {
             )
         })?;
 
-    check_eq_opt(claims.sub(), holder_did.id(), "VCT sub & and holder from vp")?;
+    check_eq_opt(
+        claims.sub(),
+        holder_did.id(),
+        "VCT sub & and holder from vp",
+    )?;
     if cred_sub_id != holder_did.id() {
         return Err(Errors::security(
             "VC credentialSubject does not match holder",

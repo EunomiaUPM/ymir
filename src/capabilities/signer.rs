@@ -18,16 +18,16 @@
 use crate::errors::Outcome;
 use crate::types::crypto::{Canon, Proof};
 use crate::types::jwt::{Jwt, JwtHeader};
+use crate::types::keys::{Alg, SigningCtx};
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde_json::Value;
-use crate::types::keys::SigningCtx;
 
 pub struct Signer;
 
 impl Signer {
-    pub fn sign_embed(sig_ctx: &SigningCtx, canonical: &Canon) -> Outcome<Proof> {
+    pub fn sign_embed(sig_ctx: &SigningCtx, canonical: &Canon, alg: Alg) -> Outcome<Proof> {
         let cryptosuite = sig_ctx.key().cryptosuite()?;
-        let sig_bytes = sig_ctx.key().sign_bytes(canonical.as_ref())?;
+        let sig_bytes = sig_ctx.key().sign_bytes(canonical.as_ref(), alg)?;
         let proof_value = format!("z{}", bs58::encode(&sig_bytes).into_string());
         let verification_method = format!("{}#{}", sig_ctx.did().id(), sig_ctx.keys_frag());
 
@@ -39,7 +39,12 @@ impl Signer {
         })
     }
 
-    pub fn sign_enveloped(sig_ctx: &SigningCtx, typ: &str, cty: &str, value: &Value) -> Outcome<Jwt> {
+    pub fn sign_enveloped(
+        sig_ctx: &SigningCtx,
+        typ: &str,
+        cty: &str,
+        value: &Value,
+    ) -> Outcome<Jwt> {
         let kid = format!("{}#{}", sig_ctx.did().id(), sig_ctx.keys_frag());
         let header = JwtHeader {
             alg: sig_ctx.key().alg(),
@@ -49,7 +54,6 @@ impl Signer {
             extra: serde_json::Map::new(),
         };
 
-
         let header_bytes = serde_json::to_vec(&header)?;
         let payload_bytes = serde_json::to_vec(value)?;
 
@@ -57,7 +61,9 @@ impl Signer {
         let payload_b64 = URL_SAFE_NO_PAD.encode(&payload_bytes);
 
         let signing_input = format!("{header_b64}.{payload_b64}");
-        let sig_bytes = sig_ctx.key().sign_bytes(signing_input.as_bytes())?;
+        let sig_bytes = sig_ctx
+            .key()
+            .sign_bytes(signing_input.as_bytes(), sig_ctx.key().alg())?;
         let sig_b64 = URL_SAFE_NO_PAD.encode(&sig_bytes);
 
         let jwt = format!("{signing_input}.{sig_b64}");

@@ -17,8 +17,10 @@
 
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
-use crate::types::dids::{DidDocument, DidType, JwkDid, VerificationMaterial, VerificationMethod, WebDid};
-use crate::utils::{decode_url_safe_no_pad, http_client, ResponseExt, StringOrArr};
+use crate::types::dids::{
+    DidDocument, DidType, JwkDid, VerificationMaterial, VerificationMethod, WebDid,
+};
+use crate::utils::{ResponseExt, StringOrArr, decode_url_safe_no_pad, http_client};
 use serde_json::Value;
 
 #[derive(Debug, Clone)]
@@ -27,19 +29,22 @@ pub enum Did {
     Web(WebDid),
 }
 
-
 impl Did {
     pub fn parse(did: &str) -> Outcome<Did> {
-        let did = did.split_once('#')
-            .map(|(did, _)| did)
-            .unwrap_or(did);
+        let did = did.split_once('#').map(|(did, _)| did).unwrap_or(did);
 
         if let Some(rest) = did.strip_prefix("did:web:") {
             let parts: Vec<&str> = rest.split(':').collect();
             let (host, path) = match parts.as_slice() {
                 [host] => (*host, None),
                 [host, path @ ..] => (*host, Some(path.join("/"))),
-                _ => return Err(Errors::format(BadFormat::Received, "Invalid DID format", None)),
+                _ => {
+                    return Err(Errors::format(
+                        BadFormat::Received,
+                        "Invalid DID format",
+                        None,
+                    ));
+                }
             };
             let (domain, port) = match host.split_once("%3A") {
                 Some((domain, port)) => (domain.to_owned(), Some(port.to_owned())),
@@ -97,12 +102,13 @@ impl Did {
     fn resolve_jwk(did: &JwkDid) -> Outcome<DidDocument> {
         let jwk_bytes = decode_url_safe_no_pad(did.jwk())?;
 
-        let jwk: Value = serde_json::from_slice(&jwk_bytes)
-            .map_err(|e| Errors::format(
+        let jwk: Value = serde_json::from_slice(&jwk_bytes).map_err(|e| {
+            Errors::format(
                 BadFormat::Received,
                 format!("Invalid JWK JSON in did:jwk: {e}"),
                 None,
-            ))?;
+            )
+        })?;
 
         let vm_id = format!("{}#0", did.id());
 
@@ -117,9 +123,7 @@ impl Did {
         };
 
         Ok(DidDocument {
-            context: StringOrArr::Arr(vec![
-                "https://www.w3.org/ns/did/v1.1".to_string()
-            ]),
+            context: StringOrArr::Arr(vec!["https://www.w3.org/ns/did/v1.1".to_string()]),
             id: did.id().to_string(),
             controller: None,
             also_known_as: None,
@@ -138,7 +142,6 @@ impl Did {
 
         let res = http_client().get(&url, None).await?;
 
-
         if !res.status().is_success() {
             return Err(Errors::petition(
                 url,
@@ -146,8 +149,8 @@ impl Did {
                 Some(res.status()),
                 PetitionFailure::HttpStatus(res.status()),
                 "did:web resolution failed",
-                None),
-            );
+                None,
+            ));
         }
 
         let doc: DidDocument = res.parse_json().await?;

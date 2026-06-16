@@ -15,10 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::Cryptosuite;
+use crate::impl_serde_via_str;
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
-use super::Cryptosuite;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Alg {
@@ -53,11 +54,9 @@ pub enum Alg {
 impl Alg {
     pub fn from_cryptosuite(suite: &Cryptosuite) -> Self {
         match suite {
-            Cryptosuite::EddsaRdfc2022
-            | Cryptosuite::EddsaJcs2022 => Alg::EdDsa,
+            Cryptosuite::EddsaRdfc2022 | Cryptosuite::EddsaJcs2022 => Alg::EdDsa,
 
-            Cryptosuite::EcdsaRdfc2019
-            | Cryptosuite::EcdsaJcs2019 => Alg::Es256,
+            Cryptosuite::EcdsaRdfc2019 | Cryptosuite::EcdsaJcs2019 => Alg::Es256,
 
             Cryptosuite::RsaSignature2018 => Alg::Rs256,
 
@@ -65,6 +64,17 @@ impl Alg {
 
             Cryptosuite::Other(s) => Alg::Other(s.clone()),
         }
+    }
+    pub fn supported() -> Vec<Alg> {
+        vec![
+            Alg::Rs256,
+            Alg::Rs384,
+            Alg::Rs512,
+            Alg::Ps256,
+            Alg::Ps384,
+            Alg::Ps512,
+            Alg::EdDsa,
+        ]
     }
 }
 

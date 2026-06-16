@@ -37,4 +37,3 @@ impl KeyRef {
         &self.fragment
     }
 }
-

@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::types::{DidConfig};
+use crate::config::types::DidConfig;
 
 pub trait DidConfigTrait {
     fn did_config(&self) -> &DidConfig;

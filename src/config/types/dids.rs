@@ -16,7 +16,7 @@
  */
 
 use serde::de::Error;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 
 use crate::config::traits::DidConfigTrait;
@@ -24,9 +24,7 @@ use crate::config::traits::DidConfigTrait;
 #[derive(Clone, Debug)]
 pub enum DidConfig {
     Jwk,
-    Web {
-        web_config: DidWebConfig,
-    },
+    Web { web_config: DidWebConfig },
     Other(String),
 }
 
@@ -54,7 +52,19 @@ impl<'de> Deserialize<'de> for DidConfig {
     }
 }
 
-#[derive(Deserialize, Clone, Debug)]
+impl Serialize for DidConfig {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            DidConfig::Jwk => serializer.serialize_str("Jwk"),
+            DidConfig::Web { web_config } => web_config.serialize(serializer),
+            DidConfig::Other(other) => other.serialize(serializer),
+        }
+    }
+}
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DidWebConfig {
     pub domain: String,
     pub path: Option<String>,
@@ -66,5 +76,3 @@ impl DidConfigTrait for DidConfig {
         self
     }
 }
-
-

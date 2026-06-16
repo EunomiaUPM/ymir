@@ -24,6 +24,12 @@ pub struct FafnirConfig {
     did: DidConfig,
 }
 
+impl FafnirConfig {
+    pub fn new(hosts: CommonHostsConfig, wallet: WalletConfig, did: DidConfig) -> Self {
+        Self { hosts, wallet, did }
+    }
+}
+
 impl HostsConfigTrait for FafnirConfig {
     fn hosts(&self) -> &CommonHostsConfig {
         &self.hosts

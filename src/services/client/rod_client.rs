@@ -25,7 +25,7 @@ use tokio::sync::Semaphore;
 
 use crate::errors::{Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
-use crate::types::http::Body;
+use crate::types::http::HttpBody;
 
 pub struct ClientService {
     client: Client,
@@ -63,7 +63,7 @@ impl ClientService {
         method: reqwest::Method,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body,
+        body: HttpBody,
     ) -> Outcome<Response> {
         let _permit = self.limiter.acquire().await.map_err(|_| {
             Errors::petition(
@@ -84,7 +84,7 @@ impl ClientService {
         method: reqwest::Method,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body,
+        body: HttpBody,
     ) -> Outcome<Response> {
         let mut attempt = 1;
 
@@ -125,7 +125,7 @@ impl ClientService {
         method: reqwest::Method,
         url: &str,
         headers: Option<HeaderMap>,
-        body: Body,
+        body: HttpBody,
     ) -> Outcome<Response> {
         let mut req = self.client.request(method.clone(), url);
 
@@ -162,12 +162,12 @@ impl ClientService {
         Ok(response)
     }
 
-    fn apply_body(&self, req: RequestBuilder, body: Body) -> Outcome<RequestBuilder> {
+    fn apply_body(&self, req: RequestBuilder, body: HttpBody) -> Outcome<RequestBuilder> {
         let req = match body {
-            Body::Json(value) => req.json(&value),
-            Body::Raw(s) => req.body(s),
-            Body::Bytes(bytes) => req.body(bytes),
-            Body::Form(pairs) => match serde_urlencoded::to_string(&pairs) {
+            HttpBody::Json(value) => req.json(&value),
+            HttpBody::Raw(s) => req.body(s),
+            HttpBody::Bytes(bytes) => req.body(bytes),
+            HttpBody::Form(pairs) => match serde_urlencoded::to_string(&pairs) {
                 Ok(encoded) => req
                     .header(
                         reqwest::header::CONTENT_TYPE,
@@ -176,7 +176,7 @@ impl ClientService {
                     .body(encoded),
                 Err(e) => return Err(Errors::parse("Unable to parse form", Some(Box::new(e)))),
             },
-            Body::None => req,
+            HttpBody::None => req,
         };
         Ok(req)
     }
@@ -185,21 +185,36 @@ impl ClientService {
 #[async_trait]
 impl ClientTrait for ClientService {
     async fn get(&self, url: &str, headers: Option<HeaderMap>) -> Outcome<Response> {
-        self.dispatch(reqwest::Method::GET, url, headers, Body::None)
+        self.dispatch(reqwest::Method::GET, url, headers, HttpBody::None)
             .await
     }
 
-    async fn post(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response> {
+    async fn post(
+        &self,
+        url: &str,
+        headers: Option<HeaderMap>,
+        body: HttpBody,
+    ) -> Outcome<Response> {
         self.dispatch(reqwest::Method::POST, url, headers, body)
             .await
     }
 
-    async fn put(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response> {
+    async fn put(
+        &self,
+        url: &str,
+        headers: Option<HeaderMap>,
+        body: HttpBody,
+    ) -> Outcome<Response> {
         self.dispatch(reqwest::Method::PUT, url, headers, body)
             .await
     }
 
-    async fn delete(&self, url: &str, headers: Option<HeaderMap>, body: Body) -> Outcome<Response> {
+    async fn delete(
+        &self,
+        url: &str,
+        headers: Option<HeaderMap>,
+        body: HttpBody,
+    ) -> Outcome<Response> {
         self.dispatch(reqwest::Method::DELETE, url, headers, body)
             .await
     }

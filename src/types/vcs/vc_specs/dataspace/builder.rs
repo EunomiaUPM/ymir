@@ -26,17 +26,15 @@ use crate::types::present::{Missing, Present};
 pub struct DataSpaceParticipantBuilder<T> {
     pub id: Option<String>,
     pub nickname: String,
-    pub dataspace_id: String,
     #[serde(skip)]
     _marker: PhantomData<T>,
 }
 
 impl DataSpaceParticipantBuilder<Missing> {
-    pub fn new(nickname: String, dataspace_id: String) -> Self {
+    pub fn new(nickname: String) -> Self {
         DataSpaceParticipantBuilder {
             id: None,
             nickname,
-            dataspace_id,
             _marker: PhantomData,
         }
     }
@@ -47,7 +45,6 @@ impl<T> DataSpaceParticipantBuilder<T> {
         DataSpaceParticipantBuilder {
             id: Some(id.into()),
             nickname: self.nickname,
-            dataspace_id: self.dataspace_id,
             _marker: PhantomData,
         }
     }
@@ -58,7 +55,6 @@ impl DataSpaceParticipantBuilder<Present> {
         DataSpaceParticipant {
             id: self.id.unwrap(),
             nickname: self.nickname,
-            dataspace_id: self.dataspace_id,
         }
     }
 }

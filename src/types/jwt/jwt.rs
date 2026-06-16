@@ -17,7 +17,7 @@
 
 use super::JwtHeader;
 use crate::errors::{BadFormat, Errors, Outcome};
-use crate::utils::{decode_url_safe_no_pad};
+use crate::utils::decode_url_safe_no_pad;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 

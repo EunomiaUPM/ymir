@@ -23,27 +23,12 @@ use axum::extract::rejection::{FormRejection, JsonRejection};
 use axum::http::header::{ACCEPT, CONTENT_TYPE};
 use axum::http::{HeaderMap, HeaderValue};
 use axum::{Form, Json};
-use reqwest::{Response, Url};
-use serde::Serialize;
+use reqwest::Response;
 use serde::de::DeserializeOwned;
 use urn::Urn;
 
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
-
-pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
-where
-    T: Clone + Serialize + DeserializeOwned,
-{
-    value
-        .ok_or_else(|| {
-            Errors::format(
-                BadFormat::Received,
-                &format!("Missing field: {}", field_name),
-                None,
-            )
-        })
-        .cloned()
-}
+use crate::types::gnap::grant_response::ErrorCode;
 
 pub fn trim_4_base(input: &str) -> String {
     let slashes: Vec<usize> = input.match_indices('/').map(|(i, _)| i).collect();
@@ -55,20 +40,6 @@ pub fn trim_4_base(input: &str) -> String {
     let cut_index = slashes[2];
 
     input[..cut_index].to_string()
-}
-
-pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
-    parsed_uri
-        .query_pairs()
-        .find(|(k, _)| k == param_name)
-        .map(|(_, v)| v.into_owned())
-        .ok_or_else(|| {
-            Errors::format(
-                BadFormat::Received,
-                format!("Missing query parameter '{}'", param_name),
-                None,
-            )
-        })
 }
 
 pub fn json_headers() -> HeaderMap {
@@ -169,4 +140,44 @@ pub fn extract_path_urn(urn: &String) -> Outcome<Urn> {
     let id_urn =
         Urn::from_str(&urn).map_err(|e| Errors::parse(format!("Invalid Urn: {}", e), None))?;
     Ok(id_urn)
+}
+pub fn errors_to_error_code(e: &Errors) -> ErrorCode {
+    match e {
+        // ─── Client-side: input mal formado o no soportado ──────────────
+        // El cliente puede arreglar reintentando con datos correctos.
+        Errors::FormatError { .. } => ErrorCode::InvalidRequest,
+        Errors::ParseError { .. } => ErrorCode::InvalidRequest,
+        Errors::FeatureNotImplError { .. } => ErrorCode::InvalidRequest,
+
+        // ─── Client-side: auth/security inválida ────────────────────────
+        // Cert, firma o token del cliente fallan.
+        Errors::UnauthorizedError { .. } => ErrorCode::InvalidClient,
+        Errors::SecurityError { .. } => ErrorCode::InvalidClient,
+
+        // ─── Client-side: denegación explícita ──────────────────────────
+        // El cliente está autenticado pero no autorizado / hay precondición.
+        Errors::ForbiddenError { .. } => ErrorCode::RequestDenied,
+        Errors::MissingActionError { .. } => ErrorCode::RequestDenied,
+
+        // ─── Client-side: referencia desconocida ────────────────────────
+        Errors::MissingResourceError { .. } => ErrorCode::InvalidRequest,
+
+        // ─── Server-side: infraestructura interna ───────────────────────
+        // No exponer detalles. Solo "server_error" genérico.
+        Errors::DatabaseError { .. }
+        | Errors::ReadError { .. }
+        | Errors::WriteError { .. }
+        | Errors::VaultError { .. }
+        | Errors::EnvVarError { .. }
+        | Errors::ModuleNotActiveError { .. }
+        | Errors::CrazyError { .. } => ErrorCode::Other("server_error".to_string()),
+
+        // ─── Server-side: fallos en servicios externos ──────────────────
+        // Llamada a otro provider/wallet/etc. falló.
+        Errors::PetitionError { .. }
+        | Errors::ProviderError { .. }
+        | Errors::ConsumerError { .. }
+        | Errors::AuthorityError { .. }
+        | Errors::WalletError { .. } => ErrorCode::Other("upstream_error".to_string()),
+    }
 }

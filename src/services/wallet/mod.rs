@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod wallet_trait;
 pub mod fafnir;
+mod wallet_trait;
 pub mod walt_id;
 
 pub use wallet_trait::WalletTrait;

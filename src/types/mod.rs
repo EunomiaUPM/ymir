@@ -28,3 +28,4 @@ pub mod vcs;
 pub mod verifying;
 pub mod vps;
 pub mod wallet;
+pub mod participants;

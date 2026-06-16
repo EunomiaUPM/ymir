@@ -15,16 +15,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::{BadFormat, Errors, Outcome};
-use crate::types::dids::{DidType};
-use crate::types::keys::{Alg, PublicKey};
 use crate::capabilities::Did;
+use crate::errors::{BadFormat, Errors, Outcome};
+use crate::types::dids::DidType;
+use crate::types::keys::PublicKey;
 
 pub struct Kid {
     frag_id: String,
     did: Did,
 }
-
 
 impl Kid {
     pub fn parse(kid: &str) -> Outcome<Kid> {
@@ -51,17 +50,14 @@ impl Kid {
     }
 
     pub fn r#type(&self) -> DidType {
-        match self.did {
-            Did::Jwk(_) => DidType::Jwk,
-            Did::Web(_) => DidType::Web,
-        }
+        self.did.r#type()
     }
 
     pub fn did(&self) -> &Did {
         &self.did
     }
 
-    pub async fn get_key(&self, alg: &Alg) -> Outcome<PublicKey> {
+    pub async fn get_key(&self) -> Outcome<PublicKey> {
         let did_doc = self.did.resolve().await?;
 
         let vm = did_doc
@@ -85,6 +81,6 @@ impl Kid {
                 )
             })?;
 
-        PublicKey::parse_from(vm, alg)
+        PublicKey::parse_from(vm)
     }
 }

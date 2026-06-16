@@ -15,4 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod repos;
+mod crud_postgres_trait;
+
+pub mod sent;
+pub mod received;
+pub mod shared;
+pub use crud_postgres_trait::BasicPostgresRepo;

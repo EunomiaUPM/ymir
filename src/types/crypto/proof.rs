@@ -17,7 +17,7 @@
 
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::crypto::Canon;
-use crate::types::keys::{Cryptosuite, PublicKey};
+use crate::types::keys::{Alg, Cryptosuite, PublicKey};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -43,9 +43,10 @@ impl Proof {
             .into_vec()
             .map_err(|e| Errors::parse("base58 decode of proofValue failed", Some(Box::new(e))))
     }
-    
+
     pub fn verify_with(&self, key: &PublicKey, canon: &Canon) -> Outcome<()> {
         let sig = self.signature()?;
-        key.verify_bytes(canon.as_ref(), &sig)
+        let alg = Alg::from_cryptosuite(&self.cryptosuite);
+        key.verify_bytes(canon.as_ref(), &sig, &alg)
     }
 }

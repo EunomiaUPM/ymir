@@ -16,52 +16,71 @@
  */
 
 use serde::{Deserialize, Serialize};
-
-use super::AccessTokenRequirements4GR;
-use super::Interact4GR;
-use super::{Client4GR, InteractActions};
-use crate::data::entities::req_interaction;
-use crate::types::gnap::grant_request::credential_request_req::CredentialRequest4GR;
-use crate::types::gnap::grant_request::subject::Subject4GR;
-use crate::types::vcs::VcType;
+use crate::data::entities::sent::interaction;
+use crate::types::vcs::{VcTypeConfig};
+use super::access::{AccessRequest, AccessType, ResourceAccess};
+use super::client::Client;
+use super::grant_request_kind::GrantRequestKind;
+use super::interact::{InteractAction, InteractRequest};
+use super::subject::SubjectRequest;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GrantRequest {
+    #[serde(flatten)]
+    pub kind: GrantRequestKind,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub access_token: Option<AccessTokenRequirements4GR>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub credential_request: Option<CredentialRequest4GR>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub subject: Option<Subject4GR>, // REQUIRED if requesting subject information
-    pub client: Client4GR,
+    pub subject: Option<SubjectRequest>,
+    pub client: Client,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
-    pub interact: Option<Interact4GR>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interact: Option<InteractRequest>,
 }
 
 impl GrantRequest {
-    pub fn new_vc(client: &Client4GR, vc_type: &VcType, model: &req_interaction::Model) -> Self {
+    pub fn new_vc(client: Client, vc_type: VcTypeConfig, model: &interaction::Model) -> Self {
+        let credential_request = AccessRequest {
+            access: ResourceAccess {
+                r#type: AccessType::VcExchange,
+                actions: Some(vec![InteractAction::RequestVc]),
+                locations: None,
+                datatypes: Some(vec![vc_type.to_string()]),
+                identifier: None,
+                privileges: None,
+            },
+            label: None,
+            flags: None,
+        };
+
         Self {
-            access_token: None,
-            credential_request: Some(CredentialRequest4GR::new(vc_type)),
+            kind: GrantRequestKind::CredentialRequest { credential_request },
             subject: None,
-            client: client.clone(),
+            client,
             user: None,
-            interact: Some(Interact4GR::new(model)),
+            interact: Some(InteractRequest::new(model.clone())),
         }
     }
-    pub fn new_token(
-        client: &Client4GR,
-        actions: Option<&[InteractActions]>,
-        model: &req_interaction::Model,
-    ) -> Self {
+
+    pub fn new_token(client: Client, actions: Vec<InteractAction>, model: &interaction::Model) -> Self {
+        let access_token = AccessRequest {
+            access: ResourceAccess {
+                r#type: AccessType::ApiAccess,
+                actions: Some(actions),
+                locations: None,
+                datatypes: None,
+                identifier: None,
+                privileges: None,
+            },
+            label: None,
+            flags: None,
+        };
+
         Self {
-            access_token: Some(AccessTokenRequirements4GR::new(actions)),
-            credential_request: None,
+            kind: GrantRequestKind::AccessToken { access_token },
             subject: None,
-            client: client.clone(),
+            client,
             user: None,
-            interact: Some(Interact4GR::new(model)),
+            interact: Some(InteractRequest::new(model.clone())),
         }
     }
 }

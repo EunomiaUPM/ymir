@@ -32,8 +32,8 @@ pub enum W3cDataModelVersion {
 impl W3cDataModelVersion {
     pub fn context(&self) -> &'static str {
         match self {
-            W3cDataModelVersion::V1 => { "https://www.w3.org/ns/credentials/v1" }
-            W3cDataModelVersion::V2 => { "https://www.w3.org/ns/credentials/v2" }
+            W3cDataModelVersion::V1 => "https://www.w3.org/ns/credentials/v1",
+            W3cDataModelVersion::V2 => "https://www.w3.org/ns/credentials/v2",
         }
     }
 }
@@ -64,34 +64,8 @@ impl Display for W3cDataModelVersion {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub enum VcModel {
-    JwtVc,
-    SdJwtVc,
-}
-
-impl Display for VcModel {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let s = match self {
-            VcModel::JwtVc => "jwt_vc".to_string(),
-            VcModel::SdJwtVc => "sd_jwt_vc".to_string(),
-        };
-
-        write!(f, "{}", s)
-    }
-}
-
-impl FromStr for VcModel {
-    type Err = Errors;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "jwt_vc" => Ok(VcModel::JwtVc),
-            "sd_jwt_vc" => Ok(VcModel::SdJwtVc),
-            format => Err(Errors::parse(
-                format!("Invalid VC format role '{}'", format),
-                None,
-            )),
-        }
+impl Default for W3cDataModelVersion {
+    fn default() -> Self {
+        W3cDataModelVersion::V2
     }
 }

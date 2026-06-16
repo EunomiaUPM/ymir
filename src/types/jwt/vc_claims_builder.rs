@@ -15,12 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::marker::PhantomData;
-use chrono::{DateTime, Utc};
-use crate::types::present::{Missing, Present};
-use crate::types::vcs::doc::VcDocument;
-use crate::types::vcs::W3cDataModelVersion;
 use super::{VCJwtClaims, VcJwtClaimsV1, VcJwtClaimsV2};
+use crate::types::present::{Missing, Present};
+use crate::types::vcs::W3cDataModelVersion;
+use crate::types::vcs::doc::VcDocument;
+use chrono::{DateTime, Utc};
+use std::marker::PhantomData;
 
 pub struct VcJwtClaimsBuilder<VC> {
     w3c_data_model_version: W3cDataModelVersion,

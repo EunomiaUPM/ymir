@@ -21,13 +21,10 @@ use std::{env, fs};
 use axum::http::HeaderValue;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use reqwest::Response;
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
-use serde_json::Value;
+use serde::{Deserialize, Serialize};
 
-use crate::errors::{BadFormat, Errors, Outcome};
-use crate::utils::validate_data;
+use crate::errors::{Errors, Outcome};
 
 pub trait ParseHeaderExt {
     fn parse_header(&self) -> Outcome<HeaderValue>;
@@ -42,20 +39,6 @@ impl ParseHeaderExt for str {
             )
         })
     }
-}
-
-pub async fn parse_json_resp<T: DeserializeOwned>(response: Response) -> Outcome<T> {
-    response
-        .json()
-        .await
-        .map_err(|e| Errors::parse("Unable to parse json response", Some(Box::new(e))))
-}
-
-pub async fn parse_text_resp(response: Response) -> Outcome<String> {
-    response
-        .text()
-        .await
-        .map_err(|e| Errors::parse("Unable to parse text response", Some(Box::new(e))))
 }
 
 pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
@@ -92,7 +75,6 @@ pub enum StringOrArr {
     String(String),
     Arr(Vec<String>),
 }
-
 
 pub fn read_json<T, P>(path: P) -> Outcome<T>
 where
@@ -131,36 +113,4 @@ where
 
 pub fn expect_from_env(env: &str) -> String {
     env::var(env).expect(format!("Environment variable {} not set", env).as_str())
-}
-
-pub fn get_claim(claims: &Value, path: &[&str]) -> Outcome<String> {
-    let mut node = claims;
-    let field = path
-        .last()
-        .ok_or_else(|| Errors::parse("Path vector is empty", None))?;
-    for key in path.iter() {
-        node = node.get(key).ok_or_else(|| {
-            Errors::format(
-                BadFormat::Received,
-                format!("Missing field '{}'", key),
-                None,
-            )
-        })?
-    }
-    validate_data(node, field)
-}
-
-pub fn get_opt_claim(claims: &Value, path: &[&str]) -> Outcome<Option<String>> {
-    let mut node = claims;
-    let field = path
-        .last()
-        .ok_or_else(|| Errors::parse("Path vector is empty", None))?;
-    for key in path.iter() {
-        node = match node.get(key) {
-            Some(data) => data,
-            None => return Ok(None),
-        };
-    }
-    let data = validate_data(node, field)?;
-    Ok(Some(data))
 }

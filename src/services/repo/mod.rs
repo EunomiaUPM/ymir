@@ -16,4 +16,4 @@
  */
 
 pub mod postgres;
-pub mod subtraits;
+pub mod traits;

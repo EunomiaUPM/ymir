@@ -18,12 +18,12 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Subject4GResponse {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SubjectResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sub_ids: Option<Vec<Value>>, // REQUIRED if returning Subject Identifiers
+    pub sub_ids: Option<Vec<Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub assertion: Option<Vec<Value>>, // REQUIRED if returning assertions
+    pub assertion: Option<Vec<Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<String>, // RECOMMENDED
+    pub updated_at: Option<String>,
 }

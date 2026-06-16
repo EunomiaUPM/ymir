@@ -22,12 +22,12 @@ use axum::http::StatusCode;
 use super::{AnyError, BadFormat, ErrorInfo, Errors, MissingAction, PetitionFailure};
 
 impl Errors {
-    pub fn petition<R: Into<String>, S: Into<String>, T: Into<String>>(
-        url: R,
-        method: S,
+    pub fn petition(
+        url: impl Into<String>,
+        method: impl Into<String>,
         http_code: Option<StatusCode>,
         failure: PetitionFailure,
-        reason: T,
+        reason: impl Into<String>,
         source: Option<AnyError>,
     ) -> Self {
         let (status_code, error_code) = match &failure {
@@ -53,11 +53,11 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn wallet<R: Into<String>, S: Into<String>, T: Into<String>>(
-        url: R,
-        method: S,
+    pub fn wallet(
+        url: impl Into<String>,
+        method: impl Into<String>,
         http_code: Option<StatusCode>,
-        reason: T,
+        reason: impl Into<String>,
         source: Option<AnyError>,
     ) -> Self {
         Errors::WalletError {
@@ -73,11 +73,11 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn provider<R: Into<String>, S: Into<String>, T: Into<String>>(
-        url: R,
-        method: S,
+    pub fn provider(
+        url: impl Into<String>,
+        method: impl Into<String>,
         http_code: Option<StatusCode>,
-        reason: T,
+        reason: impl Into<String>,
         source: Option<AnyError>,
     ) -> Self {
         Errors::ProviderError {
@@ -93,11 +93,27 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn consumer<R: Into<String>, S: Into<String>, T: Into<String>>(
-        url: R,
-        method: S,
+    pub fn provider_grant(
+        reason: impl Into<String>,
+    ) -> Self {
+        Errors::ProviderError {
+            info: ErrorInfo {
+                message: "Provider Error".to_string(),
+                error_code: 1300,
+                status_code: StatusCode::BAD_GATEWAY,
+                details: None,
+            },
+            ctx: Errors::build_ctx(None, "Provider Grant Endpoint", "POST"),
+            reason: reason.into(),
+            source: None,
+            backtrace: Backtrace::capture(),
+        }
+    }
+    pub fn consumer(
+        url: impl Into<String>,
+        method: impl Into<String>,
         http_code: Option<StatusCode>,
-        reason: T,
+        reason: impl Into<String>,
         source: Option<AnyError>,
     ) -> Self {
         Errors::ConsumerError {
@@ -113,11 +129,11 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn authority<R: Into<String>, S: Into<String>, T: Into<String>>(
-        url: R,
-        method: S,
+    pub fn authority(
+        url: impl Into<String>,
+        method: impl Into<String>,
         http_code: Option<StatusCode>,
-        reason: T,
+        reason: impl Into<String>,
         source: Option<AnyError>,
     ) -> Self {
         Errors::AuthorityError {
@@ -133,9 +149,25 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn missing_action<R: Into<String>>(
+    pub fn authority_grant(
+        reason: impl Into<String>,
+    ) -> Self {
+        Errors::AuthorityError {
+            info: ErrorInfo {
+                message: "Authority Error".to_string(),
+                error_code: 1500,
+                status_code: StatusCode::BAD_GATEWAY,
+                details: None,
+            },
+            ctx: Errors::build_ctx(None, "Authority Grant Endpoint", "POST"),
+            reason: reason.into(),
+            source: None,
+            backtrace: Backtrace::capture(),
+        }
+    }
+    pub fn missing_action(
         action: MissingAction,
-        reason: R,
+        reason: impl Into<String>,
         source: Option<AnyError>,
     ) -> Self {
         let error_code = match action {
@@ -159,9 +191,9 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn missing_resource<R: Into<String>, T: Into<String>>(
-        id: R,
-        reason: T,
+    pub fn missing_resource(
+        id: impl Into<String>,
+        reason: impl Into<String>,
         source: Option<AnyError>,
     ) -> Self {
         Errors::MissingResourceError {
@@ -177,7 +209,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn format<R: Into<String>>(option: BadFormat, reason: R, source: Option<AnyError>) -> Self {
+    pub fn format(option: BadFormat, reason: impl Into<String>, source: Option<AnyError>) -> Self {
         let (error_code, status_code) = match option {
             BadFormat::Sent => (3110, StatusCode::BAD_GATEWAY),
             BadFormat::Received => (3120, StatusCode::BAD_REQUEST),
@@ -195,7 +227,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn unauthorized<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn unauthorized(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::UnauthorizedError {
             info: ErrorInfo {
                 message: "Unauthorized Error".to_string(),
@@ -208,7 +240,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn forbidden<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn forbidden(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::ForbiddenError {
             info: ErrorInfo {
                 message: "Forbidden Error".to_string(),
@@ -221,7 +253,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn security<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn security(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::SecurityError {
             info: ErrorInfo {
                 message: "Security Error".to_string(),
@@ -234,7 +266,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn db<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn db(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::DatabaseError {
             info: ErrorInfo {
                 message: "Database Error".to_string(),
@@ -247,7 +279,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn not_impl<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn not_impl(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::FeatureNotImplError {
             info: ErrorInfo {
                 message: "Feature Not Implemented".to_string(),
@@ -260,7 +292,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn env_var<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn env_var(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::EnvVarError {
             info: ErrorInfo {
                 message: "Environment Variable Error".to_string(),
@@ -273,7 +305,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn not_active<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn not_active(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::ModuleNotActiveError {
             info: ErrorInfo {
                 message: "Module Not Active Error".to_string(),
@@ -286,9 +318,9 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn read<R: Into<String>, S: Into<String>>(
-        path: R,
-        reason: S,
+    pub fn read(
+        path: impl Into<String>,
+        reason: impl Into<String>,
         source: Option<AnyError>,
     ) -> Self {
         Errors::ReadError {
@@ -304,9 +336,9 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn write<R: Into<String>, S: Into<String>>(
-        path: R,
-        reason: S,
+    pub fn write(
+        path: impl Into<String>,
+        reason: impl Into<String>,
         source: Option<AnyError>,
     ) -> Self {
         Errors::WriteError {
@@ -322,7 +354,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn parse<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn parse(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::ParseError {
             info: ErrorInfo {
                 message: "Parse Error".to_string(),
@@ -335,7 +367,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn validation<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn validation(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         let reason = reason.into();
         Errors::ParseError {
             info: ErrorInfo {
@@ -349,7 +381,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn vault<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn vault(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::VaultError {
             info: ErrorInfo {
                 message: "Vault Error".to_string(),
@@ -362,7 +394,7 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn crazy<R: Into<String>>(reason: R, source: Option<AnyError>) -> Self {
+    pub fn crazy(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::CrazyError {
             info: ErrorInfo {
                 message: "Something unexpected happened".to_string(),

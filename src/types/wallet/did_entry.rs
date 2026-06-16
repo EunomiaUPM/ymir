@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::HasId;
 use super::KeyRef;
 use crate::types::dids::{DidBuilder, DidDocument, DidService, DidType};
 use crate::types::keys::PrivateKey;
-use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

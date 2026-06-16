@@ -17,9 +17,9 @@
 
 use std::collections::HashMap;
 
+use crate::types::keys::Alg;
+use crate::types::vcs::{VcFormat, VcType, VcTypeConfig};
 use serde::{Deserialize, Serialize};
-
-use crate::types::vcs::VcType;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CredentialConfiguration {
@@ -36,20 +36,37 @@ pub struct CredentialDefinition {
 
 impl CredentialConfiguration {
     pub fn basic(vcs: Option<&[VcType]>) -> HashMap<String, CredentialConfiguration> {
+        let vcs: Vec<VcType> = vcs
+            .map(|s| s.to_vec())
+            .unwrap_or_else(|| VcType::supported());
+
+        let formats = VcFormat::supported();
+
+        let alg: Vec<String> = Alg::supported()
+            .into_iter()
+            .map(|alg| alg.to_string())
+            .collect();
+
         let mut credential_configurations_supported = HashMap::new();
-        let vcs = vcs.unwrap_or(VcType::variants());
-        for vc_type in vcs {
-            credential_configurations_supported.insert(
-                vc_type.to_conf(),
-                CredentialConfiguration {
-                    format: "jwt_vc_json".to_string(),
-                    cryptographic_binding_methods_supported: vec!["did".to_string()],
-                    credential_signing_alg_values_supported: vec!["RSA".to_string()],
-                    credential_definition: CredentialDefinition {
-                        r#type: vec!["VerifiableCredential".to_string(), vc_type.to_string()],
+
+        for vc_type in &vcs {
+            for format in &formats {
+                let config = VcTypeConfig::new(vc_type.clone(), format.clone());
+                credential_configurations_supported.insert(
+                    config.to_string(),
+                    CredentialConfiguration {
+                        format: config.format().to_string(),
+                        cryptographic_binding_methods_supported: vec!["did".to_string()],
+                        credential_signing_alg_values_supported: alg.clone(),
+                        credential_definition: CredentialDefinition {
+                            r#type: vec![
+                                "VerifiableCredential".to_string(),
+                                config.vc_type().to_string(),
+                            ],
+                        },
                     },
-                },
-            );
+                );
+            }
         }
 
         credential_configurations_supported

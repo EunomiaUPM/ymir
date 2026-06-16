@@ -20,7 +20,6 @@ mod connection_trait;
 mod db_trait;
 mod did_trait;
 mod hosts_trait;
-mod vc_pattern_trait;
 mod verify_req_trait;
 mod wallet_trait;
 
@@ -29,6 +28,5 @@ pub use connection_trait::ConnectionConfigTrait;
 pub use db_trait::DatabaseConfigTrait;
 pub use did_trait::DidConfigTrait;
 pub use hosts_trait::{HostsConfigTrait, SingleHostTrait};
-pub use vc_pattern_trait::VcConfigTrait;
 pub use verify_req_trait::VerifyReqConfigTrait;
 pub use wallet_trait::WalletConfigTrait;

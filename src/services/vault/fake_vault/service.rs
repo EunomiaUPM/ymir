@@ -41,7 +41,10 @@ impl FakeVaultService {
             .map_err(|e| Errors::vault("VAULT_PATH env var not set", Some(Box::new(e))))?;
         let db_path = std::env::var("VAULT_APP_DB")
             .map_err(|e| Errors::vault("VAULT_APP_DB env var not set", Some(Box::new(e))))?;
-        Ok(FakeVaultService { path: PathBuf::from(path), db_path })
+        Ok(FakeVaultService {
+            path: PathBuf::from(path),
+            db_path,
+        })
     }
 }
 
@@ -72,10 +75,6 @@ impl VaultTrait for FakeVaultService {
         self.write_all_pems()
     }
 
-    async fn write_local_secrets(&self, _map: Option<HashMap<String, Value>>) -> Outcome<()> {
-        self.write_all_pems()
-    }
-
     async fn check_mount(&self) -> Outcome<()> {
         Ok(())
     }
@@ -88,7 +87,8 @@ impl VaultTrait for FakeVaultService {
 
         let db_secrets: DbSecrets = read_json(path)?;
         Database::connect(config.get_full_db_url(&db_secrets))
-            .await.map_err(|e| Errors::db("Error connecting to database", Some(Box::new(e))))
+            .await
+            .map_err(|e| Errors::db("Error connecting to database", Some(Box::new(e))))
     }
 }
 
@@ -98,8 +98,8 @@ impl FakeVaultService {
         let pub_key = expect_from_env("VAULT_APP_PUB_PKEY");
         let cert = expect_from_env("VAULT_APP_CERT");
 
-        self.write_priv_key_pem(&priv_key)?;
-        self.write_pem(&pub_key)?;
+        self.write_parsed_key_pem(&priv_key, PemHelper::priv_from_pem)?;
+        self.write_parsed_key_pem(&pub_key, PemHelper::pub_from_pem)?;
         self.write_pem(&cert)
     }
     fn write_pem(&self, json_file: &str) -> Outcome<()> {
@@ -111,11 +111,14 @@ impl FakeVaultService {
 
         write_json(self.path.join(json_file), &value)
     }
-    fn write_priv_key_pem(&self, json_file: &str) -> Outcome<()> {
+    fn write_parsed_key_pem<T>(&self, json_file: &str, parser: T) -> Outcome<()>
+    where
+        T: FnOnce(&str) -> Outcome<PemHelper>,
+    {
         let pem_file = Self::json_to_pem_extension(json_file);
         let path = self.path.join(pem_file);
         let pem = read(path)?;
-        let value = PemHelper::try_from_pem(pem)?;
+        let value = parser(&pem)?;
         write_json(self.path.join(json_file), &value)
     }
     pub fn json_to_pem_extension(s: &str) -> String {

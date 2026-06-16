@@ -16,11 +16,11 @@
  */
 
 mod db;
+mod pem_helper;
 mod string_helper;
 mod wallet;
-mod pem_helper;
 
 pub use db::*;
+pub use pem_helper::*;
 pub use string_helper::*;
 pub use wallet::*;
-pub use pem_helper::*;

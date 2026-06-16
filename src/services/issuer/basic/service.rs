@@ -18,14 +18,12 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use rsa::RsaPublicKey;
-use rsa::pkcs1::DecodeRsaPublicKey;
 use serde_json::Value;
 use tracing::info;
 use urlencoding;
 
 use super::super::IssuerTrait;
-use super::config::{BasicIssuerConfig, BasicIssuerConfigTrait};
+use super::BasicIssuerConfig;
 use crate::capabilities::{Kid, Signer, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
@@ -34,24 +32,32 @@ use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::types::issuing::{
     AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
-    TokenRequest, VCCredOffer, WellKnownJwks,
+    TokenRequest, VcCredOffer,
 };
 use crate::types::jwt::Jwt;
-use crate::types::keys::{PrivateKey, SigningCtx};
-use crate::types::secrets::{PemHelper, StringHelper};
+use crate::types::keys::{PrivateKey, PublicKey, SigningCtx};
+use crate::types::secrets::PemHelper;
 use crate::types::vcs::VcType;
 use crate::types::wallet::Identity;
-use crate::utils::{expect_from_env, get_from_opt, has_expired, is_active, trim_4_base};
+use crate::utils::{expect_from_env, has_expired, is_active, trim_4_base};
 
 pub struct BasicIssuerService {
     config: BasicIssuerConfig,
-    identity: Identity,
+    identity: Arc<Identity>,
     vault: Arc<VaultService>,
 }
 
 impl BasicIssuerService {
-    pub fn new(config: BasicIssuerConfig, vault: Arc<VaultService>, identity: Identity) -> Self {
-        Self { config, vault, identity }
+    pub fn new(
+        config: BasicIssuerConfig,
+        vault: Arc<VaultService>,
+        identity: Arc<Identity>,
+    ) -> Self {
+        Self {
+            config,
+            vault,
+            identity,
+        }
     }
 }
 
@@ -96,9 +102,9 @@ impl IssuerTrait for BasicIssuerService {
         uri
     }
 
-    fn get_cred_offer_data(&self, model: &issuing::Model) -> Outcome<VCCredOffer> {
+    fn get_cred_offer_data(&self, model: &issuing::Model) -> Outcome<VcCredOffer> {
         info!("Retrieving credential offer data");
-        VCCredOffer::new(
+        VcCredOffer::new(
             self.config.get_host(HostType::Http),
             &model.pre_auth_code,
             &model.vc_type,
@@ -172,7 +178,8 @@ impl IssuerTrait for BasicIssuerService {
 
         let proof_jwt = Jwt::parse(&cred_req.proof.jwt)?;
 
-        let (kid, claims) = Verifier::verify_enveloped::<DidPossession>(&proof_jwt, Some(&model.aud)).await?;
+        let (kid, claims) =
+            Verifier::verify_enveloped::<DidPossession>(&proof_jwt, Some(&model.aud)).await?;
 
         validate_did_possession(&claims, &kid)?;
         is_active(claims.iat)?;
@@ -189,7 +196,9 @@ impl IssuerTrait for BasicIssuerService {
         let pem_helper: PemHelper = self.vault.read(None, &priv_key).await?;
         let key = PrivateKey::try_from(pem_helper)?;
         let did = self.identity.did().clone();
-        let keys_id = self.identity.keys_id().first().cloned().ok_or_else(|| Errors::missing_action(MissingAction::Key, "No key within did Document", None))?;
+        let keys_id = self.identity.keys_id().first().cloned().ok_or_else(|| {
+            Errors::missing_action(MissingAction::Key, "No key within did Document", None)
+        })?;
 
         let sig_ctx = SigningCtx::new(did, key, keys_id.fragment().to_string());
 
@@ -206,10 +215,13 @@ impl IssuerTrait for BasicIssuerService {
         int_model: &recv_interaction::Model,
         iss_model: &issuing::Model,
     ) -> Outcome<minions::NewModel> {
-        let did = get_from_opt(iss_model.holder_did.as_ref(), "did")?;
+        let did = iss_model
+            .holder_did
+            .as_ref()
+            .ok_or_else(|| Errors::format(BadFormat::Received, "Missing holder_did", None))?;
         let base_url = trim_4_base(&int_model.uri);
         Ok(minions::NewModel {
-            participant_id: did,
+            participant_id: did.clone(),
             participant_slug: req_model.participant_slug.clone(),
             vc_uri: req_model.vc_uri.clone(),
             participant_type: "Agent".to_string(),
@@ -219,13 +231,12 @@ impl IssuerTrait for BasicIssuerService {
         })
     }
 
-    async fn get_jwks_data(&self) -> Outcome<WellKnownJwks> {
+    async fn get_jwks_data(&self) -> Outcome<Value> {
         info!("Retrieving jwks data");
         let pub_key = expect_from_env("VAULT_APP_PUB_PKEY");
-        let pub_key: StringHelper = self.vault.read(None, &pub_key).await?;
-        let key = RsaPublicKey::from_pkcs1_pem(pub_key.data())
-            .map_err(|e| Errors::forbidden("Could not parse public key", Some(Box::new(e))))?;
-        Ok(WellKnownJwks::new(&key))
+        let pub_key: PemHelper = self.vault.read(None, &pub_key).await?;
+        let key = PublicKey::try_from(pub_key)?;
+        Ok(key.public_jwk())
     }
 }
 

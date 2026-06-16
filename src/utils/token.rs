@@ -15,11 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::{BadFormat, Errors, Outcome};
+use crate::errors::{Errors, Outcome};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use chrono::Utc;
 use rand::Rng;
-use serde_json::Value;
 
 pub fn create_opaque_token() -> String {
     let mut bytes = [0u8; 32]; // 256 bits
@@ -27,26 +27,20 @@ pub fn create_opaque_token() -> String {
     URL_SAFE_NO_PAD.encode(&bytes)
 }
 
-pub fn decode_jwt_payload(jwt: &str) -> Outcome<Value> {
-    let parts: Vec<&str> = jwt.splitn(3, '.').collect();
-
-    if parts.len() < 2 {
-        return Err(Errors::format(
-            BadFormat::Received,
-            "Error decoding jwt payload",
-            None,
-        ));
+pub fn is_active(iat: i64) -> Outcome<()> {
+    let now = Utc::now().timestamp();
+    if now >= iat {
+        Ok(())
+    } else {
+        Err(Errors::forbidden("Token is not yet valid", None))
     }
+}
 
-    let payload = parts[1];
-    let decoded = URL_SAFE_NO_PAD.decode(payload).map_err(|e| {
-        Errors::format(
-            BadFormat::Received,
-            "Error decoding jwt payload",
-            Some(Box::new(e)),
-        )
-    })?;
-    let value: Value = serde_json::from_slice(&decoded)?;
-
-    Ok(value)
+pub fn has_expired(exp: i64) -> Outcome<()> {
+    let now = Utc::now().timestamp();
+    if now <= exp {
+        Ok(())
+    } else {
+        Err(Errors::forbidden("Token has expired", None))
+    }
 }

@@ -25,6 +25,12 @@ pub struct WaltIdConfig {
     did_config: DidConfig,
 }
 
+impl WaltIdConfig {
+    pub fn new(hosts: CommonHostsConfig, ssi_wallet_config: WalletConfig, did_config: DidConfig) -> Self {
+        Self { hosts, ssi_wallet_config, did_config }
+    }
+}
+
 impl HostsConfigTrait for WaltIdConfig {
     fn hosts(&self) -> &CommonHostsConfig {
         &self.hosts

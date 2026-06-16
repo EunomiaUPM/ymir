@@ -18,7 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct WalletSecrets {
+pub struct WaltIdSecrets {
     r#type: String,
     name: String,
     email: String,
@@ -26,7 +26,7 @@ pub struct WalletSecrets {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct SemiWalletSecrets {
+pub struct SemiWaltIdSecrets {
     r#type: String,
     email: String,
     password: String,

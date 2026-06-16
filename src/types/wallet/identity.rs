@@ -15,10 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::KeyRef;
 use crate::capabilities::Did;
 use crate::types::dids::DidDocument;
-use super::KeyRef;
 
+#[derive(Debug, Clone)]
 pub struct Identity {
     did: Did,
     did_doc: DidDocument,
@@ -27,7 +28,11 @@ pub struct Identity {
 
 impl Identity {
     pub fn new(did: Did, did_doc: DidDocument, keys_id: Vec<KeyRef>) -> Self {
-        Self { did, did_doc, keys_id }
+        Self {
+            did,
+            did_doc,
+            keys_id,
+        }
     }
     pub fn did(&self) -> &Did {
         &self.did

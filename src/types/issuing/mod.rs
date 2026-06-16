@@ -24,7 +24,6 @@ pub use issuer_metadata::*;
 pub use oauth_server::*;
 pub use token_req::*;
 pub use vc_issuing::*;
-pub use well_known_jwk::*;
 
 mod cred_config;
 mod cred_offer;
@@ -35,4 +34,3 @@ mod issuer_metadata;
 mod oauth_server;
 mod token_req;
 mod vc_issuing;
-mod well_known_jwk;

@@ -1,0 +1,86 @@
+/*
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+use chrono;
+use sea_orm::entity::prelude::*;
+use sea_orm::{ActiveValue, DeriveEntityModel};
+use serde::{Deserialize, Serialize};
+use crate::data::entities::IntoOverwriteActive;
+use crate::types::participants::ParticipantType;
+
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[sea_orm(table_name = "participants")]
+pub struct Model {
+    #[sea_orm(primary_key)]
+    pub participant_id: String,                     // REQUEST
+    pub participant_nick: String,                   // REQUEST
+    pub participant_type: ParticipantType,          // REQUEST
+    pub base_url: String,                           // REQUEST
+    pub token: Option<String>,                      // REQUEST
+    pub saved_at: chrono::NaiveDateTime,            // DEFAULT
+    pub last_interaction: chrono::NaiveDateTime,    // DEFAULT
+    pub extra_fields: serde_json::Value,            // REQUEST
+    pub is_me: bool,                                // REQUEST
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Plan {
+    pub participant_id: String,
+    pub participant_nick: String,
+    pub participant_type: ParticipantType,
+    pub base_url: String,
+    pub token: Option<String>,
+    pub extra_fields: Option<serde_json::Value>,
+    pub is_me: bool,
+}
+
+impl IntoOverwriteActive<ActiveModel> for Plan {
+    fn into_active(self) -> ActiveModel {
+        ActiveModel {
+            participant_id: ActiveValue::Set(self.participant_id),
+            participant_nick: ActiveValue::Set(self.participant_nick),
+            participant_type: ActiveValue::Set(self.participant_type),
+            base_url: ActiveValue::Set(self.base_url),
+            token: ActiveValue::Set(self.token),
+            saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            extra_fields: ActiveValue::Set(self.extra_fields.unwrap_or(serde_json::json!({}))),
+            is_me: ActiveValue::Set(self.is_me),
+        }
+    }
+}
+
+impl IntoOverwriteActive<ActiveModel> for Model {
+    fn into_active(self) -> ActiveModel {
+        ActiveModel {
+            participant_id: ActiveValue::Set(self.participant_id),
+            participant_nick: ActiveValue::Set(self.participant_nick),
+            participant_type: ActiveValue::Set(self.participant_type),
+            base_url: ActiveValue::Set(self.base_url),
+            token: ActiveValue::Set(self.token),
+            saved_at: ActiveValue::Set(self.saved_at),
+            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            extra_fields: ActiveValue::Set(self.extra_fields),
+            is_me: ActiveValue::Set(self.is_me),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
+
+impl ActiveModelBehavior for ActiveModel {}

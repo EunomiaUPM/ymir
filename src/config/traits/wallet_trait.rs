@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::{HostsConfigTrait};
+use crate::config::traits::HostsConfigTrait;
 use crate::config::types::{HostType, WalletConfig};
 use crate::types::wallet::WalletInstance;
 

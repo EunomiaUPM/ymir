@@ -70,13 +70,6 @@ impl VaultTrait for VaultService {
         }
     }
 
-    async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()> {
-        match self {
-            VaultService::Real(v) => v.write_local_secrets(map).await,
-            VaultService::Fake(v) => v.write_local_secrets(map).await,
-        }
-    }
-
     async fn check_mount(&self) -> Outcome<()> {
         match self {
             VaultService::Real(v) => v.check_mount().await,

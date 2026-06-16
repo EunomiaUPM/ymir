@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::types::keys::Alg;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use crate::types::keys::Alg;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JwtHeader {

@@ -28,5 +28,5 @@ pub use refresh_service::VCRefreshService;
 pub use schema::*;
 pub use status::VCStatus;
 pub use terms_of_use::TermsOfUse;
-pub use vc_doc::VcDocument;
 pub use vc_builder::VcDocumentBuilder;
+pub use vc_doc::VcDocument;

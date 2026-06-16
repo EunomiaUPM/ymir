@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::HasId;
 use crate::errors::Errors;
-use crate::types::keys::{Crv, PrivateKey, Kty, Alg};
-use crate::utils::HasId;
+use crate::types::keys::{Crv, Kty, PrivateKey};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -25,7 +25,6 @@ pub struct NewKeyModel {
     pub alias: String,
     pub kty: Kty,
     pub crv: Option<Crv>,
-    pub alg: Alg,
     pub pem: String,
 }
 
@@ -35,7 +34,6 @@ pub struct KeyModel {
     pub alias: String,
     pub kty: Kty,
     pub crv: Option<Crv>,
-    pub alg: Alg,
     pub pem: String,
 }
 
@@ -49,6 +47,6 @@ impl TryInto<PrivateKey> for KeyModel {
     type Error = Errors;
 
     fn try_into(self) -> Result<PrivateKey, Self::Error> {
-        PrivateKey::try_from_pkcs8_pem_data(&self.pem, &self.kty, self.crv.as_ref(), &self.alg)
+        PrivateKey::from_safe_pem(&self.pem, &self.kty, self.crv.as_ref())
     }
 }

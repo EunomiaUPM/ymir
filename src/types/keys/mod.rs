@@ -15,24 +15,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#[macro_use]
-mod macros;
-
 mod alg;
+mod certificate;
 mod crv;
-mod private_key;
-mod kty;
-mod jwk;
-mod public_key;
-mod serial_key;
 mod crypto_suite;
+mod kty;
+mod private_key;
+mod public_key;
 mod sig_ctx;
 
 pub use alg::Alg;
+pub use certificate::Certificate;
 pub use crv::Crv;
-pub use private_key::PrivateKey;
-pub use kty::Kty;
-pub use public_key::{PublicKey};
-pub use serial_key::SerialKey;
 pub use crypto_suite::Cryptosuite;
+pub use kty::Kty;
+pub use private_key::PrivateKey;
+pub use public_key::PublicKey;
 pub use sig_ctx::SigningCtx;

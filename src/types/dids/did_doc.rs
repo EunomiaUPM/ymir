@@ -17,10 +17,10 @@
 
 use super::{DidService, VerificationMethod};
 use crate::capabilities::Did;
-use crate::types::keys::PrivateKey;
-use crate::utils::{StringOrArr};
-use serde::{Deserialize, Serialize};
 use crate::errors::Outcome;
+use crate::types::keys::PrivateKey;
+use crate::utils::StringOrArr;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DidDocument {
@@ -41,9 +41,15 @@ pub struct DidDocument {
     pub assertion_method: Option<StringOrArr>, // TODO
     #[serde(rename = "keyAgreement", skip_serializing_if = "Option::is_none")]
     pub key_agreement: Option<StringOrArr>, // TODO
-    #[serde(rename = "capabilityInvocation", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "capabilityInvocation",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub capability_invocation: Option<StringOrArr>, // TODO
-    #[serde(rename = "capabilityDelegation", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "capabilityDelegation",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub capability_delegation: Option<StringOrArr>, // TODO
 }
 
@@ -55,7 +61,7 @@ impl DidDocument {
             .collect();
 
         DidDocument {
-            context: StringOrArr::Arr(vec!("https://www.w3.org/ns/did/v1.1".to_string())),
+            context: StringOrArr::Arr(vec!["https://www.w3.org/ns/did/v1.1".to_string()]),
             id: did.id().to_string(),
             controller: None,
             also_known_as: None,

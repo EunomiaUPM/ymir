@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::impl_serde_via_str;
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
@@ -35,7 +36,6 @@ pub enum Crv {
     // Catch-all
     Other(String),
 }
-
 
 impl Display for Crv {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

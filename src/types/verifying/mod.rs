@@ -16,5 +16,7 @@
  */
 
 mod verify_payload;
+mod status;
 
 pub use verify_payload::VerifyPayload;
+pub use status::VerificationStatus;

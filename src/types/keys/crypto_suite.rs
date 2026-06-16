@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::impl_serde_via_str;
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
@@ -38,8 +39,6 @@ pub enum Cryptosuite {
     // Catch-all
     Other(String),
 }
-
-impl_serde_via_str!(Cryptosuite);
 
 impl Display for Cryptosuite {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -71,3 +70,5 @@ impl FromStr for Cryptosuite {
         })
     }
 }
+
+impl_serde_via_str!(Cryptosuite);

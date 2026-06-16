@@ -19,11 +19,10 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::errors::Outcome;
-use crate::types::vcs::VcType;
+use crate::types::vcs::{VcFormat, VcType, VcTypeConfig};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct VCCredOffer {
+pub struct VcCredOffer {
     pub credential_issuer: String,
     pub grants: CredOfferGrants,
     pub credential_configuration_ids: Vec<String>,
@@ -41,22 +40,23 @@ pub struct UrnPreAuthorizedCode {
     pub pre_authorized_code: String,
 }
 
-impl VCCredOffer {
+impl VcCredOffer {
     pub fn new<S: Into<String>, T: Into<String>>(
         issuer: S,
         token: T,
-        vc_type: &str,
-    ) -> Outcome<VCCredOffer> {
-        let mut types: Vec<VcType> = Vec::new();
+        vc_types: &[VcType],
+    ) -> Self {
+        let formats = VcFormat::supported();
+        let mut configuration_ids: Vec<String> = Vec::new();
 
-        for s in vc_type.to_string().split('&').map(|s| s.trim()) {
-            let data = VcType::from_str(s)?;
-            types.push(data);
+        for vc_type in vc_types {
+            for format in &formats {
+                let config = VcTypeConfig::new(vc_type.clone(), format.clone());
+                configuration_ids.push(config.to_string());
+            }
         }
 
-        let configuration_ids = types.iter().map(|t| t.to_conf()).collect();
-
-        Ok(VCCredOffer {
+        VcCredOffer {
             credential_issuer: issuer.into(),
             grants: CredOfferGrants {
                 urn_pre_authorized_code: UrnPreAuthorizedCode {
@@ -64,6 +64,6 @@ impl VCCredOffer {
                 },
             },
             credential_configuration_ids: configuration_ids,
-        })
+        }
     }
 }

@@ -15,7 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod service;
 mod config;
+mod service;
 
 pub use service::FafnirService;
+pub use config::FafnirConfig;

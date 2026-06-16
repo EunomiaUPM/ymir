@@ -26,7 +26,11 @@ pub struct SigningCtx {
 
 impl SigningCtx {
     pub fn new(did: Did, key: PrivateKey, keys_frag: String) -> Self {
-        SigningCtx { did, key, keys_frag }
+        SigningCtx {
+            did,
+            key,
+            keys_frag,
+        }
     }
     pub fn did(&self) -> &Did {
         &self.did

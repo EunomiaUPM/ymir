@@ -15,9 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
-use crate::types::wallet::WalletInfo;
 use super::DidsInfo;
+use crate::types::wallet::WalletInfo;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WalletInfoResponse {

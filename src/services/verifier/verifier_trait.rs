@@ -16,17 +16,14 @@
  */
 
 use async_trait::async_trait;
-
-use crate::data::entities::recv_interaction;
-use crate::data::entities::recv_verification::{Model, NewModel};
+use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::Outcome;
 use crate::types::vcs::VPDef;
 
 #[async_trait]
 pub trait VerifierTrait: Send + Sync + 'static {
-    fn start_vp(&self, id: &str) -> Outcome<NewModel>;
+    fn build_vp_plan(&self, id: &str) -> Outcome<Plan>;
     fn generate_verification_uri(&self, model: &Model) -> String;
     fn generate_vpd(&self, ver_model: &Model) -> Outcome<VPDef>;
     async fn verify_all(&self, ver_model: &mut Model, vp_token: &str) -> Outcome<()>;
-    async fn end_verification(&self, model: &recv_interaction::Model) -> Outcome<Option<String>>;
 }

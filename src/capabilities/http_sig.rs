@@ -15,54 +15,42 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::http::HeaderMap;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
-use openssl::hash::MessageDigest;
-use openssl::pkey::PKey;
-use openssl::sign::{Signer, Verifier};
-use openssl::x509::X509;
-use rand::distributions::Alphanumeric;
+
 use rand::Rng;
+use rand::distributions::Alphanumeric;
 use sha2::{Digest, Sha256};
 
 use crate::errors::{Errors, Outcome};
+use crate::types::keys::{Alg, Certificate, PrivateKey};
 
-/// Tolerancia máxima en segundos entre el `created` de la firma y el tiempo actual.
 const MAX_CLOCK_SKEW_SECS: u64 = 30;
 
-/// Utilidad sin estado para construir y verificar headers HTTP Message Signatures
-/// (RFC 9421) según el perfil GNAP (RFC 9635 sección 7.3.1).
 pub struct HttpSig;
 
 impl HttpSig {
     // =========================================================================
-    // SIGNING — lado cliente
+    // SIGNING — client side
     // =========================================================================
 
     pub fn build(
-        cert_pem: &str,
-        private_key_pem: &str,
+        cert: &Certificate,
+        priv_key: &PrivateKey,
+        alg: Option<Alg>,
         method: &str,
         url: &str,
         body_bytes: &[u8],
         authorization: Option<&str>,
     ) -> Outcome<HeaderMap> {
-        let key_id = Self::compute_thumbprint(cert_pem)?;
-
-        let created = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-
-        let nonce: String = rand::thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(32)
-            .map(char::from)
-            .collect();
-
-        let content_digest = Self::compute_content_digest(body_bytes);
+        let alg = alg.unwrap_or(priv_key.alg());
+        let key_id = cert.thumbprint_sha256();
+        let created = unix_now();
+        let nonce = random_nonce_32();
+        let content_digest = digest(body_bytes);
         let content_length = body_bytes.len();
 
         let (signature_base, sig_params) = Self::build_signature_base(
@@ -73,13 +61,14 @@ impl HttpSig {
             created,
             &key_id,
             &nonce,
+            &alg,
             authorization,
         );
 
-        let signature = Self::sign_base(&signature_base, private_key_pem)?;
+        let signature_bytes = priv_key.sign_bytes(signature_base.as_bytes(), alg)?;
+        let signature_b64 = URL_SAFE_NO_PAD.encode(&signature_bytes);
 
         let mut headers = HeaderMap::new();
-
         headers.insert(
             "content-digest",
             content_digest.parse().map_err(|e| {
@@ -100,7 +89,7 @@ impl HttpSig {
         );
         headers.insert(
             "signature",
-            format!("sig1=:{signature}:").parse().map_err(|e| {
+            format!("sig1=:{signature_b64}:").parse().map_err(|e| {
                 Errors::parse("Failed to parse signature header", Some(Box::new(e)))
             })?,
         );
@@ -109,27 +98,21 @@ impl HttpSig {
     }
 
     // =========================================================================
-    // VERIFICATION — lado servidor
+    // VERIFICATION — server side
     // =========================================================================
 
-    /// Verifica una request httpsig entrante.
-    ///
-    /// Devuelve:
-    /// - `Ok(())`  — firma criptográficamente válida
-    /// - `Err`     — firma inválida, request manipulada o malformada → 401
-    ///
-    /// Esta función solo verifica la firma. La decisión de si el cert
-    /// es confiable o requiere aprobación manual se toma con `check_cert`.
     pub fn verify(
         headers: &HeaderMap,
+        cert: &Certificate,
         method: &str,
         url: &str,
         body_bytes: &[u8],
-        cert_pem: &str,
     ) -> Outcome<()> {
         let signature_input = Self::extract_header(headers, "signature-input")?;
         let signature_header = Self::extract_header(headers, "signature")?;
         let content_digest = Self::extract_header(headers, "content-digest")?;
+
+        cert.check_validity()?;
 
         if !signature_input.contains("tag=\"gnap\"") {
             return Err(Errors::security(
@@ -138,7 +121,7 @@ impl HttpSig {
             ));
         }
 
-        let expected_digest = Self::compute_content_digest(body_bytes);
+        let expected_digest = digest(body_bytes);
         if content_digest != expected_digest {
             return Err(Errors::security(
                 "Content-Digest mismatch — body may have been tampered",
@@ -152,23 +135,10 @@ impl HttpSig {
                 Errors::security("Invalid `created` timestamp in Signature-Input", None)
             })?;
 
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-
-        if now < created || now - created > MAX_CLOCK_SKEW_SECS {
-            return Err(Errors::security(
-                format!(
-                    "Signature timestamp out of acceptable range \
-                     (created={created}, now={now}, max_skew={MAX_CLOCK_SKEW_SECS}s)"
-                ),
-                None,
-            ));
-        }
+        check_clock_skew(created)?;
 
         let keyid_in_sig = Self::extract_sig_param(&signature_input, "keyid")?;
-        let cert_thumbprint = Self::compute_thumbprint(cert_pem)?;
+        let cert_thumbprint = cert.thumbprint_sha256();
 
         if keyid_in_sig != cert_thumbprint {
             return Err(Errors::security(
@@ -191,6 +161,10 @@ impl HttpSig {
         let content_length = body_bytes.len();
         let nonce = Self::extract_sig_param(&signature_input, "nonce").unwrap_or_default();
 
+        let alg_str = Self::extract_sig_param(&signature_input, "alg")?;
+        let Ok(alg) = Alg::from_str(&alg_str);
+        let public_key = cert.public_key()?;
+
         let (reconstructed_base, _) = Self::build_signature_base(
             method,
             url,
@@ -199,92 +173,16 @@ impl HttpSig {
             created,
             &keyid_in_sig,
             &nonce,
+            &alg,
             authorization,
         );
 
-        Self::verify_signature(&reconstructed_base, &signature_bytes, cert_pem)
-    }
-
-    // =========================================================================
-    // CERT VALIDATION — comprobación independiente del certificado
-    // =========================================================================
-
-    /// Comprueba la validez temporal de un certificado PEM.
-    ///
-    /// Devuelve un `CertStatus` que indica si el certificado es válido,
-    /// ha expirado, aún no es válido, o está malformado.
-    ///
-    /// Esta función es independiente de httpsig — se puede usar en cualquier
-    /// punto del flujo donde se necesite saber si un cert es temporalmente válido,
-    /// por ejemplo antes de decidir si un participante necesita aprobación manual.
-    ///
-    /// Uso típico en el handler GNAP:
-    /// ```rust
-    /// HttpSig::verify(&headers, "POST", &url, &body, cert_pem)?; // firma válida o 401
-    ///
-    /// match HttpSig::check_cert(cert_pem) {
-    ///     CertStatus::Valid      => process_automatic(grant_request).await,
-    ///     CertStatus::Expired    => return StatusCode::UNAUTHORIZED,
-    ///     CertStatus::NotYetValid => return StatusCode::UNAUTHORIZED,
-    ///     CertStatus::Malformed  => return StatusCode::BAD_REQUEST,
-    /// }
-    /// ```
-    pub fn check_cert(cert_pem: &str) -> Outcome<()> {
-        let normalized = normalize_cert_pem(cert_pem);
-        let cert = X509::from_pem(normalized.as_bytes())
-            .map_err(|e| Errors::security("Client certificate is malformed", Some(Box::new(e))))?;
-
-        let now = openssl::asn1::Asn1Time::days_from_now(0)
-            .expect("Failed to get current time as Asn1Time");
-
-        let not_before = cert.not_before();
-        let not_after = cert.not_after();
-
-        match (not_before.compare(&now), now.compare(not_after)) {
-            (
-                Ok(std::cmp::Ordering::Less) | Ok(std::cmp::Ordering::Equal),
-                Ok(std::cmp::Ordering::Less) | Ok(std::cmp::Ordering::Equal),
-            ) => Ok(()),
-
-            (Ok(std::cmp::Ordering::Greater), _) => Err(Errors::security(
-                "Client certificate is not yet valid",
-                None,
-            )),
-
-            (_, Ok(std::cmp::Ordering::Greater)) => {
-                Err(Errors::security("Client certificate has expired", None))
-            }
-
-            _ => Err(Errors::security("Client certificate is malformed", None)),
-        }
-    }
-
-    /// Devuelve el thumbprint SHA-256 de un certificado PEM como string base64url.
-    /// Útil para identificar un cert sin almacenarlo completo.
-    pub fn thumbprint(cert_pem: &str) -> Outcome<String> {
-        Self::compute_thumbprint(cert_pem)
+        public_key.verify_bytes(reconstructed_base.as_bytes(), &signature_bytes, &alg)
     }
 
     // =========================================================================
     // Internals
     // =========================================================================
-
-    fn compute_thumbprint(cert_pem: &str) -> Outcome<String> {
-        let cert_pem = normalize_cert_pem(cert_pem);
-        let cert = X509::from_pem(cert_pem.as_bytes())
-            .map_err(|e| Errors::security("Failed to parse cert PEM", Some(Box::new(e))))?;
-
-        let digest = cert.digest(MessageDigest::sha256()).map_err(|e| {
-            Errors::security("Failed to compute cert thumbprint", Some(Box::new(e)))
-        })?;
-
-        Ok(URL_SAFE_NO_PAD.encode(digest))
-    }
-
-    fn compute_content_digest(body: &[u8]) -> String {
-        let hash = Sha256::digest(body);
-        format!("sha-256=:{}:", URL_SAFE_NO_PAD.encode(hash))
-    }
 
     fn build_signature_base(
         method: &str,
@@ -294,6 +192,7 @@ impl HttpSig {
         created: u64,
         key_id: &str,
         nonce: &str,
+        alg: &Alg,
         authorization: Option<&str>,
     ) -> (String, String) {
         let mut components: Vec<&str> = vec![
@@ -319,6 +218,7 @@ impl HttpSig {
             ;created={created}\
             ;keyid=\"{key_id}\"\
             ;nonce=\"{nonce}\"\
+            ;alg=\"{alg}\"\
             ;tag=\"gnap\""
         );
 
@@ -337,59 +237,6 @@ impl HttpSig {
         lines.push(format!("\"@signature-params\": {sig_params}"));
 
         (lines.join("\n"), sig_params)
-    }
-
-    fn sign_base(signature_base: &str, private_key_pem: &str) -> Outcome<String> {
-        let pkey = PKey::private_key_from_pem(private_key_pem.as_bytes())
-            .map_err(|e| Errors::security("Failed to load private key", Some(Box::new(e))))?;
-
-        let mut signer = Signer::new(MessageDigest::sha256(), &pkey)
-            .map_err(|e| Errors::security("Failed to create signer", Some(Box::new(e))))?;
-
-        signer
-            .update(signature_base.as_bytes())
-            .map_err(|e| Errors::security("Failed to update signer", Some(Box::new(e))))?;
-
-        let signature = signer
-            .sign_to_vec()
-            .map_err(|e| Errors::security("Failed to produce signature", Some(Box::new(e))))?;
-
-        Ok(URL_SAFE_NO_PAD.encode(signature))
-    }
-
-    fn verify_signature(
-        signature_base: &str,
-        signature_bytes: &[u8],
-        cert_pem: &str,
-    ) -> Outcome<()> {
-        let normalized = normalize_cert_pem(cert_pem);
-        let cert = X509::from_pem(normalized.as_bytes()).map_err(|e| {
-            Errors::security("Failed to parse cert for verification", Some(Box::new(e)))
-        })?;
-
-        let public_key = cert.public_key().map_err(|e| {
-            Errors::security("Failed to extract public key from cert", Some(Box::new(e)))
-        })?;
-
-        let mut verifier = Verifier::new(MessageDigest::sha256(), &public_key)
-            .map_err(|e| Errors::security("Failed to create verifier", Some(Box::new(e))))?;
-
-        verifier
-            .update(signature_base.as_bytes())
-            .map_err(|e| Errors::security("Failed to update verifier", Some(Box::new(e))))?;
-
-        let valid = verifier
-            .verify(signature_bytes)
-            .map_err(|e| Errors::security("Failed to verify signature", Some(Box::new(e))))?;
-
-        if !valid {
-            return Err(Errors::security(
-                "Signature verification failed — request rejected",
-                None,
-            ));
-        }
-
-        Ok(())
     }
 
     fn extract_header(headers: &HeaderMap, name: &str) -> Outcome<String> {
@@ -445,15 +292,36 @@ impl HttpSig {
     }
 }
 
-fn normalize_cert_pem(cert: &str) -> String {
-    let cert = cert.trim();
+fn unix_now() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+}
 
-    if cert.starts_with("-----BEGIN CERTIFICATE-----") {
-        return cert.to_string();
+fn random_nonce_32() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect()
+}
+
+fn digest(body: &[u8]) -> String {
+    let hash = Sha256::digest(body);
+    format!("sha-256=:{}:", URL_SAFE_NO_PAD.encode(hash))
+}
+
+fn check_clock_skew(created: u64) -> Outcome<()> {
+    let now = unix_now();
+    if now < created || now - created > MAX_CLOCK_SKEW_SECS {
+        return Err(Errors::security(
+            format!(
+                "Signature timestamp out of acceptable range \
+                 (created={created}, now={now}, max_skew={MAX_CLOCK_SKEW_SECS}s)"
+            ),
+            None,
+        ));
     }
-
-    format!(
-        "-----BEGIN CERTIFICATE-----\n{}\n-----END CERTIFICATE-----",
-        cert
-    )
+    Ok(())
 }

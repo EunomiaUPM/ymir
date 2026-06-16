@@ -15,32 +15,42 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
 use crate::errors::Outcome;
-use crate::types::keys::{Alg, Crv, Kty, PrivateKey};
+use crate::types::keys::{Crv, Kty, PrivateKey, PublicKey};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct PemHelper {
     pem: String,
     crv: Option<Crv>,
-    alg: Alg,
     kty: Kty,
 }
 
 impl PemHelper {
-    pub fn new(pem: String, crv: Option<Crv>, alg: Alg, kty: Kty) -> Self {
-        Self { pem, crv, alg, kty }
+    pub fn new(pem: String, crv: Option<Crv>, kty: Kty) -> Self {
+        Self { pem, crv, kty }
     }
 
-    pub fn try_from_pem(pem: String) -> Outcome<Self> {
-        let key = PrivateKey::try_from_pkcs8_pem(&pem)?;
-        Ok(Self { pem, crv: key.crv(), alg: key.alg(), kty: key.kty() })
+    pub fn priv_from_pem(pem: &str) -> Outcome<Self> {
+        let key = PrivateKey::try_from_pkcs8_pem(pem)?;
+        Ok(Self {
+            pem: pem.to_string(),
+            crv: key.crv(),
+            kty: key.kty(),
+        })
     }
+
+    pub fn pub_from_pem(pem: &str) -> Outcome<Self> {
+        let key = PublicKey::try_from_pkcs8_pem(pem)?;
+        Ok(Self {
+            pem: pem.to_string(),
+            crv: key.crv(),
+            kty: key.kty(),
+        })
+    }
+
     pub fn pem(&self) -> &str {
         &self.pem
-    }
-    pub fn alg(&self) -> &Alg {
-        &self.alg
     }
     pub fn kty(&self) -> &Kty {
         &self.kty

@@ -60,7 +60,10 @@ pub struct JwkDid {
 
 impl JwkDid {
     pub fn new(id: impl Into<String>, jwk: impl Into<String>) -> JwkDid {
-        JwkDid { id: id.into(), jwk: jwk.into() }
+        JwkDid {
+            id: id.into(),
+            jwk: jwk.into(),
+        }
     }
     pub fn id(&self) -> &str {
         &self.id
@@ -79,7 +82,12 @@ pub struct WebDid {
 }
 
 impl WebDid {
-    pub fn new(id: impl Into<String>, domain: impl Into<String>, path: Option<String>, port: Option<String>) -> WebDid {
+    pub fn new(
+        id: impl Into<String>,
+        domain: impl Into<String>,
+        path: Option<String>,
+        port: Option<String>,
+    ) -> WebDid {
         WebDid {
             id: id.into(),
             domain: domain.into(),

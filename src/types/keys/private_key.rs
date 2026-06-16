@@ -17,102 +17,78 @@
 
 use super::{Alg, Crv, Cryptosuite, Kty, PublicKey};
 use crate::errors::{BadFormat, Errors, Outcome};
-use super::jwk::{ed25519_public_jwk, rsa_public_jwk};
-use ed25519_dalek::{SigningKey as Ed25519SigningKey};
-use rsa::pkcs8::{DecodePrivateKey};
-use rsa::pss::{SigningKey as PssSigningKey};
-use rsa::pkcs1v15::{SigningKey as PkcsSigningKey};
-use rsa::RsaPrivateKey;
-use rsa::signature::{Keypair, RandomizedSigner, SignatureEncoding};
-use rsa::signature::Signer;
-use serde_json::Value;
-use sha2::Sha256;
 use crate::types::secrets::PemHelper;
+use ed25519_dalek::SigningKey as Ed25519SigningKey;
+use rsa::RsaPrivateKey;
+use rsa::pkcs1v15::SigningKey as PkcsSigningKey;
+use rsa::pkcs8::DecodePrivateKey;
+use rsa::pss::SigningKey as PssSigningKey;
+use rsa::signature::Signer;
+use rsa::signature::{RandomizedSigner, SignatureEncoding};
+use serde_json::Value;
+use sha2::{Sha256, Sha384, Sha512};
 
 pub enum PrivateKey {
-    RsaRs256 {
-        sk: PkcsSigningKey<Sha256>,
-    },
-    RsaPs256 {
-        sk: PssSigningKey<Sha256>,
-    },
-    Ed25519 {
-        sk: Ed25519SigningKey,
-    },
+    Rsa { sk: RsaPrivateKey },
+    Ed25519 { sk: Ed25519SigningKey },
 }
 
 impl PrivateKey {
     pub fn try_from_pkcs8_pem(pem: &str) -> Outcome<Self> {
-        if let Ok(sk) = Ed25519SigningKey::from_pkcs8_pem(pem) {
-            return Ok(PrivateKey::Ed25519 { sk });
+        if let Ok(sk) = parse_rsa(pem) {
+            return Ok(Self::Rsa { sk });
         }
-        if let Ok(key) = RsaPrivateKey::from_pkcs8_pem(pem) {
-            return Ok(PrivateKey::RsaRs256 { sk: PkcsSigningKey::<Sha256>::new(key) });
+
+        if let Ok(sk) = parse_ed25519(pem) {
+            return Ok(Self::Ed25519 { sk });
         }
-        Err(Errors::format(BadFormat::Received,
-                           "PEM is not a supported Ed25519/RSA PKCS#8", None))
+
+        Err(Errors::format(
+            BadFormat::Received,
+            "PEM is not a supported Ed25519/RSA PKCS#8",
+            None,
+        ))
     }
 
-    pub fn try_from_pkcs8_pem_data(
-        pem: &str,
-        kty: &Kty,
-        crv: Option<&Crv>,
-        alg: &Alg,
-    ) -> Outcome<Self> {
-        match (kty, crv, alg) {
-            (Kty::Rsa, _, Alg::Rs256) => Ok(Self::RsaRs256 {
-                sk: PkcsSigningKey::<Sha256>::new(rsa_priv_from_pkcs8_pem(pem)?),
+    pub fn from_safe_pem(pem: &str, kty: &Kty, crv: Option<&Crv>) -> Outcome<Self> {
+        match (kty, crv) {
+            (Kty::Rsa, _) => Ok(PrivateKey::Rsa {
+                sk: parse_rsa(pem)?,
             }),
-
-            (Kty::Rsa, _, Alg::Ps256) => Ok(Self::RsaPs256 {
-                sk: PssSigningKey::<Sha256>::new(rsa_priv_from_pkcs8_pem(pem)?),
+            (Kty::Okp, Some(Crv::Ed25519)) => Ok(PrivateKey::Ed25519 {
+                sk: parse_ed25519(pem)?,
             }),
-
-            (Kty::Okp, Some(Crv::Ed25519), Alg::EdDsa) => {
-                let sk = Ed25519SigningKey::from_pkcs8_pem(pem).map_err(|e| {
-                    Errors::format(
-                        BadFormat::Received,
-                        "invalid Ed25519 PKCS#8 PEM",
-                        Some(Box::new(e)),
-                    )
-                })?;
-                Ok(Self::Ed25519 { sk })
-            }
-
             _ => Err(Errors::not_impl(
-                format!(
-                    "Unsupported key/alg combination: kty={kty}, crv={crv:?}, alg={alg}"
-                ),
+                format!("Unsupported key/alg combination: kty={kty}, crv={crv:?}"),
                 None,
             )),
         }
     }
     pub fn kty(&self) -> Kty {
         match self {
-            Self::RsaRs256 { .. } | Self::RsaPs256 { .. } => Kty::Rsa,
+            Self::Rsa { .. } => Kty::Rsa,
             Self::Ed25519 { .. } => Kty::Okp,
         }
     }
 
     pub fn crv(&self) -> Option<Crv> {
         match self {
-            Self::RsaRs256 { .. } | Self::RsaPs256 { .. } => None,
+            Self::Rsa { .. } => None,
             Self::Ed25519 { .. } => Some(Crv::Ed25519),
         }
     }
-
     pub fn alg(&self) -> Alg {
         match self {
-            Self::RsaRs256 { .. } => Alg::Rs256,
-            Self::RsaPs256 { .. } => Alg::Ps256,
-            Self::Ed25519 { .. } => Alg::EdDsa,
+            PrivateKey::Rsa { .. } => Alg::Rs256,
+            PrivateKey::Ed25519 { .. } => Alg::EdDsa,
         }
     }
+
     pub fn cryptosuite(&self) -> Outcome<Cryptosuite> {
         match self {
             Self::Ed25519 { .. } => Ok(Cryptosuite::EddsaJcs2022),
-            Self::RsaRs256 { .. } | Self::RsaPs256 { .. } => Err(Errors::not_impl(
-                "RSA no tiene cryptosuite de Data Integrity; usa firma JWT (enveloped)",
+            Self::Rsa { .. } => Err(Errors::not_impl(
+                "RSA does not have an active cryptosuite",
                 None,
             )),
         }
@@ -120,33 +96,33 @@ impl PrivateKey {
 
     pub fn public_key(&self) -> PublicKey {
         match self {
-            Self::RsaRs256 { sk } => PublicKey::RsaRs256 { vk: sk.verifying_key() },
-            Self::RsaPs256 { sk } => PublicKey::RsaPs256 { vk: sk.verifying_key() },
-            Self::Ed25519 { sk } => PublicKey::Ed25519 { vk: sk.verifying_key() },
+            Self::Rsa { sk: pk } => PublicKey::Rsa {
+                vk: pk.to_public_key(),
+            },
+            Self::Ed25519 { sk: pk } => PublicKey::Ed25519 {
+                vk: pk.verifying_key(),
+            },
         }
     }
 
     pub fn public_jwk(&self) -> Value {
-        match self {
-            Self::Ed25519 { sk } => {
-                ed25519_public_jwk(&sk.verifying_key())
-            }
-            Self::RsaRs256 { sk } => rsa_public_jwk(sk.verifying_key().as_ref()),
-            Self::RsaPs256 { sk } => rsa_public_jwk(sk.verifying_key().as_ref()),
-        }
+        self.public_key().public_jwk()
     }
 
-    pub fn sign_bytes(&self, data: &[u8]) -> Outcome<Vec<u8>> {
+    pub fn sign_bytes(&self, data: &[u8], alg: Alg) -> Outcome<Vec<u8>> {
         match self {
-            PrivateKey::RsaRs256 { sk } => {
-                let sig = sk.sign(data);
-                Ok(sig.to_bytes().to_vec())
-            }
-            PrivateKey::RsaPs256 { sk } => {
-                let mut rng = rand::thread_rng();
-                let sig = sk.sign_with_rng(&mut rng, data);
-                Ok(sig.to_bytes().to_vec())
-            }
+            PrivateKey::Rsa { sk } => match alg {
+                Alg::Rs256 => sign_rs::<Sha256>(sk, data),
+                Alg::Rs384 => sign_rs::<Sha384>(sk, data),
+                Alg::Rs512 => sign_rs::<Sha512>(sk, data),
+                Alg::Ps256 => sign_ps::<Sha256>(sk, data),
+                Alg::Ps384 => sign_ps::<Sha384>(sk, data),
+                Alg::Ps512 => sign_ps::<Sha512>(sk, data),
+                other => Err(Errors::not_impl(
+                    format!("Unsupported alg  {}", other),
+                    None,
+                )),
+            },
             PrivateKey::Ed25519 { sk } => {
                 let sig = sk.sign(data);
                 Ok(sig.to_bytes().to_vec())
@@ -159,14 +135,35 @@ impl TryFrom<PemHelper> for PrivateKey {
     type Error = Errors;
 
     fn try_from(helper: PemHelper) -> Result<Self, Self::Error> {
-        Self::try_from_pkcs8_pem_data(helper.pem(), helper.kty(), helper.crv(), helper.alg())
+        Self::from_safe_pem(helper.pem(), helper.kty(), helper.crv())
     }
 }
 
-fn rsa_priv_from_pkcs8_pem(pem: &str) -> Outcome<rsa::RsaPrivateKey> {
-    rsa::RsaPrivateKey::from_pkcs8_pem(pem).map_err(|e| {
-        Errors::format(BadFormat::Received, "invalid RSA PKCS#8 PEM", Some(Box::new(e)))
-    })
+fn sign_rs<T>(pk: &RsaPrivateKey, data: &[u8]) -> Outcome<Vec<u8>>
+where
+    T: rsa::signature::digest::Digest,
+{
+    let sk = PkcsSigningKey::<T>::from(pk.clone());
+    let sig = sk.sign(data);
+    Ok(sig.to_bytes().to_vec())
 }
 
+fn sign_ps<T>(pk: &RsaPrivateKey, data: &[u8]) -> Outcome<Vec<u8>>
+where
+    T: rsa::signature::digest::Digest + rsa::signature::digest::FixedOutputReset,
+{
+    let sk = PssSigningKey::<T>::from(pk.clone());
+    let mut rng = rand::thread_rng();
+    let sig = sk.sign_with_rng(&mut rng, data);
+    Ok(sig.to_bytes().to_vec())
+}
 
+fn parse_rsa(pem: &str) -> Outcome<RsaPrivateKey> {
+    RsaPrivateKey::from_pkcs8_pem(pem)
+        .map_err(|e| Errors::parse("Invalid RSA PKCS#8 PEM", Some(Box::new(e))))
+}
+
+fn parse_ed25519(pem: &str) -> Outcome<Ed25519SigningKey> {
+    Ed25519SigningKey::from_pkcs8_pem(pem)
+        .map_err(|e| Errors::parse("Invalid Ed25519 PKCS#8 PEM", Some(Box::new(e))))
+}

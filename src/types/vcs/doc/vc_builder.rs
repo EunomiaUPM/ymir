@@ -103,7 +103,10 @@ impl<ID, ISS, CS> VcDocumentBuilder<ID, ISS, CS> {
         }
     }
 
-    pub fn credential_subject(self, credential_subject: Value) -> VcDocumentBuilder<ID, ISS, Present> {
+    pub fn credential_subject(
+        self,
+        credential_subject: Value,
+    ) -> VcDocumentBuilder<ID, ISS, Present> {
         VcDocumentBuilder {
             context: self.context,
             id: self.id,

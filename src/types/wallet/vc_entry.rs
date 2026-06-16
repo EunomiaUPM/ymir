@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::HasId;
 use chrono::{DateTime, Utc};
-use crate::utils::HasId;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 

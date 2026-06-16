@@ -17,20 +17,20 @@
 
 use std::sync::Arc;
 
+use crate::modules::WalletModuleTrait;
+use crate::errors::AppResult;
+use crate::types::dids::{DidBuilder, DidDocument};
+use crate::types::secrets::PemHelper;
+use crate::types::wallet::VcModel;
+use crate::types::wallet::WalletInfo;
+use crate::types::wallet::waltid::{IsLinked, OidcUri};
+use crate::utils::extract_payload;
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
-use crate::core_traits::CoreWalletTrait;
-use crate::errors::AppResult;
-use crate::types::dids::{DidBuilder, DidDocument};
-use crate::types::secrets::PemHelper;
-use crate::types::wallet::WalletInfo;
-use crate::types::wallet::VcModel;
-use crate::types::wallet::waltid::{IsLinked, OidcUri};
-use crate::utils::extract_payload;
 
 #[derive(Deserialize)]
 struct RegisterKeyReq {
@@ -47,11 +47,11 @@ struct RegisterDidReq {
 }
 
 pub struct WalletRouter {
-    holder: Arc<dyn CoreWalletTrait>,
+    holder: Arc<dyn WalletModuleTrait>,
 }
 
 impl WalletRouter {
-    pub fn new(holder: Arc<dyn CoreWalletTrait>) -> Self {
+    pub fn new(holder: Arc<dyn WalletModuleTrait>) -> Self {
         Self { holder }
     }
 
@@ -77,18 +77,18 @@ impl WalletRouter {
             .with_state(self.holder.clone())
     }
 
-    async fn link(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<()> {
+    async fn link(State(holder): State<Arc<dyn WalletModuleTrait>>) -> AppResult<()> {
         holder.link().await
     }
 
     async fn is_linked(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
     ) -> AppResult<Json<IsLinked>> {
         Ok(Json(holder.is_linked().await))
     }
 
     async fn register_key(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
         payload: Result<Json<RegisterKeyReq>, JsonRejection>,
     ) -> AppResult<StatusCode> {
         let req = extract_payload(payload)?;
@@ -97,37 +97,39 @@ impl WalletRouter {
     }
 
     async fn register_did(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
         payload: Result<Json<RegisterDidReq>, JsonRejection>,
     ) -> AppResult<StatusCode> {
         let req = extract_payload(payload)?;
-        holder.register_did(req.builder, req.keys_id, req.alias).await?;
+        holder
+            .register_did(req.builder, req.keys_id, req.alias)
+            .await?;
         Ok(StatusCode::CREATED)
     }
 
     async fn delete_key(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
         Path(id): Path<String>,
     ) -> AppResult<()> {
         holder.delete_key(&id).await
     }
 
     async fn delete_did(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
         Path(id): Path<String>,
     ) -> AppResult<()> {
         holder.delete_did(&id).await
     }
 
     async fn delete_credential(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
         Path(id): Path<String>,
     ) -> AppResult<()> {
         holder.delete_credential(&id).await
     }
 
     async fn process_oidc4vci(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
         payload: Result<Json<OidcUri>, JsonRejection>,
     ) -> AppResult<()> {
         let payload = extract_payload(payload)?;
@@ -135,29 +137,31 @@ impl WalletRouter {
     }
 
     async fn process_oidc4vp(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
         payload: Result<Json<OidcUri>, JsonRejection>,
     ) -> AppResult<()> {
         let payload = extract_payload(payload)?;
         holder.process_oidc4vp(payload).await
     }
 
-    async fn get_wallet_did(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<String> {
+    async fn get_wallet_did(State(holder): State<Arc<dyn WalletModuleTrait>>) -> AppResult<String> {
         Ok(holder.get_wallet_did().await?)
     }
 
-    async fn get_did_doc(State(holder): State<Arc<dyn CoreWalletTrait>>) -> AppResult<Json<DidDocument>> {
+    async fn get_did_doc(
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
+    ) -> AppResult<Json<DidDocument>> {
         Ok(Json(holder.get_did_doc().await?))
     }
 
     async fn get_wallet_info(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
     ) -> AppResult<Json<WalletInfo>> {
         Ok(Json(holder.get_wallet_info().await?))
     }
 
     async fn get_wallet_credentials(
-        State(holder): State<Arc<dyn CoreWalletTrait>>,
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
     ) -> AppResult<Json<Vec<VcModel>>> {
         Ok(Json(holder.get_wallet_credentials().await?))
     }

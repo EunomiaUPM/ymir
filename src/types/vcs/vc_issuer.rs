@@ -16,7 +16,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-use crate::utils::HasId;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
@@ -28,22 +27,17 @@ pub enum VcIssuer {
 impl VcIssuer {
     pub fn new(id: impl Into<String>, name: Option<impl Into<String>>) -> VcIssuer {
         match name {
-            Some(name) => {
-                VcIssuer::Object(BaseIssuer {
-                    id: id.into(),
-                    name: name.into(),
-                })
-            }
-            None => { VcIssuer::Did(id.into()) }
+            Some(name) => VcIssuer::Object(BaseIssuer {
+                id: id.into(),
+                name: name.into(),
+            }),
+            None => VcIssuer::Did(id.into()),
         }
     }
-}
-
-impl HasId for VcIssuer {
-    fn id(&self) -> &str {
+    pub fn id(&self) -> &str {
         match self {
-            VcIssuer::Did(did) => { did }
-            VcIssuer::Object(doc) => { &doc.id }
+            VcIssuer::Did(did) => did,
+            VcIssuer::Object(base_issuer) => &base_issuer.id,
         }
     }
 }

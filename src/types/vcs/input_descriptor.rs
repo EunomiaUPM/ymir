@@ -16,8 +16,8 @@
  */
 
 use serde::{Deserialize, Serialize};
-
-use crate::types::vcs::W3cDataModelVersion;
+use crate::types::keys::Alg;
+use crate::types::vcs::{VcType, W3cDataModelVersion};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InputDescriptor {
@@ -54,16 +54,17 @@ pub struct InputDescriptorConstraintsFieldsFilter {
 }
 
 impl InputDescriptor {
-    pub fn new(vc_type: &str, model: &W3cDataModelVersion) -> Self {
+    pub fn new(vc_type: &VcType, model: W3cDataModelVersion) -> Self {
         let path = match model {
             W3cDataModelVersion::V1 => vec!["$.vc.type".to_string()],
             W3cDataModelVersion::V2 => vec!["$.type".to_string()],
         };
+        let supported_alg: Vec<String> = Alg::supported().into_iter().map(|s| s.to_string()).collect();
         InputDescriptor {
             id: vc_type.to_string(),
             format: InputDescriptorFormat {
                 jwt_vc_json: InputDescriptorFormatJWTJson {
-                    alg: vec!["RSA".to_string()],
+                    alg: supported_alg,
                 },
             },
             constraints: InputDescriptorConstraints {

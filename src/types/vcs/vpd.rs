@@ -17,7 +17,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::{InputDescriptor, W3cDataModelVersion};
+use super::{InputDescriptor, VcType, W3cDataModelVersion};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VPDef {
@@ -26,10 +26,10 @@ pub struct VPDef {
 }
 
 impl VPDef {
-    pub fn new(id: impl Into<String>, vc_types: &[&str], model: &W3cDataModelVersion) -> Self {
+    pub fn new(id: impl Into<String>, vc_types: &[VcType], model: W3cDataModelVersion) -> Self {
         let input_descriptors = vc_types
             .iter()
-            .map(|vc_type| InputDescriptor::new(vc_type, model))
+            .map(|vc_type| InputDescriptor::new(vc_type, model.clone()))
             .collect();
 
         VPDef {

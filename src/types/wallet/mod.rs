@@ -17,13 +17,13 @@
 
 use serde::{Deserialize, Serialize};
 
-pub mod waltid;
 mod did_entry;
 mod identity;
 mod key_entry;
 mod key_ref;
 mod vc_entry;
 mod wallet_info;
+pub mod waltid;
 
 pub use did_entry::*;
 pub use identity::Identity;
@@ -37,4 +37,8 @@ pub enum WalletInstance {
     #[default]
     Fafnir,
     WaltId,
+}
+
+pub trait HasId {
+    fn id(&self) -> &str;
 }

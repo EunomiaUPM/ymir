@@ -20,17 +20,17 @@ use std::sync::{Arc, RwLock};
 use async_trait::async_trait;
 use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::http::{HeaderMap, HeaderValue};
+use chrono::{DateTime, Utc};
 use reqwest::{Response, Url};
 use serde_json::Value;
+use std::str::FromStr;
 use tokio::sync::Mutex;
 use tracing::{debug, info, warn};
 use urlencoding::decode;
-use chrono::{DateTime, Utc};
-use std::str::FromStr;
 
-use crate::capabilities::Did;
-use super::config::WaltIdConfig;
 use super::super::WalletTrait;
+use super::config::WaltIdConfig;
+use crate::capabilities::Did;
 use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::{DidConfig, HostType};
 use crate::data::entities::{mates, minions};
@@ -39,19 +39,18 @@ use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
 use crate::services::vault::global::VaultService;
 use crate::types::dids::{DidBuilder, DidDocument, DidService, DidType};
+use crate::types::http::HttpBody;
 use crate::types::keys::{Alg, Crv, Kty};
-use crate::types::http::Body;
-use crate::types::secrets::{PemHelper, SemiWalletSecrets};
+use crate::types::secrets::{PemHelper, SemiWaltIdSecrets};
 use crate::types::vcs::VPDef;
-use crate::types::wallet::{DidModel, KeyModel, KeyRef, VcBodyType, VcModel};
-use crate::types::wallet::{Identity, WalletInfo};
 use crate::types::wallet::waltid::{
     AuthJwtClaims, CredentialOfferResponse, DidsInfo, KeyDefinition, MatchVCsRequest, MatchingVCs,
     RedirectResponse, WalletCredentials, WalletInfoResponse, WalletLoginResponse, WalletSession,
 };
+use crate::types::wallet::{DidModel, KeyModel, KeyRef, VcBodyType, VcModel};
+use crate::types::wallet::{Identity, WalletInfo};
 use crate::utils::{
-    ParseHeaderExt, ResponseExt, decode_url_safe_no_pad, expect_from_env, get_query_param,
-    http_client, json_headers, parse_text_resp,
+    ParseHeaderExt, ResponseExt, decode_url_safe_no_pad, expect_from_env, http_client, json_headers,
 };
 
 pub struct WaltIdService {
@@ -108,7 +107,11 @@ impl WalletTrait for WaltIdService {
     async fn get_wallet(&self) -> Outcome<WalletInfo> {
         let wallet_session = self.wallet_session.lock().await;
         wallet_session.wallets.first().cloned().ok_or_else(|| {
-            Errors::missing_action(MissingAction::Wallet, "There is no wallet to retrieve dids from", None)
+            Errors::missing_action(
+                MissingAction::Wallet,
+                "There is no wallet to retrieve dids from",
+                None,
+            )
         })
     }
 
@@ -117,10 +120,9 @@ impl WalletTrait for WaltIdService {
             .identity
             .read()
             .map_err(|_| Errors::read("identity", "identity lock poisoned", None))?;
-        guard
-            .as_ref()
-            .map(|id| id.did().clone())
-            .ok_or_else(|| Errors::missing_action(MissingAction::Did, "wallet not linked yet", None))
+        guard.as_ref().map(|id| id.did().clone()).ok_or_else(|| {
+            Errors::missing_action(MissingAction::Did, "wallet not linked yet", None)
+        })
     }
 
     fn get_did_doc(&self) -> Outcome<DidDocument> {
@@ -131,33 +133,70 @@ impl WalletTrait for WaltIdService {
         guard
             .as_ref()
             .map(|id| id.did_doc().clone())
-            .ok_or_else(|| Errors::missing_action(MissingAction::Did, "wallet not linked yet", None))
+            .ok_or_else(|| {
+                Errors::missing_action(MissingAction::Did, "wallet not linked yet", None)
+            })
+    }
+
+    fn get_identity(&self) -> Outcome<Arc<Identity>> {
+        let guard = self
+            .identity
+            .read()
+            .map_err(|_| Errors::read("identity", "identity lock poisoned", None))?;
+        let iden = guard.as_ref().ok_or_else(|| Errors::missing_action(MissingAction::Onboarding, "wallet has not onboarded yet (crazy)", None))?;
+        Ok(Arc::new(iden.clone()))
     }
 
     async fn retrieve_did(&self, id: &str) -> Outcome<DidModel> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/dids/{}", wallet.id, id);
-        let res = self.request("GET", &path, Body::None, true, true, "Petition to retrieve did failed").await?;
+        let res = self
+            .request(
+                "GET",
+                &path,
+                HttpBody::None,
+                true,
+                true,
+                "Petition to retrieve did failed",
+            )
+            .await?;
         let info: DidsInfo = res.parse_json().await?;
         dids_info_to_did_model(info)
     }
 
     async fn retrieve_default_did(&self) -> Outcome<DidModel> {
         let wallet = self.get_wallet().await?;
-        let info = wallet.dids.iter().find(|d| d.default).cloned()
+        let info = wallet
+            .dids
+            .iter()
+            .find(|d| d.default)
+            .cloned()
             .ok_or_else(|| Errors::missing_action(MissingAction::Did, "No default did", None))?;
         dids_info_to_did_model(info)
     }
 
     async fn retrieve_all_dids(&self) -> Outcome<Vec<DidModel>> {
         let wallet = self.get_wallet().await?;
-        wallet.dids.into_iter().map(dids_info_to_did_model).collect()
+        wallet
+            .dids
+            .into_iter()
+            .map(dids_info_to_did_model)
+            .collect()
     }
 
     async fn retrieve_key(&self, id: &str) -> Outcome<KeyModel> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/keys/{}", wallet.id, id);
-        let res = self.request("GET", &path, Body::None, true, true, "Petition to retrieve key failed").await?;
+        let res = self
+            .request(
+                "GET",
+                &path,
+                HttpBody::None,
+                true,
+                true,
+                "Petition to retrieve key failed",
+            )
+            .await?;
         let key: KeyDefinition = res.parse_json().await?;
         Ok(key_def_to_key_model(key))
     }
@@ -170,7 +209,16 @@ impl WalletTrait for WaltIdService {
     async fn retrieve_vc(&self, id: &str) -> Outcome<VcModel> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/credentials/{}", wallet.id, id);
-        let res = self.request("GET", &path, Body::None, true, true, "Petition to retrieve credential failed").await?;
+        let res = self
+            .request(
+                "GET",
+                &path,
+                HttpBody::None,
+                true,
+                true,
+                "Petition to retrieve credential failed",
+            )
+            .await?;
         let wc: WalletCredentials = res.parse_json().await?;
         Ok(wc_to_vc(wc))
     }
@@ -178,15 +226,36 @@ impl WalletTrait for WaltIdService {
     async fn retrieve_all_vcs(&self) -> Outcome<Vec<VcModel>> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/credentials?showDeleted=false", wallet.id);
-        let res = self.request("GET", &path, Body::None, true, true, "Petition to retrieve credentials failed").await?;
+        let res = self
+            .request(
+                "GET",
+                &path,
+                HttpBody::None,
+                true,
+                true,
+                "Petition to retrieve credentials failed",
+            )
+            .await?;
         let creds: Vec<WalletCredentials> = res.parse_json().await?;
         Ok(creds.into_iter().map(wc_to_vc).collect())
     }
 
-    async fn register_key(&self, pem_helper: &PemHelper, alias: Option<String>) -> Outcome<KeyModel> {
+    async fn register_key(
+        &self,
+        pem_helper: &PemHelper,
+        alias: Option<String>,
+    ) -> Outcome<KeyModel> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/keys/import", wallet.id);
-        self.request("POST", &path, Body::Raw(pem_helper.pem().to_string()), true, false, "Petition to register key failed").await?;
+        self.request(
+            "POST",
+            &path,
+            HttpBody::Raw(pem_helper.pem().to_string()),
+            true,
+            false,
+            "Petition to register key failed",
+        )
+            .await?;
         self.retrieve_wallet_keys().await?;
         let keys = self.key_data.lock().await;
         let last = keys.last().cloned().ok_or_else(|| {
@@ -197,23 +266,37 @@ impl WalletTrait for WaltIdService {
             alias: alias.unwrap_or_default(),
             kty: pem_helper.kty().clone(),
             crv: pem_helper.crv().cloned(),
-            alg: pem_helper.alg().clone(),
             pem: pem_helper.pem().to_string(),
         })
     }
 
-    async fn register_did(&self, _did_builder: &DidBuilder, _keys_id: Vec<String>, alias: Option<String>) -> Outcome<DidModel> {
+    async fn register_did(
+        &self,
+        _did_builder: &DidBuilder,
+        _keys_id: Vec<String>,
+        alias: Option<String>,
+    ) -> Outcome<DidModel> {
         let res = match self.config.did_config() {
             DidConfig::Web { web_config } => {
-                self.reg_did_web(&web_config.domain, web_config.path.as_deref().unwrap_or("")).await?
+                self.reg_did_web(&web_config.domain, web_config.path.as_deref().unwrap_or(""))
+                    .await?
             }
             DidConfig::Jwk => self.reg_did_jwk().await?,
             DidConfig::Other(s) => {
-                return Err(Errors::not_impl(format!("did type {s} not supported"), None));
+                return Err(Errors::not_impl(
+                    format!("did type {s} not supported"),
+                    None,
+                ));
             }
         };
         if !res.status().is_success() {
-            return Err(Errors::wallet("register_did", "POST", Some(res.status()), "Register did failed", None));
+            return Err(Errors::wallet(
+                "register_did",
+                "POST",
+                Some(res.status()),
+                "Register did failed",
+                None,
+            ));
         }
         let did_str = res.parse_text().await?;
         let did_str = did_str.trim().to_string();
@@ -225,7 +308,9 @@ impl WalletTrait for WaltIdService {
             .find(|d| d.did == did_str)
             .cloned()
             .or_else(|| wallet.dids.last().cloned())
-            .ok_or_else(|| Errors::missing_action(MissingAction::Did, "Just-registered did not found", None))?;
+            .ok_or_else(|| {
+                Errors::missing_action(MissingAction::Did, "Just-registered did not found", None)
+            })?;
         let mut entry = dids_info_to_did_model(info)?;
         if let Some(a) = alias {
             entry.alias = a;
@@ -236,7 +321,14 @@ impl WalletTrait for WaltIdService {
     async fn set_default_did(&self, did: Did) -> Outcome<()> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/dids/default?did={}", wallet.id, did.id());
-        self.request("POST", &path, Body::None, true, true, "Petition to set did as default failed")
+        self.request(
+            "POST",
+            &path,
+            HttpBody::None,
+            true,
+            true,
+            "Petition to set did as default failed",
+        )
             .await?;
         Ok(())
     }
@@ -244,7 +336,14 @@ impl WalletTrait for WaltIdService {
     async fn delete_key(&self, id: &str) -> Outcome<()> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/keys/{}", wallet.id, id);
-        self.request("DELETE", &path, Body::None, true, false, "Petition to delete key failed")
+        self.request(
+            "DELETE",
+            &path,
+            HttpBody::None,
+            true,
+            false,
+            "Petition to delete key failed",
+        )
             .await?;
         Ok(())
     }
@@ -252,7 +351,14 @@ impl WalletTrait for WaltIdService {
     async fn delete_did(&self, id: &str) -> Outcome<()> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/dids/{}", wallet.id, id);
-        self.request("DELETE", &path, Body::None, true, false, "Petition to delete did failed")
+        self.request(
+            "DELETE",
+            &path,
+            HttpBody::None,
+            true,
+            false,
+            "Petition to delete did failed",
+        )
             .await?;
         Ok(())
     }
@@ -260,7 +366,14 @@ impl WalletTrait for WaltIdService {
     async fn delete_vc(&self, id: &str) -> Outcome<()> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/credentials/{}", wallet.id, id);
-        self.request("DELETE", &path, Body::None, true, false, "Petition to delete vc failed")
+        self.request(
+            "DELETE",
+            &path,
+            HttpBody::None,
+            true,
+            false,
+            "Petition to delete vc failed",
+        )
             .await?;
         Ok(())
     }
@@ -284,12 +397,16 @@ impl WaltIdService {
         &self,
         method: &str,
         path: &str,
-        body: Body,
+        body: HttpBody,
         use_auth: bool,
         is_json: bool,
         error_msg: &str,
     ) -> Outcome<Response> {
-        let url = format!("{}/wallet-api{}", self.config.get_wallet_api_url(HostType::Http), path);
+        let url = format!(
+            "{}/wallet-api{}",
+            self.config.get_wallet_api_url(HostType::Http),
+            path
+        );
         let mut headers = if is_json {
             json_headers()
         } else {
@@ -314,14 +431,24 @@ impl WaltIdService {
         if res.status().is_success() {
             Ok(res)
         } else {
-            Err(Errors::wallet(&url, method, Some(res.status()), error_msg, None))
+            Err(Errors::wallet(
+                &url,
+                method,
+                Some(res.status()),
+                error_msg,
+                None,
+            ))
         }
     }
 
     async fn get_token(&self) -> Outcome<String> {
         let wallet_session = self.wallet_session.lock().await;
         wallet_session.token.as_ref().cloned().ok_or_else(|| {
-            Errors::missing_action(MissingAction::Token, "There is no token available for use", None)
+            Errors::missing_action(
+                MissingAction::Token,
+                "There is no token available for use",
+                None,
+            )
         })
     }
 
@@ -335,7 +462,11 @@ impl WaltIdService {
     async fn first_wallet_mut(&self) -> Outcome<tokio::sync::MutexGuard<'_, WalletSession>> {
         let wallet_session = self.wallet_session.lock().await;
         if wallet_session.wallets.is_empty() {
-            Err(Errors::missing_action(MissingAction::Wallet, "There is no wallet available", None))
+            Err(Errors::missing_action(
+                MissingAction::Wallet,
+                "There is no wallet available",
+                None,
+            ))
         } else {
             Ok(wallet_session)
         }
@@ -343,12 +474,15 @@ impl WaltIdService {
 
     async fn register(&self) -> Outcome<bool> {
         info!("Registering in web wallet");
-        let url = format!("{}/wallet-api/auth/register", self.config.get_wallet_api_url(HostType::Http));
+        let url = format!(
+            "{}/wallet-api/auth/register",
+            self.config.get_wallet_api_url(HostType::Http)
+        );
         let db_path = expect_from_env("VAULT_APP_WALLET");
         let body = self.vault.read(None, &db_path).await?;
 
         let res = http_client()
-            .post(&url, Some(json_headers()), Body::Json(body))
+            .post(&url, Some(json_headers()), HttpBody::Json(body))
             .await?;
 
         if res.status().is_success() {
@@ -358,7 +492,13 @@ impl WaltIdService {
             warn!("Wallet account has already registered");
             Ok(false)
         } else {
-            Err(Errors::wallet(&url, "POST", Some(res.status()), "Petition to register Wallet failed", None))
+            Err(Errors::wallet(
+                &url,
+                "POST",
+                Some(res.status()),
+                "Petition to register Wallet failed",
+                None,
+            ))
         }
     }
 
@@ -366,10 +506,17 @@ impl WaltIdService {
         info!("Login into web wallet");
 
         let db_path = expect_from_env("VAULT_APP_WALLET");
-        let body: SemiWalletSecrets = self.vault.read(None, &db_path).await?;
+        let body: SemiWaltIdSecrets = self.vault.read(None, &db_path).await?;
 
         let res = self
-            .request("POST", "/auth/login", Body::json(&body)?, false, true, "Petition to login into Wallet failed")
+            .request(
+                "POST",
+                "/auth/login",
+                HttpBody::json(&body)?,
+                false,
+                true,
+                "Petition to login into Wallet failed",
+            )
             .await?;
 
         let json_res: WalletLoginResponse = res.parse_json().await?;
@@ -380,7 +527,11 @@ impl WaltIdService {
         let jwt = json_res.token;
         let jwt_parts: Vec<&str> = jwt.split('.').collect();
         if jwt_parts.len() != 3 {
-            return Err(Errors::format(BadFormat::Sent, "The jwt does not have the correct format", None));
+            return Err(Errors::format(
+                BadFormat::Sent,
+                "The jwt does not have the correct format",
+                None,
+            ));
         }
 
         let decoded = decode_url_safe_no_pad(jwt_parts[1])?;
@@ -394,7 +545,14 @@ impl WaltIdService {
 
     async fn retrieve_wallet_info(&self) -> Outcome<()> {
         let res = self
-            .request("GET", "/wallet/accounts/wallets", Body::None, true, true, "Petition to retrieve Wallet information failed")
+            .request(
+                "GET",
+                "/wallet/accounts/wallets",
+                HttpBody::None,
+                true,
+                true,
+                "Petition to retrieve Wallet information failed",
+            )
             .await?;
 
         let weird_wallets: WalletInfoResponse = res.parse_json().await?;
@@ -419,7 +577,14 @@ impl WaltIdService {
         let path = format!("/wallet/{}/keys", wallet.id);
 
         let res = self
-            .request("GET", &path, Body::None, true, false, "Petition to retrieve keys failed")
+            .request(
+                "GET",
+                &path,
+                HttpBody::None,
+                true,
+                false,
+                "Petition to retrieve keys failed",
+            )
             .await?;
 
         let keys: Vec<KeyDefinition> = res.parse_json().await?;
@@ -437,7 +602,14 @@ impl WaltIdService {
         let path = format!("/wallet/{}/dids", wallet.id);
 
         let res = self
-            .request("GET", &path, Body::None, true, true, "Petition to retrieve Wallet DIDs failed")
+            .request(
+                "GET",
+                &path,
+                HttpBody::None,
+                true,
+                true,
+                "Petition to retrieve Wallet DIDs failed",
+            )
             .await?;
 
         let dids: Vec<DidsInfo> = res.parse_json().await?;
@@ -459,7 +631,14 @@ impl WaltIdService {
 
         let path = format!("/wallet/{}/keys/import", wallet.id);
 
-        self.request("POST", &path, Body::Raw(priv_key.pem().to_string()), true, false, "Petition to register key failed")
+        self.request(
+            "POST",
+            &path,
+            HttpBody::Raw(priv_key.pem().to_string()),
+            true,
+            false,
+            "Petition to register key failed",
+        )
             .await?;
         Ok(())
     }
@@ -467,11 +646,15 @@ impl WaltIdService {
     async fn register_did_internal(&self) -> Outcome<Option<String>> {
         let res = match self.config.did_config() {
             DidConfig::Web { web_config } => {
-                self.reg_did_web(&web_config.domain, web_config.path.as_deref().unwrap_or("")).await?
+                self.reg_did_web(&web_config.domain, web_config.path.as_deref().unwrap_or(""))
+                    .await?
             }
             DidConfig::Jwk => self.reg_did_jwk().await?,
             DidConfig::Other(method) => {
-                return Err(Errors::not_impl(format!("did type {method} not supported"), None));
+                return Err(Errors::not_impl(
+                    format!("did type {method} not supported"),
+                    None,
+                ));
             }
         };
         if res.status().is_success() {
@@ -482,7 +665,13 @@ impl WaltIdService {
             warn!("Did already exists");
             Ok(None)
         } else {
-            Err(Errors::wallet("http://register_did_in_wallet", "POST", Some(res.status()), "Petition to register did failed", None))
+            Err(Errors::wallet(
+                "http://register_did_in_wallet",
+                "POST",
+                Some(res.status()),
+                "Petition to register did failed",
+                None,
+            ))
         }
     }
 
@@ -490,9 +679,20 @@ impl WaltIdService {
         let wallet = self.get_wallet().await?;
         let key_data = self.get_key().await?;
 
-        let path = format!("/wallet/{}/dids/create/jwk?keyId={}&alias=jwk", wallet.id, key_data.key_id.id);
+        let path = format!(
+            "/wallet/{}/dids/create/jwk?keyId={}&alias=jwk",
+            wallet.id, key_data.key_id.id
+        );
 
-        self.request("POST", &path, Body::None, true, true, "Petition to register did failed").await
+        self.request(
+            "POST",
+            &path,
+            HttpBody::None,
+            true,
+            true,
+            "Petition to register did failed",
+        )
+            .await
     }
 
     async fn reg_did_web(&self, domain: &str, did_path: &str) -> Outcome<Response> {
@@ -504,7 +704,15 @@ impl WaltIdService {
             wallet.id, &key_data.key_id.id, domain, did_path
         );
 
-        self.request("POST", &path, Body::None, true, true, "Petition to register did failed").await
+        self.request(
+            "POST",
+            &path,
+            HttpBody::None,
+            true,
+            true,
+            "Petition to register did failed",
+        )
+            .await
     }
 
     async fn set_default_did_internal(&self, did: Option<&str>) -> Outcome<()> {
@@ -521,7 +729,15 @@ impl WaltIdService {
 
         let path = format!("/wallet/{}/dids/default?did={}", wallet.id, did);
 
-        self.request("POST", &path, Body::None, true, true, "Petition to set did as default failed").await?;
+        self.request(
+            "POST",
+            &path,
+            HttpBody::None,
+            true,
+            true,
+            "Petition to set did as default failed",
+        )
+            .await?;
         Ok(())
     }
 
@@ -573,25 +789,41 @@ impl WaltIdService {
         let path = format!("/wallet/{}/exchange/resolveCredentialOffer", wallet.id);
 
         let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, HeaderValue::from_static("text/plain;charset=UTF-8"));
+        headers.insert(
+            CONTENT_TYPE,
+            HeaderValue::from_static("text/plain;charset=UTF-8"),
+        );
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
         let token = self.get_token().await?;
         headers.insert(AUTHORIZATION, format!("Bearer {}", token).parse_header()?);
 
-        let url = format!("{}/wallet-api{}", self.config.get_wallet_api_url(HostType::Http), path);
+        let url = format!(
+            "{}/wallet-api{}",
+            self.config.get_wallet_api_url(HostType::Http),
+            path
+        );
         let res = http_client()
-            .post(&url, Some(headers), Body::Raw(uri.to_string()))
+            .post(&url, Some(headers), HttpBody::Raw(uri.to_string()))
             .await?;
 
         if res.status().is_success() {
             let data: CredentialOfferResponse = res.parse_json().await?;
             Ok(data)
         } else {
-            Err(Errors::wallet(&url, "POST", Some(res.status()), "Petition to resolve credential offer failed", None))
+            Err(Errors::wallet(
+                &url,
+                "POST",
+                Some(res.status()),
+                "Petition to resolve credential offer failed",
+                None,
+            ))
         }
     }
 
-    async fn resolve_credential_issuer(&self, cred_offer: &CredentialOfferResponse) -> Outcome<Value> {
+    async fn resolve_credential_issuer(
+        &self,
+        cred_offer: &CredentialOfferResponse,
+    ) -> Outcome<Value> {
         let wallet = self.get_wallet().await?;
         let path = format!(
             "/wallet/{}/exchange/resolveIssuerOpenIDMetadata?issuer={}",
@@ -599,7 +831,14 @@ impl WaltIdService {
         );
 
         let res = self
-            .request("GET", &path, Body::None, true, true, "Petition resolve credential issuer failed")
+            .request(
+                "GET",
+                &path,
+                HttpBody::None,
+                true,
+                true,
+                "Petition resolve credential issuer failed",
+            )
             .await?;
 
         let data: Value = res.parse_json().await?;
@@ -618,7 +857,14 @@ impl WaltIdService {
         );
 
         let res = self
-            .request("POST", &path, Body::Raw(uri.to_string()), true, true, "Petition accept credential issuer failed")
+            .request(
+                "POST",
+                &path,
+                HttpBody::Raw(uri.to_string()),
+                true,
+                true,
+                "Petition accept credential issuer failed",
+            )
             .await?;
 
         let data: Value = res.parse_json().await?;
@@ -631,10 +877,17 @@ impl WaltIdService {
         let path = format!("/wallet/{}/exchange/resolvePresentationRequest", wallet.id);
 
         let res = self
-            .request("POST", &path, Body::Raw(uri.to_string()), true, false, "Error joining the exchange")
+            .request(
+                "POST",
+                &path,
+                HttpBody::Raw(uri.to_string()),
+                true,
+                false,
+                "Error joining the exchange",
+            )
             .await?;
 
-        let vpd = parse_text_resp(res).await?;
+        let vpd = res.parse_text().await?;
         self.parse_vpd(&vpd)
     }
 
@@ -646,7 +899,17 @@ impl WaltIdService {
         )
             .map_err(|e| Errors::parse("Unable to extract url from string", Some(Box::new(e))))?;
 
-        let vpd_json = get_query_param(&url, "presentation_definition")?;
+        let vpd_json = &url
+            .query_pairs()
+            .find(|(k, _)| k == "presentation_definition")
+            .map(|(_, v)| v.into_owned())
+            .ok_or_else(|| {
+                Errors::format(
+                    BadFormat::Received,
+                    "Missing query parameter presentation_definition",
+                    None,
+                )
+            })?;
         Ok(serde_json::from_str(&vpd_json)?)
     }
 
@@ -672,10 +935,20 @@ impl WaltIdService {
 
     async fn match_vc4vp(&self, vp_def: Value) -> Outcome<Vec<MatchingVCs>> {
         let wallet = self.get_wallet().await?;
-        let path = format!("/wallet/{}/exchange/matchCredentialsForPresentationDefinition", wallet.id);
+        let path = format!(
+            "/wallet/{}/exchange/matchCredentialsForPresentationDefinition",
+            wallet.id
+        );
 
         let res = self
-            .request("POST", &path, Body::Json(vp_def), true, true, "Petition to match credentials failed")
+            .request(
+                "POST",
+                &path,
+                HttpBody::Json(vp_def),
+                true,
+                true,
+                "Petition to match credentials failed",
+            )
             .await?;
 
         let vc_json: Vec<MatchingVCs> = res.parse_json().await?;
@@ -695,7 +968,14 @@ impl WaltIdService {
         };
 
         let res = self
-            .request("POST", &path, Body::json(&body)?, true, true, "Petition to present credentials failed")
+            .request(
+                "POST",
+                &path,
+                HttpBody::json(&body)?,
+                true,
+                true,
+                "Petition to present credentials failed",
+            )
             .await?;
 
         match res.json::<Option<RedirectResponse>>().await {
@@ -732,10 +1012,16 @@ fn dids_info_to_did_model(d: DidsInfo) -> Outcome<DidModel> {
     } else if d.did.starts_with("did:jwk:") {
         DidType::Jwk
     } else {
-        return Err(Errors::not_impl(format!("Did method {} not supported", d.did), None))
+        return Err(Errors::not_impl(
+            format!("Did method {} not supported", d.did),
+            None,
+        ));
     };
-    let keys = did_document.verification_method.iter()
-        .map(|vm| KeyRef::new(d.key_id.clone(), vm.id.clone())).collect::<Vec<KeyRef>>();
+    let keys = did_document
+        .verification_method
+        .iter()
+        .map(|vm| KeyRef::new(d.key_id.clone(), vm.id.clone()))
+        .collect::<Vec<KeyRef>>();
     Ok(DidModel {
         did_id: d.did.clone(),
         did: d.did,
@@ -760,7 +1046,6 @@ fn key_def_to_key_model(k: KeyDefinition) -> KeyModel {
         alias: String::new(),
         kty,
         crv,
-        alg,
         pem: String::new(),
     }
 }

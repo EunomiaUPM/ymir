@@ -15,13 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::de::DeserializeOwned;
-use super::{Kid};
+use super::Kid;
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::crypto::{Canon, Proof};
 use crate::types::jwt::Jwt;
-use serde_json::Value;
 use crate::types::keys::Alg;
+use serde::de::DeserializeOwned;
+use serde_json::Value;
 
 pub struct Verifier;
 
@@ -44,7 +44,7 @@ impl Verifier {
     async fn verify_single_proof(value: &Canon, proof: &Proof) -> Outcome<()> {
         let kid = Kid::parse(&proof.verification_method)?;
         let alg = Alg::from_cryptosuite(&proof.cryptosuite);
-        let key = kid.get_key(&alg).await?;
+        let key = kid.get_key().await?;
 
         let b58 = proof.proof_value.strip_prefix('z').ok_or_else(|| {
             Errors::parse("proofValue must start with 'z' (multibase base58btc)", None)
@@ -53,7 +53,7 @@ impl Verifier {
             .into_vec()
             .map_err(|e| Errors::parse("base58 decode of proofValue failed", Some(Box::new(e))))?;
 
-        key.verify_bytes(value.as_ref(), &sig)
+        key.verify_bytes(value.as_ref(), &sig, &alg)
     }
 
     pub async fn verify_enveloped<T: DeserializeOwned>(
@@ -61,9 +61,8 @@ impl Verifier {
         expected_aud: Option<&str>,
     ) -> Outcome<(Kid, T)> {
         let kid = Kid::parse(&jwt.header().kid)?;
-        let key = kid.get_key(&jwt.header().alg).await?;
-
-        key.verify_bytes(jwt.signing_input(), jwt.signature())?;
+        let key = kid.get_key().await?;
+        key.verify_bytes(jwt.signing_input(), jwt.signature(), &jwt.header().alg)?;
 
         let value_payload: Value = jwt.unsafe_claims()?;
         if let Some(expected) = expected_aud {
