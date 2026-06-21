@@ -14,42 +14,49 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-
-use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
-use crate::errors::Outcome;
+use crate::capabilities::{Signer, Verifier};
+use crate::config::types::HostType;
+use crate::data::entities::received::grant;
+use crate::data::entities::shared::issuance;
+use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
+use crate::types::gnap::grant_request::GrantRequestKind;
+use crate::types::gnap::grant_request::client::{Client, KeyMaterial};
 use crate::types::issuing::{
-    AuthServerMetadata, CredentialRequest, GiveVC, IssuerMetadata, IssuingToken, TokenRequest,
-    VcCredOffer,
+    AuthServerMetadata, CredReqProof, CredentialRequest, DidPossession, GiveVC, IssuedCredential,
+    IssuerMetadata, IssuingToken, VcCredOffer, VcTransmissionOffer,
 };
-use crate::types::vcs::VcType;
+use crate::types::jwt::{Jwt, VCJwtClaims};
+use crate::types::keys::{PrivateKey, SigningCtx};
+use crate::types::secrets::PemHelper;
+use crate::types::vcs::{BuildCtx, VcType, VcTypeConfig};
+use crate::utils::{expect_from_env, is_active};
 use async_trait::async_trait;
-use serde_json::Value;
+use std::{format, vec};
+use tracing::info;
 
 #[async_trait]
 pub trait IssuerTrait: Send + Sync + 'static {
-    fn start_vci(&self, req_model: &vc_request::Model) -> issuing::NewModel;
-    fn generate_issuing_uri(&self, id: &str, path: Option<&str>) -> String;
-    fn get_cred_offer_data(&self, model: &issuing::Model) -> Outcome<VcCredOffer>;
-    fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata;
-    fn get_oauth_server_data(
+    fn get_cred_offer_data(&self, model: &issuance::Model) -> VcCredOffer;
+    fn build_issuance_plan(
         &self,
+        id: &str,
+        grant_request_kind: GrantRequestKind,
+        client: Client,
+        available_vcs: &[VcType],
+    ) -> Outcome<issuance::Plan>;
+    fn generate_issuing_uri(
+        &self,
+        offer_type: VcTransmissionOffer,
         path: Option<&str>,
-        vcs: Option<&[VcType]>,
-    ) -> AuthServerMetadata;
-    fn get_token(&self, model: &issuing::Model) -> IssuingToken;
-    fn validate_token_req(&self, model: &issuing::Model, payload: &TokenRequest) -> Outcome<()>;
+    ) -> Outcome<String>;
+    fn get_issuer_metadata(&self, path: Option<&str>, vcs: &[VcType]) -> IssuerMetadata;
+    fn get_oauth_server_data(&self, path: Option<&str>) -> AuthServerMetadata;
+    fn get_token(&self, model: &issuance::Model) -> IssuingToken;
     async fn validate_cred_req(
         &self,
-        model: &mut issuing::Model,
-        cred_req: &CredentialRequest,
+        issuance: &issuance::Model,
+        cred_req: CredentialRequest,
         token: &str,
-    ) -> Outcome<()>;
-    async fn issue_cred(&self, claims: &Value) -> Outcome<GiveVC>;
-    fn end(
-        &self,
-        req_model: &vc_request::Model,
-        int_model: &recv_interaction::Model,
-        iss_model: &issuing::Model,
-    ) -> Outcome<minions::NewModel>;
-    async fn get_jwks_data(&self) -> Outcome<Value>;
+    ) -> Outcome<(String, VcTypeConfig)>;
+    async fn issue_cred(&self, claims: &VCJwtClaims) -> Outcome<String>;
 }

@@ -22,18 +22,18 @@ use crate::data::entities::sent::interaction;
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::sent::SentInteractionRepoTrait;
 
-pub struct SentInteractionRepo {
+pub struct SentInteractionPostgresRepo {
     db: DatabaseConnection,
 }
 
-impl SentInteractionRepo {
+impl SentInteractionPostgresRepo {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
 }
 
 #[async_trait]
-impl BasicPostgresRepo for SentInteractionRepo {
+impl BasicPostgresRepo for SentInteractionPostgresRepo {
     type Entity = interaction::Entity;
     type Plan = interaction::Plan;
 
@@ -43,4 +43,4 @@ impl BasicPostgresRepo for SentInteractionRepo {
 }
 
 #[async_trait]
-impl SentInteractionRepoTrait for SentInteractionRepo {}
+impl SentInteractionRepoTrait for SentInteractionPostgresRepo {}

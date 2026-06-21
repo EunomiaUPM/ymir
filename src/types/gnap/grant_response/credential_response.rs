@@ -16,9 +16,10 @@
  */
 
 use serde::{Deserialize, Serialize};
+use crate::types::vcs::VcTypeConfig;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CredentialResponse {
     pub credential_uri: String,
-    pub credential_type: String,
+    pub credential_type_config: Vec<VcTypeConfig>,
 }

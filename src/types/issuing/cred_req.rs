@@ -17,22 +17,80 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::types::issuing::CredentialDefinition;
+use crate::types::vcs::VcTypeConfig;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CredentialRequestsss {
-    pub credential_requests: Vec<CredentialRequest>,
-}
+// ════════════════════════════════════════════════════════════════════════════════
+//   CredentialRequest
+// ════════════════════════════════════════════════════════════════════════════════
 
-#[derive(Debug, Serialize, Deserialize)]
+/// Credential Request received at the Credential Endpoint (OIDC4VCI 1.0 §8.1).
+///
+/// Either `credential_configuration_id` OR `credential_identifier` MUST be
+/// present (mutually exclusive). `proof` is required when the issuer mandates
+/// proof of possession (our case for `jwt_vc_json`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CredentialRequest {
-    pub format: String,
-    pub proof: CredReqProof,
-    pub credential_definition: CredentialDefinition,
+    /// References a key in `credential_configurations_supported` of the Issuer
+    /// Metadata. REQUIRED when no `credential_identifier` is present.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_configuration_id: Option<VcTypeConfig>,
+
+    /// Refers to a specific Credential previously authorised via
+    /// `authorization_details`. REQUIRED when the AS returned identifiers in
+    /// the token response.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_identifier: Option<String>,
+
+    /// Single proof of possession of the holder's key. REQUIRED when the
+    /// issuer's configuration requires proofs.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proof: Option<CredReqProof>,
+
+    /// Multiple proofs (for batch issuance). Alternative to `proof`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proofs: Option<CredReqProofs>,
+
+    /// JWE parameters for encrypting the credential response. OPTIONAL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_response_encryption: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CredReqProof {
-    pub proof_type: String,
-    pub jwt: String,
+// ════════════════════════════════════════════════════════════════════════════════
+//   CredReqProof
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// Proof of possession of the holder's key, discriminated by `proof_type`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "proof_type", rename_all = "snake_case")]
+pub enum CredReqProof {
+    /// JWT proof (OIDC4VCI 1.0 §8.2.1.1). Header `typ` MUST be
+    /// `openid4vci-proof+jwt`. Payload MUST contain `aud`, `iat`, and `nonce`
+    /// (echoing the `c_nonce` from the token response).
+    Jwt { jwt: String },
+
+    /// W3C Linked-Data Proof carried inside a Verifiable Presentation.
+    LdpVp { ldp_vp: serde_json::Value },
+
+    /// Attestation-based proof.
+    Attestation { attestation: String },
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+//   CredReqProofs
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// Batch of proofs of the same type for batch issuance.
+///
+/// Per spec, only one variant is populated per request, matching the chosen
+/// proof_type.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CredReqProofs {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub jwt: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ldp_vp: Option<Vec<serde_json::Value>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attestation: Option<Vec<String>>,
 }

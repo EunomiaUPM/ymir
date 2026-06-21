@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
 use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::Outcome;
 use crate::types::vcs::VPDef;
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait VerifierTrait: Send + Sync + 'static {

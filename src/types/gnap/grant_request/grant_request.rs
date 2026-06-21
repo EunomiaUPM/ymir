@@ -17,8 +17,9 @@
 
 use serde::{Deserialize, Serialize};
 use crate::data::entities::sent::interaction;
+use crate::types::gnap::grant_request::credential_request::AccessCredentialRequest;
 use crate::types::vcs::{VcTypeConfig};
-use super::access::{AccessRequest, AccessType, ResourceAccess};
+use super::access::{AccessTokenRequest, AccessType, ResourceAccess};
 use super::client::Client;
 use super::grant_request_kind::GrantRequestKind;
 use super::interact::{InteractAction, InteractRequest};
@@ -38,18 +39,10 @@ pub struct GrantRequest {
 }
 
 impl GrantRequest {
-    pub fn new_vc(client: Client, vc_type: VcTypeConfig, model: &interaction::Model) -> Self {
-        let credential_request = AccessRequest {
-            access: ResourceAccess {
-                r#type: AccessType::VcExchange,
-                actions: Some(vec![InteractAction::RequestVc]),
-                locations: None,
-                datatypes: Some(vec![vc_type.to_string()]),
-                identifier: None,
-                privileges: None,
-            },
+    pub fn new_vc(client: Client, vc_type: Vec<VcTypeConfig>, model: &interaction::Model) -> Self {
+        let credential_request = AccessCredentialRequest {
+            credential_configurations: vc_type,
             label: None,
-            flags: None,
         };
 
         Self {
@@ -62,7 +55,7 @@ impl GrantRequest {
     }
 
     pub fn new_token(client: Client, actions: Vec<InteractAction>, model: &interaction::Model) -> Self {
-        let access_token = AccessRequest {
+        let access_token = AccessTokenRequest {
             access: ResourceAccess {
                 r#type: AccessType::ApiAccess,
                 actions: Some(actions),

@@ -16,18 +16,19 @@
  */
 use std::sync::Arc;
 use crate::capabilities::Did;
-use crate::data::entities::{mates, minions};
 use crate::errors::{Outcome};
 use crate::types::dids::{DidBuilder, DidDocument};
 use crate::types::secrets::PemHelper;
 use crate::types::wallet::{Identity, WalletInfo};
 use crate::types::wallet::{DidModel, KeyModel, VcModel};
 use async_trait::async_trait;
+use crate::data::entities::shared::participant;
+use crate::types::participants::ParticipantType;
 
 #[async_trait]
 pub trait WalletTrait: Send + Sync + 'static {
     // BASIC
-    async fn link(&self) -> Outcome<(mates::NewModel, minions::NewModel)>;
+    async fn link(&self) -> Outcome<participant::Plan>;
     // GET FROM MANAGER (It gives a cloned Value, not a reference)
     async fn get_wallet(&self) -> Outcome<WalletInfo>;
     fn get_did(&self) -> Outcome<Did>;
@@ -61,28 +62,15 @@ pub trait WalletTrait: Send + Sync + 'static {
     // DO STUFF IN WALLET
     async fn process_oid4vci(&self, uri: &str) -> Outcome<()>;
     async fn process_oid4vp(&self, uri: &str) -> Outcome<()>;
-    fn get_self_mate(&self, base_url: String) -> Outcome<mates::NewModel> {
+    fn get_myself_plan(&self, base_url: String, participant_type: ParticipantType) -> Outcome<participant::Plan> {
         let did = self.get_did()?;
-        Ok(mates::NewModel {
+        Ok(participant::Plan {
             participant_id: did.id().to_string(),
-            participant_slug: "Myself".to_string(),
-            participant_type: "Agent".to_string(),
+            participant_nick: "Myself".to_string(),
+            participant_type,
             base_url,
             token: None,
             extra_fields: None,
-            is_me: true,
-        })
-    }
-
-    fn get_self_minion(&self, base_url: String) -> Outcome<minions::NewModel> {
-        let did = self.get_did()?;
-        Ok(minions::NewModel {
-            participant_id: did.id().to_string(),
-            participant_slug: "Myself".to_string(),
-            participant_type: "Authority".to_string(),
-            base_url: Some(base_url),
-            vc_uri: None,
-            is_vc_issued: false,
             is_me: true,
         })
     }

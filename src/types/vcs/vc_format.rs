@@ -25,6 +25,7 @@ use crate::impl_serde_via_str;
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromJsonQueryResult)]
 pub enum VcFormat {
     JwtVcJson,
+    JwtVcJsonLd,
     LdpVc,
     SdJwtVc,
     MsoMdoc,
@@ -35,6 +36,7 @@ impl Display for VcFormat {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
             VcFormat::JwtVcJson => "jwt_vc_json",
+            VcFormat::JwtVcJsonLd => "jwt_vc_json-ld",
             VcFormat::LdpVc => "ldp_vc",
             VcFormat::SdJwtVc => "vc+sd-jwt",
             VcFormat::MsoMdoc => "mso_mdoc",
@@ -50,6 +52,7 @@ impl FromStr for VcFormat {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s.to_ascii_lowercase().as_str() {
             "jwt_vc_json" => VcFormat::JwtVcJson,
+            "jwt_vc_json-ld" => VcFormat::JwtVcJsonLd,
             "ldp_vc" => VcFormat::LdpVc,
             "vc+sd-jwt" => VcFormat::SdJwtVc,
             "mso_mdoc" => VcFormat::MsoMdoc,
@@ -61,12 +64,12 @@ impl FromStr for VcFormat {
 impl_serde_via_str!(VcFormat);
 
 impl VcFormat {
-    pub fn supported() -> Vec<VcFormat> {
-        vec![VcFormat::JwtVcJson]
+    pub fn supported() -> &'static [VcFormat] {
+        &[
+            VcFormat::JwtVcJson,
+        ]
     }
     pub fn is_supported(&self) -> bool {
-        if Self::supported().contains(self) {
-            true
-        } else { false }
+        Self::supported().contains(self)
     }
 }

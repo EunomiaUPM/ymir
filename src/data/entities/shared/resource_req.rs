@@ -17,11 +17,12 @@
 
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 use crate::data::entities::IntoOverwriteActive;
 use crate::types::gnap::grant_request::access::{AccessTokenFlag, AccessType};
 use crate::types::gnap::grant_request::interact::InteractAction;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "resources_reqs")]
 pub struct Model {
     #[sea_orm(primary_key)]

@@ -29,4 +29,6 @@ pub enum GrantStatus {
     Approved,
     #[sea_orm(string_value = "Rejected")]
     Rejected,
+    #[sea_orm(string_value = "Finalized")]
+    Finalized,
 }

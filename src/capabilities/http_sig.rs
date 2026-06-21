@@ -26,7 +26,7 @@ use rand::distributions::Alphanumeric;
 use sha2::{Digest, Sha256};
 
 use crate::errors::{Errors, Outcome};
-use crate::types::keys::{Alg, Certificate, PrivateKey};
+use crate::types::keys::{Alg, KeySource, PrivateKey};
 
 const MAX_CLOCK_SKEW_SECS: u64 = 30;
 
@@ -38,7 +38,7 @@ impl HttpSig {
     // =========================================================================
 
     pub fn build(
-        cert: &Certificate,
+        key_source: &KeySource,
         priv_key: &PrivateKey,
         alg: Option<Alg>,
         method: &str,
@@ -47,7 +47,7 @@ impl HttpSig {
         authorization: Option<&str>,
     ) -> Outcome<HeaderMap> {
         let alg = alg.unwrap_or(priv_key.alg());
-        let key_id = cert.thumbprint_sha256();
+        let key_id = key_source.thumbprint();
         let created = unix_now();
         let nonce = random_nonce_32();
         let content_digest = digest(body_bytes);
@@ -103,7 +103,7 @@ impl HttpSig {
 
     pub fn verify(
         headers: &HeaderMap,
-        cert: &Certificate,
+        key_source: &KeySource,
         method: &str,
         url: &str,
         body_bytes: &[u8],
@@ -112,7 +112,7 @@ impl HttpSig {
         let signature_header = Self::extract_header(headers, "signature")?;
         let content_digest = Self::extract_header(headers, "content-digest")?;
 
-        cert.check_validity()?;
+        key_source.check_validity()?;
 
         if !signature_input.contains("tag=\"gnap\"") {
             return Err(Errors::security(
@@ -138,7 +138,7 @@ impl HttpSig {
         check_clock_skew(created)?;
 
         let keyid_in_sig = Self::extract_sig_param(&signature_input, "keyid")?;
-        let cert_thumbprint = cert.thumbprint_sha256();
+        let cert_thumbprint = key_source.thumbprint();
 
         if keyid_in_sig != cert_thumbprint {
             return Err(Errors::security(
@@ -163,7 +163,6 @@ impl HttpSig {
 
         let alg_str = Self::extract_sig_param(&signature_input, "alg")?;
         let Ok(alg) = Alg::from_str(&alg_str);
-        let public_key = cert.public_key()?;
 
         let (reconstructed_base, _) = Self::build_signature_base(
             method,
@@ -177,7 +176,7 @@ impl HttpSig {
             authorization,
         );
 
-        public_key.verify_bytes(reconstructed_base.as_bytes(), &signature_bytes, &alg)
+        key_source.verify_bytes(reconstructed_base.as_bytes(), &signature_bytes, &alg)
     }
 
     // =========================================================================

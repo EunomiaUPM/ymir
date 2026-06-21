@@ -24,18 +24,18 @@ use crate::errors::Outcome;
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::received::RecvInteractionRepoTrait;
 
-pub struct RecvInteractionRepo {
+pub struct RecvInteractionPostgresRepo {
     db: DatabaseConnection,
 }
 
-impl RecvInteractionRepo {
+impl RecvInteractionPostgresRepo {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
 }
 
 #[async_trait]
-impl BasicPostgresRepo for RecvInteractionRepo {
+impl BasicPostgresRepo for RecvInteractionPostgresRepo {
     type Entity = interaction::Entity;
     type Plan = interaction::Plan;
 
@@ -45,7 +45,7 @@ impl BasicPostgresRepo for RecvInteractionRepo {
 }
 
 #[async_trait]
-impl RecvInteractionRepoTrait for RecvInteractionRepo {
+impl RecvInteractionRepoTrait for RecvInteractionPostgresRepo {
     async fn get_by_cont_id(&self, cont_id: &str) -> Outcome<Model> {
         let query = interaction::Entity::find()
             .filter(interaction::Column::ContinueId.eq(cont_id));

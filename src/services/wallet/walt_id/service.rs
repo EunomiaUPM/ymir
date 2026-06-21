@@ -33,7 +33,7 @@ use super::config::WaltIdConfig;
 use crate::capabilities::Did;
 use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::{DidConfig, HostType};
-use crate::data::entities::{mates, minions};
+use crate::data::entities::shared::participant;
 use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
@@ -41,6 +41,7 @@ use crate::services::vault::global::VaultService;
 use crate::types::dids::{DidBuilder, DidDocument, DidService, DidType};
 use crate::types::http::HttpBody;
 use crate::types::keys::{Alg, Crv, Kty};
+use crate::types::participants::ParticipantType;
 use crate::types::secrets::{PemHelper, SemiWaltIdSecrets};
 use crate::types::vcs::VPDef;
 use crate::types::wallet::waltid::{
@@ -59,6 +60,7 @@ pub struct WaltIdService {
     services: Vec<DidService>,
     vault: Arc<VaultService>,
     config: WaltIdConfig,
+    participant_type: ParticipantType,
     identity: RwLock<Option<Identity>>,
 }
 
@@ -67,6 +69,7 @@ impl WaltIdService {
         config: WaltIdConfig,
         vault: Arc<VaultService>,
         services: Vec<DidService>,
+        participant_type: ParticipantType,
     ) -> Outcome<Self> {
         let service = WaltIdService {
             wallet_session: Arc::new(Mutex::new(WalletSession {
@@ -80,6 +83,7 @@ impl WaltIdService {
             vault,
             services,
             identity: RwLock::new(None),
+            participant_type,
         };
 
         let fresh = service.register().await?;
@@ -98,10 +102,10 @@ impl WaltIdService {
 
 #[async_trait]
 impl WalletTrait for WaltIdService {
-    async fn link(&self) -> Outcome<(mates::NewModel, minions::NewModel)> {
+    async fn link(&self) -> Outcome<participant::Plan> {
         self.login().await?;
         let url = self.config.hosts().get_host(HostType::Http);
-        Ok((self.get_self_mate(url.clone())?, self.get_self_minion(url)?))
+        self.get_myself_plan(url.clone(), self.participant_type.clone())
     }
 
     async fn get_wallet(&self) -> Outcome<WalletInfo> {

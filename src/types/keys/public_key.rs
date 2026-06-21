@@ -28,7 +28,7 @@ use rsa::signature::Verifier;
 use rsa::traits::PublicKeyParts;
 use rsa::{BigUint, RsaPublicKey};
 use serde_json::{Value, json};
-use sha2::{Sha256, Sha384, Sha512};
+use sha2::{Digest, Sha256, Sha384, Sha512};
 use std::str::FromStr;
 use x509_parser::pem::parse_x509_pem;
 use x509_parser::prelude::*;
@@ -94,8 +94,8 @@ impl PublicKey {
 
         Self::try_from_pkcs8_der(cert.public_key().raw)
     }
-    
-    pub fn parse_from(vm: &VerificationMethod) -> Outcome<PublicKey> {
+
+    pub fn parse_from_vm(vm: &VerificationMethod) -> Outcome<PublicKey> {
         let jwk = match &vm.material {
             VerificationMaterial::JsonWebKey { public_key_jwk }
             | VerificationMaterial::JsonWebKey2020 { public_key_jwk } => public_key_jwk,
@@ -107,6 +107,9 @@ impl PublicKey {
             }
         };
 
+        Self::parse_from_jwk(jwk)
+    }
+    pub fn parse_from_jwk(jwk: &Value) -> Outcome<PublicKey> {
         let kty_str = jwk
             .get("kty")
             .and_then(|v| v.as_str())
@@ -176,6 +179,16 @@ impl PublicKey {
             Self::Ed25519 { .. } => Some(Crv::Ed25519),
         }
     }
+    pub fn jwk_thumbprint(&self) -> String {
+        let jwk_json = self.public_jwk();
+
+        let serialized = serde_json::to_vec(&jwk_json).unwrap();
+
+        let hash = Sha256::digest(&serialized);
+
+        encode_url_safe_no_pad(hash.as_slice())
+    }
+
     pub fn public_jwk(&self) -> Value {
         match self {
             PublicKey::Rsa { vk } => {

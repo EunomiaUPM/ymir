@@ -25,18 +25,18 @@ use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::sent::SentGrantRepoTrait;
 use crate::types::gnap::grant_request::GrantKind;
 
-pub struct SentGrantRepo {
+pub struct SentGrantPostgresRepo {
     db: DatabaseConnection,
 }
 
-impl SentGrantRepo {
+impl SentGrantPostgresRepo {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
 }
 
 #[async_trait]
-impl BasicPostgresRepo for SentGrantRepo {
+impl BasicPostgresRepo for SentGrantPostgresRepo {
     type Entity = grant::Entity;
     type Plan = grant::Plan;
 
@@ -46,8 +46,8 @@ impl BasicPostgresRepo for SentGrantRepo {
 }
 
 #[async_trait]
-impl SentGrantRepoTrait for SentGrantRepo {
-    async fn get_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>> {
+impl SentGrantRepoTrait for SentGrantPostgresRepo {
+    async fn filter_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>> {
         grant::Entity::find()
             .filter(grant::Column::Kind.eq(kind))
             .all(self.db())

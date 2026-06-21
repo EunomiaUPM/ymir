@@ -42,7 +42,7 @@ pub struct VcDocumentBuilder<ID, ISS, CS> {
 }
 
 impl VcDocumentBuilder<Missing, Missing, Missing> {
-    pub fn new(vc_type: &VcType, model: &W3cDataModelVersion) -> Self {
+    pub fn new(vc_type: &VcType, model: W3cDataModelVersion) -> Self {
         VcDocumentBuilder {
             context: vec![model.context().to_string()],
             id: None,

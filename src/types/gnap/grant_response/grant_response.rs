@@ -24,6 +24,7 @@ use super::interact::InteractResponse;
 use super::subject::SubjectResponse;
 use super::{Continuation};
 use crate::types::gnap::access_token::{AccessToken, ContinueToken};
+use crate::types::vcs::VcTypeConfig;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
@@ -88,21 +89,22 @@ impl GrantResponse {
         GrantResponse::Approved(res)
     }
 
-    // pub fn vc_approved(params: VcApprovedParams) -> Self {
-    //     Self {
-    //         r#continue: None,
-    //         access_token: None,
-    //         credential_response: Some(CredentialResponse {
-    //             credential_uri: params.credential_uri,
-    //             credential_type: params.vc_type.to_conf(),
-    //         }),
-    //         interact: None,
-    //         subject: None,
-    //         instance_id: None,
-    //         error: None,
-    //     }
-    // }
-    //
+    pub fn vc_approved(uri: impl Into<String>, credential_type_config: Vec<VcTypeConfig>) -> Self {
+        let res = ApprovedResponse {
+            r#continue: None,
+            kind: GrantResponseKind::CredentialResponse {
+                credential_response: CredentialResponse {
+                    credential_uri: uri.into(),
+                    credential_type_config,
+                },
+            },
+            subject: None,
+            instance_id: None,
+        };
+
+        GrantResponse::Approved(res)
+    }
+
     pub fn pending(uri: impl Into<String>, model: &interaction::Model) -> Self {
         // BY DEFAULT IN THIS USE CASE, VERIFICATION IS DONE THROUGH OID4VC, THAT IS WHY THE REST REMAIN AS NONE
         GrantResponse::Pending(

@@ -26,6 +26,7 @@ mod vpd;
 mod w3c_data_model;
 mod vc_format;
 mod vc_type_config;
+mod build_ctx;
 
 pub use gaia_vc::*;
 pub use input_descriptor::InputDescriptor;
@@ -35,3 +36,4 @@ pub use vpd::VPDef;
 pub use w3c_data_model::*;
 pub use vc_format::VcFormat;
 pub use vc_type_config::VcTypeConfig;
+pub use build_ctx::BuildCtx;

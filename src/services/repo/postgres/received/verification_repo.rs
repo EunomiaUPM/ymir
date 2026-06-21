@@ -16,28 +16,25 @@
  */
 
 use async_trait::async_trait;
-use chrono::Utc;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, ColumnTrait, QueryFilter};
 
-use crate::data::entities::received::{interaction, verification};
-use crate::errors::{Errors, Outcome};
+use crate::data::entities::received::{verification};
+use crate::errors::{Outcome};
 use crate::services::repo::postgres::BasicPostgresRepo;
-use crate::services::repo::traits::CrudRepoTrait;
 use crate::services::repo::traits::received::RecvVerificationRepoTrait;
-use crate::types::verifying::VerificationStatus;
 
-pub struct RecvVerificationRepo {
+pub struct RecvVerificationPostgresRepo {
     db: DatabaseConnection,
 }
 
-impl RecvVerificationRepo {
+impl RecvVerificationPostgresRepo {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
 }
 
 #[async_trait]
-impl BasicPostgresRepo for RecvVerificationRepo {
+impl BasicPostgresRepo for RecvVerificationPostgresRepo {
     type Entity = verification::Entity;
     type Plan = verification::Plan;
 
@@ -47,22 +44,11 @@ impl BasicPostgresRepo for RecvVerificationRepo {
 }
 
 #[async_trait]
-impl RecvVerificationRepoTrait for RecvVerificationRepo {
+impl RecvVerificationRepoTrait for RecvVerificationPostgresRepo {
     async fn get_by_state(&self, state: &str) -> Outcome<verification::Model> {
         let query = verification::Entity::find()
             .filter(verification::Column::State.eq(state));
 
         self.basic_filter(query, "state", state).await
     }
-    // async fn end(&self, id: &str) -> Outcome<()> {
-    //     let model = self.get_by_id(id).await?;
-    //     let mut active: verification::ActiveModel = model.into();
-    //     active.ended_at = ActiveValue::Set(Some(Utc::now()));
-    //     active.status = ActiveValue::Set(VerificationStatus::Completed);
-    //     active
-    //         .update(self.db())
-    //         .await
-    //         .map_err(|e| Errors::db("Unable to end verification", Some(Box::new(e))))?;
-    //     Ok(())
-    // }
 }

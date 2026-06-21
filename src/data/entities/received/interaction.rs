@@ -21,11 +21,13 @@ use rand::Rng;
 use rand::distributions::Alphanumeric;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha384, Sha512};
 use crate::data::entities::IntoOverwriteActive;
 use crate::types::gnap::grant_request::interact::{FinishMethod, HashMethod, InteractStart};
+use crate::types::keys::DbKeySource;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "recv_interactions")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -33,7 +35,7 @@ pub struct Model {
     pub start: Vec<InteractStart>,        // RESPONSE
     pub method: FinishMethod,            // RESPONSE
     pub callback_uri: String,               // RESPONSE
-    pub cert: String,              // RESPONSE
+    pub key_source: DbKeySource,              // RESPONSE
     pub client_nonce: String,      // RESPONSE
     pub hash_method: HashMethod,       // RESPONSE
     pub hints: Option<String>,     // RESPONSE
@@ -52,7 +54,7 @@ pub struct Plan {
     pub start: Vec<InteractStart>,          // REQUEST
     pub method: FinishMethod,              // REQUEST
     pub callback_uri: String,                 // REQUEST
-    pub cert: String,                // REQUEST
+    pub key_source: DbKeySource,                // REQUEST
     pub client_nonce: String,        // REQUEST
     pub hash_method: Option<HashMethod>, // REQUEST
     pub hints: Option<String>,       // REQUEST
@@ -116,7 +118,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
             callback_uri: ActiveValue::Set(self.callback_uri),
-            cert: ActiveValue::Set(self.cert),
+            key_source: ActiveValue::Set(self.key_source),
             client_nonce: ActiveValue::Set(self.client_nonce),
             hash_method: ActiveValue::Set(hash_method),
             hints: ActiveValue::Set(self.hints),
@@ -138,7 +140,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
             callback_uri: ActiveValue::Set(self.callback_uri),
-            cert: ActiveValue::Set(self.cert),
+            key_source: ActiveValue::Set(self.key_source),
             client_nonce: ActiveValue::Set(self.client_nonce),
             hash_method: ActiveValue::Set(self.hash_method),
             hints: ActiveValue::Set(self.hints),

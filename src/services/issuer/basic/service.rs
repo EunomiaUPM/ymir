@@ -27,19 +27,23 @@ use super::BasicIssuerConfig;
 use crate::capabilities::{Kid, Signer, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
-use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
+use crate::data::entities::received::grant;
+use crate::data::entities::shared::issuance;
 use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::vault::{VaultService, VaultTrait};
+use crate::types::gnap::grant_request::GrantRequestKind;
+use crate::types::gnap::grant_request::client::{Client, KeyMaterial};
 use crate::types::issuing::{
-    AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
-    TokenRequest, VcCredOffer,
+    AuthServerMetadata, CredReqProof, CredentialRequest, DidPossession, GiveVC, IssuedCredential,
+    IssuedCredentialItem, IssuerMetadata, IssuingToken, TokenRequest, VcCredOffer,
+    VcTransmissionOffer,
 };
-use crate::types::jwt::Jwt;
+use crate::types::jwt::{Jwt, VCJwtClaims};
 use crate::types::keys::{PrivateKey, PublicKey, SigningCtx};
 use crate::types::secrets::PemHelper;
-use crate::types::vcs::VcType;
+use crate::types::vcs::{BuildCtx, VcType, VcTypeConfig};
 use crate::types::wallet::Identity;
-use crate::utils::{expect_from_env, has_expired, is_active, trim_4_base};
+use crate::utils::{expect_from_env, has_expired, is_active, require_field, trim_4_base};
 
 pub struct BasicIssuerService {
     config: BasicIssuerConfig,
@@ -63,28 +67,66 @@ impl BasicIssuerService {
 
 #[async_trait]
 impl IssuerTrait for BasicIssuerService {
-    fn start_vci(&self, model: &vc_request::Model) -> issuing::NewModel {
-        info!("Starting OIDC4VCI");
+    fn build_issuance_plan(
+        &self,
+        id: &str,
+        grant_request_kind: GrantRequestKind,
+        client: Client,
+        available_vcs: &[VcType],
+    ) -> Outcome<issuance::Plan> {
+        let vc_req = match grant_request_kind {
+            GrantRequestKind::AccessToken { .. } => {
+                return Err(Errors::format(
+                    BadFormat::Received,
+                    "Unable to issue tokens, just credentials",
+                    None,
+                ));
+            }
+            GrantRequestKind::CredentialRequest { credential_request } => credential_request,
+        };
+
+        let participant_nick = client.class_id.as_deref().ok_or_else(|| {
+            Errors::format(
+                BadFormat::Received,
+                "Missing field class_id in the petition",
+                None,
+            )
+        })?;
+
+        let vc_configs: Vec<VcTypeConfig> = vc_req
+            .credential_configurations
+            .into_iter()
+            .filter(|vc| vc.is_supported())
+            .filter(|vc| available_vcs.contains(vc.vc_type()))
+            .collect();
+
+        let cert = match client.key.material {
+            KeyMaterial::Jwk { .. } => None,
+            KeyMaterial::Cert { cert } => Some(cert),
+        };
         let aud = self.config.get_host(HostType::Http);
-        let uri = self.generate_issuing_uri(&model.id, None);
-        issuing::NewModel {
-            id: model.id.clone(),
-            name: model.participant_slug.clone(),
-            vc_type: model.vc_type.clone(),
+
+        let build_ctx = BuildCtx::base(participant_nick, cert);
+
+        let issuance = issuance::Plan {
+            id: id.to_string(),
+            subject_name: participant_nick.to_string(),
+            vc_type_config: vc_configs,
+            build_ctx,
             aud,
-            uri,
-        }
+            issuer_did: self.identity.did().id().to_string(),
+        };
+
+        Ok(issuance)
     }
 
-    fn generate_issuing_uri(&self, id: &str, path: Option<&str>) -> String {
+    fn generate_issuing_uri(
+        &self,
+        offer_type: VcTransmissionOffer,
+        path: Option<&str>,
+    ) -> Outcome<String> {
         let path = path.unwrap_or("issuer");
         let api_path = self.config.get_api_path();
-        let semi_host = format!(
-            "{}{}/{}",
-            self.config.get_host_without_protocol(HostType::Http),
-            api_path,
-            path
-        );
         let host = format!(
             "{}{}/{}",
             self.config.get_host(HostType::Http),
@@ -92,151 +134,127 @@ impl IssuerTrait for BasicIssuerService {
             path
         );
 
-        let credential_offer_endpoint = format!("{}/credentialOffer?id={}", host, id);
-        let encoded = urlencoding::encode(credential_offer_endpoint.as_str());
-        let uri = format!(
-            "openid-credential-offer://{}/?credential_offer_uri={}",
-            semi_host, encoded
-        );
-        info!("Issuing uri: {uri}");
-        uri
+        match offer_type {
+            VcTransmissionOffer::ByReference(id) => {
+                let credential_offer_endpoint = format!("{}/credentialOffer?id={}", host, id);
+                let encoded = urlencoding::encode(&credential_offer_endpoint);
+
+                let uri = format!(
+                    "openid-credential-offer://?credential_offer_uri={}",
+                    encoded
+                );
+                info!("Issuing uri (by reference): {uri}");
+                Ok(uri)
+            }
+            VcTransmissionOffer::ByValue(cred_offer) => {
+                let json_string = serde_json::to_string(&cred_offer)?;
+
+                let encoded_json = urlencoding::encode(&json_string);
+
+                let uri = format!(
+                    "openid-credential-offer://?credential_offer={}",
+                    encoded_json
+                );
+                info!("Issuing uri (embedded/by value): {uri}");
+                Ok(uri)
+            }
+        }
     }
 
-    fn get_cred_offer_data(&self, model: &issuing::Model) -> Outcome<VcCredOffer> {
+    fn get_cred_offer_data(&self, model: &issuance::Model) -> VcCredOffer {
         info!("Retrieving credential offer data");
-        VcCredOffer::new(
+
+        VcCredOffer::pre_authorized(
             self.config.get_host(HostType::Http),
             &model.pre_auth_code,
-            &model.vc_type,
+            &model.vc_type_config,
         )
     }
 
-    fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata {
-        info!("Retrieving issuer data");
-        let (base_host, host_path) = self.metadata_hosts(path);
-        IssuerMetadata::new(&base_host, &host_path, vcs)
+    fn get_issuer_metadata(&self, path: Option<&str>, vcs: &[VcType]) -> IssuerMetadata {
+        let (host, api_path) = self.metadata_hosts(path);
+        IssuerMetadata::new(&host, &api_path, vcs)
     }
 
-    fn get_oauth_server_data(
-        &self,
-        path: Option<&str>,
-        vcs: Option<&[VcType]>,
-    ) -> AuthServerMetadata {
-        info!("Retrieving oauth server data");
-        let (base_host, host_path) = self.metadata_hosts(path);
-        AuthServerMetadata::new(&base_host, &host_path, vcs)
+    fn get_oauth_server_data(&self, path: Option<&str>) -> AuthServerMetadata {
+        let (host, api_path) = self.metadata_hosts(path);
+        AuthServerMetadata::new(&host, &api_path)
     }
 
-    fn get_token(&self, model: &issuing::Model) -> IssuingToken {
+    fn get_token(&self, model: &issuance::Model) -> IssuingToken {
         info!("Giving token");
-        IssuingToken::new(model.token.clone())
+        IssuingToken::new(
+            &model.token,
+            Some(model.nonce.clone()),
+            model.token_expiration,
+        )
     }
-
-    fn validate_token_req(&self, model: &issuing::Model, payload: &TokenRequest) -> Outcome<()> {
-        info!("Validating token request");
-
-        // if let Some(tx_code) = &payload.tx_code {
-        //     if model.tx_code != *tx_code {
-        //         return Err(Errors::forbidden("tx_code does not match", None));
-        //     }
-        // }
-
-        if model.pre_auth_code != payload.pre_authorized_code {
-            return Err(Errors::forbidden("pre_auth_code does not match", None));
-        }
-        Ok(())
-    }
-
     async fn validate_cred_req(
         &self,
-        model: &mut issuing::Model,
-        cred_req: &CredentialRequest,
+        issuance: &issuance::Model,
+        cred_req: CredentialRequest,
         token: &str,
-    ) -> Outcome<()> {
+    ) -> Outcome<(String, VcTypeConfig)> {
         info!("Validating credential request");
 
-        if model.token != token {
+        if issuance.token != token {
             return Err(Errors::forbidden("token does not match", None));
         }
-        if cred_req.format != "jwt_vc_json" {
-            return Err(Errors::format(
+
+        let vc_config = cred_req.credential_configuration_id.ok_or_else(|| {
+            Errors::format(
                 BadFormat::Received,
-                format!("Cannot issue a credential with format: {}", cred_req.format),
+                "credential configuration id is missing",
                 None,
-            ));
-        }
-        if cred_req.proof.proof_type != "jwt" {
+            )
+        })?;
+        if issuance.vc_type_config.contains(&vc_config) {
             return Err(Errors::format(
                 BadFormat::Received,
-                format!(
-                    "Cannot validate proof with type: {}",
-                    cred_req.proof.proof_type
-                ),
+                "Credential config does not match",
                 None,
             ));
         }
 
-        let proof_jwt = Jwt::parse(&cred_req.proof.jwt)?;
+        let proof = cred_req
+            .proof
+            .ok_or_else(|| Errors::format(BadFormat::Received, "Proof missing in request", None))?;
+        let jwt = match proof {
+            CredReqProof::Jwt { jwt } => Jwt::parse(&jwt)?,
+            _ => {
+                return Err(Errors::format(
+                    BadFormat::Received,
+                    "Proof method does not match with requested one",
+                    None,
+                ))?;
+            }
+        };
 
         let (kid, claims) =
-            Verifier::verify_enveloped::<DidPossession>(&proof_jwt, Some(&model.aud)).await?;
+            Verifier::verify_enveloped::<DidPossession>(&jwt, Some(&issuance.aud)).await?;
 
         validate_did_possession(&claims, &kid)?;
         is_active(claims.iat)?;
-        has_expired(claims.exp)?;
-
-        model.holder_did = Some(kid.did().id().to_string());
-        model.issuer_did = Some(self.identity.did().id().to_string());
-        Ok(())
+        Ok((kid.did().id().to_string(), vc_config))
     }
 
-    async fn issue_cred(&self, claims: &Value) -> Outcome<GiveVC> {
+    async fn issue_cred(&self, claims: &VCJwtClaims) -> Outcome<String> {
         info!("Issuing credential");
+
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
         let pem_helper: PemHelper = self.vault.read(None, &priv_key).await?;
         let key = PrivateKey::try_from(pem_helper)?;
+
         let did = self.identity.did().clone();
         let keys_id = self.identity.keys_id().first().cloned().ok_or_else(|| {
             Errors::missing_action(MissingAction::Key, "No key within did Document", None)
         })?;
 
         let sig_ctx = SigningCtx::new(did, key, keys_id.fragment().to_string());
+        let claims = serde_json::to_value(claims)?;
 
-        let vc_jwt = Signer::sign_enveloped(&sig_ctx, "vc+ld+json+jwt", "vc+ld+json", claims)?;
-        Ok(GiveVC {
-            format: "jwt_vc_json".to_string(),
-            credential: vc_jwt.to_string(),
-        })
-    }
-
-    fn end(
-        &self,
-        req_model: &vc_request::Model,
-        int_model: &recv_interaction::Model,
-        iss_model: &issuing::Model,
-    ) -> Outcome<minions::NewModel> {
-        let did = iss_model
-            .holder_did
-            .as_ref()
-            .ok_or_else(|| Errors::format(BadFormat::Received, "Missing holder_did", None))?;
-        let base_url = trim_4_base(&int_model.uri);
-        Ok(minions::NewModel {
-            participant_id: did.clone(),
-            participant_slug: req_model.participant_slug.clone(),
-            vc_uri: req_model.vc_uri.clone(),
-            participant_type: "Agent".to_string(),
-            base_url: Some(base_url),
-            is_vc_issued: true,
-            is_me: false,
-        })
-    }
-
-    async fn get_jwks_data(&self) -> Outcome<Value> {
-        info!("Retrieving jwks data");
-        let pub_key = expect_from_env("VAULT_APP_PUB_PKEY");
-        let pub_key: PemHelper = self.vault.read(None, &pub_key).await?;
-        let key = PublicKey::try_from(pub_key)?;
-        Ok(key.public_jwk())
+        let vc_jwt = Signer::sign_enveloped(&sig_ctx, "vc+ld+json+jwt", "vc+ld+json", &claims)?;
+        Ok(vc_jwt.as_str().to_string())
     }
 }
 
@@ -245,10 +263,9 @@ impl IssuerTrait for BasicIssuerService {
 impl BasicIssuerService {
     fn metadata_hosts(&self, path: Option<&str>) -> (String, String) {
         let path = path.unwrap_or("/issuer");
-        let full_path = format!("{}{}", self.config.get_api_path(), path);
-        let base_host = self.config.get_host(HostType::Http);
-        let host_path = format!("{}{}", self.config.get_host(HostType::Http), full_path);
-        (base_host, host_path)
+        let host = self.config.get_host(HostType::Http);
+        let api_path = format!("{}{}", self.config.get_api_path(), path);
+        (host, api_path)
     }
 }
 
@@ -256,8 +273,11 @@ impl BasicIssuerService {
 
 fn validate_did_possession(claims: &DidPossession, kid: &Kid) -> Outcome<()> {
     info!("Validating did possession");
-    if claims.iss != kid.did().id() || claims.sub != kid.did().id() {
-        return Err(Errors::forbidden("Invalid proof of did possession", None));
+    if let Some(iss) = &claims.iss {
+        if iss != kid.did().id() {
+            return Err(Errors::forbidden("Invalid proof of did possession", None));
+        }
     }
+
     Ok(())
 }

@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -41,16 +42,16 @@ impl FromStr for VcType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
-            "gx:Eori" => Ok(VcType::Eori),
-            "gx:Euid" => Ok(VcType::Euid),
-            "gx:LeiCode" => Ok(VcType::LeiCode),
-            "gx:LocalRegistrationNumber" => Ok(VcType::LocalRegistrationNumber),
-            "gx:TaxId" => Ok(VcType::TaxId),
-            "gx:VatId" => Ok(VcType::VatId),
-            "DataSpaceParticipant" => Ok(VcType::DataspaceParticipant),
-            "gx:LegalPerson" => Ok(VcType::LegalPerson),
-            "gx:TermsAndConditions" => Ok(VcType::TermsAndConditions),
-            "gx:LabelCredential" => Ok(VcType::GxLabel),
+            "gx:eori" => Ok(VcType::Eori),
+            "gx:euid" => Ok(VcType::Euid),
+            "gx:leicode" => Ok(VcType::LeiCode),
+            "gx:localregistrationnumber" => Ok(VcType::LocalRegistrationNumber),
+            "gx:taxid" => Ok(VcType::TaxId),
+            "gx:vatid" => Ok(VcType::VatId),
+            "dataspaceparticipant" => Ok(VcType::DataspaceParticipant),
+            "gx:legalperson" => Ok(VcType::LegalPerson),
+            "gx:termsandconditions" => Ok(VcType::TermsAndConditions),
+            "gx:labelcredential" => Ok(VcType::GxLabel),
             other => Ok(VcType::Other(other.to_string())),
         }
     }
@@ -89,6 +90,17 @@ impl VcType {
             VcType::LegalPerson,
             VcType::TermsAndConditions,
         ]
+    }
+    pub fn is_legal_registration_number(&self) -> bool {
+        matches!(
+            self,
+            VcType::VatId
+                | VcType::LeiCode
+                | VcType::TaxId
+                | VcType::LocalRegistrationNumber
+                | VcType::Eori
+                | VcType::Euid
+        )
     }
     // pub fn to_gaia_weird(&self) -> Outcome<&str> {
     //     match self {

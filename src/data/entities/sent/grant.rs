@@ -36,7 +36,7 @@ pub struct Model {
     pub kind: GrantKind,                            // Type of request, (token or vc)
     pub status: GrantStatus,
     pub token: Option<String>,
-    pub vc_type_config: Option<VcTypeConfig>,
+    pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub vc_uri: Option<String>,
     pub as_assigned_id: Option<String>,
     pub auto: bool,                                 // If active, redeeming credentials or presented them is automatic
@@ -49,7 +49,7 @@ pub struct Plan {
     pub id: String,
     pub participant_id: String,
     pub participant_nick: String,
-    pub vc_type_config: Option<VcTypeConfig>,
+    pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub grant_endpoint: String,
     pub kind: GrantKind,
     pub auto: Option<bool>,

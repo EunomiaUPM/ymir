@@ -23,6 +23,7 @@ mod kty;
 mod private_key;
 mod public_key;
 mod sig_ctx;
+mod key_source;
 
 pub use alg::Alg;
 pub use certificate::Certificate;
@@ -32,3 +33,5 @@ pub use kty::Kty;
 pub use private_key::PrivateKey;
 pub use public_key::PublicKey;
 pub use sig_ctx::SigningCtx;
+pub use key_source::{KeySource, DbKeySource};
+

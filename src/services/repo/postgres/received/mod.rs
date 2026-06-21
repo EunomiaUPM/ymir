@@ -14,6 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 mod grant_repo;
 mod interaction_repo;
 mod verification_repo;
+
+pub use grant_repo::RecvGrantPostgresRepo;
+pub use interaction_repo::RecvInteractionPostgresRepo;
+pub use verification_repo::RecvVerificationPostgresRepo;

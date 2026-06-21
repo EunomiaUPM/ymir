@@ -18,12 +18,13 @@
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 use crate::data::entities::IntoOverwriteActive;
 use crate::types::gnap::grant_request::GrantKind;
 use crate::types::gnap::GrantStatus;
 use crate::types::vcs::VcTypeConfig;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "recv_grants")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -31,7 +32,7 @@ pub struct Model {
     pub participant_nick: String,                   // REQUEST
     pub kind: GrantKind,
     pub token: Option<String>,                      // COMPLETION
-    pub vc_type_config: Option<VcTypeConfig>,
+    pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub status: GrantStatus,                        // DEFAULT
     pub created_at: DateTime<Utc>,                  // DEFAULT
     pub ended_at: Option<DateTime<Utc>>,            // COMPLETION
@@ -41,7 +42,7 @@ pub struct Model {
 pub struct Plan {
     pub id: String,
     pub participant_nick: String,
-    pub vc_type_config: Option<VcTypeConfig>,
+    pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub kind: GrantKind,
 }
 

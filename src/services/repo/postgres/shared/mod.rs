@@ -14,5 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 mod participant_repo;
-mod resource_req;
+mod resource_req_repo;
+mod issuance_repo;
+
+pub use participant_repo::ParticipantPostgresRepo;
+pub use resource_req_repo::ResourceReqPostgresRepo;
+pub use issuance_repo::IssuancePostgresRepo;

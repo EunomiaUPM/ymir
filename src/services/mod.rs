@@ -21,3 +21,5 @@ pub mod repo;
 pub mod vault;
 pub mod verifier;
 pub mod wallet;
+mod has_service_trait;
+pub use has_service_trait::*;

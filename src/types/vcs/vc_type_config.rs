@@ -84,6 +84,9 @@ impl VcTypeConfig {
         }
         configs
     }
+    pub fn is_supported(&self) -> bool {
+        if Self::supported().contains(self) { true } else { false }
+    }
     pub fn vc_type(&self) -> &VcType {
         &self.vc_type
     }

@@ -17,12 +17,28 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Debug, Deserialize)]
+// ════════════════════════════════════════════════════════════════════════════════
+//   DidPossession
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// Payload claims of a JWT proof of possession (OIDC4VCI 1.0 §8.2.1.1).
+///
+/// The JWT header MUST carry `alg`, `typ = "openid4vci-proof+jwt"`, and one of
+/// `kid` / `jwk` / `x5c` identifying the holder's key. Those are handled by the
+/// JWT library used to sign/verify, not in this struct.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DidPossession {
-    pub iss: String,
-    pub sub: String,
+    /// Wallet's client identifier. OPTIONAL — omitted in anonymous flows.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub iss: Option<String>,
+
+    /// Credential Issuer URL. REQUIRED — anti-replay across issuers.
     pub aud: String,
-    pub jti: String,
+
+    /// Issued-at time as Unix timestamp (seconds). REQUIRED.
     pub iat: i64,
-    pub exp: i64,
+
+    /// Echo of the `c_nonce` issued by the AS. REQUIRED when `c_nonce` was
+    /// provided in the token response.
+    pub nonce: String,
 }

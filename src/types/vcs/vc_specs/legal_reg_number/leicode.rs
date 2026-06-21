@@ -15,82 +15,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::marker::PhantomData;
-
 use serde::{Deserialize, Serialize};
-
-use crate::types::present::{Missing, Present};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LeiCode {
     pub id: String,
-    // Unique LEI number.
-    #[serde(rename = "gx:leiCode")]
+    // Unique LEI number per https://www.gleif.org (ISO 17442, 20 chars).
+    #[serde(rename = "schema:leiCode")]
     pub lei_code: String,
     // The country subdivision (state/region) where the LEI number is registered.
-    #[serde(rename = "gx:city", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "gx:subdivisionCountryCode", skip_serializing_if = "Option::is_none")]
     pub subdivision_country_code: Option<String>,
-    // The country where the LEI number is registered.
-    #[serde(rename = "gx:country")]
+    // The country where the LEI number is registered (ISO 3166).
+    #[serde(rename = "gx:countryCode")]
     pub country_code: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LeiCodeBuilder<T> {
-    id: Option<String>,
-
-    // Unique LEI number.
-    #[serde(rename = "gx:leiCode")]
-    lei_code: String,
-
-    // The country subdivision (state/region) where the LEI number is registered.
-    #[serde(rename = "gx:city", skip_serializing_if = "Option::is_none")]
-    subdivision_country_code: Option<String>,
-
-    // The country where the LEI number is registered.
-    #[serde(rename = "gx:country")]
-    country_code: String,
-
-    #[serde(skip)]
-    _marker: PhantomData<T>,
-}
-
-impl LeiCodeBuilder<Missing> {
-    pub fn new(lei_code: String, country_code: String) -> Self {
-        Self {
-            id: None,
-            lei_code,
-            subdivision_country_code: None,
-            country_code,
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<T> LeiCodeBuilder<T> {
-    pub fn id(self, id: String) -> LeiCodeBuilder<Present> {
-        LeiCodeBuilder {
-            id: Some(id),
-            lei_code: self.lei_code,
-            subdivision_country_code: self.subdivision_country_code,
-            country_code: self.country_code,
-            _marker: PhantomData,
-        }
-    }
-
-    pub fn subdivision_country_code(mut self, code: String) -> Self {
-        self.subdivision_country_code = Some(code);
-        self
-    }
-}
-
-impl LeiCodeBuilder<Present> {
-    pub fn build(self) -> LeiCode {
-        LeiCode {
-            id: self.id.expect("Builder invariant violated: id missing"),
-            lei_code: self.lei_code,
-            subdivision_country_code: self.subdivision_country_code,
-            country_code: self.country_code,
-        }
-    }
-}

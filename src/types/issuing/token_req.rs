@@ -17,10 +17,30 @@
 
 use serde::Deserialize;
 
+use super::OidcGrantType;
+
+/// Token Request received by the AS Token Endpoint (OIDC4VCI 1.0 §6.1).
+///
+/// Sent by the wallet as `application/x-www-form-urlencoded`.
+/// This struct covers the Pre-Authorized Code flow; the auth_code-specific
+/// fields (`code`, `redirect_uri`, `code_verifier`) are not modeled here.
 #[derive(Debug, Deserialize)]
 pub struct TokenRequest {
-    pub grant_type: String,
+    /// The grant type the wallet is using. REQUIRED.
+    pub grant_type: OidcGrantType,
+
+    /// The pre-authorized code received in the Credential Offer. REQUIRED for
+    /// the pre-authorized code grant. JSON name MUST be `pre-authorized_code`
+    /// (with hyphen).
     #[serde(rename = "pre-authorized_code")]
     pub pre_authorized_code: String,
+
+    /// Transaction Code value, when the offer required one. OPTIONAL.
+    #[serde(default)]
     pub tx_code: Option<String>,
+
+    /// Client identifier, when client authentication is used. OPTIONAL for the
+    /// pre-authorized code grant.
+    #[serde(default)]
+    pub client_id: Option<String>,
 }

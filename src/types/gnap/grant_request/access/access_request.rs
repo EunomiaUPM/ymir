@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use super::{AccessTokenFlag, ResourceAccess};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AccessRequest {
+pub struct AccessTokenRequest {
     pub access: ResourceAccess,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,

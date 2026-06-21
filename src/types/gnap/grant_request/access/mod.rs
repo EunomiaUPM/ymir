@@ -20,7 +20,7 @@ mod access_token_flag;
 mod access_type;
 mod resource_access;
 
-pub use access_request::AccessRequest;
+pub use access_request::AccessTokenRequest;
 pub use access_token_flag::AccessTokenFlag;
 pub use access_type::AccessType;
 pub use resource_access::ResourceAccess;

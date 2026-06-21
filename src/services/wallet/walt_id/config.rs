@@ -22,6 +22,7 @@ use crate::config::types::{CommonHostsConfig, WalletConfig};
 pub struct WaltIdConfig {
     hosts: CommonHostsConfig,
     ssi_wallet_config: WalletConfig,
+
     did_config: DidConfig,
 }
 

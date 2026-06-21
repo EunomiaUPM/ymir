@@ -15,9 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod builder;
-mod core;
+use serde::{Deserialize, Serialize};
 
-pub use core::DataSpaceParticipant;
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DataSpaceParticipant {
+    pub id: String,
+    pub nickname: String,
+}
 
-pub use builder::DataSpaceParticipantBuilder;

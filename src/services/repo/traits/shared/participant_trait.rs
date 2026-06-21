@@ -19,11 +19,13 @@ use async_trait::async_trait;
 use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::shared::participant::{Model, Plan};
 use crate::errors::Outcome;
+use crate::types::participants::ParticipantType;
 
 #[async_trait]
 pub trait ParticipantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
 {
     async fn get_me(&self) -> Outcome<Model>;
+    async fn filter_by_type(&self, participant_type: ParticipantType) -> Outcome<Vec<Model>>;
     async fn get_by_token(&self, token: &str) -> Outcome<Model>;
     async fn get_batch(&self, ids: &[String]) -> Outcome<Vec<Model>>;
     async fn force_update(&self, plan: Plan) -> Outcome<Model>;

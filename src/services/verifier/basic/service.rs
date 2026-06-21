@@ -23,9 +23,9 @@ use urlencoding::encode;
 use super::super::VerifierTrait;
 use super::BasicVerifierConfig;
 use crate::capabilities::{Did, Kid, Verifier};
-use crate::config::traits::{HostsConfigTrait};
+use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
-use crate::data::entities::received::verification::{Plan, Model};
+use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::types::gnap::ApprovedCallbackBody;
@@ -99,7 +99,11 @@ impl VerifierTrait for BasicVerifierService {
     fn generate_vpd(&self, verification: &Model) -> Outcome<VPDef> {
         info!("Generating VP definition");
 
-        Ok(VPDef::new(&verification.id, &verification.vc_type, W3cDataModelVersion::default()))
+        Ok(VPDef::new(
+            &verification.id,
+            &verification.vc_type,
+            W3cDataModelVersion::default(),
+        ))
     }
 
     async fn verify_all(&self, model: &mut Model, vp_token: &str) -> Outcome<()> {
@@ -107,12 +111,16 @@ impl VerifierTrait for BasicVerifierService {
 
         let result: Outcome<()> = async {
             let (vcs, holder_did) = self.verify_vp(model, vp_token).await?;
+
             for vc in vcs {
                 self.verify_vc(&vc, &holder_did).await?;
+                model.vcs.push(vc)
             }
             Ok(())
-        }.await;
+        }
+            .await;
 
+        model.ended_at = Some(Utc::now());
         model.status = match &result {
             Ok(()) => {
                 info!("VP & VC validated successfully");

@@ -16,7 +16,5 @@
  */
 
 mod wallet;
-mod traits;
 
 pub use wallet::WalletModuleTrait;
-pub use traits::{HasVerifier, HasIssuer, HasWallet};

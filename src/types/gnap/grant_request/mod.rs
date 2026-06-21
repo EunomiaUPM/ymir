@@ -21,7 +21,8 @@ mod grant_request;
 mod grant_request_kind;
 pub mod interact;
 mod subject;
+mod credential_request;
 
 pub use grant_request::GrantRequest;
-pub use grant_request_kind::{GrantRequestKind, GrantKind};
+pub use grant_request_kind::{GrantKind, GrantRequestKind};
 pub use subject::SubjectRequest;

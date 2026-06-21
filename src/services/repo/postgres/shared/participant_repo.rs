@@ -20,9 +20,11 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, Qu
 use sea_orm::sea_query::OnConflict;
 use crate::data::entities::IntoOverwriteActive;
 use crate::data::entities::shared::participant;
+use crate::data::entities::shared::participant::Model;
 use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::shared::ParticipantRepoTrait;
+use crate::types::participants::ParticipantType;
 
 pub struct ParticipantPostgresRepo {
     db: DatabaseConnection,
@@ -51,6 +53,17 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
             .filter(participant::Column::IsMe.eq(true));
 
         self.basic_filter(query, "is_me", "true").await
+    }
+
+    async fn filter_by_type(&self, participant_type: ParticipantType) -> Outcome<Vec<Model>> {
+        participant::Entity::find()
+            .filter(participant::Column::ParticipantType.eq(participant_type))
+            .all(self.db())
+            .await
+            .map_err(|e| Errors::db(
+                "Unable to get participant by type",
+                Some(Box::new(e)),
+            ))
     }
 
     async fn get_by_token(&self, token: &str) -> Outcome<participant::Model> {

@@ -24,18 +24,18 @@ use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::received::RecvGrantRepoTrait;
 use crate::types::gnap::grant_request::GrantKind;
 
-pub struct RecvGrantRepo {
+pub struct RecvGrantPostgresRepo {
     db: DatabaseConnection,
 }
 
-impl RecvGrantRepo {
+impl RecvGrantPostgresRepo {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
 }
 
 #[async_trait]
-impl BasicPostgresRepo for RecvGrantRepo {
+impl BasicPostgresRepo for RecvGrantPostgresRepo {
     type Entity = grant::Entity;
     type Plan = grant::Plan;
 
@@ -45,7 +45,7 @@ impl BasicPostgresRepo for RecvGrantRepo {
 }
 
 #[async_trait]
-impl RecvGrantRepoTrait for RecvGrantRepo {
+impl RecvGrantRepoTrait for RecvGrantPostgresRepo {
     async fn get_by_type(&self, kind: GrantKind) -> Outcome<Vec<grant::Model>> {
         grant::Entity::find()
             .filter(grant::Column::Kind.eq(kind))

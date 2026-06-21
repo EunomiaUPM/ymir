@@ -16,28 +16,24 @@
  */
 
 use async_trait::async_trait;
-use chrono::Utc;
-use sea_orm::{ActiveModelTrait, ActiveValue, DatabaseConnection};
+use sea_orm::{ActiveModelTrait, DatabaseConnection};
 
 use crate::data::entities::sent::verification;
-use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::BasicPostgresRepo;
-use crate::services::repo::traits::CrudRepoTrait;
 use crate::services::repo::traits::sent::SentVerificationRepoTrait;
-use crate::types::verifying::VerificationStatus;
 
-pub struct SentVerificationRepo {
+pub struct SentVerificationPostgresRepo {
     db: DatabaseConnection,
 }
 
-impl SentVerificationRepo {
+impl SentVerificationPostgresRepo {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
     }
 }
 
 #[async_trait]
-impl BasicPostgresRepo for SentVerificationRepo {
+impl BasicPostgresRepo for SentVerificationPostgresRepo {
     type Entity = verification::Entity;
     type Plan = verification::Plan;
 
@@ -47,7 +43,7 @@ impl BasicPostgresRepo for SentVerificationRepo {
 }
 
 #[async_trait]
-impl SentVerificationRepoTrait for SentVerificationRepo {
+impl SentVerificationRepoTrait for SentVerificationPostgresRepo {
     // async fn end(&self, id: &str) -> Outcome<()> {
     //     let model = self.get_by_id(id).await?;
     //     let mut active: verification::ActiveModel = model.into();

@@ -20,12 +20,12 @@ use rand::distributions::Alphanumeric;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use chrono::{DateTime, Utc};
-
+use serde::{Deserialize, Serialize};
 use crate::data::entities::IntoOverwriteActive;
 use crate::types::vcs::VcType;
 use crate::types::verifying::VerificationStatus;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "recv_verification")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -36,6 +36,7 @@ pub struct Model {
     pub audience: String,                  // SEMI-RANDOM
     pub holder: Option<String>,            // RESPONSE
     pub vpt: Option<String>,               // RESPONSE
+    pub vcs: Vec<String>,               // RESPONSE
     pub status: VerificationStatus,              // DEFAULT
     pub created_at: DateTime<Utc>,          // DEFAULT
     pub ended_at: Option<DateTime<Utc>>,    // RESPONSE
@@ -70,6 +71,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             audience: ActiveValue::Set(audience),
             holder: ActiveValue::Set(None),
             vpt: ActiveValue::Set(None),
+            vcs: ActiveValue::Set(Vec::new()),
             status: ActiveValue::Set(VerificationStatus::Pending),
             created_at: ActiveValue::Set(Utc::now()),
             ended_at: ActiveValue::Set(None),
@@ -87,6 +89,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             audience: ActiveValue::Set(self.audience),
             holder: ActiveValue::Set(self.holder),
             vpt: ActiveValue::Set(self.vpt),
+            vcs: ActiveValue::Set(self.vcs),
             status: ActiveValue::Set(self.status),
             created_at: ActiveValue::Set(self.created_at),
             ended_at: ActiveValue::Set(self.ended_at),

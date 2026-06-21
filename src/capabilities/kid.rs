@@ -81,6 +81,6 @@ impl Kid {
                 )
             })?;
 
-        PublicKey::parse_from(vm)
+        PublicKey::parse_from_vm(vm)
     }
 }

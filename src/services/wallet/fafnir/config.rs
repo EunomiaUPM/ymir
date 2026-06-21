@@ -21,6 +21,7 @@ use crate::config::types::{CommonHostsConfig, DidConfig, WalletConfig};
 pub struct FafnirConfig {
     hosts: CommonHostsConfig,
     wallet: WalletConfig,
+
     did: DidConfig,
 }
 

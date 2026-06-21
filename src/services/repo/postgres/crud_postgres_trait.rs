@@ -134,7 +134,7 @@ where
     }
 }
 
-// ────────── BLANKET IMPL ──────────
+// ========================================= BLANKET IMPL ==========================================
 #[async_trait]
 impl<R> CrudRepoTrait<<R::Entity as EntityTrait>::Model, R::Plan> for R
 where

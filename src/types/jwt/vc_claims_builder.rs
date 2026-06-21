@@ -35,9 +35,9 @@ pub struct VcJwtClaimsBuilder<VC> {
 }
 
 impl VcJwtClaimsBuilder<Missing> {
-    pub fn new(w3c_data_model_version: &W3cDataModelVersion) -> Self {
+    pub fn new(w3c_data_model_version: W3cDataModelVersion) -> Self {
         VcJwtClaimsBuilder {
-            w3c_data_model_version: w3c_data_model_version.clone(),
+            w3c_data_model_version,
             iss: None,
             sub: None,
             jti: None,

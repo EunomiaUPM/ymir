@@ -25,3 +25,8 @@ mod status;
 pub use callback::{ApprovedCallbackBody, CallbackBody, RejectedCallbackBody};
 pub use continue_request::ContinueRequest;
 pub use status::GrantStatus;
+
+pub enum InteractionFinishResponse {
+    Success(Option<String>),
+    Failure(Option<String>),
+}

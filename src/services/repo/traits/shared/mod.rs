@@ -16,7 +16,9 @@
  */
 
 mod participant_trait;
-mod resource_req;
+mod resource_req_trait;
+mod issuance_trait;
 
 pub use participant_trait::ParticipantRepoTrait;
-pub use resource_req::ResourceReqRepoTrait;
+pub use resource_req_trait::ResourceReqRepoTrait;
+pub use issuance_trait::IssuanceRepoTrait;

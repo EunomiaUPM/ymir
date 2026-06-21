@@ -24,5 +24,5 @@ use crate::types::gnap::grant_request::GrantKind;
 #[async_trait]
 pub trait SentGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
 {
-    async fn get_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>>;
+    async fn filter_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>>;
 }

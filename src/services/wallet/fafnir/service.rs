@@ -21,7 +21,6 @@ use super::config::FafnirConfig;
 use crate::capabilities::Did;
 use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::{DidConfig, HostType};
-use crate::data::entities::{mates, minions};
 use crate::errors::{Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::{VaultService, VaultTrait};
@@ -36,9 +35,12 @@ use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers};
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use tracing::info;
+use crate::data::entities::shared::participant;
+use crate::types::participants::ParticipantType;
 
 pub struct FafnirService {
     config: FafnirConfig,
+    participant_type: ParticipantType,
     identity: RwLock<Arc<Identity>>,
     services: Vec<DidService>,
 }
@@ -48,6 +50,7 @@ impl FafnirService {
         config: FafnirConfig,
         vault: Arc<VaultService>,
         services: Vec<DidService>,
+        participant_type: ParticipantType,
     ) -> Outcome<Self> {
         let (did_doc, keys) = Self::bootstrap(&config, vault, &services).await?;
         let did = Did::parse(&did_doc.id)?;
@@ -55,7 +58,7 @@ impl FafnirService {
         Ok(Self {
             config,
             identity: RwLock::new(Arc::new(identity)),
-
+            participant_type,
             services,
         })
     }
@@ -169,9 +172,9 @@ impl FafnirService {
 
 #[async_trait]
 impl WalletTrait for FafnirService {
-    async fn link(&self) -> Outcome<(mates::NewModel, minions::NewModel)> {
+    async fn link(&self) -> Outcome<participant::Plan> {
         let url = self.config.get_host(HostType::Http);
-        Ok((self.get_self_mate(url.clone())?, self.get_self_minion(url)?))
+        self.get_myself_plan(url.clone(), self.participant_type.clone())
     }
 
     // ════════════════════════ GET FROM MANAGER ════════════════════════
@@ -184,7 +187,7 @@ impl WalletTrait for FafnirService {
             name: "fafnir-wallet".to_string(),
             created_on: String::new(),
             added_on: String::new(),
-            permission: String::new(),
+            permission: "Administrator".to_string(),
             dids: dids.into_iter().map(did_entry_to_info).collect(),
         })
     }

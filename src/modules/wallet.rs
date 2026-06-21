@@ -24,21 +24,15 @@ use crate::types::wallet::WalletInfo;
 use crate::types::wallet::waltid::{IsLinked, OidcUri};
 use crate::types::wallet::{DidModel, KeyModel, VcModel};
 use async_trait::async_trait;
-use crate::modules::traits::HasWallet;
+use crate::services::HasWallet;
 use crate::services::repo::traits::shared::ParticipantRepoTrait;
 
 #[async_trait]
 pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
-    fn participant(&self) -> Option<Arc<dyn ParticipantRepoTrait>>;
-
+    fn participant(&self) -> Arc<dyn ParticipantRepoTrait>;
     async fn link(&self) -> Outcome<()> {
-        let (mate, minion) = self.wallet().link().await?;
-        if let Some(mater) = self.mate() {
-            mater.force_create(mate).await?;
-        }
-        if let Some(gru) = self.minion() {
-            gru.force_create(minion).await?;
-        }
+        let plan = self.wallet().link().await?;
+        self.participant().force_update(plan).await?;
         Ok(())
     }
 
