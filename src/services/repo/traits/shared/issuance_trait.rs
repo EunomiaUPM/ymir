@@ -16,7 +16,6 @@
  */
 
 use async_trait::async_trait;
-use crate::data::entities::shared::issuance;
 use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::shared::issuance::{Model, Plan};
 use crate::errors::Outcome;

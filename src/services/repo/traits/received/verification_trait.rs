@@ -16,7 +16,6 @@
  */
 
 use async_trait::async_trait;
-use crate::data::entities::received::verification;
 use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::Outcome;
@@ -25,5 +24,5 @@ use crate::errors::Outcome;
 pub trait RecvVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
 {
     // async fn end(&self, id: &str) -> Outcome<()>;
-    async fn get_by_state(&self, state: &str) -> Outcome<verification::Model>;
+    async fn get_by_state(&self, state: &str) -> Outcome<Model>;
 }

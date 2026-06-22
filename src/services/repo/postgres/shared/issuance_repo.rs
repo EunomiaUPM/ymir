@@ -16,7 +16,7 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use crate::data::entities::shared::issuance;
 use crate::data::entities::shared::issuance::Model;
 use crate::errors::Outcome;

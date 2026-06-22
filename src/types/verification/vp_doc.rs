@@ -8,15 +8,23 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod config;
-mod service;
+use serde::{Deserialize, Serialize};
 
-pub use config::BasicIssuerConfig;
-pub use service::BasicIssuerService;
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VpDocument {
+    #[serde(rename = "@context")]
+    pub context: Vec<String>,
+    pub id: String,
+    pub r#type: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub holder: Option<String>,
+    #[serde(rename = "verifiableCredential")]
+    pub verifiable_credential: Vec<String>,
+}

@@ -14,29 +14,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-use crate::capabilities::{Signer, Verifier};
-use crate::config::types::HostType;
-use crate::data::entities::received::grant;
+
 use crate::data::entities::shared::issuance;
-use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
+use crate::errors::Outcome;
 use crate::types::gnap::grant_request::GrantRequestKind;
-use crate::types::gnap::grant_request::client::{Client, KeyMaterial};
-use crate::types::issuing::{
-    AuthServerMetadata, CredReqProof, CredentialRequest, DidPossession, GiveVC, IssuedCredential,
+use crate::types::gnap::grant_request::client::Client;
+use crate::types::issuance::{
+    AuthServerMetadata, CredentialRequest,
     IssuerMetadata, IssuingToken, VcCredOffer, VcTransmissionOffer,
 };
-use crate::types::jwt::{Jwt, VCJwtClaims};
-use crate::types::keys::{PrivateKey, SigningCtx};
-use crate::types::secrets::PemHelper;
-use crate::types::vcs::{BuildCtx, VcType, VcTypeConfig};
-use crate::utils::{expect_from_env, is_active};
+use crate::types::jwt::VCJwtClaims;
+use crate::types::vcs::{VcType, VcTypeConfig};
 use async_trait::async_trait;
-use std::{format, vec};
-use tracing::info;
 
 #[async_trait]
 pub trait IssuerTrait: Send + Sync + 'static {
-    fn get_cred_offer_data(&self, model: &issuance::Model) -> VcCredOffer;
     fn build_issuance_plan(
         &self,
         id: &str,
@@ -44,6 +36,7 @@ pub trait IssuerTrait: Send + Sync + 'static {
         client: Client,
         available_vcs: &[VcType],
     ) -> Outcome<issuance::Plan>;
+    fn get_cred_offer_data(&self, model: &issuance::Model) -> VcCredOffer;
     fn generate_issuing_uri(
         &self,
         offer_type: VcTransmissionOffer,
@@ -58,5 +51,5 @@ pub trait IssuerTrait: Send + Sync + 'static {
         cred_req: CredentialRequest,
         token: &str,
     ) -> Outcome<(String, VcTypeConfig)>;
-    async fn issue_cred(&self, claims: &VCJwtClaims) -> Outcome<String>;
+    async fn sign_claims(&self, claims: &VCJwtClaims) -> Outcome<String>;
 }

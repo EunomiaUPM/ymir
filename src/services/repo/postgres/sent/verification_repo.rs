@@ -16,7 +16,7 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::{ActiveModelTrait, DatabaseConnection};
+use sea_orm::DatabaseConnection;
 
 use crate::data::entities::sent::verification;
 use crate::services::repo::postgres::BasicPostgresRepo;
@@ -43,16 +43,4 @@ impl BasicPostgresRepo for SentVerificationPostgresRepo {
 }
 
 #[async_trait]
-impl SentVerificationRepoTrait for SentVerificationPostgresRepo {
-    // async fn end(&self, id: &str) -> Outcome<()> {
-    //     let model = self.get_by_id(id).await?;
-    //     let mut active: verification::ActiveModel = model.into();
-    //     active.ended_at = ActiveValue::Set(Some(Utc::now()));
-    //     active.status = ActiveValue::Set(VerificationStatus::Completed);
-    //     active
-    //         .update(self.db())
-    //         .await
-    //         .map_err(|e| Errors::db("Unable to end verification", Some(Box::new(e))))?;
-    //     Ok(())
-    // }
-}
+impl SentVerificationRepoTrait for SentVerificationPostgresRepo {}

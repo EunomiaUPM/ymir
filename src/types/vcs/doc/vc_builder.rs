@@ -17,7 +17,7 @@
 
 use super::super::{VcIssuer, VcType, W3cDataModelVersion};
 use super::{TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus, VcDocument};
-use crate::types::present::{Missing, Present};
+use crate::utils::{Missing, Present};
 use chrono::{DateTime, Utc};
 use serde_json::Value;
 use std::marker::PhantomData;

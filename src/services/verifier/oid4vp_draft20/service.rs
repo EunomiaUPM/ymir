@@ -21,32 +21,29 @@ use tracing::info;
 use urlencoding::encode;
 
 use super::super::VerifierTrait;
-use super::BasicVerifierConfig;
+use super::VerifierConfig;
 use crate::capabilities::{Did, Kid, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::{BadFormat, Errors, Outcome};
-use crate::services::client::ClientTrait;
-use crate::types::gnap::ApprovedCallbackBody;
-use crate::types::http::HttpBody;
 use crate::types::jwt::{Jwt, VCJwtClaims, VPJwtClaims};
 use crate::types::vcs::{VPDef, W3cDataModelVersion};
-use crate::types::verifying::VerificationStatus;
-use crate::utils::{has_expired, http_client, is_active, json_headers};
+use crate::types::verification::VerificationStatus;
+use crate::utils::{has_expired, is_active};
 
-pub struct BasicVerifierService {
-    config: BasicVerifierConfig,
+pub struct VerifierService {
+    config: VerifierConfig,
 }
 
-impl BasicVerifierService {
-    pub fn new(config: BasicVerifierConfig) -> Self {
+impl VerifierService {
+    pub fn new(config: VerifierConfig) -> Self {
         Self { config }
     }
 }
 
 #[async_trait]
-impl VerifierTrait for BasicVerifierService {
+impl VerifierTrait for VerifierService {
     fn build_vp_plan(&self, id: &str) -> Outcome<Plan> {
         info!("Managing OIDC4VP");
 
@@ -135,7 +132,7 @@ impl VerifierTrait for BasicVerifierService {
 
 // ===== Internal helpers ======================================================
 
-impl BasicVerifierService {
+impl VerifierService {
     async fn verify_vp(&self, model: &mut Model, vp_token: &str) -> Outcome<(Vec<String>, Did)> {
         info!("Verifying vp");
         model.vpt = Some(vp_token.to_string());

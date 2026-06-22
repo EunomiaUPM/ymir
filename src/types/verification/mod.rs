@@ -15,25 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::HostsConfigTrait;
-use crate::config::types::CommonHostsConfig;
+mod verify_payload;
+mod status;
+mod vp_doc;
+pub mod vp_def;
+pub mod input_descriptor;
 
-pub struct BasicIssuerConfig {
-    hosts: CommonHostsConfig,
-    api_path: String,
-}
-
-impl BasicIssuerConfig {
-    pub fn new(hosts: CommonHostsConfig, api_path: String) -> BasicIssuerConfig {
-        BasicIssuerConfig { hosts, api_path }
-    }
-    pub fn get_api_path(&self) -> &str {
-        &self.api_path
-    }
-}
-
-impl HostsConfigTrait for BasicIssuerConfig {
-    fn hosts(&self) -> &CommonHostsConfig {
-        &self.hosts
-    }
-}
+pub use verify_payload::VerifyPayload;
+pub use status::VerificationStatus;

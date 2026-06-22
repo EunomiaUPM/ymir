@@ -21,10 +21,11 @@ use std::{env, fs};
 use axum::http::HeaderValue;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use reqwest::Url;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use crate::errors::{Errors, Outcome};
+use crate::errors::{BadFormat, Errors, Outcome};
 
 pub trait ParseHeaderExt {
     fn parse_header(&self) -> Outcome<HeaderValue>;
@@ -113,4 +114,28 @@ where
 
 pub fn expect_from_env(env: &str) -> String {
     env::var(env).expect(format!("Environment variable {} not set", env).as_str())
+}
+
+pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
+    parsed_uri
+        .query_pairs()
+        .find(|(k, _)| k == param_name)
+        .map(|(_, v)| v.into_owned())
+        .ok_or_else(|| {
+            Errors::format(
+                BadFormat::Received,
+                format!("Missing query parameter '{}'", param_name),
+                None,
+            )
+        })
+}
+
+pub fn require_field<T>(opt: Option<T>, field: &str) -> Outcome<T> {
+    opt.ok_or_else(|| {
+        Errors::missing_resource(
+            field,
+            format!("Required field '{}' is missing", field),
+            None,
+        )
+    })
 }

@@ -18,7 +18,6 @@
 use serde::{Deserialize, Serialize};
 
 use super::UserCodeUri;
-use crate::types::gnap::grant_request::interact::InteractStart;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct InteractResponse {

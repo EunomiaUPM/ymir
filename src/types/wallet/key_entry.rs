@@ -21,7 +21,7 @@ use crate::types::keys::{Crv, Kty, PrivateKey};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct NewKeyModel {
+pub struct KeyPlan {
     pub alias: String,
     pub kty: Kty,
     pub crv: Option<Crv>,
@@ -40,6 +40,12 @@ pub struct KeyModel {
 impl HasId for KeyModel {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl Into<KeyModel> for KeyPlan {
+    fn into(self) -> KeyModel {
+        todo!()
     }
 }
 

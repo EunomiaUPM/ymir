@@ -18,10 +18,6 @@
 use async_trait::async_trait;
 use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::sent::verification::{Model, Plan};
-use crate::errors::Outcome;
 
 #[async_trait]
-pub trait SentVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
-{
-    // async fn end(&self, id: &str) -> Outcome<()>;
-}
+pub trait SentVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {}

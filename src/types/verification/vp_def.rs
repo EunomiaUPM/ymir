@@ -15,17 +15,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod m20250403_094651_business_mates;
-pub mod m20250403_094651_issuing;
-pub mod m20250403_094651_mates;
-pub mod m20250403_094651_minions;
-pub mod m20250403_094651_recv_interaction;
-pub mod m20250403_094651_recv_request;
-pub mod m20250403_094651_recv_verification;
-pub mod m20250403_094651_req_interaction;
-pub mod m20250403_094651_req_request;
-pub mod m20250403_094651_req_vc;
-pub mod m20250403_094651_req_verification;
-pub mod m20250403_094651_token_requirements;
-pub mod m20250403_094651_vc_request;
-pub mod migrator;
+use serde::{Deserialize, Serialize};
+
+use crate::types::vcs::{InputDescriptor, VcType, W3cDataModelVersion};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VPDef {
+    pub id: String,
+    pub input_descriptors: Vec<InputDescriptor>,
+}
+
+impl VPDef {
+    pub fn new(id: impl Into<String>, vc_types: &[VcType], model: W3cDataModelVersion) -> Self {
+        let input_descriptors = vc_types
+            .iter()
+            .map(|vc_type| InputDescriptor::new(vc_type, model.clone()))
+            .collect();
+
+        VPDef {
+            id: id.into(),
+            input_descriptors,
+        }
+    }
+}

@@ -18,5 +18,5 @@
 mod config;
 mod service;
 
-pub use config::BasicVerifierConfig;
-pub use service::BasicVerifierService;
+pub use config::IssuerConfig;
+pub use service::IssuerService;

@@ -18,42 +18,39 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use serde_json::Value;
 use tracing::info;
 use urlencoding;
 
 use super::super::IssuerTrait;
-use super::BasicIssuerConfig;
+use super::IssuerConfig;
 use crate::capabilities::{Kid, Signer, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
-use crate::data::entities::received::grant;
 use crate::data::entities::shared::issuance;
 use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::types::gnap::grant_request::GrantRequestKind;
 use crate::types::gnap::grant_request::client::{Client, KeyMaterial};
-use crate::types::issuing::{
-    AuthServerMetadata, CredReqProof, CredentialRequest, DidPossession, GiveVC, IssuedCredential,
-    IssuedCredentialItem, IssuerMetadata, IssuingToken, TokenRequest, VcCredOffer,
+use crate::types::issuance::{
+    AuthServerMetadata, CredReqProof, CredentialRequest, DidPossession, IssuerMetadata, IssuingToken, VcCredOffer,
     VcTransmissionOffer,
 };
 use crate::types::jwt::{Jwt, VCJwtClaims};
-use crate::types::keys::{PrivateKey, PublicKey, SigningCtx};
+use crate::types::keys::{PrivateKey, SigningCtx};
 use crate::types::secrets::PemHelper;
 use crate::types::vcs::{BuildCtx, VcType, VcTypeConfig};
 use crate::types::wallet::Identity;
-use crate::utils::{expect_from_env, has_expired, is_active, require_field, trim_4_base};
+use crate::utils::{expect_from_env, is_active};
 
-pub struct BasicIssuerService {
-    config: BasicIssuerConfig,
+pub struct IssuerService {
+    config: IssuerConfig,
     identity: Arc<Identity>,
     vault: Arc<VaultService>,
 }
 
-impl BasicIssuerService {
+impl IssuerService {
     pub fn new(
-        config: BasicIssuerConfig,
+        config: IssuerConfig,
         vault: Arc<VaultService>,
         identity: Arc<Identity>,
     ) -> Self {
@@ -66,7 +63,7 @@ impl BasicIssuerService {
 }
 
 #[async_trait]
-impl IssuerTrait for BasicIssuerService {
+impl IssuerTrait for IssuerService {
     fn build_issuance_plan(
         &self,
         id: &str,
@@ -120,6 +117,16 @@ impl IssuerTrait for BasicIssuerService {
         Ok(issuance)
     }
 
+    fn get_cred_offer_data(&self, model: &issuance::Model) -> VcCredOffer {
+        info!("Retrieving credential offer data");
+
+        VcCredOffer::pre_authorized(
+            self.config.get_host(HostType::Http),
+            &model.pre_auth_code,
+            &model.vc_type_config,
+        )
+    }
+
     fn generate_issuing_uri(
         &self,
         offer_type: VcTransmissionOffer,
@@ -159,16 +166,6 @@ impl IssuerTrait for BasicIssuerService {
                 Ok(uri)
             }
         }
-    }
-
-    fn get_cred_offer_data(&self, model: &issuance::Model) -> VcCredOffer {
-        info!("Retrieving credential offer data");
-
-        VcCredOffer::pre_authorized(
-            self.config.get_host(HostType::Http),
-            &model.pre_auth_code,
-            &model.vc_type_config,
-        )
     }
 
     fn get_issuer_metadata(&self, path: Option<&str>, vcs: &[VcType]) -> IssuerMetadata {
@@ -238,7 +235,7 @@ impl IssuerTrait for BasicIssuerService {
         Ok((kid.did().id().to_string(), vc_config))
     }
 
-    async fn issue_cred(&self, claims: &VCJwtClaims) -> Outcome<String> {
+    async fn sign_claims(&self, claims: &VCJwtClaims) -> Outcome<String> {
         info!("Issuing credential");
 
         let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
@@ -260,7 +257,7 @@ impl IssuerTrait for BasicIssuerService {
 
 // ===== Internal helpers ======================================================
 
-impl BasicIssuerService {
+impl IssuerService {
     fn metadata_hosts(&self, path: Option<&str>) -> (String, String) {
         let path = path.unwrap_or("/issuer");
         let host = self.config.get_host(HostType::Http);

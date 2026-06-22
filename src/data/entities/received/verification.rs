@@ -23,7 +23,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use crate::data::entities::IntoOverwriteActive;
 use crate::types::vcs::VcType;
-use crate::types::verifying::VerificationStatus;
+use crate::types::verification::VerificationStatus;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "recv_verification")]

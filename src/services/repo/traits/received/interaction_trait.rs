@@ -24,6 +24,4 @@ use crate::data::entities::received::interaction::{Plan, Model};
 #[async_trait]
 pub trait RecvInteractionRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync {
     async fn get_by_cont_id(&self, cont_id: &str) -> Outcome<Model>;
-    // async fn get_by_reference(&self, reference: &str) -> Outcome<Model>;
-    // async fn get_by_some_id(&self, some_id: &str) -> Outcome<Option<Model>>;
 }

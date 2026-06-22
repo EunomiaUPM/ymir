@@ -19,13 +19,13 @@ use crate::config::traits::{HostsConfigTrait};
 use crate::config::types::{CommonHostsConfig};
 use crate::types::vcs::VcType;
 
-pub struct BasicVerifierConfig {
+pub struct VerifierConfig {
     hosts: CommonHostsConfig,
     api_path: String,
     requested_vcs: Vec<VcType>,
 }
 
-impl BasicVerifierConfig {
+impl VerifierConfig {
     pub fn new(
         hosts: CommonHostsConfig,
         api_path: String,
@@ -46,11 +46,11 @@ impl BasicVerifierConfig {
     }
 }
 
-impl HostsConfigTrait for BasicVerifierConfig {
+impl HostsConfigTrait for VerifierConfig {
     fn hosts(&self) -> &CommonHostsConfig {
         &self.hosts
     }
 }
 
 
-impl BasicVerifierConfig {}
+impl VerifierConfig {}

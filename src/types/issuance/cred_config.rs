@@ -51,13 +51,11 @@ pub struct CredentialConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proof_types_supported: Option<HashMap<ProofType, ProofTypeMetadata>>,
 
-    /// Display information for rendering to end-users. OPTIONAL.
+    /// Display + claims metadata for this credential. Format-specific mechanisms
+    /// (e.g. SD-JWT VC display metadata) take precedence; this serves as
+    /// fallback default. OIDC4VCI 1.0 §11.2.3. OPTIONAL.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<Vec<CredentialDisplay>>,
-
-    /// Description of the claims contained in this credential (Appendix B.2). OPTIONAL.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub claims: Option<Vec<ClaimMetadata>>,
+    pub credential_metadata: Option<CredentialMetadata>,
 
     /// Format + the format-specific fields it requires. Wire JSON: `format` plus
     /// the variant fields appear flattened at this struct's level.
@@ -78,7 +76,7 @@ impl CredentialConfiguration {
     /// - `credential_signing_alg_values_supported`: `Alg::supported()`
     /// - `proof_types_supported`: `{ "jwt": { algs: Alg::supported() } }`
     ///
-    /// `scope`, `display`, and `claims` are left as `None`. Override any field
+    /// `scope` and `credential_metadata` are left as `None`. Override any field
     /// via direct field access after construction if you need to customize.
     pub fn jwt_vc_json(vc_type: &VcType) -> Self {
         let mut proof_types = HashMap::new();
@@ -98,8 +96,7 @@ impl CredentialConfiguration {
             ]),
             credential_signing_alg_values_supported: Some(Alg::supported()),
             proof_types_supported: Some(proof_types),
-            display: None,
-            claims: None,
+            credential_metadata: None,
             format_data: FormatSpecific::JwtVcJson {
                 credential_definition: CredentialDefinition {
                     r#type: vec![
@@ -111,6 +108,26 @@ impl CredentialConfiguration {
             },
         }
     }
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+//   CredentialMetadata
+// ════════════════════════════════════════════════════════════════════════════════
+
+/// Wrapper for credential display and claims metadata (OIDC4VCI 1.0 §11.2.3).
+///
+/// Format-specific mechanisms (SD-JWT VC display metadata, etc.) override these
+/// values when present. This is the format-agnostic fallback used by Wallets.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CredentialMetadata {
+    /// Display information for rendering to end-users. OPTIONAL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display: Option<Vec<CredentialDisplay>>,
+
+    /// Description of the claims contained in this credential (Appendix B.2).
+    /// OPTIONAL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub claims: Option<Vec<ClaimMetadata>>,
 }
 
 // ════════════════════════════════════════════════════════════════════════════════

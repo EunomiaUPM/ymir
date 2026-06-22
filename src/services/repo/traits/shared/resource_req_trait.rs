@@ -20,5 +20,4 @@ use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::shared::resource_req::Model;
 
 #[async_trait]
-pub trait ResourceReqRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static
-{}
+pub trait ResourceReqRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {}

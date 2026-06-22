@@ -186,7 +186,7 @@ impl PublicKey {
 
         let hash = Sha256::digest(&serialized);
 
-        encode_url_safe_no_pad(hash.as_slice())
+        encode_url_safe_no_pad(hash)
     }
 
     pub fn public_jwk(&self) -> Value {

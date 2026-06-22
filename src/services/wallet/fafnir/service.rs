@@ -29,7 +29,7 @@ use crate::types::dids::{DidBuilder, DidDocument, DidService};
 use crate::types::http::HttpBody;
 use crate::types::secrets::PemHelper;
 use crate::types::wallet::waltid::{DidsInfo, OidcUri};
-use crate::types::wallet::{DidModel, HasId, KeyModel, KeyRef, NewDidModel, NewKeyModel, VcModel};
+use crate::types::wallet::{DidModel, HasId, KeyModel, KeyRef, DidPlan, KeyPlan, VcModel};
 use crate::types::wallet::{Identity, WalletInfo};
 use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers};
 use async_trait::async_trait;
@@ -79,7 +79,7 @@ impl FafnirService {
         let pem_helper: PemHelper = vault.read(None, &priv_key).await?;
 
         let key_url = format!("{}/keys/new", config.get_wallet_api_url(HostType::Http));
-        let key_req = NewKeyModel {
+        let key_req = KeyPlan {
             alias: "base".to_string(),
             kty: pem_helper.kty().to_owned(),
             crv: pem_helper.crv().cloned(),
@@ -124,7 +124,7 @@ impl FafnirService {
         } else {
             Some(services.to_vec())
         };
-        let did_req = NewDidModel {
+        let did_req = DidPlan {
             alias: "base".to_string(),
             r#type: did_builder.clone(),
             keys: vec![key_entry.id],
@@ -257,7 +257,7 @@ impl WalletTrait for FafnirService {
             "{}/keys/new",
             self.config.get_wallet_api_url(HostType::Http)
         );
-        let key_req = NewKeyModel {
+        let key_req = KeyPlan {
             alias: alias.unwrap_or("default".to_string()),
             kty: pem_helper.kty().to_owned(),
             crv: pem_helper.crv().cloned(),
@@ -296,7 +296,7 @@ impl WalletTrait for FafnirService {
         } else {
             Some(self.services.clone())
         };
-        let did_req = NewDidModel {
+        let did_req = DidPlan {
             alias: alias.unwrap_or("default".to_string()),
             r#type: did_builder.clone(),
             keys: keys_id,
@@ -314,6 +314,30 @@ impl WalletTrait for FafnirService {
                 "POST",
                 Some(res.status()),
                 "Errors saving did on wallet",
+                None,
+            ))
+        }
+    }
+
+    async fn store_vc(&self, vc: String) -> Outcome<VcModel> {
+        let did_url = format!(
+            "{}/vcs/store",
+            self.config.get_wallet_api_url(HostType::Http)
+        );
+
+        // TODO
+        let res = http_client()
+            .post(&did_url, Some(json_headers()), HttpBody::Raw(vc))
+            .await?;
+
+        if res.status().is_success() {
+            res.parse_json().await
+        } else {
+            Err(Errors::wallet(
+                did_url,
+                "POST",
+                Some(res.status()),
+                "Errors saving vc    on wallet",
                 None,
             ))
         }

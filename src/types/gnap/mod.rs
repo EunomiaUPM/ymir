@@ -21,10 +21,13 @@ mod continue_request;
 pub mod grant_request;
 pub mod grant_response;
 mod status;
+mod vc_decision_approval;
+
 
 pub use callback::{ApprovedCallbackBody, CallbackBody, RejectedCallbackBody};
 pub use continue_request::ContinueRequest;
 pub use status::GrantStatus;
+pub use vc_decision_approval::VcDecisionApproval;
 
 pub enum InteractionFinishResponse {
     Success(Option<String>),

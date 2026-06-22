@@ -16,7 +16,7 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, ColumnTrait, QueryFilter};
+use sea_orm::{DatabaseConnection, EntityTrait, ColumnTrait, QueryFilter};
 
 use crate::data::entities::received::interaction;
 use crate::data::entities::received::interaction::Model;

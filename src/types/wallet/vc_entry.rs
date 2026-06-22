@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Serialize, Deserialize)]
-pub struct NewVcModel {
+pub struct VcPlan {
     pub id: String,
     pub r#type: VcBodyType,
 }
@@ -34,6 +34,12 @@ pub struct VcModel {
     pub parsed_document: Value,
     #[serde(rename = "addedOn", default, skip_serializing_if = "Option::is_none")]
     pub added_on: Option<DateTime<Utc>>,
+}
+
+impl Into<VcModel> for VcPlan {
+    fn into(self) -> VcModel {
+        todo!()
+    }
 }
 
 #[derive(Serialize, Deserialize)]

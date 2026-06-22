@@ -54,6 +54,7 @@ pub trait WalletTrait: Send + Sync + 'static {
         keys_id: Vec<String>,
         alias: Option<String>,
     ) -> Outcome<DidModel>;
+    async fn store_vc(&self, vc: String) -> Outcome<VcModel>;
     async fn set_default_did(&self, did: Did) -> Outcome<()>;
     // DELETE STUFF FROM WALLET
     async fn delete_key(&self, id: &str) -> Outcome<()>;

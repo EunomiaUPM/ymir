@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod basic;
+pub mod oid4vp_draft20;
 mod verifier_trait;
 
 pub use verifier_trait::VerifierTrait;

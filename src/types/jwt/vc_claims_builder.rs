@@ -16,7 +16,7 @@
  */
 
 use super::{VCJwtClaims, VcJwtClaimsV1, VcJwtClaimsV2};
-use crate::types::present::{Missing, Present};
+use crate::utils::{Missing, Present};
 use crate::types::vcs::W3cDataModelVersion;
 use crate::types::vcs::doc::VcDocument;
 use chrono::{DateTime, Utc};

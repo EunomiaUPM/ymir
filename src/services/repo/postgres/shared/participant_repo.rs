@@ -16,11 +16,10 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use sea_orm::sea_query::OnConflict;
 use crate::data::entities::IntoOverwriteActive;
 use crate::data::entities::shared::participant;
-use crate::data::entities::shared::participant::Model;
 use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::shared::ParticipantRepoTrait;
@@ -55,7 +54,7 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
         self.basic_filter(query, "is_me", "true").await
     }
 
-    async fn filter_by_type(&self, participant_type: ParticipantType) -> Outcome<Vec<Model>> {
+    async fn filter_by_type(&self, participant_type: ParticipantType) -> Outcome<Vec<participant::Model>> {
         participant::Entity::find()
             .filter(participant::Column::ParticipantType.eq(participant_type))
             .all(self.db())

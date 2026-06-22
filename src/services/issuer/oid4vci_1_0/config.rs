@@ -15,22 +15,25 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub use cred_config::*;
-pub use cred_offer::*;
-pub use cred_req::*;
-pub use did_possession::*;
-pub use iss_token::*;
-pub use issuer_metadata::*;
-pub use oauth_server::*;
-pub use token_req::*;
-pub use vc_issuing::*;
+use crate::config::traits::HostsConfigTrait;
+use crate::config::types::CommonHostsConfig;
 
-mod cred_config;
-mod cred_offer;
-mod cred_req;
-mod did_possession;
-mod iss_token;
-mod issuer_metadata;
-mod oauth_server;
-mod token_req;
-mod vc_issuing;
+pub struct IssuerConfig {
+    hosts: CommonHostsConfig,
+    api_path: String,
+}
+
+impl IssuerConfig {
+    pub fn new(hosts: CommonHostsConfig, api_path: String) -> IssuerConfig {
+        IssuerConfig { hosts, api_path }
+    }
+    pub fn get_api_path(&self) -> &str {
+        &self.api_path
+    }
+}
+
+impl HostsConfigTrait for IssuerConfig {
+    fn hosts(&self) -> &CommonHostsConfig {
+        &self.hosts
+    }
+}

@@ -22,7 +22,7 @@ use crate::types::keys::PrivateKey;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct NewDidModel {
+pub struct DidPlan {
     pub alias: String,
     pub r#type: DidBuilder,
     pub keys: Vec<String>,
@@ -43,6 +43,12 @@ pub struct DidModel {
 impl HasId for DidModel {
     fn id(&self) -> &str {
         &self.did_id
+    }
+}
+
+impl Into<DidModel> for DidPlan {
+    fn into(self) -> DidModel {
+        todo!()
     }
 }
 

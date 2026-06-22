@@ -322,6 +322,33 @@ impl WalletTrait for WaltIdService {
         Ok(entry)
     }
 
+    async fn store_vc(&self, vc: String) -> Outcome<VcModel> {
+        // TODO
+        let wallet = self.get_wallet().await?;
+        let path = format!("/wallet/{}/vcs/store", wallet.id, );
+
+        let res = self.request(
+            "POST",
+            &path,
+            HttpBody::Raw(vc),
+            true,
+            true,
+            "Petition to set did as default failed",
+        )
+            .await?;
+        if !res.status().is_success() {
+            return Err(Errors::wallet(
+                "register_did",
+                "POST",
+                Some(res.status()),
+                "Register did failed",
+                None,
+            ));
+        }
+
+        res.parse_json().await
+    }
+
     async fn set_default_did(&self, did: Did) -> Outcome<()> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/dids/default?did={}", wallet.id, did.id());
