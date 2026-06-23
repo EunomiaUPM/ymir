@@ -18,7 +18,7 @@
 use async_trait::async_trait;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use sea_orm::sea_query::OnConflict;
-use crate::data::entities::IntoOverwriteActive;
+use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::data::entities::shared::participant;
 use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::BasicPostgresRepo;

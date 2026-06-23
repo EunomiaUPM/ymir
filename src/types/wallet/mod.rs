@@ -17,19 +17,16 @@
 
 use serde::{Deserialize, Serialize};
 
-mod did_entry;
 mod identity;
-mod key_entry;
 mod key_ref;
-mod vc_entry;
 mod wallet_info;
 pub mod waltid;
 
-pub use did_entry::*;
+pub use crate::data::entities::wallet::did::*;
 pub use identity::Identity;
-pub use key_entry::*;
+pub use crate::data::entities::wallet::key::*;
 pub use key_ref::KeyRef;
-pub use vc_entry::*;
+pub use crate::data::entities::wallet::vc::*;
 pub use wallet_info::WalletInfo;
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
@@ -39,6 +36,3 @@ pub enum WalletInstance {
     WaltId,
 }
 
-pub trait HasId {
-    fn id(&self) -> &str;
-}

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-
+use sea_orm::FromJsonQueryResult;
 use super::{DidService, VerificationMethod};
 use crate::capabilities::Did;
 use crate::errors::Outcome;
@@ -22,7 +22,7 @@ use crate::types::keys::PrivateKey;
 use crate::utils::StringOrArr;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct DidDocument {
     #[serde(rename = "@context")]
     pub context: StringOrArr,
@@ -54,10 +54,10 @@ pub struct DidDocument {
 }
 
 impl DidDocument {
-    pub fn base(did: &Did, map: &[(PrivateKey, &str)]) -> DidDocument {
-        let vms: Vec<VerificationMethod> = map
+    pub fn base(did: &Did, key_with_frag: Vec<(PrivateKey, String)>) -> DidDocument {
+        let vms: Vec<VerificationMethod> = key_with_frag
             .iter()
-            .map(|(key, vm_frag)| VerificationMethod::new(did, key, vm_frag))
+            .map(|(key, vm_frag)| VerificationMethod::new(did, &key, &vm_frag))
             .collect();
 
         DidDocument {

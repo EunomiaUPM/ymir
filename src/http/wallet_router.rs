@@ -21,10 +21,10 @@ use crate::modules::WalletModuleTrait;
 use crate::errors::AppResult;
 use crate::types::dids::{DidBuilder, DidDocument};
 use crate::types::secrets::PemHelper;
-use crate::types::wallet::VcModel;
 use crate::types::wallet::WalletInfo;
 use crate::types::wallet::waltid::{IsLinked, OidcUri};
 use crate::utils::extract_payload;
+use crate::data::entities::wallet::vc::Model;
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -162,7 +162,7 @@ impl WalletRouter {
 
     async fn get_wallet_credentials(
         State(holder): State<Arc<dyn WalletModuleTrait>>,
-    ) -> AppResult<Json<Vec<VcModel>>> {
+    ) -> AppResult<Json<Vec<Model>>> {
         Ok(Json(holder.get_wallet_credentials().await?))
     }
 }

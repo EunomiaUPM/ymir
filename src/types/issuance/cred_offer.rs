@@ -31,7 +31,7 @@ pub struct VcCredOffer {
 
     /// Non-empty array of credential_configuration_ids referencing
     /// `credential_configurations_supported` in the Issuer Metadata. REQUIRED.
-    pub credential_configuration_ids: Vec<String>,
+    pub credential_configuration_ids: Vec<VcTypeConfig>,
 
     /// Grants the wallet can use to obtain a token. OPTIONAL.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -50,10 +50,7 @@ impl VcCredOffer {
     ) -> Self {
         Self {
             credential_issuer: issuer.into(),
-            credential_configuration_ids: configurations
-                .iter()
-                .map(ToString::to_string)
-                .collect(),
+            credential_configuration_ids: configurations.to_vec(),
             grants: Some(CredOfferGrants {
                 authorization_code: None,
                 pre_authorized_code: Some(PreAuthorizedCodeGrant {

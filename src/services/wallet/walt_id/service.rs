@@ -34,12 +34,14 @@ use crate::capabilities::Did;
 use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
 use crate::config::types::{DidConfig, HostType};
 use crate::data::entities::shared::participant;
+use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::VaultTrait;
 use crate::services::vault::global::VaultService;
 use crate::types::dids::{DidBuilder, DidDocument, DidService, DidType};
 use crate::types::http::HttpBody;
+use crate::types::issuance::VcBody;
 use crate::types::keys::{Alg, Crv, Kty};
 use crate::types::participants::ParticipantType;
 use crate::types::secrets::{PemHelper, SemiWaltIdSecrets};
@@ -48,7 +50,7 @@ use crate::types::wallet::waltid::{
     AuthJwtClaims, CredentialOfferResponse, DidsInfo, KeyDefinition, MatchVCsRequest, MatchingVCs,
     RedirectResponse, WalletCredentials, WalletInfoResponse, WalletLoginResponse, WalletSession,
 };
-use crate::types::wallet::{DidModel, KeyModel, KeyRef, VcBodyType, VcModel};
+use crate::types::wallet::KeyRef;
 use crate::types::wallet::{Identity, WalletInfo};
 use crate::utils::{
     ParseHeaderExt, ResponseExt, decode_url_safe_no_pad, expect_from_env, http_client, json_headers,
@@ -102,10 +104,8 @@ impl WaltIdService {
 
 #[async_trait]
 impl WalletTrait for WaltIdService {
-    async fn link(&self) -> Outcome<participant::Plan> {
-        self.login().await?;
-        let url = self.config.hosts().get_host(HostType::Http);
-        self.get_myself_plan(url.clone(), self.participant_type.clone())
+    async fn link(&self) -> Outcome<()> {
+        self.login().await
     }
 
     async fn get_wallet(&self) -> Outcome<WalletInfo> {
@@ -151,7 +151,7 @@ impl WalletTrait for WaltIdService {
         Ok(Arc::new(iden.clone()))
     }
 
-    async fn retrieve_did(&self, id: &str) -> Outcome<DidModel> {
+    async fn retrieve_did(&self, id: &str) -> Outcome<did::Model> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/dids/{}", wallet.id, id);
         let res = self
@@ -168,7 +168,7 @@ impl WalletTrait for WaltIdService {
         dids_info_to_did_model(info)
     }
 
-    async fn retrieve_default_did(&self) -> Outcome<DidModel> {
+    async fn retrieve_default_did(&self) -> Outcome<did::Model> {
         let wallet = self.get_wallet().await?;
         let info = wallet
             .dids
@@ -179,7 +179,7 @@ impl WalletTrait for WaltIdService {
         dids_info_to_did_model(info)
     }
 
-    async fn retrieve_all_dids(&self) -> Outcome<Vec<DidModel>> {
+    async fn retrieve_all_dids(&self) -> Outcome<Vec<did::Model>> {
         let wallet = self.get_wallet().await?;
         wallet
             .dids
@@ -188,7 +188,7 @@ impl WalletTrait for WaltIdService {
             .collect()
     }
 
-    async fn retrieve_key(&self, id: &str) -> Outcome<KeyModel> {
+    async fn retrieve_key(&self, id: &str) -> Outcome<key::Model> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/keys/{}", wallet.id, id);
         let res = self
@@ -205,12 +205,12 @@ impl WalletTrait for WaltIdService {
         Ok(key_def_to_key_model(key))
     }
 
-    async fn retrieve_all_keys(&self) -> Outcome<Vec<KeyModel>> {
+    async fn retrieve_all_keys(&self) -> Outcome<Vec<key::Model>> {
         let keys = self.key_data.lock().await;
         Ok(keys.iter().cloned().map(key_def_to_key_model).collect())
     }
 
-    async fn retrieve_vc(&self, id: &str) -> Outcome<VcModel> {
+    async fn retrieve_vc(&self, id: &str) -> Outcome<vc::Model> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/credentials/{}", wallet.id, id);
         let res = self
@@ -227,7 +227,7 @@ impl WalletTrait for WaltIdService {
         Ok(wc_to_vc(wc))
     }
 
-    async fn retrieve_all_vcs(&self) -> Outcome<Vec<VcModel>> {
+    async fn retrieve_all_vcs(&self) -> Outcome<Vec<vc::Model>> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/credentials?showDeleted=false", wallet.id);
         let res = self
@@ -248,7 +248,7 @@ impl WalletTrait for WaltIdService {
         &self,
         pem_helper: &PemHelper,
         alias: Option<String>,
-    ) -> Outcome<KeyModel> {
+    ) -> Outcome<key::Model> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/keys/import", wallet.id);
         self.request(
@@ -265,12 +265,13 @@ impl WalletTrait for WaltIdService {
         let last = keys.last().cloned().ok_or_else(|| {
             Errors::missing_action(MissingAction::Key, "Key register failed", None)
         })?;
-        Ok(KeyModel {
+        Ok(key::Model {
             id: last.key_id.id,
+            default: false,
             alias: alias.unwrap_or_default(),
             kty: pem_helper.kty().clone(),
             crv: pem_helper.crv().cloned(),
-            pem: pem_helper.pem().to_string(),
+            created_at: Utc::now(),
         })
     }
 
@@ -279,7 +280,7 @@ impl WalletTrait for WaltIdService {
         _did_builder: &DidBuilder,
         _keys_id: Vec<String>,
         alias: Option<String>,
-    ) -> Outcome<DidModel> {
+    ) -> Outcome<did::Model> {
         let res = match self.config.did_config() {
             DidConfig::Web { web_config } => {
                 self.reg_did_web(&web_config.domain, web_config.path.as_deref().unwrap_or(""))
@@ -322,7 +323,7 @@ impl WalletTrait for WaltIdService {
         Ok(entry)
     }
 
-    async fn store_vc(&self, vc: String) -> Outcome<VcModel> {
+    async fn store_vc(&self, vc: String) -> Outcome<vc::Model> {
         // TODO
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/vcs/store", wallet.id, );
@@ -349,7 +350,7 @@ impl WalletTrait for WaltIdService {
         res.parse_json().await
     }
 
-    async fn set_default_did(&self, did: Did) -> Outcome<()> {
+    async fn set_default_did(&self, did: Did) -> Outcome<did::Model> {
         let wallet = self.get_wallet().await?;
         let path = format!("/wallet/{}/dids/default?did={}", wallet.id, did.id());
         self.request(
@@ -361,7 +362,16 @@ impl WalletTrait for WaltIdService {
             "Petition to set did as default failed",
         )
             .await?;
-        Ok(())
+        let info = wallet
+            .dids
+            .iter()
+            .find(|d| d.did == did.id())
+            .cloned()
+            .or_else(|| wallet.dids.last().cloned())
+            .ok_or_else(|| {
+                Errors::missing_action(MissingAction::Did, "Just-registered did not found", None)
+            })?;
+        dids_info_to_did_model(info)
     }
 
     async fn delete_key(&self, id: &str) -> Outcome<()> {
@@ -811,7 +821,7 @@ impl WaltIdService {
             .identity
             .write()
             .map_err(|_| Errors::read("identity", "identity lock poisoned", None))?;
-        *guard = Some(Identity::new(did, did_doc, vec![]));
+        *guard = Some(Identity::new(did, did_doc, KeyRef::new("", "")));
         Ok(())
     }
 
@@ -1016,27 +1026,34 @@ impl WaltIdService {
     }
 }
 
-fn wc_to_vc(wc: WalletCredentials) -> VcModel {
+fn wc_to_vc(wc: WalletCredentials) -> vc::Model {
     let added_on = DateTime::parse_from_rfc3339(&wc.added_on)
         .map(|d| d.with_timezone(&Utc))
         .ok();
     let r#type = if wc.format.contains("jwt") {
-        VcBodyType::Jwt(wc.document)
+        VcBody::Jwt(wc.document)
     } else {
         match serde_json::from_str::<Value>(&wc.document) {
-            Ok(v) => VcBodyType::Value(v),
-            Err(_) => VcBodyType::Jwt(wc.document),
+            Ok(v) => VcBody::JsonLd(v),
+            Err(_) => VcBody::Jwt(wc.document),
         }
     };
-    VcModel {
+    todo!()
+    vc::Model {
         id: wc.id,
+        vc_body: (),
+        vc_type: VcType::Eori,
+        vc_format: VcFormat::JwtVcJson,
+        holder_did: "".to_string(),
         r#type,
         parsed_document: wc.parsed_document,
+        valid_until: None,
         added_on,
+        issuer_did: "".to_string(),
     }
 }
 
-fn dids_info_to_did_model(d: DidsInfo) -> Outcome<DidModel> {
+fn dids_info_to_did_model(d: DidsInfo) -> Outcome<did::Model> {
     let did_document: DidDocument = serde_json::from_str(&d.document)?;
     let did_type = if d.did.starts_with("did:web:") {
         DidType::Web
@@ -1053,6 +1070,7 @@ fn dids_info_to_did_model(d: DidsInfo) -> Outcome<DidModel> {
         .iter()
         .map(|vm| KeyRef::new(d.key_id.clone(), vm.id.clone()))
         .collect::<Vec<KeyRef>>();
+    todo!()
     Ok(DidModel {
         did_id: d.did.clone(),
         did: d.did,
@@ -1064,7 +1082,7 @@ fn dids_info_to_did_model(d: DidsInfo) -> Outcome<DidModel> {
     })
 }
 
-fn key_def_to_key_model(k: KeyDefinition) -> KeyModel {
+fn key_def_to_key_model(k: KeyDefinition) -> key::Model {
     let Ok(alg) = Alg::from_str(&k.algorithm);
     let (kty, crv) = match &alg {
         Alg::EdDsa => (Kty::Okp, Some(Crv::Ed25519)),
@@ -1072,6 +1090,7 @@ fn key_def_to_key_model(k: KeyDefinition) -> KeyModel {
         Alg::Es256 => (Kty::Ec, Some(Crv::P256)),
         _ => (Kty::Other(String::new()), None),
     };
+    todo!()
     KeyModel {
         id: k.key_id.id,
         alias: String::new(),

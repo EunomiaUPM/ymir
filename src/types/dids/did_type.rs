@@ -20,10 +20,16 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use sea_orm::entity::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::N(16))")]
 pub enum DidType {
+    #[sea_orm(string_value = "jwk")]
     Jwk,
+
+    #[sea_orm(string_value = "web")]
     Web,
 }
 

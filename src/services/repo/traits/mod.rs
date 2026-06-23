@@ -18,5 +18,7 @@
 pub mod sent;
 pub mod received;
 pub mod shared;
+pub mod wallet;
 mod crud_repo_trait;
+
 pub use crud_repo_trait::CrudRepoTrait;

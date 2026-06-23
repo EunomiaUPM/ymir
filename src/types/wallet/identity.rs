@@ -23,15 +23,15 @@ use crate::types::dids::DidDocument;
 pub struct Identity {
     did: Did,
     did_doc: DidDocument,
-    keys_id: Vec<KeyRef>,
+    keys_ref: KeyRef,
 }
 
 impl Identity {
-    pub fn new(did: Did, did_doc: DidDocument, keys_id: Vec<KeyRef>) -> Self {
+    pub fn new(did: Did, did_doc: DidDocument, keys_ref: KeyRef) -> Self {
         Self {
             did,
             did_doc,
-            keys_id,
+            keys_ref,
         }
     }
     pub fn did(&self) -> &Did {
@@ -40,7 +40,7 @@ impl Identity {
     pub fn did_doc(&self) -> &DidDocument {
         &self.did_doc
     }
-    pub fn keys_id(&self) -> &[KeyRef] {
-        &self.keys_id
+    pub fn key_ref(&self) -> &KeyRef {
+        &self.keys_ref
     }
 }

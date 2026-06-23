@@ -15,26 +15,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use chrono;
+use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::types::participants::ParticipantType;
+use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use sea_orm::{ActiveValue, DeriveEntityModel};
 use serde::{Deserialize, Serialize};
-use crate::data::entities::IntoOverwriteActive;
-use crate::types::participants::ParticipantType;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "participants")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub participant_id: String,                     // REQUEST
-    pub participant_nick: String,                   // REQUEST
-    pub participant_type: ParticipantType,          // REQUEST
-    pub base_url: String,                           // REQUEST
-    pub token: Option<String>,                      // REQUEST
-    pub saved_at: chrono::NaiveDateTime,            // DEFAULT
-    pub last_interaction: chrono::NaiveDateTime,    // DEFAULT
-    pub extra_fields: serde_json::Value,            // REQUEST
-    pub is_me: bool,                                // REQUEST
+    pub participant_id: String, // REQUEST
+    pub participant_nick: String,          // REQUEST
+    pub participant_type: ParticipantType, // REQUEST
+    pub base_url: String,                  // REQUEST
+    pub token: Option<String>,             // REQUEST
+    pub saved_at: DateTime<Utc>,           // DEFAULT
+    pub last_interaction: DateTime<Utc>,   // DEFAULT
+    pub extra_fields: serde_json::Value,   // REQUEST
+    pub is_me: bool,                       // REQUEST
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -56,8 +56,8 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             participant_type: ActiveValue::Set(self.participant_type),
             base_url: ActiveValue::Set(self.base_url),
             token: ActiveValue::Set(self.token),
-            saved_at: ActiveValue::Set(chrono::Utc::now().naive_utc()),
-            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            saved_at: ActiveValue::Set(Utc::now()),
+            last_interaction: ActiveValue::Set(Utc::now()),
             extra_fields: ActiveValue::Set(self.extra_fields.unwrap_or(serde_json::json!({}))),
             is_me: ActiveValue::Set(self.is_me),
         }
@@ -73,7 +73,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             base_url: ActiveValue::Set(self.base_url),
             token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(self.saved_at),
-            last_interaction: ActiveValue::Set(chrono::Utc::now().naive_utc()),
+            last_interaction: ActiveValue::Set(Utc::now()),
             extra_fields: ActiveValue::Set(self.extra_fields),
             is_me: ActiveValue::Set(self.is_me),
         }

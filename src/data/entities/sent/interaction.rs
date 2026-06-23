@@ -15,22 +15,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::types::gnap::grant_request::interact::{FinishMethod, HashMethod, InteractStart};
 use rand::Rng;
 use rand::distributions::Alphanumeric;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::data::entities::IntoOverwriteActive;
-use crate::types::gnap::grant_request::interact::{FinishMethod, HashMethod, InteractStart};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "sent_interactions")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: String,                        // REQUEST
+    pub id: String, // REQUEST
     pub start: Vec<InteractStart>,         // REQUEST
     pub method: FinishMethod,              // REQUEST
-    pub callback_uri: String,                       // REQUEST
+    pub callback_uri: String,              // REQUEST
     pub client_nonce: String,              // RANDOM
     pub hash_method: HashMethod,           // REQUEST
     pub hints: Option<String>,             // REQUEST
@@ -45,12 +45,12 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub id: String,                  // REQUEST
-    pub start: Vec<InteractStart>,          // REQUEST
-    pub method: FinishMethod,              // REQUEST
-    pub callback_uri: String,                 // REQUEST
+    pub id: String,                      // REQUEST
+    pub start: Vec<InteractStart>,       // REQUEST
+    pub method: FinishMethod,            // REQUEST
+    pub callback_uri: String,            // REQUEST
     pub hash_method: Option<HashMethod>, // REQUEST
-    pub hints: Option<String>,       // REQUEST
+    pub hints: Option<String>,           // REQUEST
 }
 
 impl IntoOverwriteActive<ActiveModel> for Plan {

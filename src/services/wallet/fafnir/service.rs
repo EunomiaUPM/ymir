@@ -27,16 +27,18 @@ use crate::services::vault::{VaultService, VaultTrait};
 use crate::services::wallet::WalletTrait;
 use crate::types::dids::{DidBuilder, DidDocument, DidService};
 use crate::types::http::HttpBody;
-use crate::types::secrets::PemHelper;
-use crate::types::wallet::waltid::{DidsInfo, OidcUri};
-use crate::types::wallet::{DidModel, HasId, KeyModel, KeyRef, DidPlan, KeyPlan, VcModel};
-use crate::types::wallet::{Identity, WalletInfo};
+use crate::types::secrets::{PemHelper, StringHelper};
+// use crate::types::wallet::waltid::{DidsInfo, OidcUri};
+use crate::types::wallet::{Identity, KeyRef, WalletInfo};
 use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers};
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
 use tracing::info;
 use crate::data::entities::shared::participant;
+use crate::data::entities::wallet::{did, key, vc};
 use crate::types::participants::ParticipantType;
+use crate::types::wallet::waltid::OidcUri;
 
 pub struct FafnirService {
     config: FafnirConfig,
@@ -69,28 +71,30 @@ impl FafnirService {
         config: &FafnirConfig,
         vault: Arc<VaultService>,
         services: &[DidService],
-    ) -> Outcome<(DidDocument, Vec<KeyRef>)> {
-        if let Ok(base) = Self::fetch::<DidModel>(config, "dids", "default").await {
-            return Ok((base.did_document, base.keys));
+    ) -> Outcome<(DidDocument, KeyRef)> {
+        // =====
+        if let Ok(base) = Self::fetch::<did::Model>(config, "dids", "default").await {
+            return Ok((base.did_document, base.default_key));
         }
 
-        // REGISTER KEY
-        let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
-        let pem_helper: PemHelper = vault.read(None, &priv_key).await?;
+        // ===== REGISTER KEY ======================================================================
+        let priv_vault_path = expect_from_env("VAULT_APP_PRIV_KEY");
+        let key_data: PemHelper = vault.read(None, &priv_vault_path).await?;
+
+        let key_req = key::Plan {
+            id: priv_vault_path,
+            r#default: true,
+            alias: "base".to_string(),
+            pem: key_data.pem().to_string(),
+        };
 
         let key_url = format!("{}/keys/new", config.get_wallet_api_url(HostType::Http));
-        let key_req = KeyPlan {
-            alias: "base".to_string(),
-            kty: pem_helper.kty().to_owned(),
-            crv: pem_helper.crv().cloned(),
-            pem: pem_helper.pem().to_owned(),
-        };
 
         let res = http_client()
             .post(&key_url, Some(json_headers()), HttpBody::json(&key_req)?)
             .await?;
 
-        let key_entry: KeyModel = if res.status().is_success() {
+        let key_model: key::Model = if !res.status().is_success() {
             res.parse_json().await?
         } else {
             return Err(Errors::wallet(
@@ -102,9 +106,9 @@ impl FafnirService {
             ));
         };
 
-        // REGISTER DID
+        // ===== REGISTER DID ======================================================================
         let did_builder = match config.did_config() {
-            DidConfig::Jwk => DidBuilder::new_jwk(pem_helper.pem()),
+            DidConfig::Jwk => DidBuilder::new_jwk(key_data.pem()),
             DidConfig::Web { web_config } => DidBuilder::new_web(
                 &web_config.domain,
                 web_config.path.as_deref(),
@@ -124,17 +128,17 @@ impl FafnirService {
         } else {
             Some(services.to_vec())
         };
-        let did_req = DidPlan {
+        let did_req = did::Plan {
             alias: "base".to_string(),
-            r#type: did_builder.clone(),
-            keys: vec![key_entry.id],
+            builder: did_builder,
+            keys: vec![key_model.id],
             service: services,
         };
         let res = http_client()
             .post(&did_url, Some(json_headers()), HttpBody::json(&did_req)?)
             .await?;
 
-        let did_entry: DidModel = if res.status().is_success() {
+        let did_model: did::Model = if res.status().is_success() {
             res.parse_json().await?
         } else {
             return Err(Errors::wallet(
@@ -146,11 +150,11 @@ impl FafnirService {
             ));
         };
 
-        // SET DEFAULT DID
+        // ===== SET DEFAULT DID ===================================================================
         let url = format!(
             "{}/dids/{}/default",
             config.get_wallet_api_url(HostType::Http),
-            did_entry.did_id
+            did_model.id
         );
         let res = http_client()
             .post(&url, Some(json_headers()), HttpBody::None)
@@ -165,19 +169,19 @@ impl FafnirService {
                 None,
             ))
         } else {
-            Ok((did_entry.did_document, did_entry.keys))
+            Ok((did_model.did_document, did_model.default_key))
         }
     }
 }
 
 #[async_trait]
 impl WalletTrait for FafnirService {
-    async fn link(&self) -> Outcome<participant::Plan> {
-        let url = self.config.get_host(HostType::Http);
-        self.get_myself_plan(url.clone(), self.participant_type.clone())
+    // IT IS ALWAYS LINKED
+    async fn link(&self) -> Outcome<()> {
+        Ok(())
     }
 
-    // ════════════════════════ GET FROM MANAGER ════════════════════════
+
 
     async fn get_wallet(&self) -> Outcome<WalletInfo> {
         let dids = self.retrieve_all_dids().await?;
@@ -220,30 +224,30 @@ impl WalletTrait for FafnirService {
     // ════════════════════════ RETRIEVE FROM WALLET ════════════════════
     //
 
-    async fn retrieve_did(&self, id: &str) -> Outcome<DidModel> {
-        Self::fetch::<DidModel>(&self.config, "dids", id).await
+    async fn retrieve_did(&self, id: &str) -> Outcome<did::Model> {
+        Self::fetch::<did::Model>(&self.config, "dids", id).await
     }
-    async fn retrieve_default_did(&self) -> Outcome<DidModel> {
-        Self::fetch::<DidModel>(&self.config, "dids", "default").await
+    async fn retrieve_default_did(&self) -> Outcome<did::Model> {
+        Self::fetch::<did::Model>(&self.config, "dids", "default").await
     }
-    async fn retrieve_all_dids(&self) -> Outcome<Vec<DidModel>> {
-        Self::fetch::<Vec<DidModel>>(&self.config, "dids", "all").await
-    }
-
-    async fn retrieve_key(&self, id: &str) -> Outcome<KeyModel> {
-        Self::fetch::<KeyModel>(&self.config, "keys", id).await
+    async fn retrieve_all_dids(&self) -> Outcome<Vec<did::Model>> {
+        Self::fetch::<Vec<did::Model>>(&self.config, "dids", "all").await
     }
 
-    async fn retrieve_all_keys(&self) -> Outcome<Vec<KeyModel>> {
-        Self::fetch::<Vec<KeyModel>>(&self.config, "keys", "all").await
+    async fn retrieve_key(&self, id: &str) -> Outcome<key::Model> {
+        Self::fetch::<key::Model>(&self.config, "keys", id).await
     }
 
-    async fn retrieve_vc(&self, id: &str) -> Outcome<VcModel> {
-        Self::fetch::<VcModel>(&self.config, "vcs", id).await
+    async fn retrieve_all_keys(&self) -> Outcome<Vec<key::Model>> {
+        Self::fetch::<Vec<key::Model>>(&self.config, "keys", "all").await
     }
 
-    async fn retrieve_all_vcs(&self) -> Outcome<Vec<VcModel>> {
-        Self::fetch::<Vec<VcModel>>(&self.config, "vcs", "all").await
+    async fn retrieve_vc(&self, id: &str) -> Outcome<vc::Model> {
+        Self::fetch::<vc::Model>(&self.config, "vcs", id).await
+    }
+
+    async fn retrieve_all_vcs(&self) -> Outcome<Vec<vc::Model>> {
+        Self::fetch::<Vec<vc::Model>>(&self.config, "vcs", "all").await
     }
 
     // ════════════════════════ REGISTER STUFF ══════════════════════════
@@ -252,15 +256,16 @@ impl WalletTrait for FafnirService {
         &self,
         pem_helper: &PemHelper,
         alias: Option<String>,
-    ) -> Outcome<KeyModel> {
+    ) -> Outcome<key::Model> {
         let key_url = format!(
             "{}/keys/new",
             self.config.get_wallet_api_url(HostType::Http)
         );
-        let key_req = KeyPlan {
-            alias: alias.unwrap_or("default".to_string()),
-            kty: pem_helper.kty().to_owned(),
-            crv: pem_helper.crv().cloned(),
+        let id = uuid::Uuid::new_v4().to_string();
+        let key_req = key::Plan {
+            id: format!("crypto/keys/{id}"),
+            default: false,
+            alias: alias.unwrap_or("".to_string()),
             pem: pem_helper.pem().to_owned(),
         };
 
@@ -286,7 +291,7 @@ impl WalletTrait for FafnirService {
         did_builder: &DidBuilder,
         keys_id: Vec<String>,
         alias: Option<String>,
-    ) -> Outcome<DidModel> {
+    ) -> Outcome<did::Model> {
         let did_url = format!(
             "{}/dids/new",
             self.config.get_wallet_api_url(HostType::Http)
@@ -296,9 +301,9 @@ impl WalletTrait for FafnirService {
         } else {
             Some(self.services.clone())
         };
-        let did_req = DidPlan {
+        let did_req = did::Plan {
             alias: alias.unwrap_or("default".to_string()),
-            r#type: did_builder.clone(),
+            builder: did_builder.clone(),
             keys: keys_id,
             service: services,
         };
@@ -319,7 +324,7 @@ impl WalletTrait for FafnirService {
         }
     }
 
-    async fn store_vc(&self, vc: String) -> Outcome<VcModel> {
+    async fn store_vc(&self, vc: String) -> Outcome<vc::Model> {
         let did_url = format!(
             "{}/vcs/store",
             self.config.get_wallet_api_url(HostType::Http)
@@ -343,8 +348,9 @@ impl WalletTrait for FafnirService {
         }
     }
 
-    async fn set_default_did(&self, did: Did) -> Outcome<()> {
+    async fn set_default_did(&self, did: Did) -> Outcome<did::Model> {
         info!("FafnirService: set_default_did");
+        todo!()
         let all = self.retrieve_all_dids().await?;
         let target = all
             .iter()
@@ -492,7 +498,7 @@ impl FafnirService {
     }
 }
 
-fn did_entry_to_info(did: DidModel) -> DidsInfo {
+fn did_entry_to_info(did: did::Model) -> DidsInfo {
     let key_id = did
         .keys
         .iter()

@@ -15,16 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::VcFormat;
+use super::VcType;
+use crate::impl_serde_via_str;
+use sea_orm::FromJsonQueryResult;
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use sea_orm::FromJsonQueryResult;
-use crate::impl_serde_via_str;
-use super::VcType;
-use super::VcFormat;
 
-#[derive(Debug, Clone, PartialEq, FromJsonQueryResult)]
+#[derive(Debug, Hash, Eq, Clone, PartialEq, FromJsonQueryResult)]
 pub struct VcTypeConfig {
     vc_type: VcType,
     format: VcFormat,
@@ -85,7 +85,11 @@ impl VcTypeConfig {
         configs
     }
     pub fn is_supported(&self) -> bool {
-        if Self::supported().contains(self) { true } else { false }
+        if Self::supported().contains(self) {
+            true
+        } else {
+            false
+        }
     }
     pub fn vc_type(&self) -> &VcType {
         &self.vc_type

@@ -15,14 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::errors::{Errors, Outcome};
+use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::services::repo::traits::CrudRepoTrait;
 use async_trait::async_trait;
 use sea_orm::{
     ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
     PrimaryKeyTrait, QuerySelect, Select,
 };
-use crate::data::entities::IntoOverwriteActive;
-use crate::errors::{Errors, Outcome};
-use crate::services::repo::traits::CrudRepoTrait;
 
 #[async_trait]
 pub trait BasicPostgresRepo: Send + Sync + 'static
@@ -33,15 +33,15 @@ where
         + Sync
         + Clone
         + 'static,
-    <Self::Entity as EntityTrait>::ActiveModel: ActiveModelTrait<Entity = Self::Entity>
-        + ActiveModelBehavior
-        + Send
-        + Sync
-        + 'static,
+    <Self::Entity as EntityTrait>::ActiveModel:
+        ActiveModelTrait<Entity = Self::Entity> + ActiveModelBehavior + Send + Sync + 'static,
     <Self::Entity as EntityTrait>::PrimaryKey: PrimaryKeyTrait<ValueType = String>,
 {
     type Entity: EntityTrait + Send + Sync + 'static;
-    type Plan: IntoOverwriteActive<<Self::Entity as EntityTrait>::ActiveModel> + Send + Sync + 'static;
+    type Plan: IntoOverwriteActive<<Self::Entity as EntityTrait>::ActiveModel>
+        + Send
+        + Sync
+        + 'static;
 
     fn db(&self) -> &DatabaseConnection;
 
@@ -58,10 +58,7 @@ where
             .map_err(|e| Errors::db("Unable to get all models", Some(Box::new(e))))
     }
 
-    async fn basic_get_by_id(
-        &self,
-        id: &str,
-    ) -> Outcome<<Self::Entity as EntityTrait>::Model> {
+    async fn basic_get_by_id(&self, id: &str) -> Outcome<<Self::Entity as EntityTrait>::Model> {
         Self::Entity::find_by_id(id.to_string())
             .one(self.db())
             .await
@@ -71,9 +68,7 @@ where
                     Some(Box::new(e)),
                 )
             })?
-            .ok_or_else(|| {
-                Errors::missing_resource(id, format!("Model not found: {}", id), None)
-            })
+            .ok_or_else(|| Errors::missing_resource(id, format!("Model not found: {}", id), None))
     }
 
     async fn basic_create(
@@ -145,11 +140,8 @@ where
         + Sync
         + Clone
         + 'static,
-    <R::Entity as EntityTrait>::ActiveModel: ActiveModelTrait<Entity = R::Entity>
-        + ActiveModelBehavior
-        + Send
-        + Sync
-        + 'static,
+    <R::Entity as EntityTrait>::ActiveModel:
+        ActiveModelTrait<Entity = R::Entity> + ActiveModelBehavior + Send + Sync + 'static,
     <R::Entity as EntityTrait>::PrimaryKey: PrimaryKeyTrait<ValueType = String>,
 {
     async fn get_all(
@@ -160,17 +152,11 @@ where
         self.basic_get_all(limit, offset).await
     }
 
-    async fn get_by_id(
-        &self,
-        id: &str,
-    ) -> Outcome<<R::Entity as EntityTrait>::Model> {
+    async fn get_by_id(&self, id: &str) -> Outcome<<R::Entity as EntityTrait>::Model> {
         self.basic_get_by_id(id).await
     }
 
-    async fn create(
-        &self,
-        plan: R::Plan,
-    ) -> Outcome<<R::Entity as EntityTrait>::Model> {
+    async fn create(&self, plan: R::Plan) -> Outcome<<R::Entity as EntityTrait>::Model> {
         self.basic_create(plan).await
     }
 

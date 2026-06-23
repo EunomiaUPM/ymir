@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
+use std::str::FromStr;
 use super::{TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus};
-use crate::types::vcs::VcIssuer;
+use crate::types::vcs::{VcIssuer, VcType};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -48,4 +48,36 @@ pub struct VcDocument {
     pub terms_of_use: Option<TermsOfUse>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub evidence: Option<Vec<VCEvidence>>,
+}
+
+impl VcDocument {
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    pub fn specialized_type(&self) -> Option<VcType> {
+        let t = self
+            .r#type
+            .iter()
+            .find(|t| t.as_str() != "VerifiableCredential")
+            .map(|s| s.as_str());
+        t.and_then(|t| VcType::from_str(t).ok())
+    }
+    pub fn holder_did(&self) -> Option<&str> {
+        self.credential_subject.get("id")?.as_str()
+    }
+    pub fn issuer_did(&self) -> &str {
+        self.issuer.id()
+    }
+    pub fn is_expired(&self) -> bool {
+        match self.valid_until {
+            Some(until) => Utc::now() > until,
+            None => false,
+        }
+    }
+    pub fn is_active(&self) -> bool {
+        let now = Utc::now();
+        let started = self.valid_from.map_or(true, |from| from <= now);
+        let not_expired = self.valid_until.map_or(true, |until| now < until);
+        started && not_expired
+    }
 }

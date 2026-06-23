@@ -22,7 +22,7 @@ use std::str::FromStr;
 use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, FromJsonQueryResult)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 pub enum VcType {
     Eori,
     Euid,

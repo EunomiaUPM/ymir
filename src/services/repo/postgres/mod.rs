@@ -16,8 +16,11 @@
  */
 
 mod crud_postgres_trait;
+mod to_active;
 
 pub mod sent;
 pub mod received;
 pub mod shared;
+pub mod wallet;
 pub use crud_postgres_trait::BasicPostgresRepo;
+pub use to_active::IntoOverwriteActive;

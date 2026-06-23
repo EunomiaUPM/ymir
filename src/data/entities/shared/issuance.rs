@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::data::entities::IntoOverwriteActive;
+use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::vcs::{BuildCtx, VcTypeConfig};
+use crate::utils::create_opaque_token;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::utils::create_opaque_token;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "issuance")]

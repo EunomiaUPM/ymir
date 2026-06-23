@@ -230,7 +230,7 @@ impl IssuerTrait for IssuerService {
         let (kid, claims) =
             Verifier::verify_enveloped::<DidPossession>(&jwt, Some(&issuance.aud)).await?;
 
-        validate_did_possession(&claims, &kid)?;
+        validate_did_possession(&claims, &kid, &issuance.nonce)?;
         is_active(claims.iat)?;
         Ok((kid.did().id().to_string(), vc_config))
     }
@@ -238,16 +238,13 @@ impl IssuerTrait for IssuerService {
     async fn sign_claims(&self, claims: &VCJwtClaims) -> Outcome<String> {
         info!("Issuing credential");
 
-        let priv_key = expect_from_env("VAULT_APP_PRIV_KEY");
-        let pem_helper: PemHelper = self.vault.read(None, &priv_key).await?;
+        let key_ref = self.identity.key_ref();
+        let did = self.identity.did().clone();
+
+        let pem_helper: PemHelper = self.vault.read(None, key_ref.internal()).await?;
         let key = PrivateKey::try_from(pem_helper)?;
 
-        let did = self.identity.did().clone();
-        let keys_id = self.identity.keys_id().first().cloned().ok_or_else(|| {
-            Errors::missing_action(MissingAction::Key, "No key within did Document", None)
-        })?;
-
-        let sig_ctx = SigningCtx::new(did, key, keys_id.fragment().to_string());
+        let sig_ctx = SigningCtx::new(did, key, key_ref.fragment().to_string());
         let claims = serde_json::to_value(claims)?;
 
         let vc_jwt = Signer::sign_enveloped(&sig_ctx, "vc+ld+json+jwt", "vc+ld+json", &claims)?;
@@ -268,12 +265,16 @@ impl IssuerService {
 
 // ===== Free helpers ==========================================================
 
-fn validate_did_possession(claims: &DidPossession, kid: &Kid) -> Outcome<()> {
+fn validate_did_possession(claims: &DidPossession, kid: &Kid, nonce: &str) -> Outcome<()> {
     info!("Validating did possession");
     if let Some(iss) = &claims.iss {
         if iss != kid.did().id() {
             return Err(Errors::forbidden("Invalid proof of did possession", None));
         }
+    }
+
+    if &claims.nonce != nonce {
+        return Err(Errors::security("nonce mismatch", None));
     }
 
     Ok(())

@@ -15,31 +15,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
+use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::types::gnap::GrantStatus;
+use crate::types::gnap::grant_request::GrantKind;
+use crate::types::vcs::VcTypeConfig;
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::data::entities::IntoOverwriteActive;
-use crate::types::gnap::grant_request::GrantKind;
-use crate::types::gnap::GrantStatus;
-use crate::types::vcs::VcTypeConfig;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "sent_grants")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: String,                                 // ID of request
-    pub participant_id: String,                     // ID of participant to who which we do the request
-    pub participant_nick: String,                   // Nick of participant
+    pub id: String, // ID of request
+    pub participant_id: String, // ID of participant to who which we do the request
+    pub participant_nick: String, // Nick of participant
     pub grant_endpoint: String,
-    pub kind: GrantKind,                            // Type of request, (token or vc)
+    pub kind: GrantKind, // Type of request, (token or vc)
     pub status: GrantStatus,
     pub token: Option<String>,
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub vc_uri: Option<String>,
     pub as_assigned_id: Option<String>,
-    pub auto: bool,                                 // If active, redeeming credentials or presented them is automatic
+    pub auto: bool, // If active, redeeming credentials or presented them is automatic
     pub created_at: DateTime<Utc>,
     pub ended_at: Option<DateTime<Utc>>,
 }

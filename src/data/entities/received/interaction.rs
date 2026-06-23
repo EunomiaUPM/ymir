@@ -15,6 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::types::gnap::grant_request::interact::{FinishMethod, HashMethod, InteractStart};
+use crate::types::keys::DbKeySource;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use rand::Rng;
@@ -23,45 +26,42 @@ use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha384, Sha512};
-use crate::data::entities::IntoOverwriteActive;
-use crate::types::gnap::grant_request::interact::{FinishMethod, HashMethod, InteractStart};
-use crate::types::keys::DbKeySource;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "recv_interactions")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // RESPONSE
-    pub start: Vec<InteractStart>,        // RESPONSE
-    pub method: FinishMethod,            // RESPONSE
-    pub callback_uri: String,               // RESPONSE
-    pub key_source: DbKeySource,              // RESPONSE
-    pub client_nonce: String,      // RESPONSE
-    pub hash_method: HashMethod,       // RESPONSE
-    pub hints: Option<String>,     // RESPONSE
-    pub continue_endpoint: String, // RESPONSE
-    pub continue_id: String,       // RESPONSE
-    pub continue_token: String,    // RESPONSE
-    pub continue_wait: Option<i64>,        // RESPONSE
-    pub as_nonce: String,          // RANDOM
-    pub interact_ref: String,      // RANDOM
-    pub hash: String,              // RANDOM
+    pub start: Vec<InteractStart>,  // RESPONSE
+    pub method: FinishMethod,       // RESPONSE
+    pub callback_uri: String,       // RESPONSE
+    pub key_source: DbKeySource,    // RESPONSE
+    pub client_nonce: String,       // RESPONSE
+    pub hash_method: HashMethod,    // RESPONSE
+    pub hints: Option<String>,      // RESPONSE
+    pub continue_endpoint: String,  // RESPONSE
+    pub continue_id: String,        // RESPONSE
+    pub continue_token: String,     // RESPONSE
+    pub continue_wait: Option<i64>, // RESPONSE
+    pub as_nonce: String,           // RANDOM
+    pub interact_ref: String,       // RANDOM
+    pub hash: String,               // RANDOM
 }
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub id: String,                  // REQUEST
-    pub start: Vec<InteractStart>,          // REQUEST
-    pub method: FinishMethod,              // REQUEST
-    pub callback_uri: String,                 // REQUEST
-    pub key_source: DbKeySource,                // REQUEST
-    pub client_nonce: String,        // REQUEST
+    pub id: String,                      // REQUEST
+    pub start: Vec<InteractStart>,       // REQUEST
+    pub method: FinishMethod,            // REQUEST
+    pub callback_uri: String,            // REQUEST
+    pub key_source: DbKeySource,         // REQUEST
+    pub client_nonce: String,            // REQUEST
     pub hash_method: Option<HashMethod>, // REQUEST
-    pub hints: Option<String>,       // REQUEST
-    pub grant_endpoint: String,      // REQUEST
-    pub continue_endpoint: String,   // RESPONSE
-    pub continue_token: String,      // RESPONSE
-    pub continue_wait: Option<i64>,        // RESPONSE
+    pub hints: Option<String>,           // REQUEST
+    pub grant_endpoint: String,          // REQUEST
+    pub continue_endpoint: String,       // RESPONSE
+    pub continue_token: String,          // RESPONSE
+    pub continue_wait: Option<i64>,      // RESPONSE
 }
 
 impl IntoOverwriteActive<ActiveModel> for Plan {
@@ -107,7 +107,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             }
             _ => unreachable!(),
         };
-
 
         let cont_endpoint = format!("{}/{}", self.continue_endpoint, continue_id);
 

@@ -14,7 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+use std::{format, vec};
+use async_trait::async_trait;
+use sea_orm::Condition;
+use sea_orm::prelude::Expr;
+use crate::data::entities::wallet::vc;
+use crate::services::repo::traits::CrudRepoTrait;
+use crate::data::entities::wallet::vc::{Model};
+use crate::errors::Outcome;
+use crate::types::vcs::{InputDescriptor, VcType};
 
-pub mod postgres;
-pub mod traits;
-mod disk;
+#[async_trait]
+pub trait VcRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static
+{
+    async fn filter_by_type(&self, r#type: VcType) -> Outcome<Vec<Model>>;
+    async fn filter_by_desc(&self, input_descriptor: &InputDescriptor ) -> Outcome<Vec<Model>>;
+}

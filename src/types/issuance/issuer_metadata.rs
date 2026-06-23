@@ -17,9 +17,9 @@
 
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
-use crate::types::vcs::{VcFormat, VcType, VcTypeConfig};
 use super::{CredentialConfiguration, DisplayLogo};
+use crate::types::vcs::{VcFormat, VcType, VcTypeConfig};
+use serde::{Deserialize, Serialize};
 
 // ════════════════════════════════════════════════════════════════════════════════
 //   IssuerMetadata
@@ -37,7 +37,7 @@ pub struct IssuerMetadata {
     pub credential_endpoint: String,
 
     /// Map of credential_configuration_id → configuration. REQUIRED.
-    pub credential_configurations_supported: HashMap<String, CredentialConfiguration>,
+    pub credential_configurations_supported: HashMap<VcTypeConfig, CredentialConfiguration>,
 
     /// Authorization Servers protecting this issuer's endpoints. OPTIONAL.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -78,21 +78,17 @@ pub struct IssuerMetadata {
 
 impl IssuerMetadata {
     pub fn new(issuer: &str, api_path: &str, vc_types: &[VcType]) -> Self {
-        let mut supported: HashMap<String, CredentialConfiguration> = HashMap::new();
+        let mut supported: HashMap<VcTypeConfig, CredentialConfiguration> = HashMap::new();
         let formats = VcFormat::supported();
 
         for vc_type in vc_types {
             for format in formats {
                 let config = VcTypeConfig::new(vc_type.clone(), format.clone());
                 let cred_config = match format {
-                    VcFormat::JwtVcJson => {
-                        CredentialConfiguration::jwt_vc_json(config.vc_type())
-                    }
-                    // Future formats: add a constructor on CredentialConfiguration
-                    // and an arm here.
+                    VcFormat::JwtVcJson => CredentialConfiguration::jwt_vc_json(config.vc_type()),
                     _ => continue,
                 };
-                supported.insert(config.to_string(), cred_config);
+                supported.insert(config, cred_config);
             }
         }
 

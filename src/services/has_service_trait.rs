@@ -17,6 +17,7 @@
 
 use std::sync::Arc;
 use crate::services::issuer::IssuerTrait;
+use crate::services::vault::VaultService;
 use crate::services::verifier::VerifierTrait;
 use crate::services::wallet::WalletTrait;
 
@@ -30,4 +31,8 @@ pub trait HasVerifier {
 
 pub trait HasIssuer {
     fn issuer(&self) -> Arc<dyn IssuerTrait>;
+}
+
+pub trait HasVault {
+    fn vault(&self) -> Arc<VaultService>;
 }

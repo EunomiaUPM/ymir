@@ -15,32 +15,32 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::types::vcs::VcType;
+use crate::types::verification::VerificationStatus;
+use chrono::{DateTime, Utc};
 use rand::Rng;
 use rand::distributions::Alphanumeric;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use crate::data::entities::IntoOverwriteActive;
-use crate::types::vcs::VcType;
-use crate::types::verification::VerificationStatus;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "recv_verification")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub state: String,                     // RANDOM
-    pub nonce: String,                     // RANDOM
-    pub vc_type: Vec<VcType>,              // REQUEST
-    pub audience: String,                  // SEMI-RANDOM
-    pub holder: Option<String>,            // RESPONSE
-    pub vpt: Option<String>,               // RESPONSE
-    pub vcs: Vec<String>,               // RESPONSE
-    pub status: VerificationStatus,              // DEFAULT
-    pub created_at: DateTime<Utc>,          // DEFAULT
-    pub ended_at: Option<DateTime<Utc>>,    // RESPONSE
-    // pub requirements: Value, TODO
+    pub state: String,              // RANDOM
+    pub nonce: String,              // RANDOM
+    pub vc_type: Vec<VcType>,       // REQUEST
+    pub audience: String,           // SEMI-RANDOM
+    pub holder: Option<String>,     // RESPONSE
+    pub vpt: Option<String>,        // RESPONSE
+    pub vcs: Vec<String>,           // RESPONSE
+    pub status: VerificationStatus, // DEFAULT
+    pub created_at: DateTime<Utc>,  // DEFAULT
+    pub ended_at: Option<DateTime<Utc>>, // RESPONSE
+                                    // pub requirements: Value, TODO
 }
 
 #[derive(Clone, Debug)]

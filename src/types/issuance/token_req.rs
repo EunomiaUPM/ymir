@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::OidcGrantType;
 
@@ -24,7 +24,7 @@ use super::OidcGrantType;
 /// Sent by the wallet as `application/x-www-form-urlencoded`.
 /// This struct covers the Pre-Authorized Code flow; the auth_code-specific
 /// fields (`code`, `redirect_uri`, `code_verifier`) are not modeled here.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct TokenRequest {
     /// The grant type the wallet is using. REQUIRED.
     pub grant_type: OidcGrantType,

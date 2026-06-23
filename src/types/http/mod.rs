@@ -48,6 +48,13 @@ impl HttpBody {
         let body = serde_json::to_value(value)?;
         Ok(HttpBody::Json(body))
     }
+    pub fn form<T: Serialize>(value: &T) -> Outcome<HttpBody> {
+        let encoded = serde_urlencoded::to_string(value)
+            .map_err(|e| Errors::parse("Failed to encode form", Some(Box::new(e))))?;
+        let pairs: HashMap<String, String> = serde_urlencoded::from_str(&encoded)
+            .map_err(|e| Errors::parse("Failed to decode form back", Some(Box::new(e))))?;
+        Ok(HttpBody::Form(pairs))
+    }
 
     pub fn str(value: &str) -> Outcome<HttpBody> {
         Ok(HttpBody::Raw(value.to_string()))

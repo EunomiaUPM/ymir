@@ -15,6 +15,31 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod postgres;
-pub mod traits;
-mod disk;
+use async_trait::async_trait;
+use sea_orm::{DatabaseConnection};
+use crate::data::entities::wallet::key;
+use crate::services::repo::postgres::{BasicPostgresRepo};
+use crate::services::repo::traits::wallet::KeyRepoTrait;
+
+pub struct KeyPostgresRepo {
+    db: DatabaseConnection,
+}
+
+impl KeyPostgresRepo {
+    pub fn new(db: DatabaseConnection) -> Self {
+        Self { db }
+    }
+}
+
+#[async_trait]
+impl BasicPostgresRepo for KeyPostgresRepo {
+    type Entity = key::Entity;
+    type Plan = key::Model;
+
+    fn db(&self) -> &DatabaseConnection {
+        &self.db
+    }
+}
+
+#[async_trait]
+impl KeyRepoTrait for KeyPostgresRepo {}

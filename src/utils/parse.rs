@@ -70,7 +70,7 @@ where
     })
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum StringOrArr {
     String(String),
@@ -138,4 +138,8 @@ pub fn require_field<T>(opt: Option<T>, field: &str) -> Outcome<T> {
             None,
         )
     })
+}
+
+pub trait HasId {
+    fn id(&self) -> &str;
 }

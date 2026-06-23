@@ -15,30 +15,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::types::verification::VerificationStatus;
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::data::entities::IntoOverwriteActive;
-use crate::types::verification::VerificationStatus;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "sent_verifications")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub uri: String,                             // REQUEST
-    pub scheme: String,                          // REQUEST
-    pub response_type: String,                   // REQUEST
-    pub client_id: String,                       // REQUEST
-    pub response_mode: String,                   // REQUEST
-    pub pd_uri: String,                          // REQUEST
-    pub client_id_scheme: String,                // REQUEST
-    pub nonce: String,                           // REQUEST
-    pub response_uri: String,                    // REQUEST
-    pub status: VerificationStatus,              // DEFAULT
-    pub created_at: DateTime<Utc>,               // DEFAULT
-    pub ended_at: Option<DateTime<Utc>>,         // RESPONSE
+    pub uri: String,                     // REQUEST
+    pub scheme: String,                  // REQUEST
+    pub response_type: String,           // REQUEST
+    pub client_id: String,               // REQUEST
+    pub response_mode: String,           // REQUEST
+    pub pd_uri: String,                  // REQUEST
+    pub client_id_scheme: String,        // REQUEST
+    pub nonce: String,                   // REQUEST
+    pub response_uri: String,            // REQUEST
+    pub status: VerificationStatus,      // DEFAULT
+    pub created_at: DateTime<Utc>,       // DEFAULT
+    pub ended_at: Option<DateTime<Utc>>, // RESPONSE
 }
 
 #[derive(Clone, Debug)]

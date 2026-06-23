@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-
+use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -44,7 +44,7 @@ pub struct GiveVC {
 
 impl GiveVC {
     /// Build a synchronous response wrapping one or more issued credentials.
-    pub fn synchronous(credentials: Vec<IssuedCredential>) -> Self {
+    pub fn synchronous(credentials: Vec<VcBody>) -> Self {
         Self {
             credentials: Some(
                 credentials
@@ -76,7 +76,7 @@ impl GiveVC {
 pub struct IssuedCredentialItem {
     /// The issued credential, either as a compact JWT string or as a JSON-LD
     /// document.
-    pub credential: IssuedCredential,
+    pub credential: VcBody,
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -88,9 +88,9 @@ pub struct IssuedCredentialItem {
 /// `#[serde(untagged)]` so the wire format matches the spec: a bare string for
 /// JWT-based formats (`jwt_vc_json`, `sd_jwt_vc`, `mso_mdoc`, …), a bare JSON
 /// object for `ldp_vc`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 #[serde(untagged)]
-pub enum IssuedCredential {
+pub enum VcBody {
     /// JWT-based credential (compact serialization).
     Jwt(String),
 
@@ -98,7 +98,7 @@ pub enum IssuedCredential {
     JsonLd(serde_json::Value),
 }
 
-impl IssuedCredential {
+impl VcBody {
     /// Convenience constructor for the JWT case (the common one in our setup).
     pub fn jwt(signed: impl Into<String>) -> Self {
         Self::Jwt(signed.into())

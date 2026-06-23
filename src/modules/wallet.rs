@@ -22,7 +22,7 @@ use crate::types::dids::{DidBuilder, DidDocument};
 use crate::types::secrets::PemHelper;
 use crate::types::wallet::WalletInfo;
 use crate::types::wallet::waltid::{IsLinked, OidcUri};
-use crate::types::wallet::{DidModel, KeyModel, VcModel};
+use crate::data::entities::wallet::{did, vc, key};
 use async_trait::async_trait;
 use crate::services::HasWallet;
 use crate::services::repo::traits::shared::ParticipantRepoTrait;
@@ -31,9 +31,7 @@ use crate::services::repo::traits::shared::ParticipantRepoTrait;
 pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
     fn participant(&self) -> Arc<dyn ParticipantRepoTrait>;
     async fn link(&self) -> Outcome<()> {
-        let plan = self.wallet().link().await?;
-        self.participant().force_update(plan).await?;
-        Ok(())
+        self.wallet().link().await
     }
 
     async fn is_linked(&self) -> IsLinked {
@@ -48,7 +46,7 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
         &self,
         pem_helper: PemHelper,
         alias: Option<String>,
-    ) -> Outcome<KeyModel> {
+    ) -> Outcome<key::Model> {
         self.wallet().register_key(&pem_helper, alias).await
     }
 
@@ -57,7 +55,7 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
         did_builder: DidBuilder,
         keys_id: Vec<String>,
         alias: Option<String>,
-    ) -> Outcome<DidModel> {
+    ) -> Outcome<did::Model> {
         self.wallet()
             .register_did(&did_builder, keys_id, alias)
             .await
@@ -91,7 +89,7 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
         Ok(self.wallet().get_did()?.id().to_string())
     }
 
-    async fn get_wallet_credentials(&self) -> Outcome<Vec<VcModel>> {
+    async fn get_wallet_credentials(&self) -> Outcome<Vec<vc::Model>> {
         self.wallet().retrieve_all_vcs().await
     }
 }

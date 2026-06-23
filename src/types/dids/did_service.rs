@@ -21,8 +21,9 @@ use std::convert::Infallible;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use sea_orm::FromJsonQueryResult;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct DidService {
     #[serde(skip_serializing_if = "Option::is_none")]
     id: Option<DidServiceType>,
@@ -41,7 +42,7 @@ impl DidService {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DidServiceType {
     AuthorizationServer,
     CredentialIssuer,

@@ -15,12 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::types::gnap::grant_request::access::{AccessTokenFlag, AccessType};
+use crate::types::gnap::grant_request::interact::InteractAction;
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::data::entities::IntoOverwriteActive;
-use crate::types::gnap::grant_request::access::{AccessTokenFlag, AccessType};
-use crate::types::gnap::grant_request::interact::InteractAction;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "resources_reqs")]
@@ -28,13 +28,13 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
     pub r#type: AccessType,                  // REQUEST
-    pub actions: Vec<InteractAction>,            // REQUEST
-    pub locations: Option<Vec<String>>,  // REQUEST
-    pub datatypes: Option<Vec<String>>,  // REQUEST
-    pub identifier: Option<String>,      // REQUEST
-    pub privileges: Option<Vec<String>>, // REQUEST
-    pub label: Option<String>,           // REQUEST
-    pub flags: Option<Vec<AccessTokenFlag>>,      // REQUEST
+    pub actions: Vec<InteractAction>,        // REQUEST
+    pub locations: Option<Vec<String>>,      // REQUEST
+    pub datatypes: Option<Vec<String>>,      // REQUEST
+    pub identifier: Option<String>,          // REQUEST
+    pub privileges: Option<Vec<String>>,     // REQUEST
+    pub label: Option<String>,               // REQUEST
+    pub flags: Option<Vec<AccessTokenFlag>>, // REQUEST
 }
 
 impl IntoOverwriteActive<ActiveModel> for Model {
