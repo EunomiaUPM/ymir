@@ -15,6 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod oid4vci_1_0;
 mod issuer_trait;
+pub mod oid4vci_1_0;
 pub use issuer_trait::IssuerTrait;

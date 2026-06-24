@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-use std::str::FromStr;
 use super::{TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus};
 use crate::types::vcs::{VcIssuer, VcType};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VcDocument {

@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use sea_orm::FromJsonQueryResult;
+use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use sea_orm::FromJsonQueryResult;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
 pub enum VcType {
@@ -70,7 +70,7 @@ impl Display for VcType {
             VcType::LegalPerson => "gx:LegalPerson",
             VcType::TermsAndConditions => "gx:TermsAndConditions",
             VcType::GxLabel => "gx:LabelCredential",
-            VcType::Other(other) => { other }
+            VcType::Other(other) => other,
         };
 
         write!(f, "{s}")

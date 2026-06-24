@@ -15,11 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::fmt::Display;
-use std::str::FromStr;
+use crate::errors::{BadFormat, Errors};
 use sea_orm::{DeriveActiveEnum, EnumIter};
 use serde::{Deserialize, Serialize};
-use crate::errors::{BadFormat, Errors};
+use std::fmt::Display;
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Eq, PartialEq, DeriveActiveEnum, EnumIter, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "participant_type")]
@@ -35,9 +35,15 @@ pub enum ParticipantType {
 impl Display for ParticipantType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParticipantType::Agent => { write!(f, "Agent") }
-            ParticipantType::Authority => { write!(f, "Authority") }
-            ParticipantType::All => { write!(f, "All") }
+            ParticipantType::Agent => {
+                write!(f, "Agent")
+            }
+            ParticipantType::Authority => {
+                write!(f, "Authority")
+            }
+            ParticipantType::All => {
+                write!(f, "All")
+            }
         }
     }
 }
@@ -50,7 +56,11 @@ impl FromStr for ParticipantType {
             "agent" | "agents" => Ok(ParticipantType::Agent),
             "authority" | "authorities" => Ok(ParticipantType::Authority),
             "all" => Ok(ParticipantType::All),
-            other => Err(Errors::format(BadFormat::Received, format!("invalid participant type {other}"), None)),
+            other => Err(Errors::format(
+                BadFormat::Received,
+                format!("invalid participant type {other}"),
+                None,
+            )),
         }
     }
 }

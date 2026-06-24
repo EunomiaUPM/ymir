@@ -15,10 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod sent;
+mod crud_repo_trait;
 pub mod received;
+pub mod sent;
 pub mod shared;
 pub mod wallet;
-mod crud_repo_trait;
 
 pub use crud_repo_trait::CrudRepoTrait;

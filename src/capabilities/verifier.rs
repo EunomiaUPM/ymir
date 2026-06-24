@@ -23,9 +23,20 @@ use crate::types::keys::Alg;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
+/// Centralized Cryptographic Verification Engine validating asset authenticity.
+///
+/// Processes incoming data boundaries by resolving internal key material anchors
+/// and evaluating structural correctness of embedded proofs or enveloped network tokens.
 pub struct Verifier;
 
 impl Verifier {
+    // ===== EMBEDDED PROOF VALIDATION =============================================================
+
+    /// Evaluates structural embedded signature suites appended under the standard JSON `"proof"` property boundary.
+    ///
+    /// # Errors
+    /// Returns an [`Errors::FormatError`] if the data object lacks valid structural proofs or
+    /// if any single evaluated data cryptographic signature step encounters mathematical verification mismatches.
     pub async fn verify_embed(value: &Value) -> Outcome<()> {
         let mut value = value.clone();
         let proof_value = value
@@ -41,6 +52,8 @@ impl Verifier {
         }
         Ok(())
     }
+
+    /// Isolated logical runner verifying an individual extracted W3C structural [`Proof`] instance.
     async fn verify_single_proof(value: &Canon, proof: &Proof) -> Outcome<()> {
         let kid = Kid::parse(&proof.verification_method)?;
         let alg = Alg::from_cryptosuite(&proof.cryptosuite);
@@ -56,6 +69,15 @@ impl Verifier {
         key.verify_bytes(value.as_ref(), &sig, &alg)
     }
 
+    // ===== ENVELOPED JWT VALIDATION ==============================================================
+
+    /// Unwraps and verifies an authoritative compact network [`Jwt`], validating cryptographic bounds and audiences.
+    ///
+    /// Automatically performs dynamic deserialization into the requested payload model structure target `T`.
+    ///
+    /// # Errors
+    /// Returns an [`Errors::FormatError`] if verification bounds break or if the token's structural
+    /// target `"aud"` vector claims fail to match the expected parameter constraint layout.
     pub async fn verify_enveloped<T: DeserializeOwned>(
         jwt: &Jwt,
         expected_aud: Option<&str>,

@@ -18,5 +18,5 @@
 mod config;
 mod service;
 
-pub use service::FafnirService;
 pub use config::FafnirConfig;
+pub use service::FafnirService;

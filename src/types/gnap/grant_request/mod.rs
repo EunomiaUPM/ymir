@@ -17,11 +17,11 @@
 
 pub mod access;
 pub mod client;
+mod credential_request;
 mod grant_request;
 mod grant_request_kind;
 pub mod interact;
 mod subject;
-mod credential_request;
 
 pub use grant_request::GrantRequest;
 pub use grant_request_kind::{GrantKind, GrantRequestKind};

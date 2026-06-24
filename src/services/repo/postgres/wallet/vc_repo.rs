@@ -15,14 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use sea_orm::{ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter};
-use sea_orm::prelude::Expr;
 use crate::data::entities::wallet::vc;
 use crate::errors::{Errors, Outcome};
-use crate::services::repo::postgres::{BasicPostgresRepo};
+use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::wallet::VcRepoTrait;
 use crate::types::vcs::{InputDescriptor, VcType};
+use async_trait::async_trait;
+use sea_orm::prelude::Expr;
+use sea_orm::{ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter};
 
 pub struct VcPostgresRepo {
     db: DatabaseConnection,
@@ -51,10 +51,7 @@ impl VcRepoTrait for VcPostgresRepo {
             .filter(vc::Column::VcType.eq(r#type))
             .all(self.db())
             .await
-            .map_err(|e| Errors::db(
-                "Unable to get participant by type",
-                Some(Box::new(e)),
-            ))
+            .map_err(|e| Errors::db("Unable to get participant by type", Some(Box::new(e))))
     }
     async fn filter_by_desc(&self, input_descriptor: &InputDescriptor) -> Outcome<Vec<vc::Model>> {
         todo!()

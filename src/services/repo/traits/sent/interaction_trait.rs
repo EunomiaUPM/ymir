@@ -15,12 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::sent::interaction::{Model, Plan};
+use crate::services::repo::traits::CrudRepoTrait;
+use async_trait::async_trait;
 
+/// Data Repository Contract for Outbound GNAP User Interaction sessions.
+///
+/// Inherits foundational CRUD layers from [`CrudRepoTrait`]. Tracks and lifecycle-manages 
+/// interactive authentication hooks (such as redirect URIs or user codes) demanded by 
+/// external Authorization Servers to complete a dynamic grant approval loop.
 #[async_trait]
-pub trait SentInteractionRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
-{
-
-}
+pub trait SentInteractionRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {}

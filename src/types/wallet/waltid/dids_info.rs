@@ -18,7 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
-pub struct DidsInfo {
+pub struct WaltIdDidsInfo {
     pub did: String,
     pub alias: String,
     pub document: String,

@@ -34,7 +34,11 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(ResourcesReqs::Type).string().not_null())
-                    .col(ColumnDef::new(ResourcesReqs::Actions).json_binary().not_null())
+                    .col(
+                        ColumnDef::new(ResourcesReqs::Actions)
+                            .json_binary()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(ResourcesReqs::Locations).json_binary())
                     .col(ColumnDef::new(ResourcesReqs::Datatypes).json_binary())
                     .col(ColumnDef::new(ResourcesReqs::Identifier).string())

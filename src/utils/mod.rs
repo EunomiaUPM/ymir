@@ -18,11 +18,11 @@
 mod client;
 mod http;
 mod parse;
-mod token;
 mod present;
+mod token;
 
 pub use client::http_client;
 pub use http::*;
 pub use parse::*;
-pub use token::*;
 pub use present::*;
+pub use token::*;

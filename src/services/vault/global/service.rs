@@ -29,8 +29,14 @@ use crate::config::traits::DatabaseConfigTrait;
 use crate::errors::Outcome;
 use crate::services::vault::VaultTrait;
 
+/// Dispatcher Enum for Vault Strategies.
+///
+/// Wraps both the production-ready HTTP engine and the local file-system sandbox
+/// under a single runtime entity, abstracting identity signing and database connection orchestrations.
 pub enum VaultService {
+    /// Production client targeting an active HashiCorp Vault cluster.
     Real(RealVaultService),
+    /// Isolated file-based implementation designed for local testing and CI/CD pipelines.
     Fake(FakeVaultService),
 }
 

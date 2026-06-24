@@ -20,12 +20,23 @@ use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::dids::DidType;
 use crate::types::keys::PublicKey;
 
+/// Key Identifier (KID) structural parser and cryptographic key resolver.
+///
+/// Dissects standard compound identification URIs containing a foundational 
+/// Decentralized Identifier (DID) and its corresponding cryptographic key verification fragment identifier.
 pub struct Kid {
     frag_id: String,
     did: Did,
 }
 
 impl Kid {
+    // ===== PARSING & CONSTRUCTION ================================================================
+
+    /// Parses a raw string slice identifier representation into a validated concrete [`Kid`] instance.
+    ///
+    /// # Errors
+    /// Returns an [`Errors::FormatError`] if the incoming payload string fails to present a trailing 
+    /// URI fragment separator character (`#`) or if the fragment itself evaluation yields empty strings.
     pub fn parse(kid: &str) -> Outcome<Kid> {
         let (did, frag_id) = kid.split_once('#').ok_or_else(|| {
             Errors::format(
@@ -49,14 +60,25 @@ impl Kid {
         })
     }
 
+    // ===== PROPERTY ACCESSORS ====================================================================
+
+    /// Resolves the baseline taxonomy scheme classification type governing the underlying inner DID.
     pub fn r#type(&self) -> DidType {
         self.did.r#type()
     }
 
+    /// Yields a reference to the parsed polymorphic decentralized identifier instance.
     pub fn did(&self) -> &Did {
         &self.did
     }
 
+    // ===== RESOLUTION WORKFLOWS ==================================================================
+
+    /// Triggers the downstream DID Document resolution pipeline to extract the target matching [`PublicKey`].
+    ///
+    /// # Errors
+    /// Returns an [`Errors::FormatError`] if the designated fragment identifier fails to match 
+    /// any verification methods listed inside the recovered canonical structural data document.
     pub async fn get_key(&self) -> Outcome<PublicKey> {
         let did_doc = self.did.resolve().await?;
 

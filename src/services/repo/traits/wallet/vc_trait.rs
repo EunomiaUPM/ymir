@@ -14,19 +14,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-use std::{format, vec};
-use async_trait::async_trait;
-use sea_orm::Condition;
-use sea_orm::prelude::Expr;
-use crate::data::entities::wallet::vc;
-use crate::services::repo::traits::CrudRepoTrait;
-use crate::data::entities::wallet::vc::{Model};
+
+use crate::data::entities::wallet::vc::Model;
 use crate::errors::Outcome;
+use crate::services::repo::traits::CrudRepoTrait;
 use crate::types::vcs::{InputDescriptor, VcType};
 
+use async_trait::async_trait;
+
+/// Data Repository Contract for Verifiable Credentials (VCs) lifecycle management.
+///
+/// Inherits foundational CRUD operations from [`CrudRepoTrait`] and supplies
+/// cryptographic matching filters to resolve verification requests within the SSI ecosystem.
 #[async_trait]
-pub trait VcRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static
-{
+pub trait VcRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {
+    // ===== EXTENDED SEMANTIC QUERIES =============================================================
+
+    /// Retrieves all stored Verifiable Credentials matching a specific schemas or contextual type.
+    ///
+    /// Useful for grouping credentials prior to rendering UI elements or compiling stats.
     async fn filter_by_type(&self, r#type: VcType) -> Outcome<Vec<Model>>;
-    async fn filter_by_desc(&self, input_descriptor: &InputDescriptor ) -> Outcome<Vec<Model>>;
+
+    /// Evaluates stored credentials against constraints declared inside a DIF Presentation Exchange structure.
+    ///
+    /// This method is crucial during OpenID4VP challenge resolutions, enabling the Wallet to scan 
+    /// fields (such as JSONPaths, issuers, or claim patterns) to determine which VCs are eligible 
+    /// to satisfy the verifier's requested evaluation criteria.
+    async fn filter_by_desc(&self, input_descriptor: &InputDescriptor) -> Outcome<Vec<Model>>;
 }

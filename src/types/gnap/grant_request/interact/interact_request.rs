@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
-use crate::data::entities::sent::interaction;
 use super::{FinishCallback, InteractStart};
+use crate::data::entities::sent::interaction;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct InteractRequest {

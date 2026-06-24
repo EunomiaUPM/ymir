@@ -15,15 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
-use crate::data::entities::sent::interaction;
-use crate::types::gnap::grant_request::credential_request::AccessCredentialRequest;
-use crate::types::vcs::{VcTypeConfig};
 use super::access::{AccessTokenRequest, AccessType, ResourceAccess};
 use super::client::Client;
 use super::grant_request_kind::GrantRequestKind;
 use super::interact::{InteractAction, InteractRequest};
 use super::subject::SubjectRequest;
+use crate::data::entities::sent::interaction;
+use crate::types::gnap::grant_request::credential_request::AccessCredentialRequest;
+use crate::types::vcs::VcTypeConfig;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GrantRequest {
@@ -54,7 +54,11 @@ impl GrantRequest {
         }
     }
 
-    pub fn new_token(client: Client, actions: Vec<InteractAction>, model: &interaction::Model) -> Self {
+    pub fn new_token(
+        client: Client,
+        actions: Vec<InteractAction>,
+        model: &interaction::Model,
+    ) -> Self {
         let access_token = AccessTokenRequest {
             access: ResourceAccess {
                 r#type: AccessType::ApiAccess,

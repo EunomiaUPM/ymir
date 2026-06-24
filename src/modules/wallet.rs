@@ -15,33 +15,42 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::Arc;
-
+use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::Outcome;
+use crate::services::HasWallet;
 use crate::types::dids::{DidBuilder, DidDocument};
 use crate::types::secrets::PemHelper;
-use crate::types::wallet::WalletInfo;
-use crate::types::wallet::waltid::{IsLinked, OidcUri};
-use crate::data::entities::wallet::{did, vc, key};
+use crate::types::wallet::{OidcUri, WalletInfo};
 use async_trait::async_trait;
-use crate::services::HasWallet;
-use crate::services::repo::traits::shared::ParticipantRepoTrait;
 
+/// Business Orchestration Module for the SSI Decentralized Wallet.
+///
+/// Serves as a high-level facade exposing unified operations for key management,
+/// DID lifecycle registration, credential inventory queries, and standard protocol interactions.
+///
+/// Automatically implements default structural routing to the underlying [`WalletTrait`] implementation.
 #[async_trait]
 pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
-    fn participant(&self) -> Arc<dyn ParticipantRepoTrait>;
+    // ===== LIFECYCLE & LINKING ===================================================================
+
+    /// Triggers an out-of-band linkage routine to anchor the wallet inside an ecosystem data space.
     async fn link(&self) -> Outcome<()> {
         self.wallet().link().await
     }
 
-    async fn is_linked(&self) -> IsLinked {
-        IsLinked::new(self.wallet().get_did().is_ok())
+    /// Asserts whether the wallet has been successfully linked and possesses an active identity context.
+    async fn is_linked(&self) -> bool {
+        self.wallet().get_did().is_ok()
     }
 
+    /// Resolves and returns the fully compliant local Decentralized Identifier (DID) Document.
     async fn get_did_doc(&self) -> Outcome<DidDocument> {
         self.wallet().get_did_doc()
     }
 
+    // ===== IDENTITY PROVISIONING & CRYPTOGRAPHY ==================================================
+
+    /// Registers a new asymmetric keypair registry within the database from a secure private PEM payload.
     async fn register_key(
         &self,
         pem_helper: PemHelper,
@@ -50,6 +59,7 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
         self.wallet().register_key(&pem_helper, alias).await
     }
 
+    /// Establishes and activates a new local DID binding it to a set of pre-registered verification keys.
     async fn register_did(
         &self,
         did_builder: DidBuilder,
@@ -61,34 +71,48 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
             .await
     }
 
+    // ===== RESOURCE PURGING / DELETIONS ==========================================================
+
+    /// Permanently removes a key reference from the database ledger.
     async fn delete_key(&self, id: &str) -> Outcome<()> {
         self.wallet().delete_key(id).await
     }
 
+    /// Permanently removes a local DID registry from the database ledger.
     async fn delete_did(&self, id: &str) -> Outcome<()> {
         self.wallet().delete_did(id).await
     }
 
+    /// Permanently purges an issued Verifiable Credential from the wallet storage.
     async fn delete_credential(&self, id: &str) -> Outcome<()> {
         self.wallet().delete_vc(id).await
     }
 
+    // ===== PROTOCOL INBOUND INTERACTIONS =========================================================
+
+    /// Processes an inbound OpenID4VCI credential offer URI to claim and store a Verifiable Credential.
     async fn process_oidc4vci(&self, payload: OidcUri) -> Outcome<()> {
         self.wallet().process_oid4vci(&payload.uri).await
     }
 
+    /// Processes an inbound OpenID4VP verifiable presentation request challenge to submit an evaluation response.
     async fn process_oidc4vp(&self, payload: OidcUri) -> Outcome<()> {
         self.wallet().process_oid4vp(&payload.uri).await
     }
 
+    // ===== AUDITING & INVENTORY ==================================================================
+
+    /// Gathers structural diagnostic metrics and settings regarding the host wallet instance.
     async fn get_wallet_info(&self) -> Outcome<WalletInfo> {
         self.wallet().get_wallet().await
     }
 
+    /// Resolves the raw string identifier of the default active identity DID (e.g. `did:key:z6M...`).
     async fn get_wallet_did(&self) -> Outcome<String> {
         Ok(self.wallet().get_did()?.id().to_string())
     }
 
+    /// Retrieves the entire historical inventory of Verifiable Credentials stored in this wallet.
     async fn get_wallet_credentials(&self) -> Outcome<Vec<vc::Model>> {
         self.wallet().retrieve_all_vcs().await
     }

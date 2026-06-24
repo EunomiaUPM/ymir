@@ -15,9 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::sent::verification::{Model, Plan};
+use crate::services::repo::traits::CrudRepoTrait;
+use async_trait::async_trait;
 
+/// Data Repository Contract for Outbound OpenID4VP Verification Challenges.
+///
+/// Inherits foundational CRUD layers from [`CrudRepoTrait`]. Manages the transactional lifecycle 
+/// of presentation requests initialized by the verifier component, serving as the state machine 
+/// to evaluate incoming Verifiable Presentations against the Presentation Exchange rules.
 #[async_trait]
 pub trait SentVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {}

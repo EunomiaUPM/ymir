@@ -15,13 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use crate::data::entities::shared::issuance;
 use crate::data::entities::shared::issuance::Model;
 use crate::errors::Outcome;
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::shared::IssuanceRepoTrait;
+use async_trait::async_trait;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 pub struct IssuancePostgresRepo {
     db: DatabaseConnection,
@@ -46,14 +46,12 @@ impl BasicPostgresRepo for IssuancePostgresRepo {
 #[async_trait]
 impl IssuanceRepoTrait for IssuancePostgresRepo {
     async fn get_by_pre_auth_code(&self, code: &str) -> Outcome<Model> {
-        let query = issuance::Entity::find()
-            .filter(issuance::Column::PreAuthCode.eq(code));
+        let query = issuance::Entity::find().filter(issuance::Column::PreAuthCode.eq(code));
 
         self.basic_filter(query, "pre_auth_code", code).await
     }
     async fn get_by_token(&self, token: &str) -> Outcome<Model> {
-        let query = issuance::Entity::find()
-            .filter(issuance::Column::Token.eq(token));
+        let query = issuance::Entity::find().filter(issuance::Column::Token.eq(token));
 
         self.basic_filter(query, "token", token).await
     }

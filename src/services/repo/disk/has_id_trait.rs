@@ -15,15 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-pub struct IsLinked {
-    is_linked: bool,
-}
-
-impl IsLinked {
-    pub fn new(is_linked: bool) -> Self {
-        Self { is_linked }
-    }
+pub trait HasId {
+    fn id(&self) -> &str;
 }

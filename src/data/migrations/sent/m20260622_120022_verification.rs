@@ -34,16 +34,48 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(SentVerifications::Uri).string().not_null())
-                    .col(ColumnDef::new(SentVerifications::Scheme).string().not_null())
-                    .col(ColumnDef::new(SentVerifications::ResponseType).string().not_null())
-                    .col(ColumnDef::new(SentVerifications::ClientId).string().not_null())
-                    .col(ColumnDef::new(SentVerifications::ResponseMode).string().not_null())
+                    .col(
+                        ColumnDef::new(SentVerifications::Scheme)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SentVerifications::ResponseType)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SentVerifications::ClientId)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SentVerifications::ResponseMode)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(SentVerifications::PdUri).string().not_null())
-                    .col(ColumnDef::new(SentVerifications::ClientIdScheme).string().not_null())
+                    .col(
+                        ColumnDef::new(SentVerifications::ClientIdScheme)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(SentVerifications::Nonce).string().not_null())
-                    .col(ColumnDef::new(SentVerifications::ResponseUri).string().not_null())
-                    .col(ColumnDef::new(SentVerifications::Status).string().not_null())
-                    .col(ColumnDef::new(SentVerifications::CreatedAt).timestamp_with_time_zone().not_null())
+                    .col(
+                        ColumnDef::new(SentVerifications::ResponseUri)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SentVerifications::Status)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SentVerifications::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(SentVerifications::EndedAt).timestamp_with_time_zone())
                     .to_owned(),
             )

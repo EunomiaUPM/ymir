@@ -15,10 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod issuance_trait;
 mod participant_trait;
 mod resource_req_trait;
-mod issuance_trait;
 
+pub use issuance_trait::IssuanceRepoTrait;
 pub use participant_trait::ParticipantRepoTrait;
 pub use resource_req_trait::ResourceReqRepoTrait;
-pub use issuance_trait::IssuanceRepoTrait;

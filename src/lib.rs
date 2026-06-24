@@ -17,11 +17,11 @@
 
 pub mod capabilities;
 pub mod config;
-pub mod modules;
 pub mod data;
 pub mod errors;
 pub mod http;
 mod macros;
+pub mod modules;
 pub mod services;
 pub mod types;
 pub mod utils;

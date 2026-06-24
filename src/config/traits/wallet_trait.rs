@@ -14,16 +14,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-
+    
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::{HostType, WalletConfig};
 use crate::types::wallet::WalletInstance;
 
+/// Shared behavior for component managers overseeing user wallet instance states.
 pub trait WalletConfigTrait {
+    // ===== EXTRACTION ANCHORS ====================================================================
+
+    /// Returns a backing reference to the root wallet configuration model.
     fn wallet_config(&self) -> &WalletConfig;
+
+    // ===== METRIC ROUTING QUERIES ================================================================
+
+    /// Computes the complete target endpoint URI route for the wallet service API surface.
     fn get_wallet_api_url(&self, host: HostType) -> String {
         self.wallet_config().api.get_host(host)
     }
+
+    /// Recovers a direct reference to the current structural runtime [`WalletInstance`].
     fn get_wallet(&self) -> &WalletInstance {
         &self.wallet_config().wallet
     }

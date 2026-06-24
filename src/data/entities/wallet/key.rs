@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use chrono::{DateTime, Utc};
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::keys::{Crv, Kty};
+use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
 use sea_orm::{ActiveValue, DeriveEntityModel};
 use serde::{Deserialize, Serialize};
@@ -55,7 +55,6 @@ impl IntoOverwriteActive<ActiveModel> for Model {
         }
     }
 }
-
 
 // impl TryInto<PrivateKey> for Model {
 //     type Error = Errors;

@@ -25,6 +25,7 @@ pub use oauth_server::*;
 pub use token_req::*;
 pub use vc_issuing::*;
 
+pub mod build_ctx;
 mod cred_config;
 mod cred_offer;
 mod cred_req;
@@ -34,4 +35,3 @@ mod issuer_metadata;
 mod oauth_server;
 mod token_req;
 mod vc_issuing;
-pub mod build_ctx;

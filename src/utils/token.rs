@@ -21,12 +21,25 @@ use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;
 use rand::Rng;
 
+// ===== CRYPTOGRAPHIC TOKEN GENERATION ============================================================
+
+/// Generates a high-entropy, 256-bit opaque security token string.
+///
+/// Collects randomness via standard local system thread sources, outputting an unpadded
+/// network-safe Base64URL serialized layout sequence.
 pub fn create_opaque_token() -> String {
-    let mut bytes = [0u8; 32]; // 256 bits
+    let mut bytes = [0u8; 32];
     rand::thread_rng().fill(&mut bytes);
     URL_SAFE_NO_PAD.encode(&bytes)
 }
 
+// ===== TEMPORAL EVALUATION ENGINE ================================================================
+
+/// Validates an asset issuance time assertion flag (`iat`) against active host machine clock parameters.
+///
+/// # Errors
+/// Returns an [`Errors::ForbiddenError`] if the token context's declared activation milestone sits
+/// inside future temporal horizons.
 pub fn is_active(iat: i64) -> Outcome<()> {
     let now = Utc::now().timestamp();
     if now >= iat {
@@ -36,6 +49,11 @@ pub fn is_active(iat: i64) -> Outcome<()> {
     }
 }
 
+/// Validates an asset absolute lifetime termination barrier flag (`exp`) against host machine clocks.
+///
+/// # Errors
+/// Returns an [`Errors::ForbiddenError`] if active network tracking indicates current milestones
+/// have drifted past expiration thresholds.
 pub fn has_expired(exp: i64) -> Outcome<()> {
     let now = Utc::now().timestamp();
     if now <= exp {

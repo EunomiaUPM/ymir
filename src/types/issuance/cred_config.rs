@@ -99,10 +99,7 @@ impl CredentialConfiguration {
             credential_metadata: None,
             format_data: FormatSpecific::JwtVcJson {
                 credential_definition: CredentialDefinition {
-                    r#type: vec![
-                        "VerifiableCredential".to_string(),
-                        vc_type.to_string(),
-                    ],
+                    r#type: vec!["VerifiableCredential".to_string(), vc_type.to_string()],
                     context: None,
                 },
             },
@@ -330,7 +327,6 @@ pub struct CredentialDefinition {
     #[serde(rename = "@context", skip_serializing_if = "Option::is_none")]
     pub context: Option<Vec<String>>,
 }
-
 
 // ─── Display ───────────────────────────────────────────────────────────────────
 

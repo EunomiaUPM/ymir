@@ -22,17 +22,28 @@ use reqwest::Response;
 use crate::errors::Outcome;
 use crate::types::http::HttpBody;
 
+/// Abstract Asynchronous HTTP Client interface.
+///
+/// Provides a unified contract for executing network petitions across data spaces,
+/// managing raw responses and isolating business logic from specific HTTP runtimes.
 #[async_trait]
 pub trait ClientTrait: Send + Sync {
+    /// Executes an HTTP GET request against the target URL.
     async fn get(&self, url: &str, headers: Option<HeaderMap>) -> Outcome<Response>;
+
+    /// Executes an HTTP POST request transmitting the specified operational payload.
     async fn post(
         &self,
         url: &str,
         headers: Option<HeaderMap>,
         body: HttpBody,
     ) -> Outcome<Response>;
+
+    /// Executes an HTTP PUT request to modify target cloud resources.
     async fn put(&self, url: &str, headers: Option<HeaderMap>, body: HttpBody)
     -> Outcome<Response>;
+
+    /// Executes an HTTP DELETE request to remove remote transactional assets.
     async fn delete(
         &self,
         url: &str,

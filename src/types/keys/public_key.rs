@@ -84,13 +84,11 @@ impl PublicKey {
     }
 
     pub fn try_from_certificate_pem(cert_pem: &str) -> Outcome<Self> {
-        let (_, pem) = parse_x509_pem(cert_pem.as_bytes()).map_err(|e| {
-            Errors::parse("Error parsing certificate", Some(Box::new(e)))
-        })?;
+        let (_, pem) = parse_x509_pem(cert_pem.as_bytes())
+            .map_err(|e| Errors::parse("Error parsing certificate", Some(Box::new(e))))?;
 
-        let (_, cert) = X509Certificate::from_der(&pem.contents).map_err(|e| {
-            Errors::parse("Invalid Certificate Structure", Some(Box::new(e)))
-        })?;
+        let (_, cert) = X509Certificate::from_der(&pem.contents)
+            .map_err(|e| Errors::parse("Invalid Certificate Structure", Some(Box::new(e))))?;
 
         Self::try_from_pkcs8_der(cert.public_key().raw)
     }

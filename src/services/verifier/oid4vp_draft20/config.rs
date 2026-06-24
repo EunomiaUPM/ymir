@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::{HostsConfigTrait};
-use crate::config::types::{CommonHostsConfig};
+use crate::config::traits::HostsConfigTrait;
+use crate::config::types::CommonHostsConfig;
 use crate::types::vcs::VcType;
 
 pub struct VerifierConfig {
@@ -26,11 +26,7 @@ pub struct VerifierConfig {
 }
 
 impl VerifierConfig {
-    pub fn new(
-        hosts: CommonHostsConfig,
-        api_path: String,
-        requested_vcs: Vec<VcType>,
-    ) -> Self {
+    pub fn new(hosts: CommonHostsConfig, api_path: String, requested_vcs: Vec<VcType>) -> Self {
         Self {
             hosts,
             api_path,
@@ -51,6 +47,5 @@ impl HostsConfigTrait for VerifierConfig {
         &self.hosts
     }
 }
-
 
 impl VerifierConfig {}

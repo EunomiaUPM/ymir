@@ -15,14 +15,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::Outcome;
+use crate::services::repo::traits::CrudRepoTrait;
+use async_trait::async_trait;
 
+/// Data Repository Contract for Received OpenID4VP Presentation Requests.
+///
+/// Tracks verification requests received from external Verifiers, storing session states
+/// while the local wallet processes and constructs the target Verifiable Presentation response.
 #[async_trait]
-pub trait RecvVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
-{
-    // async fn end(&self, id: &str) -> Outcome<()>;
+pub trait RecvVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
+    /// Resolves an active inbound verification session via its OAuth2/OIDC cross-network `state` parameter.
+    ///
+    /// Essential for securely mapping incoming token/presentation callback handshakes
+    /// back to the initial authorization transactional context.
     async fn get_by_state(&self, state: &str) -> Outcome<Model>;
 }

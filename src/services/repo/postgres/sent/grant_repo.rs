@@ -52,9 +52,6 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
             .filter(grant::Column::Kind.eq(kind))
             .all(self.db())
             .await
-            .map_err(|e| Errors::db(
-                "Unable to get grants by kind",
-                Some(Box::new(e)),
-            ))
+            .map_err(|e| Errors::db("Unable to get grants by kind", Some(Box::new(e))))
     }
 }

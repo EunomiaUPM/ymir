@@ -15,9 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
 use crate::types::keys::Alg;
 use crate::types::vcs::{VcType, W3cDataModelVersion};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InputDescriptor {
@@ -59,13 +59,14 @@ impl InputDescriptor {
             W3cDataModelVersion::V1 => vec!["$.vc.type".to_string()],
             W3cDataModelVersion::V2 => vec!["$.type".to_string()],
         };
-        let supported_alg: Vec<String> = Alg::supported().into_iter().map(|s| s.to_string()).collect();
+        let supported_alg: Vec<String> = Alg::supported()
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect();
         InputDescriptor {
             id: vc_type.to_string(),
             format: InputDescriptorFormat {
-                jwt_vc_json: InputDescriptorFormatJWTJson {
-                    alg: supported_alg,
-                },
+                jwt_vc_json: InputDescriptorFormatJWTJson { alg: supported_alg },
             },
             constraints: InputDescriptorConstraints {
                 fields: vec![InputDescriptorConstraintsFields {

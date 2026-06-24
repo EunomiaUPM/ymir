@@ -15,15 +15,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use sea_orm::sea_query::OnConflict;
-use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::data::entities::shared::participant;
 use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::BasicPostgresRepo;
+use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::services::repo::traits::shared::ParticipantRepoTrait;
 use crate::types::participants::ParticipantType;
+use async_trait::async_trait;
+use sea_orm::sea_query::OnConflict;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 pub struct ParticipantPostgresRepo {
     db: DatabaseConnection,
@@ -48,26 +48,24 @@ impl BasicPostgresRepo for ParticipantPostgresRepo {
 #[async_trait]
 impl ParticipantRepoTrait for ParticipantPostgresRepo {
     async fn get_me(&self) -> Outcome<participant::Model> {
-        let query = participant::Entity::find()
-            .filter(participant::Column::IsMe.eq(true));
+        let query = participant::Entity::find().filter(participant::Column::IsMe.eq(true));
 
         self.basic_filter(query, "is_me", "true").await
     }
 
-    async fn filter_by_type(&self, participant_type: ParticipantType) -> Outcome<Vec<participant::Model>> {
+    async fn filter_by_type(
+        &self,
+        participant_type: ParticipantType,
+    ) -> Outcome<Vec<participant::Model>> {
         participant::Entity::find()
             .filter(participant::Column::ParticipantType.eq(participant_type))
             .all(self.db())
             .await
-            .map_err(|e| Errors::db(
-                "Unable to get participant by type",
-                Some(Box::new(e)),
-            ))
+            .map_err(|e| Errors::db("Unable to get participant by type", Some(Box::new(e))))
     }
 
     async fn get_by_token(&self, token: &str) -> Outcome<participant::Model> {
-        let query = participant::Entity::find()
-            .filter(participant::Column::Token.eq(token));
+        let query = participant::Entity::find().filter(participant::Column::Token.eq(token));
 
         self.basic_filter(query, "token", token).await
     }

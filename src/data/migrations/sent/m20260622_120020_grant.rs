@@ -33,9 +33,21 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(SentGrants::ParticipantId).string().not_null())
-                    .col(ColumnDef::new(SentGrants::ParticipantNick).string().not_null())
-                    .col(ColumnDef::new(SentGrants::GrantEndpoint).string().not_null())
+                    .col(
+                        ColumnDef::new(SentGrants::ParticipantId)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SentGrants::ParticipantNick)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SentGrants::GrantEndpoint)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(SentGrants::Kind).string().not_null())
                     .col(ColumnDef::new(SentGrants::Status).string().not_null())
                     .col(ColumnDef::new(SentGrants::Token).string())
@@ -43,7 +55,11 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(SentGrants::VcUri).string())
                     .col(ColumnDef::new(SentGrants::AsAssignedId).string())
                     .col(ColumnDef::new(SentGrants::Auto).boolean().not_null())
-                    .col(ColumnDef::new(SentGrants::CreatedAt).timestamp_with_time_zone().not_null())
+                    .col(
+                        ColumnDef::new(SentGrants::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(SentGrants::EndedAt).timestamp_with_time_zone())
                     .to_owned(),
             )

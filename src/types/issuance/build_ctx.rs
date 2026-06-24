@@ -58,7 +58,9 @@ impl BuildCtx {
     pub fn claim(mut self, key: impl Into<String>, value: impl Serialize) -> Self {
         let value = serde_json::to_value(value).unwrap_or(Value::Null);
 
-        let map = self.claims.as_object_mut()
+        let map = self
+            .claims
+            .as_object_mut()
             .expect("claims must be initialized as a JSON object");
 
         map.insert(key.into(), value);

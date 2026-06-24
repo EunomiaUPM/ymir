@@ -19,8 +19,9 @@ use std::sync::{Arc, RwLock};
 
 use super::config::FafnirConfig;
 use crate::capabilities::Did;
-use crate::config::traits::{DidConfigTrait, HostsConfigTrait, WalletConfigTrait};
+use crate::config::traits::{DidConfigTrait, WalletConfigTrait};
 use crate::config::types::{DidConfig, HostType};
+use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::{Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::{VaultService, VaultTrait};
@@ -28,31 +29,32 @@ use crate::services::wallet::WalletTrait;
 use crate::types::dids::{DidBuilder, DidDocument, DidService};
 use crate::types::http::HttpBody;
 use crate::types::secrets::{PemHelper, StringHelper};
-// use crate::types::wallet::waltid::{DidsInfo, OidcUri};
-use crate::types::wallet::{Identity, KeyRef, WalletInfo};
+use crate::types::wallet::{Identity, KeyRef, OidcUri, WalletInfo};
 use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers};
+
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
+use reqwest::Response;
 use serde::de::DeserializeOwned;
 use tracing::info;
-use crate::data::entities::shared::participant;
-use crate::data::entities::wallet::{did, key, vc};
-use crate::types::participants::ParticipantType;
-use crate::types::wallet::waltid::OidcUri;
 
+/// Wallet implementation backed by an external Fafnir wallet instance.
+///
+/// This service acts as a thin HTTP client over the wallet API,
+/// maintaining a local identity cache for frequently accessed
+/// DID information.
 pub struct FafnirService {
     config: FafnirConfig,
-    participant_type: ParticipantType,
     identity: RwLock<Arc<Identity>>,
     services: Vec<DidService>,
 }
 
 impl FafnirService {
+    /// Creates a new Fafnir wallet client and initializes
+    /// the local identity cache.
     pub async fn new(
         config: FafnirConfig,
         vault: Arc<VaultService>,
         services: Vec<DidService>,
-        participant_type: ParticipantType,
     ) -> Outcome<Self> {
         let (did_doc, keys) = Self::bootstrap(&config, vault, &services).await?;
         let did = Did::parse(&did_doc.id)?;
@@ -60,19 +62,20 @@ impl FafnirService {
         Ok(Self {
             config,
             identity: RwLock::new(Arc::new(identity)),
-            participant_type,
             services,
         })
     }
-}
 
-impl FafnirService {
+    /// Initializes the wallet identity.
+    ///
+    /// If a default DID already exists in the wallet it is reused.
+    /// Otherwise, a new key, DID and default identity are created.
     async fn bootstrap(
         config: &FafnirConfig,
         vault: Arc<VaultService>,
         services: &[DidService],
     ) -> Outcome<(DidDocument, KeyRef)> {
-        // =====
+        // ===== IF DATA IS SAVED IN WALLET RETRIEVE ===============================================
         if let Ok(base) = Self::fetch::<did::Model>(config, "dids", "default").await {
             return Ok((base.did_document, base.default_key));
         }
@@ -94,17 +97,7 @@ impl FafnirService {
             .post(&key_url, Some(json_headers()), HttpBody::json(&key_req)?)
             .await?;
 
-        let key_model: key::Model = if !res.status().is_success() {
-            res.parse_json().await?
-        } else {
-            return Err(Errors::wallet(
-                key_url,
-                "POST",
-                Some(res.status()),
-                "Errors saving key on wallet",
-                None,
-            ));
-        };
+        let key_model: key::Model = Self::parse_res_or_fail(res, &key_url, "POST").await?;
 
         // ===== REGISTER DID ======================================================================
         let did_builder = match config.did_config() {
@@ -138,50 +131,29 @@ impl FafnirService {
             .post(&did_url, Some(json_headers()), HttpBody::json(&did_req)?)
             .await?;
 
-        let did_model: did::Model = if res.status().is_success() {
-            res.parse_json().await?
-        } else {
-            return Err(Errors::wallet(
-                did_url,
-                "POST",
-                Some(res.status()),
-                "Errors saving did on wallet",
-                None,
-            ));
-        };
+        let did_model: did::Model = Self::parse_res_or_fail(res, &did_url, "POST").await?;
 
         // ===== SET DEFAULT DID ===================================================================
-        let url = format!(
+        let default_did_url = format!(
             "{}/dids/{}/default",
             config.get_wallet_api_url(HostType::Http),
             did_model.id
         );
         let res = http_client()
-            .post(&url, Some(json_headers()), HttpBody::None)
+            .post(&default_did_url, Some(json_headers()), HttpBody::None)
             .await?;
 
-        if !res.status().is_success() {
-            Err(Errors::wallet(
-                url,
-                "POST",
-                Some(res.status()),
-                "Errors saving default did",
-                None,
-            ))
-        } else {
-            Ok((did_model.did_document, did_model.default_key))
-        }
+        Self::check_or_fail(res, &default_did_url, "POST")?;
+        Ok((did_model.did_document, did_model.default_key))
     }
 }
 
 #[async_trait]
 impl WalletTrait for FafnirService {
-    // IT IS ALWAYS LINKED
+    // ===== CORE WALLET STATE =====================================================================
     async fn link(&self) -> Outcome<()> {
         Ok(())
     }
-
-
 
     async fn get_wallet(&self) -> Outcome<WalletInfo> {
         let dids = self.retrieve_all_dids().await?;
@@ -192,7 +164,7 @@ impl WalletTrait for FafnirService {
             created_on: String::new(),
             added_on: String::new(),
             permission: "Administrator".to_string(),
-            dids: dids.into_iter().map(did_entry_to_info).collect(),
+            dids,
         })
     }
 
@@ -221,9 +193,7 @@ impl WalletTrait for FafnirService {
         Ok(iden.clone())
     }
 
-    // ════════════════════════ RETRIEVE FROM WALLET ════════════════════
-    //
-
+    // ===== STORAGE (READ ONLY) ===================================================================
     async fn retrieve_did(&self, id: &str) -> Outcome<did::Model> {
         Self::fetch::<did::Model>(&self.config, "dids", id).await
     }
@@ -250,7 +220,7 @@ impl WalletTrait for FafnirService {
         Self::fetch::<Vec<vc::Model>>(&self.config, "vcs", "all").await
     }
 
-    // ════════════════════════ REGISTER STUFF ══════════════════════════
+    // ===== STORAGE (MUTATIONS) ===================================================================
 
     async fn register_key(
         &self,
@@ -273,17 +243,7 @@ impl WalletTrait for FafnirService {
             .post(&key_url, Some(json_headers()), HttpBody::json(&key_req)?)
             .await?;
 
-        if res.status().is_success() {
-            res.parse_json().await
-        } else {
-            Err(Errors::wallet(
-                key_url,
-                "POST",
-                Some(res.status()),
-                "Errors saving key on wallet",
-                None,
-            ))
-        }
+        Self::parse_res_or_fail(res, &key_url, "POST").await
     }
 
     async fn register_did(
@@ -302,7 +262,7 @@ impl WalletTrait for FafnirService {
             Some(self.services.clone())
         };
         let did_req = did::Plan {
-            alias: alias.unwrap_or("default".to_string()),
+            alias: alias.unwrap_or("".to_string()),
             builder: did_builder.clone(),
             keys: keys_id,
             service: services,
@@ -311,55 +271,35 @@ impl WalletTrait for FafnirService {
             .post(&did_url, Some(json_headers()), HttpBody::json(&did_req)?)
             .await?;
 
-        if res.status().is_success() {
-            res.parse_json().await
-        } else {
-            Err(Errors::wallet(
-                did_url,
-                "POST",
-                Some(res.status()),
-                "Errors saving did on wallet",
-                None,
-            ))
-        }
+        Self::parse_res_or_fail(res, &did_url, "POST").await
     }
 
     async fn store_vc(&self, vc: String) -> Outcome<vc::Model> {
-        let did_url = format!(
+        let vc_url = format!(
             "{}/vcs/store",
             self.config.get_wallet_api_url(HostType::Http)
         );
 
-        // TODO
+        let vc = StringHelper::new(vc);
         let res = http_client()
-            .post(&did_url, Some(json_headers()), HttpBody::Raw(vc))
+            .post(&vc_url, Some(json_headers()), HttpBody::json(&vc)?)
             .await?;
 
-        if res.status().is_success() {
-            res.parse_json().await
-        } else {
-            Err(Errors::wallet(
-                did_url,
-                "POST",
-                Some(res.status()),
-                "Errors saving vc    on wallet",
-                None,
-            ))
-        }
+        Self::parse_res_or_fail(res, &vc_url, "POST").await
     }
 
     async fn set_default_did(&self, did: Did) -> Outcome<did::Model> {
         info!("FafnirService: set_default_did");
-        todo!()
+
         let all = self.retrieve_all_dids().await?;
         let target = all
             .iter()
             .find(|d| d.did == did.id())
             .ok_or_else(|| Errors::missing_resource(did.id(), "DID not stored in wallet", None))?;
-        self.set_default_did_with_id(target.id()).await
+        self.set_default_did_with_id(&target.id).await
     }
 
-    // ════════════════════════ DELETE ══════════════════════════════════
+    // ===== DELETE OPERATIONS =====================================================================
 
     async fn delete_key(&self, id: &str) -> Outcome<()> {
         self.delete("keys", id).await
@@ -371,7 +311,7 @@ impl WalletTrait for FafnirService {
         self.delete("vcs", id).await
     }
 
-    // ════════════════════════ OIDC ═════════════════════════
+    // ===== PROTOCOL HANDLING =====================================================================
 
     async fn process_oid4vci(&self, uri: &str) -> Outcome<()> {
         info!("FafnirService: process_oid4vci({})", uri);
@@ -385,17 +325,8 @@ impl WalletTrait for FafnirService {
                 })?,
             )
             .await?;
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            Err(Errors::wallet(
-                url,
-                "POST",
-                Some(res.status()),
-                "Errors processing oid4vci",
-                None,
-            ))
-        }
+
+        Self::check_or_fail(res, &url, "POST")
     }
 
     async fn process_oid4vp(&self, uri: &str) -> Outcome<()> {
@@ -411,21 +342,43 @@ impl WalletTrait for FafnirService {
             )
             .await?;
 
+        Self::check_or_fail(res, &url, "POST")
+    }
+}
+
+// ===== INTERNAL HELPERS ==========================================================================
+impl FafnirService {
+    async fn parse_res_or_fail<T: DeserializeOwned>(
+        res: Response,
+        url: &str,
+        method: &str,
+    ) -> Outcome<T> {
+        if res.status().is_success() {
+            res.parse_json().await
+        } else {
+            Err(Errors::wallet(
+                url,
+                method,
+                Some(res.status()),
+                "unexpected http status",
+                None,
+            ))
+        }
+    }
+    fn check_or_fail(res: Response, url: &str, method: &str) -> Outcome<()> {
         if res.status().is_success() {
             Ok(())
         } else {
             Err(Errors::wallet(
                 url,
-                "POST",
+                method,
                 Some(res.status()),
-                "Errors processing oid4vp",
+                "unexpected http status",
                 None,
             ))
         }
     }
-}
 
-impl FafnirService {
     async fn fetch<T: DeserializeOwned>(
         config: &FafnirConfig,
         resource: &str,
@@ -438,17 +391,8 @@ impl FafnirService {
             id
         );
         let res = http_client().get(&url, Some(json_headers())).await?;
-        if res.status().is_success() {
-            res.parse_json().await
-        } else {
-            Err(Errors::wallet(
-                url,
-                "GET",
-                Some(res.status()),
-                format!("Error fetching {resource}/{id}"),
-                None,
-            ))
-        }
+
+        Self::parse_res_or_fail(res, &url, "GET").await
     }
     async fn delete(&self, resource: &str, id: &str) -> Outcome<()> {
         let url = format!(
@@ -461,20 +405,10 @@ impl FafnirService {
             .delete(&url, Some(json_headers()), HttpBody::None)
             .await?;
 
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            Err(Errors::wallet(
-                &url,
-                "DELETE",
-                Some(res.status()),
-                format!("Error deleting {}/{}", resource, id),
-                None,
-            ))
-        }
+        Self::check_or_fail(res, &url, "DELETE")
     }
 
-    async fn set_default_did_with_id(&self, did: &str) -> Outcome<()> {
+    async fn set_default_did_with_id(&self, did: &str) -> Outcome<did::Model> {
         let url = format!(
             "{}/dids/{}/default",
             self.config.get_wallet_api_url(HostType::Http),
@@ -484,33 +418,6 @@ impl FafnirService {
             .post(&url, Some(json_headers()), HttpBody::None)
             .await?;
 
-        if !res.status().is_success() {
-            Err(Errors::wallet(
-                url,
-                "POST",
-                Some(res.status()),
-                "Errors saving default did",
-                None,
-            ))
-        } else {
-            Ok(())
-        }
-    }
-}
-
-fn did_entry_to_info(did: did::Model) -> DidsInfo {
-    let key_id = did
-        .keys
-        .iter()
-        .next()
-        .map(|k| k.internal().to_string())
-        .unwrap_or_default();
-    DidsInfo {
-        document: serde_json::to_string(&did.did_document).unwrap_or_default(),
-        did: did.did,
-        alias: did.alias,
-        key_id: key_id.to_string(),
-        default: did.default,
-        created_on: String::new(),
+        Self::parse_res_or_fail(res, &url, "POST").await
     }
 }

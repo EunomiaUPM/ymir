@@ -21,15 +21,27 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse};
 use axum::routing::get;
 
+/// HTTP API Gateway Router governing self-contained API documentation assets.
+///
+/// Serves the standardized OpenAPI 3.0/3.1 specification metadata alongside a 
+/// browser-rendered Swagger UI shell, ensuring machine-readable discovery and interactive 
+/// contract validation for external ecosystem actors.
 pub struct OpenapiRouter {
+    /// In-memory raw representation of the compiled OpenAPI json contract sheet.
     openapi: String,
 }
 
 impl OpenapiRouter {
+    /// Instantiates a new OpenAPI documentation service layer with its backing contract string.
     pub fn new(openapi: String) -> OpenapiRouter {
         OpenapiRouter { openapi }
     }
 
+    /// Provisions and registers target endpoints into a unified sub-routing architecture branch.
+    ///
+    /// # Exposed Map
+    /// * `GET /openapi.json` - Yields the raw machine-parsable JSON specification.
+    /// * `GET /openapi`      - Renders an interactive Swagger UI documentation dashboard.
     pub fn router(self) -> Router {
         Router::new()
             .route("/openapi.json", get(Self::get_json))
@@ -37,6 +49,7 @@ impl OpenapiRouter {
             .with_state(self.openapi)
     }
 
+    /// Axum endpoint handler retrieving the inner raw string asset forced as a structured JSON payload.
     async fn get_json(State(openapi): State<String>) -> impl IntoResponse {
         (
             StatusCode::OK,
@@ -45,6 +58,7 @@ impl OpenapiRouter {
         )
     }
 
+    /// Utility helper injecting the destination document route parameter inside an embedded HTML container framework.
     async fn get_swagger(route: &str) -> impl IntoResponse {
         let html = format!(
             r#"<!doctype html>

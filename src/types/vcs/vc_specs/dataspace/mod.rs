@@ -22,4 +22,3 @@ pub struct DataSpaceParticipant {
     pub id: String,
     pub nickname: String,
 }
-

@@ -20,10 +20,38 @@ use crate::errors::Outcome;
 use crate::types::vcs::VPDef;
 use async_trait::async_trait;
 
+/// Verifiable Presentation verification service.
+///
+/// Responsible for generating presentation definitions,
+/// creating verification requests and validating received
+/// VP tokens against the requested requirements.
 #[async_trait]
 pub trait VerifierTrait: Send + Sync + 'static {
+    /// Creates a new verification plan associated with a grant.
+    ///
+    /// The resulting [`Plan`] establishes the expected cryptographic audience
+    /// (the Verifier's endpoint) and the array of allowed VC types.
     fn build_vp_plan(&self, id: &str) -> Outcome<Plan>;
-    fn generate_verification_uri(&self, model: &Model) -> String;
-    fn generate_vpd(&self, ver_model: &Model) -> Outcome<VPDef>;
-    async fn verify_all(&self, ver_model: &mut Model, vp_token: &str) -> Outcome<()>;
+
+    /// Generates the wallet-facing verification URI used to
+    /// initiate the presentation flow.
+    ///
+    /// Compiles an `openid4vp://` scheme deployment utilizing `direct_post` mode
+    /// and points the wallet to the ephemeral presentation definition endpoint.
+    fn generate_verification_uri(&self, verification_model: &Model) -> String;
+
+    /// Builds the Presentation Definition describing the
+    /// credentials that must be presented.
+    ///
+    /// Follows the DIF Presentation Exchange specification to restrict
+    /// the submission to the requested types within the [`Model`].
+    fn generate_vpd(&self, verification_model: &Model) -> Outcome<VPDef>;
+
+    /// Verifies all received presentations and updates the
+    /// verification model with the validation results.
+    ///
+    /// This validates the outer VP envelope (nonce, holder signature, expiration)
+    /// as well as each nested Verifiable Credential inside the token. Updates
+    /// the mutable [`Model`] status to reflect success or failure.
+    async fn verify_all(&self, verification_model: &mut Model, vp_token: &str) -> Outcome<()>;
 }

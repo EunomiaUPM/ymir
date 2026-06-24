@@ -27,8 +27,16 @@ pub struct WaltIdConfig {
 }
 
 impl WaltIdConfig {
-    pub fn new(hosts: CommonHostsConfig, ssi_wallet_config: WalletConfig, did_config: DidConfig) -> Self {
-        Self { hosts, ssi_wallet_config, did_config }
+    pub fn new(
+        hosts: CommonHostsConfig,
+        ssi_wallet_config: WalletConfig,
+        did_config: DidConfig,
+    ) -> Self {
+        Self {
+            hosts,
+            ssi_wallet_config,
+            did_config,
+        }
     }
 }
 

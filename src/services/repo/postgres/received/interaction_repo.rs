@@ -16,7 +16,7 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::{DatabaseConnection, EntityTrait, ColumnTrait, QueryFilter};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use crate::data::entities::received::interaction;
 use crate::data::entities::received::interaction::Model;
@@ -47,8 +47,7 @@ impl BasicPostgresRepo for RecvInteractionPostgresRepo {
 #[async_trait]
 impl RecvInteractionRepoTrait for RecvInteractionPostgresRepo {
     async fn get_by_cont_id(&self, cont_id: &str) -> Outcome<Model> {
-        let query = interaction::Entity::find()
-            .filter(interaction::Column::ContinueId.eq(cont_id));
+        let query = interaction::Entity::find().filter(interaction::Column::ContinueId.eq(cont_id));
 
         self.basic_filter(query, "cont_id", cont_id).await
     }

@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use crate::data::entities::shared::resource_req;
 use crate::types::gnap::grant_request::access::{AccessTokenFlag, ResourceAccess};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccessToken {

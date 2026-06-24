@@ -15,10 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::wallet::key::Model;
+use crate::services::repo::traits::CrudRepoTrait;
+use async_trait::async_trait;
 
+/// Data Repository Contract for Cryptographic Key Management registries.
+///
+/// Inherits comprehensive CRUD capabilities from [`CrudRepoTrait`]. This interface
+/// orchestrates the persistence of verification key metadata, asymmetric algorithm mappings,
+/// and DID fragment pointers, serving as the relational anchor for the secure cryptographic Vault.
 #[async_trait]
-pub trait KeyRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static
-{}
+pub trait KeyRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {}

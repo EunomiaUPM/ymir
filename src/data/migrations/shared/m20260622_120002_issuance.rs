@@ -35,9 +35,17 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Issuance::SubjectName).string().not_null())
                     .col(ColumnDef::new(Issuance::PreAuthCode).string().not_null())
-                    .col(ColumnDef::new(Issuance::VcTypeConfig).json_binary().not_null())
+                    .col(
+                        ColumnDef::new(Issuance::VcTypeConfig)
+                            .json_binary()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Issuance::Token).string().not_null())
-                    .col(ColumnDef::new(Issuance::TokenExpiration).big_integer().not_null())
+                    .col(
+                        ColumnDef::new(Issuance::TokenExpiration)
+                            .big_integer()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Issuance::Nonce).string().not_null())
                     .col(ColumnDef::new(Issuance::Aud).string().not_null())
                     .col(ColumnDef::new(Issuance::IssuerDid).string().not_null())

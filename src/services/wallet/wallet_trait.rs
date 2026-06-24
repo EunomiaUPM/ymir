@@ -15,14 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::Arc;
 use crate::capabilities::Did;
-use crate::errors::{Outcome};
+use crate::data::entities::wallet::{did, key, vc};
+use crate::errors::Outcome;
 use crate::types::dids::{DidBuilder, DidDocument};
 use crate::types::secrets::PemHelper;
 use crate::types::wallet::{Identity, WalletInfo};
 use async_trait::async_trait;
-use crate::data::entities::wallet::{did, key, vc};
+use std::sync::Arc;
 
 /// Wallet abstraction.
 ///
@@ -30,7 +30,6 @@ use crate::data::entities::wallet::{did, key, vc};
 /// identity management, DID/VC storage, and protocol handling (OID4VCI/OID4VP).
 #[async_trait]
 pub trait WalletTrait: Send + Sync + 'static {
-
     // ===== CORE WALLET STATE =====================================================================
 
     /// Links the wallet to its backend or runtime environment.

@@ -16,18 +16,18 @@
  */
 
 pub mod doc;
+mod vc_format;
 pub mod vc_issuer;
 pub mod vc_specs;
 mod vc_type;
-mod w3c_data_model;
-mod vc_format;
 mod vc_type_config;
+mod w3c_data_model;
 
+pub use crate::types::issuance::build_ctx::BuildCtx;
 pub use crate::types::verification::input_descriptor::InputDescriptor;
+pub use crate::types::verification::vp_def::VPDef;
+pub use vc_format::VcFormat;
 pub use vc_issuer::*;
 pub use vc_type::VcType;
-pub use crate::types::verification::vp_def::VPDef;
-pub use w3c_data_model::*;
-pub use vc_format::VcFormat;
 pub use vc_type_config::VcTypeConfig;
-pub use crate::types::issuance::build_ctx::BuildCtx;
+pub use w3c_data_model::*;

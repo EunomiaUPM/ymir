@@ -32,6 +32,11 @@ use crate::types::vcs::{VPDef, W3cDataModelVersion};
 use crate::types::verification::VerificationStatus;
 use crate::utils::{has_expired, is_active};
 
+/// Verifiable Presentation verification service backed by an OpenID4VP implementation.
+///
+/// Follows the OpenID for Verifiable Presentations (OpenID4VP) **Draft 20** specification
+/// to receive, parse, and evaluate incoming Verifiable Presentations against requirements
+/// defined via the DIF Presentation Exchange.
 pub struct VerifierService {
     config: VerifierConfig,
 }
@@ -115,7 +120,7 @@ impl VerifierTrait for VerifierService {
             }
             Ok(())
         }
-            .await;
+        .await;
 
         model.ended_at = Some(Utc::now());
         model.status = match &result {

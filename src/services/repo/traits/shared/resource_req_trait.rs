@@ -15,9 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::shared::resource_req::Model;
+use crate::services::repo::traits::CrudRepoTrait;
+use async_trait::async_trait;
 
+/// Data Repository Contract for Protected Resource Requests.
+///
+/// Inherits foundational CRUD capabilities from [`CrudRepoTrait`]. Tracks, historical logs,
+/// and updates the lifecycle state of rich authorization requests initiated by clients
+/// seeking access to transactional components or credential management subsystems.
 #[async_trait]
 pub trait ResourceReqRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {}

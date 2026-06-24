@@ -16,10 +16,10 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::{DatabaseConnection, EntityTrait, ColumnTrait, QueryFilter};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
-use crate::data::entities::received::{verification};
-use crate::errors::{Outcome};
+use crate::data::entities::received::verification;
+use crate::errors::Outcome;
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::received::RecvVerificationRepoTrait;
 
@@ -46,8 +46,7 @@ impl BasicPostgresRepo for RecvVerificationPostgresRepo {
 #[async_trait]
 impl RecvVerificationRepoTrait for RecvVerificationPostgresRepo {
     async fn get_by_state(&self, state: &str) -> Outcome<verification::Model> {
-        let query = verification::Entity::find()
-            .filter(verification::Column::State.eq(state));
+        let query = verification::Entity::find().filter(verification::Column::State.eq(state));
 
         self.basic_filter(query, "state", state).await
     }

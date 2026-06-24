@@ -32,8 +32,8 @@ use crate::services::vault::{VaultService, VaultTrait};
 use crate::types::gnap::grant_request::GrantRequestKind;
 use crate::types::gnap::grant_request::client::{Client, KeyMaterial};
 use crate::types::issuance::{
-    AuthServerMetadata, CredReqProof, CredentialRequest, DidPossession, IssuerMetadata, IssuingToken, VcCredOffer,
-    VcTransmissionOffer,
+    AuthServerMetadata, CredReqProof, CredentialRequest, DidPossession, IssuerMetadata,
+    IssuingToken, VcCredOffer, VcTransmissionOffer,
 };
 use crate::types::jwt::{Jwt, VCJwtClaims};
 use crate::types::keys::{PrivateKey, SigningCtx};
@@ -42,6 +42,11 @@ use crate::types::vcs::{BuildCtx, VcType, VcTypeConfig};
 use crate::types::wallet::Identity;
 use crate::utils::{expect_from_env, is_active};
 
+/// Core Implementation of the OpenID4VCI (v1.0) Credential Issuer Service.
+///
+/// Implements the OpenID for Verifiable Credential Issuance v1.0 specification.
+/// Backed by a configured server environment, an active decentralized Identity reference (DID/Keys),
+/// and an abstraction over an unsealed secret storage Vault.
 pub struct IssuerService {
     config: IssuerConfig,
     identity: Arc<Identity>,
@@ -49,11 +54,7 @@ pub struct IssuerService {
 }
 
 impl IssuerService {
-    pub fn new(
-        config: IssuerConfig,
-        vault: Arc<VaultService>,
-        identity: Arc<Identity>,
-    ) -> Self {
+    pub fn new(config: IssuerConfig, vault: Arc<VaultService>, identity: Arc<Identity>) -> Self {
         Self {
             config,
             vault,
@@ -127,18 +128,12 @@ impl IssuerTrait for IssuerService {
         )
     }
 
-    fn generate_issuing_uri(
-        &self,
-        offer_type: VcTransmissionOffer,
-        path: Option<&str>,
-    ) -> Outcome<String> {
-        let path = path.unwrap_or("issuer");
+    fn generate_issuing_uri(&self, offer_type: VcTransmissionOffer) -> Outcome<String> {
         let api_path = self.config.get_api_path();
         let host = format!(
-            "{}{}/{}",
+            "{}{}/issuer",
             self.config.get_host(HostType::Http),
             api_path,
-            path
         );
 
         match offer_type {
@@ -168,13 +163,13 @@ impl IssuerTrait for IssuerService {
         }
     }
 
-    fn get_issuer_metadata(&self, path: Option<&str>, vcs: &[VcType]) -> IssuerMetadata {
-        let (host, api_path) = self.metadata_hosts(path);
+    fn get_issuer_metadata(&self, vcs: &[VcType]) -> IssuerMetadata {
+        let (host, api_path) = self.metadata_hosts();
         IssuerMetadata::new(&host, &api_path, vcs)
     }
 
-    fn get_oauth_server_data(&self, path: Option<&str>) -> AuthServerMetadata {
-        let (host, api_path) = self.metadata_hosts(path);
+    fn get_oauth_server_data(&self) -> AuthServerMetadata {
+        let (host, api_path) = self.metadata_hosts();
         AuthServerMetadata::new(&host, &api_path)
     }
 
@@ -205,7 +200,7 @@ impl IssuerTrait for IssuerService {
                 None,
             )
         })?;
-        if issuance.vc_type_config.contains(&vc_config) {
+        if !issuance.vc_type_config.contains(&vc_config) {
             return Err(Errors::format(
                 BadFormat::Received,
                 "Credential config does not match",
@@ -223,7 +218,7 @@ impl IssuerTrait for IssuerService {
                     BadFormat::Received,
                     "Proof method does not match with requested one",
                     None,
-                ))?;
+                ));
             }
         };
 
@@ -255,10 +250,9 @@ impl IssuerTrait for IssuerService {
 // ===== Internal helpers ======================================================
 
 impl IssuerService {
-    fn metadata_hosts(&self, path: Option<&str>) -> (String, String) {
-        let path = path.unwrap_or("/issuer");
+    fn metadata_hosts(&self) -> (String, String) {
         let host = self.config.get_host(HostType::Http);
-        let api_path = format!("{}{}", self.config.get_api_path(), path);
+        let api_path = format!("{}/issuer", self.config.get_api_path());
         (host, api_path)
     }
 }

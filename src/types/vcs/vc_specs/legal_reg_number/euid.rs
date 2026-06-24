@@ -24,4 +24,3 @@ pub struct Euid {
     #[serde(rename = "gx:euid")]
     pub euid: String,
 }
-

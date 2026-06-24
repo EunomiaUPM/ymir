@@ -19,19 +19,18 @@ mod alg;
 mod certificate;
 mod crv;
 mod crypto_suite;
+mod key_source;
 mod kty;
 mod private_key;
 mod public_key;
 mod sig_ctx;
-mod key_source;
 
 pub use alg::Alg;
 pub use certificate::Certificate;
 pub use crv::Crv;
 pub use crypto_suite::Cryptosuite;
+pub use key_source::{DbKeySource, KeySource};
 pub use kty::Kty;
 pub use private_key::PrivateKey;
 pub use public_key::PublicKey;
 pub use sig_ctx::SigningCtx;
-pub use key_source::{KeySource, DbKeySource};
-

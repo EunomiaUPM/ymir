@@ -18,8 +18,14 @@
 use crate::services::client::ClientService;
 use std::sync::LazyLock;
 
+// ===== STATIC RUNTIME INSTANCES ==================================================================
+
+/// Centralized thread-safe network pool handling engine egress operations.
 static CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| ClientService::new(10, 10, 0));
 
+// ===== SUBSYSTEM HOOKS ===========================================================================
+
+/// Yields a static reference to the shared global [`ClientService`] management infrastructure.
 pub fn http_client() -> &'static ClientService {
     &CLIENT_SERVICE
 }

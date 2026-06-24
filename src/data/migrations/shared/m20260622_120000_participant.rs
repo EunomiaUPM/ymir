@@ -33,13 +33,29 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Participants::ParticipantNick).string().not_null())
-                    .col(ColumnDef::new(Participants::ParticipantType).string().not_null())
+                    .col(
+                        ColumnDef::new(Participants::ParticipantNick)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Participants::ParticipantType)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Participants::BaseUrl).string().not_null())
                     .col(ColumnDef::new(Participants::Token).string())
                     .col(ColumnDef::new(Participants::SavedAt).date_time().not_null())
-                    .col(ColumnDef::new(Participants::LastInteraction).date_time().not_null())
-                    .col(ColumnDef::new(Participants::ExtraFields).json_binary().not_null())
+                    .col(
+                        ColumnDef::new(Participants::LastInteraction)
+                            .date_time()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Participants::ExtraFields)
+                            .json_binary()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(Participants::IsMe).boolean().not_null())
                     .to_owned(),
             )

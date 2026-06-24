@@ -16,7 +16,7 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::{DatabaseConnection};
+use sea_orm::DatabaseConnection;
 
 use crate::data::entities::sent::interaction;
 use crate::services::repo::postgres::BasicPostgresRepo;

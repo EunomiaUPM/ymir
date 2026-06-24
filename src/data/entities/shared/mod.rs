@@ -15,6 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+pub mod issuance;
 pub mod participant;
 pub mod resource_req;
-pub mod issuance;

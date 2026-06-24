@@ -16,12 +16,11 @@
  */
 
 use std::backtrace::Backtrace;
-
 use axum::http::StatusCode;
-
 use super::{AnyError, BadFormat, ErrorInfo, Errors, MissingAction, PetitionFailure};
 
 impl Errors {
+    /// Factory constructor processing downstream network failure metrics. Maps distinct error ranges per category.
     pub fn petition(
         url: impl Into<String>,
         method: impl Into<String>,
@@ -53,6 +52,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Factory constructor managing failure boundaries occurring inside Decentralized Wallet engines.
     pub fn wallet(
         url: impl Into<String>,
         method: impl Into<String>,
@@ -73,6 +74,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Factory constructor processing operational failures under the Provider role context.
     pub fn provider(
         url: impl Into<String>,
         method: impl Into<String>,
@@ -93,9 +96,9 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn provider_grant(
-        reason: impl Into<String>,
-    ) -> Self {
+
+    /// Shorthand constructor tracking failures at the inbound Provider Grant endpoint.
+    pub fn provider_grant(reason: impl Into<String>) -> Self {
         Errors::ProviderError {
             info: ErrorInfo {
                 message: "Provider Error".to_string(),
@@ -109,6 +112,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Factory constructor processing operational failures under the Consumer role context.
     pub fn consumer(
         url: impl Into<String>,
         method: impl Into<String>,
@@ -129,6 +134,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Factory constructor tracking infrastructure or handshake failures inside external Authorization Servers.
     pub fn authority(
         url: impl Into<String>,
         method: impl Into<String>,
@@ -149,9 +156,9 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
-    pub fn authority_grant(
-        reason: impl Into<String>,
-    ) -> Self {
+
+    /// Shorthand constructor targeting transactional authorization loops at raw AS continuation endpoints.
+    pub fn authority_grant(reason: impl Into<String>) -> Self {
         Errors::AuthorityError {
             info: ErrorInfo {
                 message: "Authority Error".to_string(),
@@ -165,6 +172,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Factory constructor tracking state prerequisites or setup capabilities missing during protocol evaluations.
     pub fn missing_action(
         action: MissingAction,
         reason: impl Into<String>,
@@ -191,6 +200,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Factory constructor mapping entity isolation mismatches inside repositories.
     pub fn missing_resource(
         id: impl Into<String>,
         reason: impl Into<String>,
@@ -209,6 +220,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Factory constructor checking schema structural validation mismatches.
     pub fn format(option: BadFormat, reason: impl Into<String>, source: Option<AnyError>) -> Self {
         let (error_code, status_code) = match option {
             BadFormat::Sent => (3110, StatusCode::BAD_GATEWAY),
@@ -227,6 +240,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Standard identity validation tracking builder.
     pub fn unauthorized(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::UnauthorizedError {
             info: ErrorInfo {
@@ -240,6 +255,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Resource access privilege denial tracking builder.
     pub fn forbidden(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::ForbiddenError {
             info: ErrorInfo {
@@ -253,6 +270,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Cryptographic verify, decryption, or message tracking integrity error factory.
     pub fn security(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::SecurityError {
             info: ErrorInfo {
@@ -266,6 +285,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Standard internal database mapping tracker.
     pub fn db(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::DatabaseError {
             info: ErrorInfo {
@@ -279,6 +300,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Stubs development tracking engine constructor.
     pub fn not_impl(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::FeatureNotImplError {
             info: ErrorInfo {
@@ -292,6 +315,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Runtime application setting extraction failure constructor.
     pub fn env_var(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::EnvVarError {
             info: ErrorInfo {
@@ -305,6 +330,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Dynamic configurations operational module gating check failure builder.
     pub fn not_active(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::ModuleNotActiveError {
             info: ErrorInfo {
@@ -318,6 +345,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// File read pipeline error factory.
     pub fn read(
         path: impl Into<String>,
         reason: impl Into<String>,
@@ -336,6 +365,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// File write pipeline serialization error factory.
     pub fn write(
         path: impl Into<String>,
         reason: impl Into<String>,
@@ -354,6 +385,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Data transformations parsing evaluation step failure tracker.
     pub fn parse(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::ParseError {
             info: ErrorInfo {
@@ -367,6 +400,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Specialized validation failure factory tailored for Data Space component templates.
     pub fn validation(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         let reason = reason.into();
         Errors::ParseError {
@@ -381,6 +416,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// Hardware enclave or cryptographic Key Vault subsystem failure tracking builder.
     pub fn vault(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::VaultError {
             info: ErrorInfo {
@@ -394,6 +431,8 @@ impl Errors {
             backtrace: Backtrace::capture(),
         }
     }
+
+    /// High level irregular fallback tracking panic-equivalent entry point factory.
     pub fn crazy(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::CrazyError {
             info: ErrorInfo {

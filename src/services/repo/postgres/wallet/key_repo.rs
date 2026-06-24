@@ -15,11 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use sea_orm::{DatabaseConnection};
 use crate::data::entities::wallet::key;
-use crate::services::repo::postgres::{BasicPostgresRepo};
+use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::wallet::KeyRepoTrait;
+use async_trait::async_trait;
+use sea_orm::DatabaseConnection;
 
 pub struct KeyPostgresRepo {
     db: DatabaseConnection,

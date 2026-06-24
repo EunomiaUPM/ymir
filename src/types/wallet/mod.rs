@@ -19,14 +19,13 @@ use serde::{Deserialize, Serialize};
 
 mod identity;
 mod key_ref;
+mod oidc_uri;
 mod wallet_info;
 pub mod waltid;
 
-pub use crate::data::entities::wallet::did::*;
 pub use identity::Identity;
-pub use crate::data::entities::wallet::key::*;
 pub use key_ref::KeyRef;
-pub use crate::data::entities::wallet::vc::*;
+pub use oidc_uri::OidcUri;
 pub use wallet_info::WalletInfo;
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
@@ -35,4 +34,3 @@ pub enum WalletInstance {
     Fafnir,
     WaltId,
 }
-

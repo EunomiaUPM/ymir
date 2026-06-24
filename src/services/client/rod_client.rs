@@ -27,6 +27,11 @@ use crate::errors::{Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
 use crate::types::http::HttpBody;
 
+/// Rate-limited HTTP Client Service with exponential backoff retries.
+///
+/// Wraps a standard `reqwest::Client` inside a Tokio `Semaphore` safety shell to strictly
+/// govern outbound concurrency. Evaluates `5xx` statuses and network errors to auto-execute
+/// backoff loops without cascading crashes to identity protocols.
 pub struct ClientService {
     client: Client,
     limiter: Arc<Semaphore>,

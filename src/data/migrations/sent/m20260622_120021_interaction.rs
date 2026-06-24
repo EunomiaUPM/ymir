@@ -33,11 +33,27 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(SentInteractions::Start).json_binary().not_null())
+                    .col(
+                        ColumnDef::new(SentInteractions::Start)
+                            .json_binary()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(SentInteractions::Method).string().not_null())
-                    .col(ColumnDef::new(SentInteractions::CallbackUri).string().not_null())
-                    .col(ColumnDef::new(SentInteractions::ClientNonce).string().not_null())
-                    .col(ColumnDef::new(SentInteractions::HashMethod).string().not_null())
+                    .col(
+                        ColumnDef::new(SentInteractions::CallbackUri)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SentInteractions::ClientNonce)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SentInteractions::HashMethod)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(SentInteractions::Hints).string())
                     .col(ColumnDef::new(SentInteractions::ContinueEndpoint).string())
                     .col(ColumnDef::new(SentInteractions::ContinueToken).string())

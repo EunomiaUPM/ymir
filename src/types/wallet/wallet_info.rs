@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::types::wallet::waltid::DidsInfo;
+use crate::data::entities::wallet::did;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Clone, Debug)]
 pub struct WalletInfo {
     pub id: String,
     pub name: String,
@@ -27,5 +27,5 @@ pub struct WalletInfo {
     #[serde(rename = "addedOn")]
     pub added_on: String,
     pub permission: String, // TODO
-    pub dids: Vec<DidsInfo>,
+    pub dids: Vec<did::Model>,
 }

@@ -21,14 +21,21 @@ use serde_json::Value;
 
 use crate::config::traits::DidConfigTrait;
 
+/// Polymorphic deployment configuration tracking decentralized identifier strategies.
 #[derive(Clone, Debug)]
 pub enum DidConfig {
+    /// Pure cryptographic key derived locally bound scheme.
     Jwk,
+    /// Web host infrastructure anchored identifier scheme layout.
     Web { web_config: DidWebConfig },
+    /// Fallback variant supporting novel custom experimental schemes.
     Other(String),
 }
 
+// ===== PLUGGED SERDE ENGINE COUPLING =============================================================
+
 impl<'de> Deserialize<'de> for DidConfig {
+    /// Custom deserializer routing untyped configuration map inputs into structured variants.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -53,6 +60,7 @@ impl<'de> Deserialize<'de> for DidConfig {
 }
 
 impl Serialize for DidConfig {
+    /// Flattens variant instances into standard config-driven outbound string or object schemas.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -64,10 +72,17 @@ impl Serialize for DidConfig {
         }
     }
 }
+
+// ===== SUB-SCHEME LAYOUTS ========================================================================
+
+/// Dedicated parameters driving domain-bound `did:web` deployments.
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DidWebConfig {
+    /// Target authority domain string host location.
     pub domain: String,
+    /// Optional structured deployment directory sub-path matrix.
     pub path: Option<String>,
+    /// Custom network port exposure parameter if overriding default TLS hooks.
     pub port: Option<String>,
 }
 

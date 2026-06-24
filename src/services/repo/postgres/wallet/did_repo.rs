@@ -15,13 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use crate::data::entities::wallet::did;
 use crate::errors::Outcome;
-use crate::services::repo::postgres::{BasicPostgresRepo};
+use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::CrudRepoTrait;
 use crate::services::repo::traits::wallet::DidRepoTrait;
+use async_trait::async_trait;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 pub struct DidPostgresRepo {
     db: DatabaseConnection,
@@ -46,14 +46,12 @@ impl BasicPostgresRepo for DidPostgresRepo {
 #[async_trait]
 impl DidRepoTrait for DidPostgresRepo {
     async fn get_by_did(&self, did: &str) -> Outcome<did::Model> {
-        let query = did::Entity::find()
-            .filter(did::Column::Did.eq(did));
+        let query = did::Entity::find().filter(did::Column::Did.eq(did));
         self.basic_filter(query, "did", did).await
     }
 
     async fn get_default(&self) -> Outcome<did::Model> {
-        let query = did::Entity::find()
-            .filter(did::Column::Default.eq(true));
+        let query = did::Entity::find().filter(did::Column::Default.eq(true));
         self.basic_filter(query, "default", "true").await
     }
 

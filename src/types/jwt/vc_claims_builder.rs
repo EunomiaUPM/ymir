@@ -16,9 +16,9 @@
  */
 
 use super::{VCJwtClaims, VcJwtClaimsV1, VcJwtClaimsV2};
-use crate::utils::{Missing, Present};
 use crate::types::vcs::W3cDataModelVersion;
 use crate::types::vcs::doc::VcDocument;
+use crate::utils::{Missing, Present};
 use chrono::{DateTime, Utc};
 use std::marker::PhantomData;
 

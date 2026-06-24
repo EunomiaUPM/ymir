@@ -15,3 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 mod crud_disk_trait;
+mod has_id_trait;
+
+pub use has_id_trait::HasId;

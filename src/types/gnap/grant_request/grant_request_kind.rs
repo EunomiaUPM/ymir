@@ -15,18 +15,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
 use super::access::AccessTokenRequest;
-use sea_orm::{DeriveActiveEnum, EnumIter};
 use crate::types::gnap::grant_request::credential_request::AccessCredentialRequest;
+use sea_orm::{DeriveActiveEnum, EnumIter};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum GrantRequestKind {
-    AccessToken { access_token: AccessTokenRequest },
-    CredentialRequest { credential_request: AccessCredentialRequest },
+    AccessToken {
+        access_token: AccessTokenRequest,
+    },
+    CredentialRequest {
+        credential_request: AccessCredentialRequest,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, DeriveActiveEnum, EnumIter, Serialize, Deserialize)]

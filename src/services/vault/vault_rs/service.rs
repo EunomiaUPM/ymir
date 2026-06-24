@@ -36,6 +36,10 @@ use crate::services::vault::VaultTrait;
 use crate::types::secrets::{DbSecrets, PemHelper, StringHelper};
 use crate::utils::{expect_from_env, read, read_json};
 
+/// Production Vault service backed by HashiCorp Vault.
+///
+/// Communicates via HTTP/S using the `vaultrs` crate ecosystem. Manages active engine mounts,
+/// checks seals, and pulls raw secrets containing cryptographic material and dynamic DB configurations.
 pub struct RealVaultService {
     client: Arc<VaultClient>,
     mount: String,

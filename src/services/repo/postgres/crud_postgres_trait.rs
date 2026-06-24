@@ -24,6 +24,10 @@ use sea_orm::{
     PrimaryKeyTrait, QuerySelect, Select,
 };
 
+/// Structural Mixin for automated Sea-ORM Postgres CRUD execution.
+///
+/// Any repository containing a [`DatabaseConnection`] can implement this trait
+/// to automatically qualify for a blanket [`CrudRepoTrait`] injection, minimizing boilerplate.
 #[async_trait]
 pub trait BasicPostgresRepo: Send + Sync + 'static
 where
@@ -37,12 +41,16 @@ where
         ActiveModelTrait<Entity = Self::Entity> + ActiveModelBehavior + Send + Sync + 'static,
     <Self::Entity as EntityTrait>::PrimaryKey: PrimaryKeyTrait<ValueType = String>,
 {
+    /// Associated Sea-ORM operational entity declaration.
     type Entity: EntityTrait + Send + Sync + 'static;
+
+    /// Target Plan architecture used for insertions.
     type Plan: IntoOverwriteActive<<Self::Entity as EntityTrait>::ActiveModel>
         + Send
         + Sync
         + 'static;
 
+    /// Exposes the inner active database reference pool.
     fn db(&self) -> &DatabaseConnection;
 
     async fn basic_get_all(

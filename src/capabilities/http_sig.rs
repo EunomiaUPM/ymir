@@ -30,13 +30,16 @@ use crate::types::keys::{Alg, KeySource, PrivateKey};
 
 const MAX_CLOCK_SKEW_SECS: u64 = 30;
 
+/// HTTP Message Signatures (RFC 9421) processor tailored for GNAP security interactions.
+///
+/// Handles detached cryptographic signature generation for egress request envelopes
+/// and verification routines for incoming edge execution paths.
 pub struct HttpSig;
 
 impl HttpSig {
-    // =========================================================================
-    // SIGNING — client side
-    // =========================================================================
+    // ===== SIGNING — CLIENT SIDE =================================================================
 
+    /// Orchestrates and constructs compliant RFC 9421 cryptographic headers for outbound HTTP requests.
     pub fn build(
         key_source: &KeySource,
         priv_key: &PrivateKey,
@@ -97,10 +100,9 @@ impl HttpSig {
         Ok(headers)
     }
 
-    // =========================================================================
-    // VERIFICATION — server side
-    // =========================================================================
+    // ===== VERIFICATION — SERVER SIDE ============================================================
 
+    /// Validates an incoming HTTP perimeter boundary request against its accompanied cryptographic signatures.
     pub fn verify(
         headers: &HeaderMap,
         key_source: &KeySource,
@@ -179,10 +181,9 @@ impl HttpSig {
         key_source.verify_bytes(reconstructed_base.as_bytes(), &signature_bytes, &alg)
     }
 
-    // =========================================================================
-    // Internals
-    // =========================================================================
+    // ===== INTERNALS =============================================================================
 
+    /// Assembles the canonical verification block footprint used to compute or check signatures.
     fn build_signature_base(
         method: &str,
         url: &str,
@@ -238,6 +239,7 @@ impl HttpSig {
         (lines.join("\n"), sig_params)
     }
 
+    /// Pulls structural tracking strings out of targeted [`HeaderMap`] parameters.
     fn extract_header(headers: &HeaderMap, name: &str) -> Outcome<String> {
         headers
             .get(name)
@@ -252,6 +254,7 @@ impl HttpSig {
             })
     }
 
+    /// Extracts target parameter strings nested inside RFC 9421 signature-input envelopes.
     fn extract_sig_param(signature_input: &str, param: &str) -> Outcome<String> {
         let quoted_pattern = format!("{param}=\"");
         if let Some(start) = signature_input.find(&quoted_pattern) {
@@ -276,6 +279,7 @@ impl HttpSig {
         ))
     }
 
+    /// Evaluates internal data slices to trim framing parameters out of standard cryptographic arrays.
     fn extract_sig_value(signature_header: &str) -> Outcome<&str> {
         let start = signature_header.find("=:").ok_or_else(|| {
             Errors::security("Malformed Signature header — expected sig1=:<value>:", None)
@@ -291,6 +295,9 @@ impl HttpSig {
     }
 }
 
+// ===== MODULE LOCAL HELPER PROCEDURES ============================================================
+
+/// Pulls the dynamic host epoch runtime clock matrix.
 fn unix_now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -298,6 +305,7 @@ fn unix_now() -> u64 {
         .as_secs()
 }
 
+/// Generates alphanumeric contextual block vectors mitigating replay vectors.
 fn random_nonce_32() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
@@ -306,11 +314,13 @@ fn random_nonce_32() -> String {
         .collect()
 }
 
+/// Hashes payload text bytes to prevent tampering on distributed nodes.
 fn digest(body: &[u8]) -> String {
     let hash = Sha256::digest(body);
     format!("sha-256=:{}:", URL_SAFE_NO_PAD.encode(hash))
 }
 
+/// Rejects out-of-bounds network iterations drifting past the designated maximum configuration skew threshold.
 fn check_clock_skew(created: u64) -> Outcome<()> {
     let now = unix_now();
     if now < created || now - created > MAX_CLOCK_SKEW_SECS {

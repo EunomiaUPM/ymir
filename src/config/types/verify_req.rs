@@ -21,10 +21,14 @@ use serde::{Deserialize, Serialize};
 use crate::config::traits::VerifyReqConfigTrait;
 use crate::types::vcs::VcType;
 
+/// Verification compliance matrix specifying required credential parameters and trust anchors.
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct VerifyReqConfig {
+    /// Toggle controlling whether identity chains can anchor on public key infrastructure certificates.
     pub is_cert_allowed: bool,
+    /// Toggle specifying if structural certificate authorization skips administrative queues.
     pub auto_approve_cert: bool,
+    /// Collection of required target credential formats mapped via string parsing.
     #[serde(deserialize_with = "deserialize_vc_type_vec")]
     pub vcs_requested: Vec<VcType>,
 }
@@ -35,6 +39,9 @@ impl VerifyReqConfigTrait for VerifyReqConfig {
     }
 }
 
+// ===== MODULE LOCAL HELPER PROCEDURES ============================================================
+
+/// Deserializes a string collection into concrete taxonomy types leveraging internal [`FromStr`](std::str::FromStr) hooks.
 fn deserialize_vc_type_vec<'de, D>(deserializer: D) -> Result<Vec<VcType>, D::Error>
 where
     D: Deserializer<'de>,

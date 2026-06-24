@@ -30,6 +30,10 @@ use crate::services::vault::VaultTrait;
 use crate::types::secrets::{DbSecrets, PemHelper, StringHelper};
 use crate::utils::{expect_from_env, read, read_json, write_json};
 
+/// Sandbox Vault service backed by the local filesystem.
+///
+/// Emulates the Key-Value (KV2) behavior of a real Vault instance by translating paths
+/// into flat JSON files inside a designated development directory.
 pub struct FakeVaultService {
     path: PathBuf,
     db_path: String,

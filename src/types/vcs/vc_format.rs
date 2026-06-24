@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::impl_serde_via_str;
+use sea_orm::FromJsonQueryResult;
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use sea_orm::FromJsonQueryResult;
-use crate::impl_serde_via_str;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromJsonQueryResult)]
 pub enum VcFormat {
@@ -65,9 +65,7 @@ impl_serde_via_str!(VcFormat);
 
 impl VcFormat {
     pub fn supported() -> &'static [VcFormat] {
-        &[
-            VcFormat::JwtVcJson,
-        ]
+        &[VcFormat::JwtVcJson]
     }
     pub fn is_supported(&self) -> bool {
         Self::supported().contains(self)

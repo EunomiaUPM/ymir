@@ -15,16 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
-use crate::data::entities::received::interaction;
-use crate::data::entities::shared::resource_req;
+use super::Continuation;
 use super::credential_response::CredentialResponse;
 use super::error_code::ErrorCode;
 use super::interact::InteractResponse;
 use super::subject::SubjectResponse;
-use super::{Continuation};
+use crate::data::entities::received::interaction;
+use crate::data::entities::shared::resource_req;
 use crate::types::gnap::access_token::{AccessToken, ContinueToken};
 use crate::types::vcs::VcTypeConfig;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
@@ -62,7 +62,6 @@ pub struct ProcessingResponse {
     pub instance_id: Option<String>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ErrorResponse {
     pub error: ErrorCode,
@@ -71,8 +70,12 @@ pub struct ErrorResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum GrantResponseKind {
-    AccessToken { access_token: AccessToken },
-    CredentialResponse { credential_response: CredentialResponse },
+    AccessToken {
+        access_token: AccessToken,
+    },
+    CredentialResponse {
+        credential_response: CredentialResponse,
+    },
 }
 
 impl GrantResponse {
@@ -107,38 +110,34 @@ impl GrantResponse {
 
     pub fn pending(uri: impl Into<String>, model: &interaction::Model) -> Self {
         // BY DEFAULT IN THIS USE CASE, VERIFICATION IS DONE THROUGH OID4VC, THAT IS WHY THE REST REMAIN AS NONE
-        GrantResponse::Pending(
-            PendingResponse {
-                r#continue: Continuation {
-                    uri: model.continue_endpoint.clone(),
-                    wait: None,
-                    access_token: ContinueToken::new(model.continue_token.clone()),
-                },
-                interact: InteractResponse {
-                    oid4vp: Some(uri.into()),
-                    redirect: None,
-                    app: None,
-                    user_code: None,
-                    user_code_uri: None,
-                    finish: Some(model.as_nonce.clone()),
-                    expires_in: None,
-                },
-                instance_id: Some(model.id.clone()),
-            }
-        )
+        GrantResponse::Pending(PendingResponse {
+            r#continue: Continuation {
+                uri: model.continue_endpoint.clone(),
+                wait: None,
+                access_token: ContinueToken::new(model.continue_token.clone()),
+            },
+            interact: InteractResponse {
+                oid4vp: Some(uri.into()),
+                redirect: None,
+                app: None,
+                user_code: None,
+                user_code_uri: None,
+                finish: Some(model.as_nonce.clone()),
+                expires_in: None,
+            },
+            instance_id: Some(model.id.clone()),
+        })
     }
 
     pub fn processing(model: &interaction::Model) -> Self {
-        GrantResponse::Processing(
-            ProcessingResponse {
-                r#continue: Continuation {
-                    uri: model.continue_endpoint.clone(),
-                    wait: None,
-                    access_token: ContinueToken::new(model.continue_token.clone()),
-                },
-                instance_id: Some(model.id.clone()),
-            }
-        )
+        GrantResponse::Processing(ProcessingResponse {
+            r#continue: Continuation {
+                uri: model.continue_endpoint.clone(),
+                wait: None,
+                access_token: ContinueToken::new(model.continue_token.clone()),
+            },
+            instance_id: Some(model.id.clone()),
+        })
     }
     //
     // pub fn error(code: ErrorCode) -> Self {

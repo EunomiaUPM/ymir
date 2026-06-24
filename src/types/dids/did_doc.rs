@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-use sea_orm::FromJsonQueryResult;
 use super::{DidService, VerificationMethod};
 use crate::capabilities::Did;
 use crate::errors::Outcome;
 use crate::types::keys::PrivateKey;
 use crate::utils::StringOrArr;
+use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]

@@ -16,12 +16,12 @@
  */
 
 use crate::impl_serde_via_str;
+use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use sea_orm::FromJsonQueryResult;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct DidService {

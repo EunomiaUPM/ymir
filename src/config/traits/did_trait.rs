@@ -17,6 +17,10 @@
 
 use crate::config::types::DidConfig;
 
+/// Shared behavior for configuration models tracking ecosystem anchor identifier schemes.
 pub trait DidConfigTrait {
+    // ===== EXTRACTION ANCHORS ====================================================================
+
+    /// Returns a backing reference to the root decentralized identifier configuration model.
     fn did_config(&self) -> &DidConfig;
 }

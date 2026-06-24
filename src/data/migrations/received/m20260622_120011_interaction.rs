@@ -33,19 +33,59 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(RecvInteractions::Start).json_binary().not_null())
+                    .col(
+                        ColumnDef::new(RecvInteractions::Start)
+                            .json_binary()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvInteractions::Method).string().not_null())
-                    .col(ColumnDef::new(RecvInteractions::CallbackUri).string().not_null())
-                    .col(ColumnDef::new(RecvInteractions::KeySource).json_binary().not_null())
-                    .col(ColumnDef::new(RecvInteractions::ClientNonce).string().not_null())
-                    .col(ColumnDef::new(RecvInteractions::HashMethod).string().not_null())
+                    .col(
+                        ColumnDef::new(RecvInteractions::CallbackUri)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteractions::KeySource)
+                            .json_binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteractions::ClientNonce)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteractions::HashMethod)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvInteractions::Hints).string())
-                    .col(ColumnDef::new(RecvInteractions::ContinueEndpoint).string().not_null())
-                    .col(ColumnDef::new(RecvInteractions::ContinueId).string().not_null())
-                    .col(ColumnDef::new(RecvInteractions::ContinueToken).string().not_null())
+                    .col(
+                        ColumnDef::new(RecvInteractions::ContinueEndpoint)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteractions::ContinueId)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteractions::ContinueToken)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvInteractions::ContinueWait).big_integer())
-                    .col(ColumnDef::new(RecvInteractions::AsNonce).string().not_null())
-                    .col(ColumnDef::new(RecvInteractions::InteractRef).string().not_null())
+                    .col(
+                        ColumnDef::new(RecvInteractions::AsNonce)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvInteractions::InteractRef)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvInteractions::Hash).string().not_null())
                     .to_owned(),
             )

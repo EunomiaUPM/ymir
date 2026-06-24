@@ -15,14 +15,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use crate::services::repo::traits::CrudRepoTrait;
 use crate::data::entities::received::grant::{Model, Plan};
 use crate::errors::Outcome;
+use crate::services::repo::traits::CrudRepoTrait;
 use crate::types::gnap::grant_request::GrantKind;
+use async_trait::async_trait;
 
+/// Data Repository Contract for Inbound GNAP Grant Requests (*Received Grants*).
+///
+/// Inherits foundational CRUD layers from [`CrudRepoTrait`]. Acts as the core ledger
+/// for an Authorization Server (AS), tracking incoming authorization requests pending negotiation.
 #[async_trait]
-pub trait RecvGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
-{
+pub trait RecvGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
+    /// Filters incoming grants by their specific operational request nature ([`GrantKind`]).
     async fn get_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>>;
 }

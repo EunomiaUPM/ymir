@@ -63,11 +63,7 @@ impl IssuingToken {
     ///
     /// `refresh_token`, `scope`, and `authorization_details` are left as
     /// `None`; set them via field access if needed.
-    pub fn new(
-        token: impl Into<String>,
-        nonce: Option<String>,
-        expires_in: u32,
-    ) -> Self {
+    pub fn new(token: impl Into<String>, nonce: Option<String>, expires_in: u32) -> Self {
         let c_nonce_expires_in = nonce.as_ref().map(|_| 3600);
 
         Self {

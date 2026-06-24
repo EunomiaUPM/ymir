@@ -23,13 +23,29 @@ use crate::types::dids::{
 use crate::utils::{ResponseExt, StringOrArr, decode_url_safe_no_pad, http_client};
 use serde_json::Value;
 
+/// Decentralized Identifier (DID) polymorphic enum wrapper.
+///
+/// Dispatches execution flows for structural parsing, lifecycle attribute extraction,
+/// and cross-protocol cryptographic identifier resolution according to W3C Core 1.1 specifications.
 #[derive(Debug, Clone)]
 pub enum Did {
+    /// JSON Web Key derived self-contained identifier scheme (`did:jwk:`).
     Jwk(JwkDid),
+    /// Domain-name and internet infrastructure anchored identifier scheme (`did:web:`).
     Web(WebDid),
 }
 
 impl Did {
+    // ===== PARSING & CONSTRUCTION ================================================================
+
+    /// Parses a raw string slice input into a validated concrete [`Did`] variant.
+    ///
+    /// Automatically strips trailing verification method fragments (delimited by `#`)
+    /// before evaluating sub-scheme prefixes.
+    ///
+    /// # Errors
+    /// Returns an [`Errors::FormatError`] if the anatomy of a `did:web` path matrix is broken,
+    /// or [`Errors::FeatureNotImplError`] if the targeted sub-scheme is unsupported.
     pub fn parse(did: &str) -> Outcome<Did> {
         let did = did.split_once('#').map(|(did, _)| did).unwrap_or(did);
 
@@ -63,12 +79,17 @@ impl Did {
         }
     }
 
+    // ===== METADATA PROPERTIES ===================================================================
+
+    /// Returns a direct reference to the complete canonical identifier string.
     pub fn id(&self) -> &str {
         match self {
-            Did::Jwk(j) => &j.id(),
-            Did::Web(w) => &w.id(),
+            Did::Jwk(j) => j.id(),
+            Did::Web(w) => w.id(),
         }
     }
+
+    /// Evaluates and yields the concrete underlying taxonomy type metadata representation.
     pub fn r#type(&self) -> DidType {
         match self {
             Did::Jwk(_) => DidType::Jwk,
@@ -76,29 +97,17 @@ impl Did {
         }
     }
 
-    // pub fn create(builder: DidBuilder, keys: &[Key]) -> Outcome<Did> {
-    //     match builder {
-    //         DidBuilder::Jwk => {
-    //             let key = keys.first().ok_or_else(|| {
-    //                 Errors::format(
-    //                     BadFormat::Sent,
-    //                     "did:jwk requires at least one key",
-    //                     None,
-    //                 )
-    //             })?;
-    //             let did = key.data().to_did_jwk()?;
-    //             Did::parse_from_kid(&did)
-    //         }
-    //         DidBuilder::Web(web) => Ok(Did::Web(web)),
-    //     }
-    // }
+    // ===== RESOLUTION LIFECYCLE ==================================================================
 
+    /// Executes the complete state resolution workflow, mapping the instance into a valid W3C [`DidDocument`].
     pub async fn resolve(&self) -> Outcome<DidDocument> {
         match self {
             Did::Jwk(j) => Self::resolve_jwk(j),
             Did::Web(w) => Self::resolve_web(w).await,
         }
     }
+
+    /// Parses internal data parameters to reconstruct a self-contained `did:jwk` Document locally.
     fn resolve_jwk(did: &JwkDid) -> Outcome<DidDocument> {
         let jwk_bytes = decode_url_safe_no_pad(did.jwk())?;
 
@@ -137,6 +146,7 @@ impl Did {
         })
     }
 
+    /// Dispatches an asynchronous network outbound call to recover a remote `did:web` document.
     async fn resolve_web(did: &WebDid) -> Outcome<DidDocument> {
         let url = did.get_web_url();
 

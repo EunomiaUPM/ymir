@@ -15,10 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod issuance_repo;
 mod participant_repo;
 mod resource_req_repo;
-mod issuance_repo;
 
+pub use issuance_repo::IssuancePostgresRepo;
 pub use participant_repo::ParticipantPostgresRepo;
 pub use resource_req_repo::ResourceReqPostgresRepo;
-pub use issuance_repo::IssuancePostgresRepo;

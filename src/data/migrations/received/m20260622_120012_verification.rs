@@ -35,13 +35,29 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(RecvVerification::State).string().not_null())
                     .col(ColumnDef::new(RecvVerification::Nonce).string().not_null())
-                    .col(ColumnDef::new(RecvVerification::VcType).json_binary().not_null())
-                    .col(ColumnDef::new(RecvVerification::Audience).string().not_null())
+                    .col(
+                        ColumnDef::new(RecvVerification::VcType)
+                            .json_binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(RecvVerification::Audience)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvVerification::Holder).string())
                     .col(ColumnDef::new(RecvVerification::Vpt).string())
-                    .col(ColumnDef::new(RecvVerification::Vcs).json_binary().not_null())
+                    .col(
+                        ColumnDef::new(RecvVerification::Vcs)
+                            .json_binary()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvVerification::Status).string().not_null())
-                    .col(ColumnDef::new(RecvVerification::CreatedAt).timestamp_with_time_zone().not_null())
+                    .col(
+                        ColumnDef::new(RecvVerification::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvVerification::EndedAt).timestamp_with_time_zone())
                     .to_owned(),
             )

@@ -16,10 +16,10 @@
  */
 
 use crate::impl_serde_via_str;
+use sea_orm::FromJsonQueryResult;
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
-use sea_orm::FromJsonQueryResult;
 
 #[derive(Debug, Clone, PartialEq, Eq, FromJsonQueryResult)]
 pub enum Kty {

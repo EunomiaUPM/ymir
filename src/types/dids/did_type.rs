@@ -16,12 +16,11 @@
  */
 
 use crate::errors::Errors;
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use sea_orm::entity::prelude::*;
-
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::N(16))")]

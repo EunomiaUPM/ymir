@@ -15,11 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod verify_payload;
-mod status;
-mod vp_doc;
-pub mod vp_def;
 pub mod input_descriptor;
+mod status;
+mod verify_payload;
+pub mod vp_def;
+mod vp_doc;
 
-pub use verify_payload::VerifyPayload;
 pub use status::VerificationStatus;
+pub use verify_payload::VerifyPayload;

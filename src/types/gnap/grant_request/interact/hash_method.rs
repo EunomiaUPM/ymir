@@ -15,11 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::impl_serde_via_str;
+use sea_orm::FromJsonQueryResult;
 use std::convert::Infallible;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use sea_orm::FromJsonQueryResult;
-use crate::impl_serde_via_str;
 
 #[derive(PartialEq, Eq, Debug, Clone, FromJsonQueryResult)]
 pub enum HashMethod {

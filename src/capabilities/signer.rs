@@ -22,9 +22,19 @@ use crate::types::keys::{Alg, SigningCtx};
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde_json::Value;
 
+/// Centralized Signing Engine managing payload cryptographic proof enrichment.
+///
+/// Dispatches orchestration routines for executing both embedded W3C Data Integrity Proof
+/// assertions and enveloped JSON Web Token (JWT) marshaling signatures over dynamic data contexts.
 pub struct Signer;
 
 impl Signer {
+    // ===== EMBEDDED DATA INTEGRITY PROOFS ========================================================
+
+    /// Generates an attached compliant W3C [`Proof`] entity calculated over canonicalized buffers.
+    ///
+    /// The resulting structure encodes the computed cryptographic signature payload into a standard
+    /// Multibase Base58 string pattern prefixed with the structural literal 'z'.
     pub fn sign_embed(sig_ctx: &SigningCtx, canonical: &Canon, alg: Alg) -> Outcome<Proof> {
         let cryptosuite = sig_ctx.key().cryptosuite()?;
         let sig_bytes = sig_ctx.key().sign_bytes(canonical.as_ref(), alg)?;
@@ -39,6 +49,9 @@ impl Signer {
         })
     }
 
+    // ===== ENVELOPED JSON WEB TOKENS =============================================================
+
+    /// Encapsulates dynamic structured JSON data inside an authoritative compact cryptographic [`Jwt`] envelope.
     pub fn sign_enveloped(
         sig_ctx: &SigningCtx,
         typ: &str,

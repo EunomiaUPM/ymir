@@ -24,20 +24,20 @@ use sea_orm::{ActiveValue, DeriveEntityModel};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, DeriveEntityModel)]
-    #[sea_orm(table_name = "vcs")]
-    pub struct Model {
-        #[sea_orm(primary_key)]
-        pub id: String,
-        pub vc_body: VcBody,
-        pub vc_type: VcType,
-        pub vc_format: VcFormat,
-        pub holder_did: String,
-        pub issuer_did: String,
-        pub parsed_document: Value,
-        pub valid_until: Option<DateTime<Utc>>,
-        pub added_on: DateTime<Utc>,
-    }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, DeriveEntityModel)]
+#[sea_orm(table_name = "vcs")]
+pub struct Model {
+    #[sea_orm(primary_key)]
+    pub id: String,
+    pub vc_body: VcBody,
+    pub vc_type: VcType,
+    pub vc_format: VcFormat,
+    pub holder_did: String,
+    pub issuer_did: String,
+    pub parsed_document: Value,
+    pub valid_until: Option<DateTime<Utc>>,
+    pub added_on: DateTime<Utc>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Plan {

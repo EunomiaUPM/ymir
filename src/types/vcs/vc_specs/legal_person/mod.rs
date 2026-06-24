@@ -75,7 +75,10 @@ pub struct Address {
     #[serde(rename = "vcard:postal-code", skip_serializing_if = "Option::is_none")]
     pub postal_code: Option<String>,
     /// vCard street address. OPTIONAL.
-    #[serde(rename = "vcard:street-address", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "vcard:street-address",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub street_address: Option<String>,
 }
 

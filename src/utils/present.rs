@@ -15,5 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+// ===== TYPE-STATE PROPERTIES & MARKERS ==========================================================
+
+/// Type-state marker representing a missing mandatory parameter field inside a structural builder pipeline.
+///
+/// Prevents execution of terminal builder execution blocks by failing trait bound compilation constraints.
 pub struct Missing;
+
+/// Type-state marker representing a successfully provisioned parameter field inside a structural builder pipeline.
+///
+/// Unlocks corresponding initialization capabilities or downstream terminal verification bounds.
 pub struct Present;

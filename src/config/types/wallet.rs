@@ -21,10 +21,13 @@ use crate::config::traits::WalletConfigTrait;
 use crate::config::types::CommonHostsConfig;
 use crate::types::wallet::WalletInstance;
 
+/// Technical exposure matrix defining wallet instance characteristics and gateway endpoints.
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct WalletConfig {
+    /// Active runtime state profile tracker. Leverages internal `Default` implementations.
     #[serde(default)]
     pub wallet: WalletInstance,
+    /// Multi-transport routing descriptors dedicated to wallet network integrations.
     pub api: CommonHostsConfig,
 }
 

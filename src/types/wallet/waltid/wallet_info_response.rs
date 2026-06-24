@@ -15,8 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::DidsInfo;
-use crate::types::wallet::WalletInfo;
+use super::WaltIdDidsInfo;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -34,18 +33,30 @@ pub struct ModifiedWalletInfo {
     #[serde(rename = "addedOn")]
     pub added_on: String,
     pub permission: String, // TODO
-    pub dids: Option<Vec<DidsInfo>>,
+    pub dids: Option<Vec<WaltIdDidsInfo>>,
+}
+
+#[derive(Deserialize, Serialize, PartialEq, Clone, Debug)]
+pub struct WaltIdWalletInfo {
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "createdOn")]
+    pub created_on: String,
+    #[serde(rename = "addedOn")]
+    pub added_on: String,
+    pub permission: String, // TODO
+    pub dids: Vec<WaltIdDidsInfo>,
 }
 
 impl ModifiedWalletInfo {
-    pub fn to_normal(self) -> WalletInfo {
-        WalletInfo {
+    pub fn to_normal(self) -> WaltIdWalletInfo {
+        WaltIdWalletInfo {
             id: self.id,
             name: self.name,
             created_on: self.created_on,
             added_on: self.added_on,
             permission: self.permission,
-            dids: Vec::<DidsInfo>::new(),
+            dids: self.dids.unwrap(),
         }
     }
 }

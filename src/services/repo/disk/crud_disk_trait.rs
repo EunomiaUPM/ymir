@@ -18,15 +18,33 @@
 use async_trait::async_trait;
 use std::path::{Path, PathBuf};
 
+use super::HasId;
+use crate::errors::{Errors, Outcome};
+use crate::utils::{read_json, write_json};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use crate::errors::{Errors, Outcome};
-use crate::utils::{read_json, write_json, HasId};
 
+/// Structural Mixin for file-system-based JSON CRUD operations.
+///
+/// Emulates an ACID database table by mapping domain resource IDs directly to individual
+/// `.json` files inside a dedicated host directory.
+///
+/// # Architectural Warning (Overlapping Blanket Implementations)
+///
+/// Due to Rust's orphan rules and trait coherence limits, a generic blanket implementation
+/// (`impl<R> CrudRepoTrait for R where R: BasicDiskTrait`) overlaps with the Postgres engine implementation.
+/// Therefore, to attach this file-system CRUD capability to a concrete repository struct,
+/// **do not use a generic blanket implementation**. Instead, use a boilerplate replication macro:
+///
 #[async_trait]
-pub trait BasicDiskTrait: Send + Sync + 'static {
+pub trait _BasicDiskTrait: Send + Sync + 'static {
+    /// Target domain record serializable to a single JSON payload. Must implement [`HasId`].
     type Model: Serialize + DeserializeOwned + HasId + Send + Sync + 'static;
+
+    /// Life-cycle instantiation package that can be converted [`Into`] the final model.
     type Plan: Into<Self::Model> + Send + Sync + 'static;
+
+    /// Exposes the backing operational directory path assigned to this database table simulator.
     fn dir(&self) -> &Path;
 
     async fn basic_get_all(&self) -> Outcome<Vec<Self::Model>> {

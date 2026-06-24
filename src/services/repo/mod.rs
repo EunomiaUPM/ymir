@@ -15,6 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod disk;
 pub mod postgres;
 pub mod traits;
-mod disk;

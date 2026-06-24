@@ -33,12 +33,20 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(RecvGrants::ParticipantNick).string().not_null())
+                    .col(
+                        ColumnDef::new(RecvGrants::ParticipantNick)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvGrants::Kind).string().not_null())
                     .col(ColumnDef::new(RecvGrants::Token).string())
                     .col(ColumnDef::new(RecvGrants::VcTypeConfig).json_binary())
                     .col(ColumnDef::new(RecvGrants::Status).string().not_null())
-                    .col(ColumnDef::new(RecvGrants::CreatedAt).timestamp_with_time_zone().not_null())
+                    .col(
+                        ColumnDef::new(RecvGrants::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvGrants::EndedAt).timestamp_with_time_zone())
                     .to_owned(),
             )
