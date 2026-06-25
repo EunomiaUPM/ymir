@@ -22,7 +22,7 @@ use sha2::{Digest, Sha256};
 
 /// Subresource Integrity (SRI) hashing utility for canonical data buffers.
 ///
-/// Provides deterministic cryptographic checksum generation and verification 
+/// Provides deterministic cryptographic checksum generation and verification
 /// over canonicalized structural envelopes ([`Canon`]) using standard web-integrity layouts.
 pub struct DigestSRI;
 
@@ -43,7 +43,7 @@ impl DigestSRI {
     /// Assesses an inbound SRI metadata string pattern against a locally computed token.
     ///
     /// # Errors
-    /// Returns an [`Errors::FeatureNotImplError`] if the provided SRI string does not match the 
+    /// Returns an [`Errors::FeatureNotImplError`] if the provided SRI string does not match the
     /// required `sha256-` prefix taxonomy.
     pub fn validate_json_sri(canonical: &Canon, sri: impl Into<String>) -> Outcome<bool> {
         let sri = sri.into();

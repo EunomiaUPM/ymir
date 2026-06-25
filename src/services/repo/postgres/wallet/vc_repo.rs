@@ -54,48 +54,62 @@ impl VcRepoTrait for VcPostgresRepo {
             .map_err(|e| Errors::db("Unable to get participant by type", Some(Box::new(e))))
     }
     async fn filter_by_desc(&self, input_descriptor: &InputDescriptor) -> Outcome<Vec<vc::Model>> {
-        todo!()
-        // let mut condition = Condition::all();
-        //
-        // for field in &input_descriptor.constraints.fields {
-        //     if let Some(json_path) = field.path.first() {
-        //         let pattern = &field.filter.pattern;
-        //
-        //         // Traducimos el JSONPath a la sintaxis que entiende Postgres para JSONB
-        //         // "$.vc.type" -> 'vc' ->> 'type'
-        //         // "$.type"    ->> 'type'
-        //         let pg_json_accessor = match json_path.as_str() {
-        //             "$.vc.type" => r#""parsed_document" -> 'vc' ->> 'type'"#.to_string(),
-        //             "$.type" => r#""parsed_document" ->> 'type'"#.to_string(),
-        //             // Fallback genérico por si vienen otros campos (ej. $.credentialSubject.id)
-        //             _ => {
-        //                 // Limpieza rápida del "$." inicial para convertir paths simples
-        //                 let clean_path = json_path.trim_start_matches("$.").replace('.', "' -> '");
-        //                 // El último elemento debe extraerse como texto (->>)
-        //                 if let Some(last_dot) = clean_path.rfind("' -> '") {
-        //                     let (head, tail) = clean_path.split_at(last_dot);
-        //                     let tail_cleaned = tail.trim_start_matches("' -> '");
-        //                     format!(r#""parsed_document" -> '{}' ->> '{}'"#, head, tail_cleaned)
-        //                 } else {
-        //                     format!(r#""parsed_document" ->> '{}'"#, clean_path)
-        //                 }
-        //             }
-        //         };
-        //
-        //         // Si el patrón es una expresión regular o un tipo exacto, aplicamos el operador de Postgres.
-        //         // Usamos '~' para evaluar expresiones regulares en Postgres (comportamiento estándar de 'pattern' en Present Exchange)
-        //         let sql_inject = format!("{} ~ ?", pg_json_accessor);
-        //
-        //         condition = condition.add(Expr::cust_with_values(sql_inject, vec![pattern.into()]));
-        //     }
-        // }
-        //
-        // vc::Entity::find()
-        //     .filter(condition)
-        //     .all(self.db())
-        //     .await.map_err(|e| Errors::db(
-        //     "Unable to get vc by filter",
-        //     Some(Box::new(e)),
-        // ))
+        let mut condition = Condition::all();
+
+        for field in &input_descriptor.constraints.fields {
+            if let Some(json_path) = field.path.first() {
+                let pattern = &field.filter.pattern;
+
+                // Traducimos el JSONPath a la sintaxis que entiende Postgres para JSONB.
+                // `->>` extrae como texto; `->` navega manteniendo el tipo JSONB.
+                // Cuando el campo destino es un array JSON (ej. `type`), `->>` devuelve
+                // la representación textual del array y el operador `~` de Postgres
+                // puede buscar el patrón dentro de esa cadena.
+                let pg_json_accessor = match json_path.as_str() {
+                    "$.vc.type" => r#""parsed_document" -> 'vc' ->> 'type'"#.to_string(),
+                    "$.type" => r#""parsed_document" ->> 'type'"#.to_string(),
+                    // Fallback genérico para otros campos (ej. $.credentialSubject.id)
+                    _ => {
+                        let segments: Vec<&str> =
+                            json_path.trim_start_matches("$.").split('.').collect();
+                        match segments.as_slice() {
+                            [] => continue,
+                            [single] => {
+                                format!(r#""parsed_document" ->> '{}'"#, single)
+                            }
+                            [head @ .., last] => {
+                                let nav = head
+                                    .iter()
+                                    .map(|s| format!("-> '{}'", s))
+                                    .collect::<Vec<_>>()
+                                    .join(" ");
+                                format!(r#""parsed_document" {} ->> '{}'"#, nav, last)
+                            }
+                        }
+                    }
+                };
+
+                // Usamos el operador `~` de Postgres para evaluar el patrón como
+                // expresión regular, que es el comportamiento estándar del campo
+                // `pattern` en la especificación DIF Presentation Exchange.
+                let sql_expr = format!("{} ~ $1", pg_json_accessor);
+
+                condition = condition.add(Expr::cust_with_values(
+                    sql_expr,
+                    [sea_orm::Value::from(pattern.as_str())],
+                ));
+            }
+        }
+
+        vc::Entity::find()
+            .filter(condition)
+            .all(self.db())
+            .await
+            .map_err(|e| {
+                Errors::db(
+                    "Unable to filter VCs by input descriptor",
+                    Some(Box::new(e)),
+                )
+            })
     }
 }

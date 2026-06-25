@@ -15,7 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc};
+use tokio::sync::{RwLock};
 
 use super::config::FafnirConfig;
 use crate::capabilities::Did;
@@ -44,7 +45,7 @@ use tracing::info;
 /// DID information.
 pub struct FafnirService {
     config: FafnirConfig,
-    identity: RwLock<Arc<Identity>>,
+    identity: Arc<RwLock<Identity>>,
     services: Vec<DidService>,
 }
 
@@ -61,7 +62,7 @@ impl FafnirService {
         let identity = Identity::new(did, did_doc, keys);
         Ok(Self {
             config,
-            identity: RwLock::new(Arc::new(identity)),
+            identity: Arc::new(RwLock::new(identity)),
             services,
         })
     }
@@ -133,17 +134,6 @@ impl FafnirService {
 
         let did_model: did::Model = Self::parse_res_or_fail(res, &did_url, "POST").await?;
 
-        // ===== SET DEFAULT DID ===================================================================
-        let default_did_url = format!(
-            "{}/dids/{}/default",
-            config.get_wallet_api_url(HostType::Http),
-            did_model.id
-        );
-        let res = http_client()
-            .post(&default_did_url, Some(json_headers()), HttpBody::None)
-            .await?;
-
-        Self::check_or_fail(res, &default_did_url, "POST")?;
         Ok((did_model.did_document, did_model.default_key))
     }
 }
@@ -168,29 +158,24 @@ impl WalletTrait for FafnirService {
         })
     }
 
-    fn get_did(&self) -> Outcome<Did> {
-        let iden = self
+    async fn get_did(&self) -> Outcome<Did> {
+        let identity = self
             .identity
-            .read()
-            .map_err(|_| Errors::read("identity", "identity lock poisoned", None))?;
+            .read().await;
 
-        Ok(iden.did().clone())
+        Ok(identity.did().clone())
     }
 
-    fn get_did_doc(&self) -> Outcome<DidDocument> {
-        let iden = self
+    async fn get_did_doc(&self) -> Outcome<DidDocument> {
+        let identity = self
             .identity
-            .read()
-            .map_err(|_| Errors::read("identity", "identity lock poisoned", None))?;
-        Ok(iden.did_doc().clone())
+            .read().await;
+
+        Ok(identity.did_doc().clone())
     }
 
-    fn get_identity(&self) -> Outcome<Arc<Identity>> {
-        let iden = self
-            .identity
-            .read()
-            .map_err(|_| Errors::read("identity", "identity lock poisoned", None))?;
-        Ok(iden.clone())
+    fn get_identity(&self) -> Arc<RwLock<Identity>> {
+        self.identity.clone()
     }
 
     // ===== STORAGE (READ ONLY) ===================================================================

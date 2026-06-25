@@ -14,12 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
 use super::{DidService, VerificationMethod};
 use crate::capabilities::Did;
 use crate::errors::Outcome;
 use crate::types::keys::PrivateKey;
 use crate::utils::StringOrArr;
-use sea_orm::FromJsonQueryResult;
+use sea_orm::{FromJsonQueryResult};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
@@ -82,5 +83,20 @@ impl DidDocument {
     pub fn add_services(mut self, services: Vec<DidService>) -> Self {
         self.service = Some(services);
         self
+    }
+
+    pub fn add_key(&mut self, key: &PrivateKey, vm_frag: Option<&str>) {
+        let did = Did::parse(&self.id).unwrap(); // THE CREATION MAKES PANIC IMPOSSIBLE
+        let len = self.verification_method.len().to_string();
+        let key_frag = vm_frag.unwrap_or(&len).to_string();
+        self.verification_method
+            .push(VerificationMethod::new(&did, &key, &key_frag));
+    }
+
+    pub fn delete_key(&mut self, vm_frag: &str) {
+        let did = Did::parse(&self.id).unwrap(); // THE CREATION MAKES PANIC IMPOSSIBLE
+        let vm_id = format!("{}#{}", did.id(), vm_frag);
+        self.verification_method
+            .retain(|vm| vm.id != vm_id);
     }
 }

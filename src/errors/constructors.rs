@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::backtrace::Backtrace;
-use axum::http::StatusCode;
 use super::{AnyError, BadFormat, ErrorInfo, Errors, MissingAction, PetitionFailure};
+use axum::http::StatusCode;
+use std::backtrace::Backtrace;
 
 impl Errors {
     /// Factory constructor processing downstream network failure metrics. Maps distinct error ranges per category.

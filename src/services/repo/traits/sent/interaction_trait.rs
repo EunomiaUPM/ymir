@@ -21,8 +21,8 @@ use async_trait::async_trait;
 
 /// Data Repository Contract for Outbound GNAP User Interaction sessions.
 ///
-/// Inherits foundational CRUD layers from [`CrudRepoTrait`]. Tracks and lifecycle-manages 
-/// interactive authentication hooks (such as redirect URIs or user codes) demanded by 
+/// Inherits foundational CRUD layers from [`CrudRepoTrait`]. Tracks and lifecycle-manages
+/// interactive authentication hooks (such as redirect URIs or user codes) demanded by
 /// external Authorization Servers to complete a dynamic grant approval loop.
 #[async_trait]
 pub trait SentInteractionRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {}

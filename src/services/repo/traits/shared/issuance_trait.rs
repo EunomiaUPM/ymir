@@ -22,14 +22,13 @@ use async_trait::async_trait;
 
 /// Data Repository Contract for OpenID4VCI v1.0 Issuance Sessions.
 ///
-/// Orchestrates the persistence of active credential issuance states, tracking 
+/// Orchestrates the persistence of active credential issuance states, tracking
 /// transactional lifetimes from initialization (`Plan`) down to ephemeral token authorization evaluations (`Model`).
 #[async_trait]
 pub trait IssuanceRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
-
     /// Retrieves an issuance session using its associated pre-authorized code.
     ///
-    /// Utilized during the Pre-Authorized Code Flow handshake when a remote Wallet 
+    /// Utilized during the Pre-Authorized Code Flow handshake when a remote Wallet
     /// hits the token endpoint using a code extracted from a `Credential Offer`.
     ///
     /// # Errors
@@ -38,7 +37,7 @@ pub trait IssuanceRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static 
 
     /// Locates an active issuance transaction bound to a specific OAuth 2.0 / GNAP Access Token.
     ///
-    /// Executed at the `/credential` endpoint to guarantee that the incoming request 
+    /// Executed at the `/credential` endpoint to guarantee that the incoming request
     /// possesses authorized coverage over the requested Verifiable Credentials configuration layout.
     async fn get_by_token(&self, token: &str) -> Outcome<Model>;
 }

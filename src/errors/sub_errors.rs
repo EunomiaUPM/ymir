@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::fmt::{Display, Formatter};
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
 // =================================================================================================
 // SUB_ERRORS STRUCTS & ENUMS

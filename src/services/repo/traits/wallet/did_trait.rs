@@ -22,11 +22,10 @@ use async_trait::async_trait;
 
 /// Data Repository Contract for Decentralized Identifier (DID) records lifecycle.
 ///
-/// Inherits foundational CRUD actions from [`CrudRepoTrait`] and encapsulates 
+/// Inherits foundational CRUD actions from [`CrudRepoTrait`] and encapsulates
 /// identity-switching mechanisms and indexed DID resolution queries.
 #[async_trait]
 pub trait DidRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {
-
     /// Resolves local metadata for a complete, fully-qualified DID string.
     ///
     /// # Errors
@@ -35,13 +34,15 @@ pub trait DidRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {
 
     /// Retrieves the active or primary DID designated as the default choice for outbound operations.
     ///
-    /// This identity is typically utilized for implicit client handshakes or automated signing 
+    /// This identity is typically utilized for implicit client handshakes or automated signing
     /// contexts when no explicit identity is requested by the transaction.
     async fn get_default(&self) -> Outcome<Model>;
 
     /// Designates a specific DID record as the default primary identity for the execution context.
     ///
-    /// Implementations should guarantee that this operation updates transactional state cleanly, 
+    /// Implementations should guarantee that this operation updates transactional state cleanly,
     /// clearing any previous default flag atomically if multi-tenant constraints apply.
-    async fn set_default(&self, id: &str) -> Outcome<Model>;
+    async fn set_default_id(&self, id: &str) -> Outcome<Model>;
+    async fn set_default_by_did(&self, did: &str) -> Outcome<Model>;
+    async fn delete_by_did(&self, did: &str) -> Outcome<()>;
 }

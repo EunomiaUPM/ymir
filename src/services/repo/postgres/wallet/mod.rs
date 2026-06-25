@@ -17,3 +17,7 @@
 mod did_repo;
 mod key_repo;
 mod vc_repo;
+
+pub use did_repo::DidPostgresRepo;
+pub use key_repo::KeyPostgresRepo;
+pub use vc_repo::VcPostgresRepo;

@@ -22,7 +22,8 @@ use crate::types::dids::{DidBuilder, DidDocument};
 use crate::types::secrets::PemHelper;
 use crate::types::wallet::{Identity, WalletInfo};
 use async_trait::async_trait;
-use std::sync::Arc;
+use std::sync::{Arc};
+use tokio::sync::{RwLock};
 
 /// Wallet abstraction.
 ///
@@ -39,13 +40,13 @@ pub trait WalletTrait: Send + Sync + 'static {
     async fn get_wallet(&self) -> Outcome<WalletInfo>;
 
     /// Returns the currently active DID.
-    fn get_did(&self) -> Outcome<Did>;
+    async fn get_did(&self) -> Outcome<Did>;
 
     /// Returns the DID Document of the active identity.
-    fn get_did_doc(&self) -> Outcome<DidDocument>;
+    async fn get_did_doc(&self) -> Outcome<DidDocument>;
 
     /// Returns the wallet identity reference shared across services.
-    fn get_identity(&self) -> Outcome<Arc<Identity>>;
+    fn get_identity(&self) -> Arc<RwLock<Identity>>;
 
     // ===== STORAGE (READ ONLY) ===================================================================
 

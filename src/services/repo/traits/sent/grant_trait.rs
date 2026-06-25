@@ -23,15 +23,14 @@ use async_trait::async_trait;
 
 /// Data Repository Contract for Outbound Grant Requests (*Sent Grants*).
 ///
-/// Inherits foundational CRUD layers from [`CrudRepoTrait`]. Tracks the execution state 
-/// and polling lifecycles of grant requests sent to external Authorization Servers (AS), 
+/// Inherits foundational CRUD layers from [`CrudRepoTrait`]. Tracks the execution state
+/// and polling lifecycles of grant requests sent to external Authorization Servers (AS),
 /// serving as the client-side audit ledger for active security negotiations.
 #[async_trait]
 pub trait SentGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
-
     /// Filters and gathers sent grants matching a specific intent or operational type.
     ///
-    /// Essential for orchestrating background tasks, handling status polling loops 
+    /// Essential for orchestrating background tasks, handling status polling loops
     /// for pending interactions, or separating credential-issuance grants from standard data access tokens.
     async fn filter_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>>;
 }

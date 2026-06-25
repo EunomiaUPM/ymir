@@ -37,8 +37,8 @@ pub trait VcRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {
 
     /// Evaluates stored credentials against constraints declared inside a DIF Presentation Exchange structure.
     ///
-    /// This method is crucial during OpenID4VP challenge resolutions, enabling the Wallet to scan 
-    /// fields (such as JSONPaths, issuers, or claim patterns) to determine which VCs are eligible 
+    /// This method is crucial during OpenID4VP challenge resolutions, enabling the Wallet to scan
+    /// fields (such as JSONPaths, issuers, or claim patterns) to determine which VCs are eligible
     /// to satisfy the verifier's requested evaluation criteria.
     async fn filter_by_desc(&self, input_descriptor: &InputDescriptor) -> Outcome<Vec<Model>>;
 }

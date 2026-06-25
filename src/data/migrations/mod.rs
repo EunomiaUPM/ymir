@@ -18,3 +18,4 @@
 pub mod received;
 pub mod sent;
 pub mod shared;
+pub mod wallet;

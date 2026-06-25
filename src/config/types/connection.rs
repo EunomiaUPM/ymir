@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
 use crate::config::traits::ConnectionConfigTrait;
+use serde::{Deserialize, Serialize};
 
 /// Deployment deployment boundaries and infrastructure environment configuration tracks.
 #[derive(Deserialize, Serialize, Clone, Debug)]

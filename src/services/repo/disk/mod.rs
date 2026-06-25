@@ -14,7 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 mod crud_disk_trait;
 mod has_id_trait;
 
+pub use crud_disk_trait::BasicDiskTrait;
 pub use has_id_trait::HasId;

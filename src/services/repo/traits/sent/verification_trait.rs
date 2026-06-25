@@ -21,8 +21,8 @@ use async_trait::async_trait;
 
 /// Data Repository Contract for Outbound OpenID4VP Verification Challenges.
 ///
-/// Inherits foundational CRUD layers from [`CrudRepoTrait`]. Manages the transactional lifecycle 
-/// of presentation requests initialized by the verifier component, serving as the state machine 
+/// Inherits foundational CRUD layers from [`CrudRepoTrait`]. Manages the transactional lifecycle
+/// of presentation requests initialized by the verifier component, serving as the state machine
 /// to evaluate incoming Verifiable Presentations against the Presentation Exchange rules.
 #[async_trait]
 pub trait SentVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {}

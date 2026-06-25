@@ -23,8 +23,8 @@ use axum::routing::get;
 
 /// HTTP API Gateway Router governing self-contained API documentation assets.
 ///
-/// Serves the standardized OpenAPI 3.0/3.1 specification metadata alongside a 
-/// browser-rendered Swagger UI shell, ensuring machine-readable discovery and interactive 
+/// Serves the standardized OpenAPI 3.0/3.1 specification metadata alongside a
+/// browser-rendered Swagger UI shell, ensuring machine-readable discovery and interactive
 /// contract validation for external ecosystem actors.
 pub struct OpenapiRouter {
     /// In-memory raw representation of the compiled OpenAPI json contract sheet.

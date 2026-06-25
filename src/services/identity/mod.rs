@@ -15,20 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::traits::ApiConfigTrait;
-use serde::{Deserialize, Serialize};
+mod identity_trait;
+mod service;
 
-/// Technical exposure matrix defining versioning constraints and specification locations.
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct ApiConfig {
-    /// Canonical version identifier segment used for route dispatch structuring (e.g., "v1").
-    pub version: String,
-    /// Absolute or relative file-system track path pointing to the local OpenAPI specification sheet asset.
-    pub openapi_path: String,
-}
-
-impl ApiConfigTrait for ApiConfig {
-    fn api(&self) -> &ApiConfig {
-        self
-    }
-}
+pub use identity_trait::IdentityTrait;
+pub use service::IdentityManager;

@@ -15,7 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::Arc;
+use std::sync::{Arc};
+use tokio::sync::{RwLock};
 
 use async_trait::async_trait;
 use tracing::info;
@@ -27,7 +28,7 @@ use crate::capabilities::{Kid, Signer, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::shared::issuance;
-use crate::errors::{BadFormat, Errors, MissingAction, Outcome};
+use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::types::gnap::grant_request::GrantRequestKind;
 use crate::types::gnap::grant_request::client::{Client, KeyMaterial};
@@ -40,7 +41,7 @@ use crate::types::keys::{PrivateKey, SigningCtx};
 use crate::types::secrets::PemHelper;
 use crate::types::vcs::{BuildCtx, VcType, VcTypeConfig};
 use crate::types::wallet::Identity;
-use crate::utils::{expect_from_env, is_active};
+use crate::utils::is_active;
 
 /// Core Implementation of the OpenID4VCI (v1.0) Credential Issuer Service.
 ///
@@ -49,12 +50,12 @@ use crate::utils::{expect_from_env, is_active};
 /// and an abstraction over an unsealed secret storage Vault.
 pub struct IssuerService {
     config: IssuerConfig,
-    identity: Arc<Identity>,
+    identity: Arc<RwLock<Identity>>,
     vault: Arc<VaultService>,
 }
 
 impl IssuerService {
-    pub fn new(config: IssuerConfig, vault: Arc<VaultService>, identity: Arc<Identity>) -> Self {
+    pub fn new(config: IssuerConfig, vault: Arc<VaultService>, identity: Arc<RwLock<Identity>>) -> Self {
         Self {
             config,
             vault,
@@ -65,7 +66,7 @@ impl IssuerService {
 
 #[async_trait]
 impl IssuerTrait for IssuerService {
-    fn build_issuance_plan(
+    async fn build_issuance_plan(
         &self,
         id: &str,
         grant_request_kind: GrantRequestKind,
@@ -106,13 +107,16 @@ impl IssuerTrait for IssuerService {
 
         let build_ctx = BuildCtx::base(participant_nick, cert);
 
+        let lock = self.identity.read().await;
+        let issuer_did = lock.did().id().to_string();
+
         let issuance = issuance::Plan {
             id: id.to_string(),
             subject_name: participant_nick.to_string(),
             vc_type_config: vc_configs,
             build_ctx,
             aud,
-            issuer_did: self.identity.did().id().to_string(),
+            issuer_did,
         };
 
         Ok(issuance)
@@ -233,13 +237,14 @@ impl IssuerTrait for IssuerService {
     async fn sign_claims(&self, claims: &VCJwtClaims) -> Outcome<String> {
         info!("Issuing credential");
 
-        let key_ref = self.identity.key_ref();
-        let did = self.identity.did().clone();
+        let lock = self.identity.read().await;
+        let did = lock.did();
+        let key_ref = lock.key_ref();
 
         let pem_helper: PemHelper = self.vault.read(None, key_ref.internal()).await?;
         let key = PrivateKey::try_from(pem_helper)?;
 
-        let sig_ctx = SigningCtx::new(did, key, key_ref.fragment().to_string());
+        let sig_ctx = SigningCtx::new(did.clone(), key, key_ref.fragment().to_string());
         let claims = serde_json::to_value(claims)?;
 
         let vc_jwt = Signer::sign_enveloped(&sig_ctx, "vc+ld+json+jwt", "vc+ld+json", &claims)?;

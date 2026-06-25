@@ -15,7 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::Arc;
+use std::sync::{Arc};
+use tokio::sync::{RwLock};
 
 use async_trait::async_trait;
 
@@ -45,15 +46,15 @@ impl WalletTrait for WaltIdService {
         todo!()
     }
 
-    fn get_did(&self) -> Outcome<Did> {
+    async fn get_did(&self) -> Outcome<Did> {
         todo!()
     }
 
-    fn get_did_doc(&self) -> Outcome<DidDocument> {
+    async fn get_did_doc(&self) -> Outcome<DidDocument> {
         todo!()
     }
 
-    fn get_identity(&self) -> Outcome<Arc<Identity>> {
+    fn get_identity(&self) -> Arc<RwLock<Identity>> {
         todo!()
     }
 

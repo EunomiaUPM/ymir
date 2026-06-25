@@ -27,7 +27,6 @@ use super::{AnyError, ErrorInfo, HttpContext, MissingAction, PetitionFailure};
 #[derive(Debug)]
 pub enum Errors {
     // ===== HTTP & ECOSYSTEM CONTEXT ERRORS =======================================================
-
     /// Triggered when an outbound or inbound HTTP network request/handshake transaction fails.
     PetitionError {
         info: ErrorInfo,
@@ -71,7 +70,6 @@ pub enum Errors {
     },
 
     // ===== PROTOCOL LIFECYCLE ERRORS ============================================================
-
     /// Occurs when a mandatory GNAP or OAuth transactional action state is requested but missing.
     MissingActionError {
         info: ErrorInfo,
@@ -90,7 +88,6 @@ pub enum Errors {
     },
 
     // ===== FILESYSTEM & STORAGE IO ERRORS ========================================================
-
     /// Read file-system IO block operations failure.
     ReadError {
         info: ErrorInfo,
@@ -109,7 +106,6 @@ pub enum Errors {
     },
 
     // ===== FOUNDATIONAL SECURITY & PLATFORM BASE ERRORS ==========================================
-
     /// Data structures schema mismatch or unexpected envelope formats.
     FormatError {
         info: ErrorInfo,

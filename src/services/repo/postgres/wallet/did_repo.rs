@@ -55,12 +55,24 @@ impl DidRepoTrait for DidPostgresRepo {
         self.basic_filter(query, "default", "true").await
     }
 
-    async fn set_default(&self, id: &str) -> Outcome<did::Model> {
+    async fn set_default_id(&self, id: &str) -> Outcome<did::Model> {
         let mut def_model = self.get_default().await?;
         def_model.default = false;
         self.basic_update(def_model).await?;
         let mut def_model = self.basic_get_by_id(id).await?;
         def_model.default = true;
         self.update(def_model).await
+    }
+    async fn set_default_by_did(&self, did: &str) -> Outcome<did::Model> {
+        let mut def_model = self.get_default().await?;
+        def_model.default = false;
+        self.basic_update(def_model).await?;
+        let mut def_model = self.get_by_did(did).await?;
+        def_model.default = true;
+        self.update(def_model).await
+    }
+    async fn delete_by_did(&self, did: &str) -> Outcome<()> {
+        let model = self.get_by_did(did).await?;
+        self.basic_delete(&model.id).await
     }
 }

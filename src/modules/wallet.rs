@@ -40,12 +40,12 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
 
     /// Asserts whether the wallet has been successfully linked and possesses an active identity context.
     async fn is_linked(&self) -> bool {
-        self.wallet().get_did().is_ok()
+        self.wallet().get_did().await.is_ok()
     }
 
     /// Resolves and returns the fully compliant local Decentralized Identifier (DID) Document.
     async fn get_did_doc(&self) -> Outcome<DidDocument> {
-        self.wallet().get_did_doc()
+        self.wallet().get_did_doc().await
     }
 
     // ===== IDENTITY PROVISIONING & CRYPTOGRAPHY ==================================================
@@ -109,7 +109,7 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
 
     /// Resolves the raw string identifier of the default active identity DID (e.g. `did:key:z6M...`).
     async fn get_wallet_did(&self) -> Outcome<String> {
-        Ok(self.wallet().get_did()?.id().to_string())
+        Ok(self.wallet().get_did().await?.id().to_string())
     }
 
     /// Retrieves the entire historical inventory of Verifiable Credentials stored in this wallet.

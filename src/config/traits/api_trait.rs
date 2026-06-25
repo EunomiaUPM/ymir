@@ -31,7 +31,7 @@ pub trait ApiConfigTrait {
     /// Dispatches a synchronous file-system read operation to recover the target OpenAPI schema raw string.
     ///
     /// # Errors
-    /// Returns an [`Errors::ReadError`](crate::errors::Errors::ReadError) if the specified schema path matrix 
+    /// Returns an [`Errors::ReadError`](crate::errors::Errors::ReadError) if the specified schema path matrix
     /// cannot be resolved or accessed on the host system.
     fn get_openapi(&self) -> Outcome<String> {
         read(&self.api().openapi_path)

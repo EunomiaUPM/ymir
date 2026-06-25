@@ -20,6 +20,7 @@ use crate::services::vault::VaultService;
 use crate::services::verifier::VerifierTrait;
 use crate::services::wallet::WalletTrait;
 use std::sync::Arc;
+use crate::services::identity::IdentityTrait;
 
 /// Capability provider for the Decentralized Identity Wallet core service.
 ///
@@ -56,4 +57,13 @@ pub trait HasIssuer {
 pub trait HasVault {
     /// Returns a reference-counted pointer to the operational Vault dispatcher.
     fn vault(&self) -> Arc<VaultService>;
+}
+
+/// Capability provider for the Hot In-Memory Active Identity Manager.
+///
+/// Binds asynchronous state logic to runtime components, allowing business modules
+/// to load, mutably lock, and synchronize the active default DID state across threads.
+pub trait HasIdentity {
+    /// Returns a reference-counted pointer to the live Identity manager trait object.
+    fn identity(&self) -> Arc<dyn IdentityTrait>;
 }

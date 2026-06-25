@@ -37,7 +37,7 @@ use serde::de::DeserializeOwned;
 /// **do not use a generic blanket implementation**. Instead, use a boilerplate replication macro:
 ///
 #[async_trait]
-pub trait _BasicDiskTrait: Send + Sync + 'static {
+pub trait BasicDiskTrait: Send + Sync + 'static {
     /// Target domain record serializable to a single JSON payload. Must implement [`HasId`].
     type Model: Serialize + DeserializeOwned + HasId + Send + Sync + 'static;
 

@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
 
 use crate::config::traits::DatabaseConfigTrait;
 use crate::errors::Errors;

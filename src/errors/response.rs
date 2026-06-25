@@ -22,7 +22,7 @@ use super::Errors;
 
 /// Axum network boundary translation mapping [`Errors`] to wire-level responses.
 ///
-/// Ensures every application-level failure triggers automated downstream structured logging 
+/// Ensures every application-level failure triggers automated downstream structured logging
 /// before serializing the inner [`ErrorInfo`] to network boundaries via JSON payloads.
 impl IntoResponse for Errors {
     fn into_response(self) -> Response {
@@ -31,7 +31,7 @@ impl IntoResponse for Errors {
 
         let mut info = self.info().clone();
 
-        // Fallback boundary: guarantees client payloads always obtain precise context 
+        // Fallback boundary: guarantees client payloads always obtain precise context
         // by hoisting the inner 'reason' string if no explicit 'details' are set.
         if info.details.is_none() {
             info.details = Some(self.reason().to_string());
