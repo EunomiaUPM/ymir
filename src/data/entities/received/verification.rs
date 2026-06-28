@@ -32,6 +32,7 @@ pub struct Model {
     pub id: String, // REQUEST
     pub state: String,              // RANDOM
     pub nonce: String,              // RANDOM
+    #[sea_orm(column_type = "JsonBinary")]
     pub vc_type: Vec<VcType>,       // REQUEST
     pub audience: String,           // SEMI-RANDOM
     pub holder: Option<String>,     // RESPONSE

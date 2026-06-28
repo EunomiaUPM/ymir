@@ -31,9 +31,11 @@ pub struct Model {
     pub alias: String,
     pub r#default: bool,
     pub r#type: DidType,
+    #[sea_orm(column_type = "JsonBinary")]
     pub keys: Vec<KeyRef>,
     pub default_key: KeyRef,
     pub did_document: DidDocument,
+    #[sea_orm(column_type = "JsonBinary")]
     pub service: Option<Vec<DidService>>,
 }
 

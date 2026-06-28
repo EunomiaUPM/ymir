@@ -32,6 +32,7 @@ pub struct Model {
     pub participant_nick: String, // REQUEST
     pub kind: GrantKind,
     pub token: Option<String>, // COMPLETION
+    #[sea_orm(column_type = "JsonBinary")]
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub status: GrantStatus,             // DEFAULT
     pub created_at: DateTime<Utc>,       // DEFAULT
@@ -53,7 +54,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             participant_nick: ActiveValue::Set(self.participant_nick),
             kind: ActiveValue::Set(self.kind),
             token: ActiveValue::Set(None),
-            vc_type_config: ActiveValue::Set(None),
+            vc_type_config: ActiveValue::Set(self.vc_type_config),
             status: ActiveValue::Set(GrantStatus::Pending),
             created_at: ActiveValue::Set(Utc::now()),
             ended_at: ActiveValue::Set(None),

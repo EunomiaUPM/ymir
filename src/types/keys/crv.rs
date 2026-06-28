@@ -15,13 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::impl_serde_via_str;
-use sea_orm::FromJsonQueryResult;
+use crate::{impl_seaorm_via_str, impl_serde_via_str};
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq, Eq, FromJsonQueryResult)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Crv {
     // EC family
     P256,
@@ -74,3 +73,4 @@ impl FromStr for Crv {
 }
 
 impl_serde_via_str!(Crv);
+impl_seaorm_via_str!(Crv, 32);

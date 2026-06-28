@@ -80,9 +80,8 @@ impl DidDocument {
         Did::parse(&self.id)
     }
 
-    pub fn add_services(mut self, services: Vec<DidService>) -> Self {
+    pub fn add_services(&mut self, services: Vec<DidService>) {
         self.service = Some(services);
-        self
     }
 
     pub fn add_key(&mut self, key: &PrivateKey, vm_frag: Option<&str>) {

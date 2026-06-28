@@ -27,7 +27,6 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String,
-    pub r#default: bool,
     pub alias: String,
     pub kty: Kty,
     pub crv: Option<Crv>,
@@ -37,21 +36,18 @@ pub struct Model {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Plan {
     pub id: String,
-    pub r#default: bool,
     pub alias: String,
     pub pem: String,
 }
 
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
-        let id = Uuid::new_v4().to_string();
         ActiveModel {
-            id: ActiveValue::Set(id),
-            r#default: Default::default(),
+            id: ActiveValue::Set(self.id),
             alias: ActiveValue::Set(self.alias),
             kty: ActiveValue::Set(self.kty),
             crv: ActiveValue::Set(self.crv),
-            created_at: Default::default(),
+            created_at: ActiveValue::Set(self.created_at),
         }
     }
 }

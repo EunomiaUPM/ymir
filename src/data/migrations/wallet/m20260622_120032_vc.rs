@@ -30,7 +30,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Vcs::Id).string().not_null().primary_key())
                     .col(ColumnDef::new(Vcs::VcBody).json_binary().not_null())
                     .col(ColumnDef::new(Vcs::VcType).json_binary().not_null())
-                    .col(ColumnDef::new(Vcs::VcFormat).json_binary().not_null())
+                    .col(ColumnDef::new(Vcs::VcFormat).string_len(32).not_null())
                     .col(ColumnDef::new(Vcs::HolderDid).string().not_null())
                     .col(ColumnDef::new(Vcs::IssuerDid).string().not_null())
                     .col(ColumnDef::new(Vcs::ParsedDocument).json_binary().not_null())

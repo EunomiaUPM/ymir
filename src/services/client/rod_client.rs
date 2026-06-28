@@ -22,7 +22,7 @@ use async_trait::async_trait;
 use axum::http::HeaderMap;
 use reqwest::{Client, RequestBuilder, Response};
 use tokio::sync::Semaphore;
-
+use tracing::info;
 use crate::errors::{Errors, Outcome, PetitionFailure};
 use crate::services::client::ClientTrait;
 use crate::types::http::HttpBody;
@@ -132,6 +132,7 @@ impl ClientService {
         headers: Option<HeaderMap>,
         body: HttpBody,
     ) -> Outcome<Response> {
+        info!("Sending {} to {}", method, url);
         let mut req = self.client.request(method.clone(), url);
 
         if let Some(h) = headers {

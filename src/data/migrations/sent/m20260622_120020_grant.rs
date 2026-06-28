@@ -48,8 +48,8 @@ impl MigrationTrait for Migration {
                             .string()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(SentGrants::Kind).string().not_null())
-                    .col(ColumnDef::new(SentGrants::Status).string().not_null())
+                    .col(ColumnDef::new(SentGrants::Kind).string_len(32).not_null())
+                    .col(ColumnDef::new(SentGrants::Status).string_len(32).not_null())
                     .col(ColumnDef::new(SentGrants::Token).string())
                     .col(ColumnDef::new(SentGrants::VcTypeConfig).json_binary())
                     .col(ColumnDef::new(SentGrants::VcUri).string())

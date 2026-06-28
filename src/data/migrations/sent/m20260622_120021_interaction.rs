@@ -38,7 +38,7 @@ impl MigrationTrait for Migration {
                             .json_binary()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(SentInteractions::Method).string().not_null())
+                    .col(ColumnDef::new(SentInteractions::Method).string_len(32).not_null())
                     .col(
                         ColumnDef::new(SentInteractions::CallbackUri)
                             .string()
@@ -51,7 +51,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(SentInteractions::HashMethod)
-                            .string()
+                            .string_len(32)
                             .not_null(),
                     )
                     .col(ColumnDef::new(SentInteractions::Hints).string())

@@ -29,9 +29,10 @@ pub struct Model {
     pub id: String,
     pub subject_name: String,
     pub pre_auth_code: String,
+    #[sea_orm(column_type = "JsonBinary")]
     pub vc_type_config: Vec<VcTypeConfig>,
     pub token: String,
-    pub token_expiration: u32,
+    pub token_expiration: i64,
     pub nonce: String,
     pub aud: String,
     pub issuer_did: String,
@@ -86,7 +87,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             aud: ActiveValue::Set(self.aud),
             issuer_did: ActiveValue::Set(self.issuer_did),
             credential_id: ActiveValue::Set(self.credential_id),
-            credential: ActiveValue::Set(None),
+            credential: ActiveValue::Set(self.credential),
             build_ctx: ActiveValue::Set(self.build_ctx),
         }
     }

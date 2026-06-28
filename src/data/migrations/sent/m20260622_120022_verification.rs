@@ -68,7 +68,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(SentVerifications::Status)
-                            .string()
+                            .string_len(32)
                             .not_null(),
                     )
                     .col(

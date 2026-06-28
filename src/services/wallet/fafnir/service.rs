@@ -87,7 +87,6 @@ impl FafnirService {
 
         let key_req = key::Plan {
             id: priv_vault_path,
-            r#default: true,
             alias: "base".to_string(),
             pem: key_data.pem().to_string(),
         };
@@ -219,7 +218,6 @@ impl WalletTrait for FafnirService {
         let id = uuid::Uuid::new_v4().to_string();
         let key_req = key::Plan {
             id: format!("crypto/keys/{id}"),
-            default: false,
             alias: alias.unwrap_or("".to_string()),
             pem: pem_helper.pem().to_owned(),
         };

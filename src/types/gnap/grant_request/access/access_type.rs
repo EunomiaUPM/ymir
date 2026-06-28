@@ -15,13 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::impl_serde_via_str;
-use sea_orm::FromJsonQueryResult;
+use crate::{impl_seaorm_via_str, impl_serde_via_str};
 use std::convert::Infallible;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-#[derive(Debug, Clone, Eq, PartialEq, FromJsonQueryResult)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum AccessType {
     ApiAccess,
     VcExchange,
@@ -52,3 +51,4 @@ impl FromStr for AccessType {
 }
 
 impl_serde_via_str!(AccessType);
+impl_seaorm_via_str!(AccessType, 32);

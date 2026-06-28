@@ -16,13 +16,13 @@
  */
 
 use sea_orm::FromJsonQueryResult;
-use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use crate::impl_serde_via_str;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, FromJsonQueryResult)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, FromJsonQueryResult)]
 pub enum VcType {
     Eori,
     Euid,
@@ -102,21 +102,5 @@ impl VcType {
                 | VcType::Euid
         )
     }
-    // pub fn to_gaia_weird(&self) -> Outcome<&str> {
-    //     match self {
-    //         VcType::Eori => Ok("gx:eori"),
-    //         VcType::Euid => Ok("gx:euid"),
-    //         VcType::LeiCode => Ok("gx:leiCode"),
-    //         VcType::LocalRegistrationNumber => Ok("gx:local"),
-    //         VcType::TaxId => Ok("gx:taxID"),
-    //         VcType::VatId => Ok("gx:vatID"),
-    //         VcType::LegalPerson => Ok("gx:legalPerson"),
-    //         VcType::TermsAndConditions => Ok("gx:termsAndConditions"),
-    //         vc_type => Err(Errors::format(
-    //             BadFormat::Received,
-    //             format!("Cannot implement this function with vc_type {}", vc_type),
-    //             None,
-    //         )),
-    //     }
-    // }
 }
+impl_serde_via_str!(VcType);

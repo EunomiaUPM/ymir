@@ -31,7 +31,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Dids::Did).string().not_null())
                     .col(ColumnDef::new(Dids::Alias).string().not_null())
                     .col(ColumnDef::new(Dids::Default).boolean().not_null())
-                    .col(ColumnDef::new(Dids::Type).json_binary().not_null())
+                    .col(ColumnDef::new(Dids::Type).string_len(32).not_null())
                     .col(ColumnDef::new(Dids::Keys).json_binary().not_null())
                     .col(ColumnDef::new(Dids::DefaultKey).json_binary().not_null())
                     .col(ColumnDef::new(Dids::DidDocument).json_binary().not_null())

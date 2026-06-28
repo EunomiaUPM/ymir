@@ -57,11 +57,16 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
         &self,
         participant_type: ParticipantType,
     ) -> Outcome<Vec<participant::Model>> {
-        participant::Entity::find()
-            .filter(participant::Column::ParticipantType.eq(participant_type))
-            .all(self.db())
-            .await
-            .map_err(|e| Errors::db("Unable to get participant by type", Some(Box::new(e))))
+        match participant_type {
+            ParticipantType::All => { self.basic_get_all(None, None).await }
+            filter => {
+                participant::Entity::find()
+                    .filter(participant::Column::ParticipantType.eq(filter))
+                    .all(self.db())
+                    .await
+                    .map_err(|e| Errors::db("Unable to get participant by type", Some(Box::new(e))))
+            }
+        }
     }
 
     async fn get_by_token(&self, token: &str) -> Outcome<participant::Model> {

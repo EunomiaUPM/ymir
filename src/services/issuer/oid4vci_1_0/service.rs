@@ -182,7 +182,7 @@ impl IssuerTrait for IssuerService {
         IssuingToken::new(
             &model.token,
             Some(model.nonce.clone()),
-            model.token_expiration,
+            model.token_expiration as u32,
         )
     }
     async fn validate_cred_req(

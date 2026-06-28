@@ -28,6 +28,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
+    #[sea_orm(column_type = "JsonBinary")]
     pub start: Vec<InteractStart>,         // REQUEST
     pub method: FinishMethod,              // REQUEST
     pub callback_uri: String,              // REQUEST

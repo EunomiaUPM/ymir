@@ -75,8 +75,12 @@ impl VaultTrait for FakeVaultService {
         write_json(path, secret)
     }
 
-    async fn write_all_secrets(&self, _map: Option<HashMap<String, Value>>) -> Outcome<()> {
-        self.write_all_pems()
+    async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()> {
+        if map.is_none() {
+            self.write_all_pems()?;
+        }
+
+        Ok(())
     }
 
     async fn check_mount(&self) -> Outcome<()> {

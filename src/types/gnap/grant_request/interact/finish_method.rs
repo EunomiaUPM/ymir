@@ -15,13 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::impl_serde_via_str;
-use sea_orm::FromJsonQueryResult;
+use crate::{impl_seaorm_via_str, impl_serde_via_str};
 use std::convert::Infallible;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-#[derive(PartialEq, Eq, Debug, Clone, FromJsonQueryResult)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum FinishMethod {
     Redirect,
     Push,
@@ -52,3 +51,4 @@ impl FromStr for FinishMethod {
 }
 
 impl_serde_via_str!(FinishMethod);
+impl_seaorm_via_str!(FinishMethod, 32);

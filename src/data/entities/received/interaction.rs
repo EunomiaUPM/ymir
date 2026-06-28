@@ -32,6 +32,7 @@ use sha2::{Digest, Sha256, Sha384, Sha512};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // RESPONSE
+    #[sea_orm(column_type = "JsonBinary")]
     pub start: Vec<InteractStart>,  // RESPONSE
     pub method: FinishMethod,       // RESPONSE
     pub callback_uri: String,       // RESPONSE

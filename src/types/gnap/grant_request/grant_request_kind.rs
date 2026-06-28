@@ -17,10 +17,10 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
+use sea_orm::entity::prelude::*;
 
 use super::access::AccessTokenRequest;
 use crate::types::gnap::grant_request::credential_request::AccessCredentialRequest;
-use sea_orm::{DeriveActiveEnum, EnumIter};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
@@ -34,14 +34,13 @@ pub enum GrantRequestKind {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, DeriveActiveEnum, EnumIter, Serialize, Deserialize)]
-#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "grant_kind")]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::N(16))")]
 pub enum GrantKind {
     #[sea_orm(string_value = "AccessToken")]
     AccessToken,
     #[sea_orm(string_value = "CredentialRequest")]
     CredentialRequest,
 }
-
 impl Display for GrantKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {

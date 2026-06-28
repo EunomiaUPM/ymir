@@ -28,12 +28,14 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
     pub r#type: AccessType,                  // REQUEST
+    #[sea_orm(column_type = "JsonBinary")]
     pub actions: Vec<InteractAction>,        // REQUEST
     pub locations: Option<Vec<String>>,      // REQUEST
     pub datatypes: Option<Vec<String>>,      // REQUEST
     pub identifier: Option<String>,          // REQUEST
     pub privileges: Option<Vec<String>>,     // REQUEST
     pub label: Option<String>,               // REQUEST
+    #[sea_orm(column_type = "JsonBinary")]
     pub flags: Option<Vec<AccessTokenFlag>>, // REQUEST
 }
 

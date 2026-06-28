@@ -35,6 +35,7 @@ pub struct Model {
     pub kind: GrantKind, // Type of request, (token or vc)
     pub status: GrantStatus,
     pub token: Option<String>,
+    #[sea_orm(column_type = "JsonBinary")]
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub vc_uri: Option<String>,
     pub as_assigned_id: Option<String>,

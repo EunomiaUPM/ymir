@@ -58,3 +58,68 @@ macro_rules! impl_serde_via_str {
         )+
     };
 }
+
+
+/// Declarative macro automatically deriving the required SeaORM traits to
+/// persist types as strings.
+///
+/// Binds target concrete types to SeaORM's persistence layer by marshaling
+/// database values via their existing [`std::fmt::Display`] and
+/// [`std::str::FromStr`] traits.
+///
+/// # Examples
+/// ```ignore
+/// impl_serde_via_str!(Kty);
+/// impl_seaorm_via_str!(Kty, 32);
+/// ```
+#[macro_export]
+macro_rules! impl_seaorm_via_str {
+    ($t:ty, $max_len:expr) => {
+        impl From<$t> for sea_orm::sea_query::Value {
+            fn from(v: $t) -> Self {
+                sea_orm::sea_query::Value::String(Some(Box::new(v.to_string())))
+            }
+        }
+
+        impl sea_orm::TryGetable for $t {
+            fn try_get_by<I: sea_orm::ColIdx>(
+                res: &sea_orm::QueryResult,
+                idx: I,
+            ) -> Result<Self, sea_orm::TryGetError> {
+                let s = String::try_get_by(res, idx)?;
+                <$t as std::str::FromStr>::from_str(&s).map_err(|e| {
+                    sea_orm::TryGetError::DbErr(sea_orm::DbErr::Type(format!("{:?}", e)))
+                })
+            }
+        }
+
+        impl sea_orm::sea_query::ValueType for $t {
+            fn try_from(
+                v: sea_orm::sea_query::Value,
+            ) -> Result<Self, sea_orm::sea_query::ValueTypeErr> {
+                match v {
+                    sea_orm::sea_query::Value::String(Some(s)) => {
+                        <$t as std::str::FromStr>::from_str(&s)
+                            .map_err(|_| sea_orm::sea_query::ValueTypeErr)
+                    }
+                    _ => Err(sea_orm::sea_query::ValueTypeErr),
+                }
+            }
+            fn type_name() -> String {
+                stringify!($t).to_owned()
+            }
+            fn array_type() -> sea_orm::sea_query::ArrayType {
+                sea_orm::sea_query::ArrayType::String
+            }
+            fn column_type() -> sea_orm::sea_query::ColumnType {
+                sea_orm::sea_query::ColumnType::String(sea_orm::sea_query::StringLen::N($max_len))
+            }
+        }
+
+        impl sea_orm::sea_query::Nullable for $t {
+            fn null() -> sea_orm::sea_query::Value {
+                sea_orm::sea_query::Value::String(None)
+            }
+        }
+    };
+}

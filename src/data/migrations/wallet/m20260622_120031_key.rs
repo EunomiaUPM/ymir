@@ -28,10 +28,9 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Keys::Table)
                     .col(ColumnDef::new(Keys::Id).string().not_null().primary_key())
-                    .col(ColumnDef::new(Keys::Default).boolean().not_null())
                     .col(ColumnDef::new(Keys::Alias).string().not_null())
-                    .col(ColumnDef::new(Keys::Kty).json_binary().not_null())
-                    .col(ColumnDef::new(Keys::Crv).json_binary())
+                    .col(ColumnDef::new(Keys::Kty).string_len(32).not_null())
+                    .col(ColumnDef::new(Keys::Crv).string_len(32))
                     .col(
                         ColumnDef::new(Keys::CreatedAt)
                             .timestamp_with_time_zone()
@@ -54,8 +53,6 @@ pub enum Keys {
     #[iden = "keys"]
     Table,
     Id,
-    #[iden = "default"]
-    Default,
     Alias,
     Kty,
     Crv,

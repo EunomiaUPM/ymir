@@ -16,13 +16,13 @@
  */
 
 use crate::errors::{BadFormat, Errors};
-use sea_orm::{DeriveActiveEnum, EnumIter};
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::str::FromStr;
 
-#[derive(Clone, Debug, Eq, PartialEq, DeriveActiveEnum, EnumIter, Serialize, Deserialize)]
-#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "participant_type")]
+#[derive(Clone, Debug, Eq, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::N(16))")]
 pub enum ParticipantType {
     #[sea_orm(string_value = "Agent")]
     Agent,

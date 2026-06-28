@@ -15,13 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::impl_serde_via_str;
-use sea_orm::FromJsonQueryResult;
+use crate::{impl_seaorm_via_str, impl_serde_via_str};
 use std::convert::Infallible;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq, Eq, FromJsonQueryResult)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Kty {
     /// Elliptic Curve — RFC 7518 §6.2
     Ec,
@@ -67,3 +66,4 @@ impl FromStr for Kty {
 }
 
 impl_serde_via_str!(Kty);
+impl_seaorm_via_str!(Kty, 32);
