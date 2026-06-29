@@ -28,5 +28,5 @@ use async_trait::async_trait;
 #[async_trait]
 pub trait RecvGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
     /// Filters incoming grants by their specific operational request nature ([`GrantKind`]).
-    async fn get_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>>;
+    async fn filter_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>>;
 }

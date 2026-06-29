@@ -104,8 +104,8 @@ impl WalletRouter {
             .route("/credential/{id}", delete(Self::delete_credential))
             .route("/info", get(Self::get_wallet_info))
             .route("/vcs", get(Self::get_wallet_credentials))
-            .route("/oidc4vci", post(Self::process_oidc4vci))
-            .route("/oidc4vp", post(Self::process_oidc4vp))
+            .route("/oid4vci", post(Self::process_oidc4vci))
+            .route("/oid4vp", post(Self::process_oidc4vp))
             .with_state(self.holder)
     }
 

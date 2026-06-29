@@ -43,10 +43,19 @@ impl MigrationTrait for Migration {
                             .json_binary()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(ResourcesReqs::Locations).json_binary())
-                    .col(ColumnDef::new(ResourcesReqs::Datatypes).json_binary())
+                    .col(
+                        ColumnDef::new(ResourcesReqs::Locations)
+                            .array(ColumnType::String(StringLen::None)),
+                    )
+                    .col(
+                        ColumnDef::new(ResourcesReqs::Datatypes)
+                            .array(ColumnType::String(StringLen::None)),
+                    )
                     .col(ColumnDef::new(ResourcesReqs::Identifier).string())
-                    .col(ColumnDef::new(ResourcesReqs::Privileges).json_binary())
+                    .col(
+                        ColumnDef::new(ResourcesReqs::Privileges)
+                            .array(ColumnType::String(StringLen::None)),
+                    )
                     .col(ColumnDef::new(ResourcesReqs::Label).string())
                     .col(ColumnDef::new(ResourcesReqs::Flags).json_binary())
                     .to_owned(),

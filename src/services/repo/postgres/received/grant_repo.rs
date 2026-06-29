@@ -46,7 +46,7 @@ impl BasicPostgresRepo for RecvGrantPostgresRepo {
 
 #[async_trait]
 impl RecvGrantRepoTrait for RecvGrantPostgresRepo {
-    async fn get_by_type(&self, kind: GrantKind) -> Outcome<Vec<grant::Model>> {
+    async fn filter_by_type(&self, kind: GrantKind) -> Outcome<Vec<grant::Model>> {
         grant::Entity::find()
             .filter(grant::Column::Kind.eq(kind))
             .all(self.db())
