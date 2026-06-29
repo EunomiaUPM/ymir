@@ -15,18 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::{Arc};
-use tokio::sync::{RwLock};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 use async_trait::async_trait;
 
 use super::super::WalletTrait;
 use crate::capabilities::Did;
-use crate::data::entities::wallet::did::Model;
+use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::Outcome;
-use crate::types::dids::{DidBuilder, DidDocument};
-use crate::types::secrets::PemHelper;
-use crate::types::wallet::{Identity, WalletInfo};
+use crate::types::dids::DidDocument;
+use crate::types::wallet::{DidSearch, Identity, WalletInfo};
 
 pub struct WaltIdService {}
 
@@ -58,56 +57,71 @@ impl WalletTrait for WaltIdService {
         todo!()
     }
 
-    async fn retrieve_did(&self, _id: &str) -> Outcome<Model> {
+    async fn retrieve_did(&self, _search: DidSearch) -> Outcome<did::Model> {
         todo!()
     }
 
-    async fn retrieve_default_did(&self) -> Outcome<Model> {
+    async fn retrieve_default_did(&self) -> Outcome<did::Model> {
         todo!()
     }
 
-    async fn retrieve_all_dids(&self) -> Outcome<Vec<Model>> {
+    async fn retrieve_all_dids(&self) -> Outcome<Vec<did::Model>> {
         todo!()
     }
 
-    async fn retrieve_key(&self, _id: &str) -> Outcome<crate::data::entities::wallet::key::Model> {
+    async fn retrieve_key(&self, _id: &str) -> Outcome<key::Model> {
         todo!()
     }
 
-    async fn retrieve_all_keys(&self) -> Outcome<Vec<crate::data::entities::wallet::key::Model>> {
+    async fn retrieve_all_keys(&self) -> Outcome<Vec<key::Model>> {
         todo!()
     }
 
-    async fn retrieve_vc(&self, _id: &str) -> Outcome<crate::data::entities::wallet::vc::Model> {
+    async fn retrieve_vc(&self, _id: &str) -> Outcome<vc::Model> {
         todo!()
     }
 
-    async fn retrieve_all_vcs(&self) -> Outcome<Vec<crate::data::entities::wallet::vc::Model>> {
+    async fn retrieve_all_vcs(&self) -> Outcome<Vec<vc::Model>> {
         todo!()
     }
 
-    async fn register_key(
+    async fn register_key(&self, _plan: key::Plan) -> Outcome<key::Model> {
+        todo!()
+    }
+
+    async fn register_did(&self, _plan: did::Plan) -> Outcome<did::Model> {
+        todo!()
+    }
+
+    async fn store_vc(&self, _plan: vc::Plan) -> Outcome<vc::Model> {
+        todo!()
+    }
+
+    async fn set_default_did(&self, _search: DidSearch) -> Outcome<did::Model> {
+        todo!()
+    }
+
+    async fn add_key_to_did(
         &self,
-        _pem_helper: &PemHelper,
-        _alias: Option<String>,
-    ) -> Outcome<crate::data::entities::wallet::key::Model> {
+        _search: DidSearch,
+        _key_id: String,
+    ) -> Outcome<did::Model> {
         todo!()
     }
 
-    async fn register_did(
+    async fn remove_key_from_did(
         &self,
-        _did_builder: &DidBuilder,
-        _keys_id: Vec<String>,
-        _alias: Option<String>,
-    ) -> Outcome<Model> {
+        _search: DidSearch,
+        _key_id: String,
+    ) -> Outcome<did::Model> {
         todo!()
     }
 
-    async fn store_vc(&self, _vc: String) -> Outcome<crate::data::entities::wallet::vc::Model> {
-        todo!()
-    }
-
-    async fn set_default_did(&self, _did: Did) -> Outcome<Model> {
+    async fn set_default_key(
+        &self,
+        _search: DidSearch,
+        _key_id: String,
+    ) -> Outcome<did::Model> {
         todo!()
     }
 
@@ -115,7 +129,7 @@ impl WalletTrait for WaltIdService {
         todo!()
     }
 
-    async fn delete_did(&self, _id: &str) -> Outcome<()> {
+    async fn delete_did(&self, _search: DidSearch) -> Outcome<()> {
         todo!()
     }
 

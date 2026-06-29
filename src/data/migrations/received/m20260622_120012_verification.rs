@@ -49,7 +49,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(RecvVerification::Vpt).string())
                     .col(
                         ColumnDef::new(RecvVerification::Vcs)
-                            .json_binary()
+                            .array(ColumnType::String(StringLen::None))
                             .not_null(),
                     )
                     .col(ColumnDef::new(RecvVerification::Status).string_len(32).not_null())

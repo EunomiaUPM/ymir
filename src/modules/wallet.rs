@@ -18,9 +18,8 @@
 use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::Outcome;
 use crate::services::HasWallet;
-use crate::types::dids::{DidBuilder, DidDocument};
-use crate::types::secrets::PemHelper;
-use crate::types::wallet::{OidcUri, WalletInfo};
+use crate::types::dids::{DidBuilder, DidDocument, DidService};
+use crate::types::wallet::{DidSearch, OidcUri, WalletInfo};
 use async_trait::async_trait;
 
 /// Business Orchestration Module for the SSI Decentralized Wallet.
@@ -50,25 +49,66 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
 
     // ===== IDENTITY PROVISIONING & CRYPTOGRAPHY ==================================================
 
-    /// Registers a new asymmetric keypair registry within the database from a secure private PEM payload.
-    async fn register_key(
-        &self,
-        pem_helper: PemHelper,
-        alias: Option<String>,
-    ) -> Outcome<key::Model> {
-        self.wallet().register_key(&pem_helper, alias).await
+    /// Registers a new asymmetric keypair in the wallet from a raw PEM payload.
+    ///
+    /// The vault path id is generated here so callers (HTTP handlers, internal
+    /// services) don't have to know about the storage layout.
+    async fn register_key(&self, pem: String, alias: Option<String>) -> Outcome<key::Model> {
+        let plan = key::Plan {
+            id: format!("crypto/keys/{}", uuid::Uuid::new_v4()),
+            alias: alias.unwrap_or_default(),
+            pem,
+        };
+        self.wallet().register_key(plan).await
     }
 
     /// Establishes and activates a new local DID binding it to a set of pre-registered verification keys.
     async fn register_did(
         &self,
-        did_builder: DidBuilder,
+        builder: DidBuilder,
         keys_id: Vec<String>,
         alias: Option<String>,
+        service: Option<Vec<DidService>>,
     ) -> Outcome<did::Model> {
-        self.wallet()
-            .register_did(&did_builder, keys_id, alias)
-            .await
+        let plan = did::Plan {
+            alias: alias.unwrap_or_default(),
+            builder,
+            keys: keys_id,
+            service,
+        };
+        self.wallet().register_did(plan).await
+    }
+
+    /// Sets the default DID of the wallet. Refreshes the cached identity if it changed.
+    async fn set_default_did(&self, search: DidSearch) -> Outcome<did::Model> {
+        self.wallet().set_default_did(search).await
+    }
+
+    /// Attaches an existing key to an existing DID.
+    async fn add_key_to_did(
+        &self,
+        search: DidSearch,
+        key_id: String,
+    ) -> Outcome<did::Model> {
+        self.wallet().add_key_to_did(search, key_id).await
+    }
+
+    /// Removes a key from an existing DID.
+    async fn remove_key_from_did(
+        &self,
+        search: DidSearch,
+        key_id: String,
+    ) -> Outcome<did::Model> {
+        self.wallet().remove_key_from_did(search, key_id).await
+    }
+
+    /// Sets which of the DID's attached keys becomes the default for signing.
+    async fn set_default_key(
+        &self,
+        search: DidSearch,
+        key_id: String,
+    ) -> Outcome<did::Model> {
+        self.wallet().set_default_key(search, key_id).await
     }
 
     // ===== RESOURCE PURGING / DELETIONS ==========================================================
@@ -79,8 +119,9 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
     }
 
     /// Permanently removes a local DID registry from the database ledger.
-    async fn delete_did(&self, id: &str) -> Outcome<()> {
-        self.wallet().delete_did(id).await
+    /// The underlying wallet refuses deletion of the DID currently bound to the active identity.
+    async fn delete_did(&self, search: DidSearch) -> Outcome<()> {
+        self.wallet().delete_did(search).await
     }
 
     /// Permanently purges an issued Verifiable Credential from the wallet storage.
@@ -115,5 +156,10 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
     /// Retrieves the entire historical inventory of Verifiable Credentials stored in this wallet.
     async fn get_wallet_credentials(&self) -> Outcome<Vec<vc::Model>> {
         self.wallet().retrieve_all_vcs().await
+    }
+
+    /// Retrieves all asymmetric keypairs stored in this wallet.
+    async fn get_wallet_keys(&self) -> Outcome<Vec<key::Model>> {
+        self.wallet().retrieve_all_keys().await
     }
 }

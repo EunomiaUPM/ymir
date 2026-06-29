@@ -89,6 +89,7 @@ impl VcType {
             VcType::DataspaceParticipant,
             VcType::LegalPerson,
             VcType::TermsAndConditions,
+            VcType::GxLabel,
         ]
     }
     pub fn is_legal_registration_number(&self) -> bool {

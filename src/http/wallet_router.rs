@@ -18,11 +18,11 @@
 use std::sync::Arc;
 
 use crate::data::entities::wallet::vc::Model;
+use crate::data::entities::wallet::{did, key};
 use crate::errors::AppResult;
 use crate::modules::WalletModuleTrait;
-use crate::types::dids::{DidBuilder, DidDocument};
-use crate::types::secrets::PemHelper;
-use crate::types::wallet::{OidcUri, WalletInfo};
+use crate::types::dids::{DidBuilder, DidDocument, DidService};
+use crate::types::wallet::{DidSearch, OidcUri, WalletInfo};
 use crate::utils::extract_payload;
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
@@ -35,9 +35,8 @@ use serde::Deserialize;
 /// Internal operational payload to register and pair raw asymmetric private keys.
 #[derive(Deserialize)]
 struct RegisterKeyReq {
-    /// Helper payload supplying metadata context over the raw private key PEM data.
-    #[serde(flatten)]
-    pem_helper: PemHelper,
+    /// Raw private key in PEM format. `kty`/`crv` are derived from it on the wallet side.
+    pem: String,
     /// Human-readable custom alias tag to index and reference the cryptographic keypair.
     alias: Option<String>,
 }
@@ -51,6 +50,9 @@ struct RegisterDidReq {
     keys_id: Vec<String>,
     /// Human-readable identity identifier alias.
     alias: Option<String>,
+    /// Optional DID Document service entries.
+    #[serde(default)]
+    service: Option<Vec<DidService>>,
 }
 
 /// HTTP API Gateway Router governing the Wallet Module ecosystem.
@@ -86,9 +88,19 @@ impl WalletRouter {
             .route("/is-linked", get(Self::is_linked))
             .route("/link", post(Self::link))
             .route("/key", post(Self::register_key))
+            .route("/keys", get(Self::get_wallet_keys))
             .route("/key/{id}", delete(Self::delete_key))
             .route("/did", get(Self::get_wallet_did).post(Self::register_did))
             .route("/did/{id}", delete(Self::delete_did))
+            .route("/did/{id}/default", post(Self::set_default_did))
+            .route(
+                "/did/{id}/key/{key_id}",
+                post(Self::add_key_to_did).delete(Self::remove_key_from_did),
+            )
+            .route(
+                "/did/{id}/key/default/{key_id}",
+                post(Self::set_default_key),
+            )
             .route("/credential/{id}", delete(Self::delete_credential))
             .route("/info", get(Self::get_wallet_info))
             .route("/vcs", get(Self::get_wallet_credentials))
@@ -125,7 +137,7 @@ impl WalletRouter {
         payload: Result<Json<RegisterKeyReq>, JsonRejection>,
     ) -> AppResult<StatusCode> {
         let req = extract_payload(payload)?;
-        holder.register_key(req.pem_helper, req.alias).await?;
+        holder.register_key(req.pem, req.alias).await?;
         Ok(StatusCode::CREATED)
     }
 
@@ -135,7 +147,7 @@ impl WalletRouter {
     ) -> AppResult<StatusCode> {
         let req = extract_payload(payload)?;
         holder
-            .register_did(req.builder, req.keys_id, req.alias)
+            .register_did(req.builder, req.keys_id, req.alias, req.service)
             .await?;
         Ok(StatusCode::CREATED)
     }
@@ -151,7 +163,41 @@ impl WalletRouter {
         State(holder): State<Arc<dyn WalletModuleTrait>>,
         Path(id): Path<String>,
     ) -> AppResult<()> {
-        holder.delete_did(&id).await
+        holder.delete_did(DidSearch::Id(id)).await
+    }
+
+    async fn set_default_did(
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
+        Path(id): Path<String>,
+    ) -> AppResult<Json<did::Model>> {
+        let model = holder.set_default_did(DidSearch::Id(id)).await?;
+        Ok(Json(model))
+    }
+
+    async fn add_key_to_did(
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
+        Path((id, key_id)): Path<(String, String)>,
+    ) -> AppResult<Json<did::Model>> {
+        let model = holder.add_key_to_did(DidSearch::Id(id), key_id).await?;
+        Ok(Json(model))
+    }
+
+    async fn remove_key_from_did(
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
+        Path((id, key_id)): Path<(String, String)>,
+    ) -> AppResult<Json<did::Model>> {
+        let model = holder
+            .remove_key_from_did(DidSearch::Id(id), key_id)
+            .await?;
+        Ok(Json(model))
+    }
+
+    async fn set_default_key(
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
+        Path((id, key_id)): Path<(String, String)>,
+    ) -> AppResult<Json<did::Model>> {
+        let model = holder.set_default_key(DidSearch::Id(id), key_id).await?;
+        Ok(Json(model))
     }
 
     async fn delete_credential(
@@ -197,5 +243,11 @@ impl WalletRouter {
         State(holder): State<Arc<dyn WalletModuleTrait>>,
     ) -> AppResult<Json<Vec<Model>>> {
         Ok(Json(holder.get_wallet_credentials().await?))
+    }
+
+    async fn get_wallet_keys(
+        State(holder): State<Arc<dyn WalletModuleTrait>>,
+    ) -> AppResult<Json<Vec<key::Model>>> {
+        Ok(Json(holder.get_wallet_keys().await?))
     }
 }

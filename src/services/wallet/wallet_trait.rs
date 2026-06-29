@@ -18,12 +18,11 @@
 use crate::capabilities::Did;
 use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::Outcome;
-use crate::types::dids::{DidBuilder, DidDocument};
-use crate::types::secrets::PemHelper;
-use crate::types::wallet::{Identity, WalletInfo};
+use crate::types::dids::DidDocument;
+use crate::types::wallet::{DidSearch, Identity, WalletInfo};
 use async_trait::async_trait;
-use std::sync::{Arc};
-use tokio::sync::{RwLock};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 /// Wallet abstraction.
 ///
@@ -33,7 +32,8 @@ use tokio::sync::{RwLock};
 pub trait WalletTrait: Send + Sync + 'static {
     // ===== CORE WALLET STATE =====================================================================
 
-    /// Links the wallet to its backend or runtime environment.
+    /// Links the wallet to its backend, refreshing the locally cached identity
+    /// from whatever the remote considers the active default DID.
     async fn link(&self) -> Outcome<()>;
 
     /// Returns a snapshot of the wallet configuration and state.
@@ -50,8 +50,8 @@ pub trait WalletTrait: Send + Sync + 'static {
 
     // ===== STORAGE (READ ONLY) ===================================================================
 
-    /// Retrieves a DID by its identifier.
-    async fn retrieve_did(&self, id: &str) -> Outcome<did::Model>;
+    /// Retrieves a DID by internal id or by DID string.
+    async fn retrieve_did(&self, search: DidSearch) -> Outcome<did::Model>;
 
     /// Retrieves the default DID configured in the wallet.
     async fn retrieve_default_did(&self) -> Outcome<did::Model>;
@@ -73,34 +73,39 @@ pub trait WalletTrait: Send + Sync + 'static {
 
     // ===== STORAGE (MUTATIONS) ===================================================================
 
-    /// Registers a new cryptographic key from a PEM representation.
-    async fn register_key(
-        &self,
-        pem_helper: &PemHelper,
-        alias: Option<String>,
-    ) -> Outcome<key::Model>;
+    /// Registers a new cryptographic key.
+    async fn register_key(&self, plan: key::Plan) -> Outcome<key::Model>;
 
     /// Registers a new DID associated with a set of keys.
-    async fn register_did(
-        &self,
-        did_builder: &DidBuilder,
-        keys_id: Vec<String>,
-        alias: Option<String>,
-    ) -> Outcome<did::Model>;
+    async fn register_did(&self, plan: did::Plan) -> Outcome<did::Model>;
 
     /// Stores a verifiable credential in the wallet.
-    async fn store_vc(&self, vc: String) -> Outcome<vc::Model>;
+    async fn store_vc(&self, plan: vc::Plan) -> Outcome<vc::Model>;
 
-    /// Sets the default DID for the wallet.
-    async fn set_default_did(&self, did: Did) -> Outcome<did::Model>;
+    /// Sets the default DID for the wallet. Returns the updated default DID model.
+    async fn set_default_did(&self, search: DidSearch) -> Outcome<did::Model>;
+
+    // ===== DID-KEY MANAGEMENT ====================================================================
+
+    /// Attaches an existing key to an existing DID (only meaningful for DID methods
+    /// that support multiple verification methods, e.g. did:web). Returns the updated DID model.
+    async fn add_key_to_did(&self, search: DidSearch, key_id: String) -> Outcome<did::Model>;
+
+    /// Removes a key from an existing DID. Returns the updated DID model.
+    async fn remove_key_from_did(&self, search: DidSearch, key_id: String) -> Outcome<did::Model>;
+
+    /// Sets which of the DID's attached keys becomes the default for signing.
+    /// Returns the updated DID model.
+    async fn set_default_key(&self, search: DidSearch, key_id: String) -> Outcome<did::Model>;
 
     // ===== DELETE OPERATIONS =====================================================================
 
     /// Deletes a cryptographic key by its identifier.
     async fn delete_key(&self, id: &str) -> Outcome<()>;
 
-    /// Deletes a DID by its identifier.
-    async fn delete_did(&self, id: &str) -> Outcome<()>;
+    /// Deletes a DID by internal id or by DID string. Implementations must reject
+    /// deletion of the DID currently bound to the active identity.
+    async fn delete_did(&self, search: DidSearch) -> Outcome<()>;
 
     /// Deletes a verifiable credential by its identifier.
     async fn delete_vc(&self, id: &str) -> Outcome<()>;

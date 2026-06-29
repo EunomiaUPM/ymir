@@ -17,22 +17,21 @@
 
 use serde::{Deserialize, Serialize};
 
-mod did_search;
-mod identity;
-mod key_ref;
-mod oidc_uri;
-mod wallet_info;
-pub mod waltid;
+/// Locator for a DID stored in the wallet.
+///
+/// Allows wallet APIs to address an entry either by the internal id assigned
+/// at registration (`Id`) or by the DID string itself (`Did`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DidSearch {
+    Id(String),
+    Did(String),
+}
 
-pub use did_search::DidSearch;
-pub use identity::Identity;
-pub use key_ref::KeyRef;
-pub use oidc_uri::OidcUri;
-pub use wallet_info::WalletInfo;
-
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub enum WalletInstance {
-    #[default]
-    Fafnir,
-    WaltId,
+impl DidSearch {
+    pub fn as_str(&self) -> &str {
+        match self {
+            DidSearch::Id(s) | DidSearch::Did(s) => s.as_str(),
+        }
+    }
 }
