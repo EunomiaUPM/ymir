@@ -21,6 +21,8 @@ use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;
 use rand::Rng;
 
+const CLOCK_SKEW_LEEWAY: i64 = 30;
+
 // ===== CRYPTOGRAPHIC TOKEN GENERATION ============================================================
 
 /// Generates a high-entropy, 256-bit opaque security token string.
@@ -42,7 +44,7 @@ pub fn create_opaque_token() -> String {
 /// inside future temporal horizons.
 pub fn is_active(iat: i64) -> Outcome<()> {
     let now = Utc::now().timestamp();
-    if now >= iat {
+    if now + CLOCK_SKEW_LEEWAY >= iat {
         Ok(())
     } else {
         Err(Errors::forbidden("Token is not yet valid", None))
@@ -56,7 +58,7 @@ pub fn is_active(iat: i64) -> Outcome<()> {
 /// have drifted past expiration thresholds.
 pub fn has_expired(exp: i64) -> Outcome<()> {
     let now = Utc::now().timestamp();
-    if now <= exp {
+    if now - CLOCK_SKEW_LEEWAY <= exp {
         Ok(())
     } else {
         Err(Errors::forbidden("Token has expired", None))
