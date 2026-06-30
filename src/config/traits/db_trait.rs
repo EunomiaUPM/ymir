@@ -18,8 +18,18 @@
 use crate::config::types::{DatabaseConfig, DbType};
 use crate::types::secrets::DbSecrets;
 
+/// Shared behavior for component configurations provisioning structural database connections.
 pub trait DatabaseConfigTrait {
+    // ===== EXTRACTION ANCHORS ====================================================================
+
+    /// Returns a backing reference to the root database configuration model.
     fn db(&self) -> &DatabaseConfig;
+
+    // ===== URL STRING ENGINE =====================================================================
+
+    /// Assembles the complete canonical connection string injected into data mapping layers (e.g., Sea-ORM).
+    ///
+    /// Automatically isolates volatile properties like passwords using runtime decoupled [`DbSecrets`].
     fn get_full_db_url(&self, db_secrets: &DbSecrets) -> String {
         let db_config = self.db();
         match db_config.db_type {

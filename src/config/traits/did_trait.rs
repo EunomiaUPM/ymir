@@ -15,25 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::config::types::{DidConfig, DidWebOptions};
-use crate::types::dids::DidType;
+use crate::config::types::DidConfig;
 
+/// Shared behavior for configuration models tracking ecosystem anchor identifier schemes.
 pub trait DidConfigTrait {
-    fn did_config(&self) -> &DidConfig;
-    fn get_did(&self) -> &str {
-        &self.did_config().did
-    }
-    fn get_did_type(&self) -> &DidType {
-        &self.did_config().r#type
-    }
-    fn get_did_web_options(&self) -> Option<&DidWebOptions> {
-        self.did_config().did_web_options.as_ref()
-    }
-    fn get_did_web_domain(&self) -> Option<&str> {
-        self.get_did_web_options().map(|o| o.domain.as_str())
-    }
+    // ===== EXTRACTION ANCHORS ====================================================================
 
-    fn get_did_web_path(&self) -> Option<&str> {
-        self.get_did_web_options().and_then(|o| o.path.as_deref())
-    }
+    /// Returns a backing reference to the root decentralized identifier configuration model.
+    fn did_config(&self) -> &DidConfig;
 }

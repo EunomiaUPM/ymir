@@ -21,21 +21,27 @@ mod helpers;
 mod response;
 mod sub_errors;
 
+// Re-expose primary structural error representation entity.
 pub use core::Errors;
-
-use axum::response::Response;
 pub use sub_errors::*;
 
+use axum::response::Response;
+
+/// Dynamic dispatch boundary type-alias mapping third-party standard library error wrappers.
 pub type AnyError = Box<dyn std::error::Error + Send + Sync>;
+
+/// Core operational result wrapper utilizing internal taxonomy engines for domain layer operations.
 pub type Outcome<T> = Result<T, Errors>;
+
+/// Perimeter HTTP interface wrapper matching standard Axum network routing architectures.
 pub type AppResult<T = Response> = Result<T, Errors>;
 
-/// Trait for repository-specific error types to convert into [`Errors`].
+/// Infrastructure conversion trait simplifying direct translation from repository level drivers.
 ///
-/// Implement this trait (with an empty body) on any repo error enum that
-/// derives `thiserror::Error` and whose fields are `Send + Sync + 'static`.
-/// The default implementation wraps the error as a [`Errors::db`] variant.
+/// Automatically implements default structural formatting mapping raw data layers
+/// into structural application-wide [`Errors::DatabaseError`] targets.
 pub trait RepoIntoErrors: std::error::Error + Send + Sync + 'static {
+    /// Translates raw external database or layer failures into native tracking structures.
     fn into_errors(self) -> Errors
     where
         Self: Sized,

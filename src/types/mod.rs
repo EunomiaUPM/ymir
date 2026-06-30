@@ -15,13 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+pub mod crypto;
 pub mod dids;
 pub mod gnap;
 pub mod http;
-pub mod issuing;
+pub mod issuance;
 pub mod jwt;
-pub mod present;
+pub mod keys;
+pub mod participants;
 pub mod secrets;
 pub mod vcs;
-pub mod verifying;
+pub mod verification;
+pub mod vps;
 pub mod wallet;

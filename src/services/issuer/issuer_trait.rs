@@ -15,45 +15,65 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use jsonwebtoken::TokenData;
-use serde_json::Value;
-
-use crate::data::entities::{issuing, minions, recv_interaction, vc_request};
+use crate::data::entities::shared::issuance;
 use crate::errors::Outcome;
-use crate::types::issuing::{
-    AuthServerMetadata, CredentialRequest, DidPossession, GiveVC, IssuerMetadata, IssuingToken,
-    TokenRequest, VCCredOffer, WellKnownJwks,
+use crate::types::gnap::grant_request::GrantRequestKind;
+use crate::types::gnap::grant_request::client::Client;
+use crate::types::issuance::{
+    AuthServerMetadata, CredentialRequest, IssuerMetadata, IssuingToken, VcCredOffer,
+    VcTransmissionOffer,
 };
-use crate::types::vcs::VcType;
+use crate::types::jwt::VCJwtClaims;
+use crate::types::vcs::{VcType, VcTypeConfig};
+use async_trait::async_trait;
 
+/// OpenID4VCI Verifiable Credential Issuer service specification.
+///
+/// Defines the core contract for managing the credential issuance lifecycle, covering
+/// cryptographic handshake validations, metadata compilation, and secure signature generation.
 #[async_trait]
 pub trait IssuerTrait: Send + Sync + 'static {
-    fn start_vci(&self, req_model: &vc_request::Model) -> issuing::NewModel;
-    fn generate_issuing_uri(&self, id: &str, path: Option<&str>) -> String;
-    fn get_cred_offer_data(&self, model: &issuing::Model) -> Outcome<VCCredOffer>;
-    fn get_issuer_data(&self, path: Option<&str>, vcs: Option<&[VcType]>) -> IssuerMetadata;
-    fn get_oauth_server_data(
+    // ===== ISSUANCE INITIALIZATION & OFFERS ======================================================
+
+    /// Provisions an internal transactional issuance plan derived from an authenticated client request.
+    async fn build_issuance_plan(
         &self,
-        path: Option<&str>,
-        vcs: Option<&[VcType]>,
-    ) -> AuthServerMetadata;
-    fn get_token(&self, model: &issuing::Model) -> IssuingToken;
-    fn validate_token_req(&self, model: &issuing::Model, payload: &TokenRequest) -> Outcome<()>;
-    async fn issue_cred(&self, claims: &Value, did: Option<&str>) -> Outcome<GiveVC>;
+        id: &str,
+        grant_request_kind: GrantRequestKind,
+        client: Client,
+        available_vcs: &[VcType],
+    ) -> Outcome<issuance::Plan>;
+
+    /// Compiles token payload data necessary to build a pre-authorized credential offer.
+    fn get_cred_offer_data(&self, model: &issuance::Model) -> VcCredOffer;
+
+    /// Generates a standard-compliant `openid-credential-offer://` URI wrapper.
+    ///
+    /// Depending on the [`VcTransmissionOffer`] configuration, embeds the payload
+    /// either inline (`ByValue`) or as a short-lived URL query reference (`ByReference`).
+    fn generate_issuing_uri(&self, offer_type: VcTransmissionOffer) -> Outcome<String>;
+
+    // ===== METADATA DISCOVERY ====================================================================
+
+    /// Compiles the static standard `.well-known/openid-credential-issuer` metadata registry.
+    fn get_issuer_metadata(&self, vcs: &[VcType]) -> IssuerMetadata;
+
+    /// Compiles the standard metadata describing the backing OAuth 2.0 / GNAP Authorization Server.
+    fn get_oauth_server_data(&self) -> AuthServerMetadata;
+
+    // ===== SECURITY VALIDATION & SIGNING =========================================================
+
+    /// Formulates a valid access [`IssuingToken`] package containing session lifetimes.
+    fn get_token(&self, model: &issuance::Model) -> IssuingToken;
+
+    /// Validates the client's payload request token against the session state and asserts the Proof of Possession (PoP).
     async fn validate_cred_req(
         &self,
-        model: &mut issuing::Model,
-        cred_req: &CredentialRequest,
+        issuance: &issuance::Model,
+        cred_req: CredentialRequest,
         token: &str,
-        did: Option<&str>,
-    ) -> Outcome<()>;
-    fn validate_did_possession(&self, token: &TokenData<DidPossession>, kid: &str) -> Outcome<()>;
-    fn end(
-        &self,
-        req_model: &vc_request::Model,
-        int_model: &recv_interaction::Model,
-        iss_model: &issuing::Model,
-    ) -> Outcome<minions::NewModel>;
-    async fn get_jwks_data(&self) -> Outcome<WellKnownJwks>;
+    ) -> Outcome<(String, VcTypeConfig)>;
+
+    /// Digitally signs the structured credential claims using asymmetric keys pulled securely from the Vault.
+    async fn sign_claims(&self, claims: &VCJwtClaims) -> Outcome<String>;
 }

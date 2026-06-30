@@ -15,19 +15,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod claims_v1;
-pub mod claims_v2;
-mod gaia_vc;
-mod input_descriptor;
-pub mod vc_decision_approval;
+pub mod doc;
+mod vc_format;
 pub mod vc_issuer;
 pub mod vc_specs;
 mod vc_type;
-mod vpd;
+mod vc_type_config;
 mod w3c_data_model;
 
-pub use gaia_vc::*;
-pub use input_descriptor::InputDescriptor;
+pub use crate::types::issuance::build_ctx::BuildCtx;
+pub use crate::types::verification::input_descriptor::InputDescriptor;
+pub use crate::types::verification::vp_def::VPDef;
+pub use vc_format::VcFormat;
+pub use vc_issuer::*;
 pub use vc_type::VcType;
-pub use vpd::VPDef;
+pub use vc_type_config::VcTypeConfig;
 pub use w3c_data_model::*;

@@ -15,63 +15,106 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::data::entities::{mates, minions};
+use crate::capabilities::Did;
+use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::Outcome;
-use crate::types::dids::DidsInfo;
-use crate::types::vcs::VPDef;
-use crate::types::wallet::{
-    CredentialOfferResponse, KeyDefinition, MatchingVCs, WalletCredentials, WalletInfo,
-    WalletSession,
-};
+use crate::types::dids::DidDocument;
+use crate::types::wallet::{DidSearch, Identity, WalletInfo};
 use async_trait::async_trait;
-use reqwest::Response;
-use serde_json::Value;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
+/// Wallet abstraction.
+///
+/// This trait represents the full wallet capability set:
+/// identity management, DID/VC storage, and protocol handling (OID4VCI/OID4VP).
 #[async_trait]
 pub trait WalletTrait: Send + Sync + 'static {
-    // BASIC
-    async fn register(&self) -> Outcome<()>;
-    async fn login(&self) -> Outcome<()>;
-    async fn logout(&self) -> Outcome<()>;
-    async fn onboard(&self) -> Outcome<(mates::NewModel, minions::NewModel)>;
-    async fn partial_onboard(&self) -> Outcome<(mates::NewModel, minions::NewModel)>;
-    async fn get_self_mate(&self) -> Outcome<mates::NewModel>;
-    async fn get_self_minion(&self) -> Outcome<minions::NewModel>;
-    async fn has_onboarded(&self) -> bool;
-    // GET FROM MANAGER (It gives a cloned Value, not a reference)
+    // ===== CORE WALLET STATE =====================================================================
+
+    /// Links the wallet to its backend, refreshing the locally cached identity
+    /// from whatever the remote considers the active default DID.
+    async fn link(&self) -> Outcome<()>;
+
+    /// Returns a snapshot of the wallet configuration and state.
     async fn get_wallet(&self) -> Outcome<WalletInfo>;
-    async fn first_wallet_mut(&self) -> Outcome<tokio::sync::MutexGuard<'_, WalletSession>>;
-    async fn get_did(&self) -> Outcome<String>;
-    async fn get_token(&self) -> Outcome<String>;
-    async fn get_did_doc(&self) -> Outcome<Value>;
-    async fn get_key(&self) -> Outcome<KeyDefinition>;
-    // RETRIEVE FROM WALLET
-    async fn retrieve_wallet_info(&self) -> Outcome<()>;
-    async fn retrieve_wallet_keys(&self) -> Outcome<()>;
-    async fn retrieve_wallet_dids(&self) -> Outcome<()>;
-    async fn retrieve_wallet_credentials(&self) -> Outcome<Vec<WalletCredentials>>;
-    // REGISTER STUFF IN WALLET
-    async fn register_key(&self) -> Outcome<()>;
-    async fn register_did(&self) -> Outcome<Option<String>>;
-    async fn reg_did_jwk(&self) -> Outcome<Response>;
-    async fn reg_did_web(&self) -> Outcome<Response>;
-    async fn set_default_did(&self, did: Option<&str>) -> Outcome<()>;
-    // DELETE STUFF FROM WALLET
-    async fn delete_key(&self, key: KeyDefinition) -> Outcome<()>;
-    async fn delete_did(&self, did_info: DidsInfo) -> Outcome<()>;
+
+    /// Returns the currently active DID.
+    async fn get_did(&self) -> Outcome<Did>;
+
+    /// Returns the DID Document of the active identity.
+    async fn get_did_doc(&self) -> Outcome<DidDocument>;
+
+    /// Returns the wallet identity reference shared across services.
+    fn get_identity(&self) -> Arc<RwLock<Identity>>;
+
+    // ===== STORAGE (READ ONLY) ===================================================================
+
+    /// Retrieves a DID by internal id or by DID string.
+    async fn retrieve_did(&self, search: DidSearch) -> Outcome<did::Model>;
+
+    /// Retrieves the default DID configured in the wallet.
+    async fn retrieve_default_did(&self) -> Outcome<did::Model>;
+
+    /// Returns all stored DIDs in the wallet.
+    async fn retrieve_all_dids(&self) -> Outcome<Vec<did::Model>>;
+
+    /// Retrieves a cryptographic key by its identifier.
+    async fn retrieve_key(&self, id: &str) -> Outcome<key::Model>;
+
+    /// Returns all stored cryptographic keys.
+    async fn retrieve_all_keys(&self) -> Outcome<Vec<key::Model>>;
+
+    /// Retrieves a verifiable credential by its identifier.
+    async fn retrieve_vc(&self, id: &str) -> Outcome<vc::Model>;
+
+    /// Returns all stored verifiable credentials.
+    async fn retrieve_all_vcs(&self) -> Outcome<Vec<vc::Model>>;
+
+    // ===== STORAGE (MUTATIONS) ===================================================================
+
+    /// Registers a new cryptographic key.
+    async fn register_key(&self, plan: key::Plan) -> Outcome<key::Model>;
+
+    /// Registers a new DID associated with a set of keys.
+    async fn register_did(&self, plan: did::Plan) -> Outcome<did::Model>;
+
+    /// Stores a verifiable credential in the wallet.
+    async fn store_vc(&self, plan: vc::Plan) -> Outcome<vc::Model>;
+
+    /// Sets the default DID for the wallet. Returns the updated default DID model.
+    async fn set_default_did(&self, search: DidSearch) -> Outcome<did::Model>;
+
+    // ===== DID-KEY MANAGEMENT ====================================================================
+
+    /// Attaches an existing key to an existing DID (only meaningful for DID methods
+    /// that support multiple verification methods, e.g. did:web). Returns the updated DID model.
+    async fn add_key_to_did(&self, search: DidSearch, key_id: String) -> Outcome<did::Model>;
+
+    /// Removes a key from an existing DID. Returns the updated DID model.
+    async fn remove_key_from_did(&self, search: DidSearch, key_id: String) -> Outcome<did::Model>;
+
+    /// Sets which of the DID's attached keys becomes the default for signing.
+    /// Returns the updated DID model.
+    async fn set_default_key(&self, search: DidSearch, key_id: String) -> Outcome<did::Model>;
+
+    // ===== DELETE OPERATIONS =====================================================================
+
+    /// Deletes a cryptographic key by its identifier.
+    async fn delete_key(&self, id: &str) -> Outcome<()>;
+
+    /// Deletes a DID by internal id or by DID string. Implementations must reject
+    /// deletion of the DID currently bound to the active identity.
+    async fn delete_did(&self, search: DidSearch) -> Outcome<()>;
+
+    /// Deletes a verifiable credential by its identifier.
     async fn delete_vc(&self, id: &str) -> Outcome<()>;
-    // DO STUFF IN WALLET
-    async fn resolve_credential_offer(&self, uri: &str) -> Outcome<CredentialOfferResponse>;
-    async fn resolve_credential_issuer(
-        &self,
-        cred_offer: &CredentialOfferResponse,
-    ) -> Outcome<Value>;
-    async fn use_offer_req(&self, uri: &str, cred_offer: &CredentialOfferResponse) -> Outcome<()>;
-    async fn get_vpd(&self, uri: &str) -> Outcome<VPDef>;
-    fn parse_vpd(&self, vpd_as_string: &str) -> Outcome<VPDef>;
-    async fn get_matching_vcs(&self, vpd: &VPDef) -> Outcome<Vec<String>>;
-    async fn match_vc4vp(&self, vp_def: Value) -> Outcome<Vec<MatchingVCs>>;
-    async fn present_vp(&self, uri: &str, vcs_id: Vec<String>) -> Outcome<Option<String>>;
-    async fn process_oidc4vci(&self, uri: &str) -> Outcome<()>;
-    async fn process_oidc4vp(&self, uri: &str) -> Outcome<Option<String>>;
+
+    // ===== PROTOCOL HANDLING =====================================================================
+
+    /// Processes an OID4VCI issuance flow from a URI.
+    async fn process_oid4vci(&self, uri: &str) -> Outcome<()>;
+
+    /// Processes an OID4VP presentation flow from a URI.
+    async fn process_oid4vp(&self, uri: &str) -> Outcome<()>;
 }

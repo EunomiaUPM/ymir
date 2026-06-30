@@ -8,17 +8,17 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::data::entities::wallet::did;
 use serde::{Deserialize, Serialize};
 
-use crate::types::dids::DidsInfo;
-#[derive(Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Clone, Debug)]
 pub struct WalletInfo {
     pub id: String,
     pub name: String,
@@ -27,5 +27,5 @@ pub struct WalletInfo {
     #[serde(rename = "addedOn")]
     pub added_on: String,
     pub permission: String, // TODO
-    pub dids: Vec<DidsInfo>,
+    pub dids: Vec<did::Model>,
 }

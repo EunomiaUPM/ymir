@@ -18,14 +18,26 @@
 use crate::config::types::VerifyReqConfig;
 use crate::types::vcs::VcType;
 
+/// Shared behavior for evaluation contexts demanding data space verification checks.
 pub trait VerifyReqConfigTrait {
+    // ===== EXTRACTION ANCHORS ====================================================================
+
+    /// Returns a backing reference to the root verification requirement configuration model.
     fn verify_req_config(&self) -> &VerifyReqConfig;
+
+    // ===== POLICY CONTROL QUERIES ================================================================
+
+    /// Checks whether raw cryptographic X.509 certificates are explicitly permitted within verification scopes.
     fn is_cert_allowed(&self) -> bool {
         self.verify_req_config().is_cert_allowed
     }
+
+    /// Checks if validated incoming cryptographic certificates bypass manual authorization queues.
     fn auto_approve_cert(&self) -> bool {
         self.verify_req_config().auto_approve_cert
     }
+
+    /// Recovers the precise array of requested Verifiable Credential taxonomy schemas.
     fn get_requested_vcs(&self) -> &[VcType] {
         &self.verify_req_config().vcs_requested
     }

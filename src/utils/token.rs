@@ -15,51 +15,50 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::{BadFormat, Errors, Outcome};
-use crate::utils::parse_from_slice;
+use crate::errors::{Errors, Outcome};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use jsonwebtoken::{EncodingKey, Header, encode};
+use chrono::Utc;
 use rand::Rng;
-use serde::Serialize;
-use serde_json::Value;
 
+// ===== CRYPTOGRAPHIC TOKEN GENERATION ============================================================
+
+/// Generates a high-entropy, 256-bit opaque security token string.
+///
+/// Collects randomness via standard local system thread sources, outputting an unpadded
+/// network-safe Base64URL serialized layout sequence.
 pub fn create_opaque_token() -> String {
-    let mut bytes = [0u8; 32]; // 256 bits
-    rand::rng().fill(&mut bytes);
+    let mut bytes = [0u8; 32];
+    rand::thread_rng().fill(&mut bytes);
     URL_SAFE_NO_PAD.encode(&bytes)
 }
 
-pub fn sign_token<T: Serialize>(header: &Header, claims: &T, key: &EncodingKey) -> Outcome<String> {
-    encode(&header, &claims, &key).map_err(|e| {
-        Errors::format(
-            BadFormat::Received,
-            "Unable to sign token",
-            Some(Box::new(e)),
-        )
-    })
+// ===== TEMPORAL EVALUATION ENGINE ================================================================
+
+/// Validates an asset issuance time assertion flag (`iat`) against active host machine clock parameters.
+///
+/// # Errors
+/// Returns an [`Errors::ForbiddenError`] if the token context's declared activation milestone sits
+/// inside future temporal horizons.
+pub fn is_active(iat: i64) -> Outcome<()> {
+    let now = Utc::now().timestamp();
+    if now >= iat {
+        Ok(())
+    } else {
+        Err(Errors::forbidden("Token is not yet valid", None))
+    }
 }
 
-pub fn decode_jwt_payload(jwt: &str) -> Outcome<Value> {
-    let parts: Vec<&str> = jwt.splitn(3, '.').collect();
-
-    if parts.len() < 2 {
-        return Err(Errors::format(
-            BadFormat::Received,
-            "Error decoding jwt payload",
-            None,
-        ));
+/// Validates an asset absolute lifetime termination barrier flag (`exp`) against host machine clocks.
+///
+/// # Errors
+/// Returns an [`Errors::ForbiddenError`] if active network tracking indicates current milestones
+/// have drifted past expiration thresholds.
+pub fn has_expired(exp: i64) -> Outcome<()> {
+    let now = Utc::now().timestamp();
+    if now <= exp {
+        Ok(())
+    } else {
+        Err(Errors::forbidden("Token has expired", None))
     }
-
-    let payload = parts[1];
-    let decoded = URL_SAFE_NO_PAD.decode(payload).map_err(|e| {
-        Errors::format(
-            BadFormat::Received,
-            "Error decoding jwt payload",
-            Some(Box::new(e)),
-        )
-    })?;
-    let value: Value = parse_from_slice(&decoded)?;
-
-    Ok(value)
 }

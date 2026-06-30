@@ -15,16 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::Errors;
+use crate::impl_serde_via_str;
+use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
+use std::convert::Infallible;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
 pub struct DidService {
     #[serde(skip_serializing_if = "Option::is_none")]
-    id: Option<String>,
+    id: Option<DidServiceType>,
     r#type: String,
     #[serde(rename = "serviceEndpoint")]
     service_endpoint: String,
@@ -40,10 +42,12 @@ impl DidService {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum DidServiceType {
     AuthorizationServer,
     CredentialIssuer,
     FederatedCatalog,
+    Other(String),
 }
 
 impl Display for DidServiceType {
@@ -52,6 +56,7 @@ impl Display for DidServiceType {
             DidServiceType::AuthorizationServer => "AuthorizationServer",
             DidServiceType::CredentialIssuer => "CredentialIssuer",
             DidServiceType::FederatedCatalog => "FederatedCatalog",
+            DidServiceType::Other(service) => service.as_str(),
         };
 
         write!(f, "{s}")
@@ -59,17 +64,16 @@ impl Display for DidServiceType {
 }
 
 impl FromStr for DidServiceType {
-    type Err = Errors;
+    type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "AuthorizationServer" => Ok(DidServiceType::AuthorizationServer),
             "CredentialIssuer" => Ok(DidServiceType::CredentialIssuer),
             "FederatedCatalog" => Ok(DidServiceType::FederatedCatalog),
-            format => Err(Errors::parse(
-                format!("Unknown service type: {}", format),
-                None,
-            )),
+            other => Ok(DidServiceType::Other(other.to_owned())),
         }
     }
 }
+
+impl_serde_via_str!(DidServiceType);

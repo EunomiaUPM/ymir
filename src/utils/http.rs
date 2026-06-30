@@ -23,28 +23,16 @@ use axum::extract::rejection::{FormRejection, JsonRejection};
 use axum::http::header::{ACCEPT, CONTENT_TYPE};
 use axum::http::{HeaderMap, HeaderValue};
 use axum::{Form, Json};
-use reqwest::{Response, Url};
-use serde::Serialize;
+use reqwest::Response;
 use serde::de::DeserializeOwned;
 use urn::Urn;
 
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
+use crate::types::gnap::grant_response::ErrorCode;
 
-pub fn get_from_opt<T>(value: Option<&T>, field_name: &str) -> Outcome<T>
-where
-    T: Clone + Serialize + DeserializeOwned,
-{
-    value
-        .ok_or_else(|| {
-            Errors::format(
-                BadFormat::Received,
-                &format!("Missing field: {}", field_name),
-                None,
-            )
-        })
-        .cloned()
-}
+// ===== STRING & URI MANIPULATION =================================================================
 
+/// Trims a fully qualified URI path layout back to its structural protocol base domain level.
 pub fn trim_4_base(input: &str) -> String {
     let slashes: Vec<usize> = input.match_indices('/').map(|(i, _)| i).collect();
 
@@ -57,20 +45,9 @@ pub fn trim_4_base(input: &str) -> String {
     input[..cut_index].to_string()
 }
 
-pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
-    parsed_uri
-        .query_pairs()
-        .find(|(k, _)| k == param_name)
-        .map(|(_, v)| v.into_owned())
-        .ok_or_else(|| {
-            Errors::format(
-                BadFormat::Received,
-                format!("Missing query parameter '{}'", param_name),
-                None,
-            )
-        })
-}
+// ===== HTTP HEADER BUILDERS ======================================================================
 
+/// Allocates an optimized standard HTTP [`HeaderMap`] initialized with standard application/json headers.
 pub fn json_headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
@@ -78,9 +55,14 @@ pub fn json_headers() -> HeaderMap {
     headers
 }
 
+// ===== ASYNC NETWORK RESPONSE EXTENSIONS =========================================================
+
+/// Extended asynchronous trait provisioning high-level deserialization shortcuts over network raw [`Response`] objects.
 #[async_trait]
 pub trait ResponseExt {
+    /// Deserializes the target network wire packet payload safely into structural model representations `T`.
     async fn parse_json<T: DeserializeOwned>(self) -> Outcome<T>;
+    /// Consumes the wire packet context completely, yielding a raw text payload representation.
     async fn parse_text(self) -> Outcome<String>;
 }
 
@@ -117,6 +99,9 @@ impl ResponseExt for Response {
     }
 }
 
+// ===== AXUM EXTRACTOR LAYER UNWRAPPERS ===========================================================
+
+/// Safely unwraps inbound Axum extract json vectors, converting framework errors into internal [`Errors::FormatError`].
 pub fn extract_payload<T>(payload: Result<Json<T>, JsonRejection>) -> Outcome<T> {
     payload.map(|Json(v)| v).map_err(|e| {
         Errors::format(
@@ -127,6 +112,7 @@ pub fn extract_payload<T>(payload: Result<Json<T>, JsonRejection>) -> Outcome<T>
     })
 }
 
+/// Safely unwraps inbound Axum extract form parameters, converting errors into internal framework errors.
 pub fn extract_form_payload<T>(payload: Result<Form<T>, FormRejection>) -> Outcome<T> {
     payload.map(|Form(v)| v).map_err(|e| {
         Errors::format(
@@ -137,6 +123,7 @@ pub fn extract_form_payload<T>(payload: Result<Form<T>, FormRejection>) -> Outco
     })
 }
 
+/// Dispatches localized key parsing queries over standard unstructured query hash matrixes.
 pub fn extract_query_param(params: &HashMap<String, String>, key: &str) -> Outcome<String> {
     params.get(key).cloned().ok_or_else(|| {
         Errors::format(
@@ -147,6 +134,9 @@ pub fn extract_query_param(params: &HashMap<String, String>, key: &str) -> Outco
     })
 }
 
+// ===== AUTHORIZATION TOKEN PROCESSING ============================================================
+
+/// Validates perimeter headers to parse detached GNAP capability token values.
 pub fn extract_gnap_token(headers: &HeaderMap) -> Outcome<String> {
     headers
         .get("Authorization")
@@ -156,6 +146,7 @@ pub fn extract_gnap_token(headers: &HeaderMap) -> Outcome<String> {
         .ok_or_else(|| Errors::unauthorized("GNAP token missing", None))
 }
 
+/// Validates perimeter headers to parse standard OAuth2 style Bearer authorization strings.
 pub fn extract_bearer_token(headers: &HeaderMap) -> Outcome<String> {
     headers
         .get("Authorization")
@@ -165,8 +156,48 @@ pub fn extract_bearer_token(headers: &HeaderMap) -> Outcome<String> {
         .ok_or_else(|| Errors::unauthorized("Bearer token missing", None))
 }
 
+/// Parses unstructured network payload parameters safely into strongly typed data space [`Urn`] footprints.
 pub fn extract_path_urn(urn: &String) -> Outcome<Urn> {
     let id_urn =
-        Urn::from_str(&urn).map_err(|e| Errors::parse(format!("Invalid Urn: {}", e), None))?;
+        Urn::from_str(urn).map_err(|e| Errors::parse(format!("Invalid Urn: {}", e), None))?;
     Ok(id_urn)
+}
+
+// ===== TRUST FRAMEWORK SPECIFIC CONVERSIONS ======================================================
+
+/// Translates systemic internal Rust domain errors into formalized external GNAP payload error protocols.
+pub fn errors_to_error_code(e: &Errors) -> ErrorCode {
+    match e {
+        // Client-side: Malformed or unmappable inputs
+        Errors::FormatError { .. } => ErrorCode::InvalidRequest,
+        Errors::ParseError { .. } => ErrorCode::InvalidRequest,
+        Errors::FeatureNotImplError { .. } => ErrorCode::InvalidRequest,
+
+        // Client-side: Invalid cryptographic boundary assertions
+        Errors::UnauthorizedError { .. } => ErrorCode::InvalidClient,
+        Errors::SecurityError { .. } => ErrorCode::InvalidClient,
+
+        // Client-side: Valid identities explicitly denied by policies
+        Errors::ForbiddenError { .. } => ErrorCode::RequestDenied,
+        Errors::MissingActionError { .. } => ErrorCode::RequestDenied,
+
+        // Client-side: Unknown target identifiers
+        Errors::MissingResourceError { .. } => ErrorCode::InvalidRequest,
+
+        // Server-side: Opaque database or internal infrastructure failure boundaries
+        Errors::DatabaseError { .. }
+        | Errors::ReadError { .. }
+        | Errors::WriteError { .. }
+        | Errors::VaultError { .. }
+        | Errors::EnvVarError { .. }
+        | Errors::ModuleNotActiveError { .. }
+        | Errors::CrazyError { .. } => ErrorCode::Other("server_error".to_string()),
+
+        // Server-side: Errors encountered when executing external network data boundaries
+        Errors::PetitionError { .. }
+        | Errors::ProviderError { .. }
+        | Errors::ConsumerError { .. }
+        | Errors::AuthorityError { .. }
+        | Errors::WalletError { .. } => ErrorCode::Other("upstream_error".to_string()),
+    }
 }

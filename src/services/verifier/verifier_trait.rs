@@ -15,55 +15,43 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use jsonwebtoken::TokenData;
-use serde_json::Value;
-
-use crate::data::entities::recv_interaction;
-use crate::data::entities::recv_verification::{Model, NewModel};
+use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::Outcome;
-use crate::types::vcs::{VPDef, W3cDataModelVersion};
+use crate::types::vcs::VPDef;
+use async_trait::async_trait;
 
+/// Verifiable Presentation verification service.
+///
+/// Responsible for generating presentation definitions,
+/// creating verification requests and validating received
+/// VP tokens against the requested requirements.
 #[async_trait]
 pub trait VerifierTrait: Send + Sync + 'static {
-    fn start_vp(&self, id: &str) -> Outcome<NewModel>;
-    fn generate_verification_uri(&self, model: &Model) -> String;
-    fn generate_vpd(&self, ver_model: &Model) -> Outcome<VPDef>;
-    async fn verify_all(&self, ver_model: &mut Model, vp_token: &str) -> Outcome<()>;
-    async fn verify_vp(&self, model: &mut Model, vp_token: &str) -> Outcome<(Vec<String>, String)>;
-    async fn verify_vc(&self, vc_token: &str, holder: &str) -> Outcome<()>;
-    fn validate_nonce(&self, model: &Model, token: &TokenData<Value>) -> Outcome<()>;
-    fn validate_vp_subject(
-        &self,
-        model: &mut Model,
-        token: &TokenData<Value>,
-        kid: &str,
-    ) -> Outcome<()>;
-    fn validate_vc_sub(
-        &self,
-        token: &TokenData<Value>,
-        holder: &str,
-        model: &W3cDataModelVersion,
-    ) -> Outcome<()>;
-    fn validate_vp_id(&self, model: &Model, token: &TokenData<Value>) -> Outcome<()>;
-    fn validate_holder(&self, model: &Model, token: &TokenData<Value>) -> Outcome<()>;
-    fn validate_issuer(
-        &self,
-        token: &TokenData<Value>,
-        kid: &str,
-        model: &W3cDataModelVersion,
-    ) -> Outcome<()>;
-    fn validate_vc_id(&self, token: &TokenData<Value>, model: &W3cDataModelVersion) -> Outcome<()>;
-    fn validate_valid_from(
-        &self,
-        token: &TokenData<Value>,
-        model: &W3cDataModelVersion,
-    ) -> Outcome<()>;
-    fn validate_valid_until(
-        &self,
-        token: &TokenData<Value>,
-        model: &W3cDataModelVersion,
-    ) -> Outcome<()>;
-    fn retrieve_vcs(&self, token: TokenData<Value>) -> Outcome<Vec<String>>;
-    async fn end_verification(&self, model: &recv_interaction::Model) -> Outcome<Option<String>>;
+    /// Creates a new verification plan associated with a grant.
+    ///
+    /// The resulting [`Plan`] establishes the expected cryptographic audience
+    /// (the Verifier's endpoint) and the array of allowed VC types.
+    fn build_vp_plan(&self, id: &str) -> Outcome<Plan>;
+
+    /// Generates the wallet-facing verification URI used to
+    /// initiate the presentation flow.
+    ///
+    /// Compiles an `openid4vp://` scheme deployment utilizing `direct_post` mode
+    /// and points the wallet to the ephemeral presentation definition endpoint.
+    fn generate_verification_uri(&self, verification_model: &Model) -> String;
+
+    /// Builds the Presentation Definition describing the
+    /// credentials that must be presented.
+    ///
+    /// Follows the DIF Presentation Exchange specification to restrict
+    /// the submission to the requested types within the [`Model`].
+    fn generate_vpd(&self, verification_model: &Model) -> Outcome<VPDef>;
+
+    /// Verifies all received presentations and updates the
+    /// verification model with the validation results.
+    ///
+    /// This validates the outer VP envelope (nonce, holder signature, expiration)
+    /// as well as each nested Verifiable Credential inside the token. Updates
+    /// the mutable [`Model`] status to reflect success or failure.
+    async fn verify_all(&self, verification_model: &mut Model, vp_token: &str) -> Outcome<()>;
 }

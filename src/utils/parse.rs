@@ -21,16 +21,20 @@ use std::{env, fs};
 use axum::http::HeaderValue;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use jsonwebtoken::EncodingKey;
-use reqwest::Response;
-use serde::Serialize;
+use reqwest::Url;
 use serde::de::DeserializeOwned;
-use serde_json::Value;
+use serde::{Deserialize, Serialize};
 
 use crate::errors::{BadFormat, Errors, Outcome};
-use crate::utils::validate_data;
 
+// ===== AXUM LAYER EXTENSIONS =====================================================================
+
+/// Trait provisioning fast conversion hooks from text boundaries to axum network [`HeaderValue`] structures.
 pub trait ParseHeaderExt {
+    /// Parses a raw string slice into a validated axum network [`HeaderValue`].
+    ///
+    /// # Errors
+    /// Returns an [`Errors::ParseError`] if the data payload contains illegal characters.
     fn parse_header(&self) -> Outcome<HeaderValue>;
 }
 
@@ -45,55 +49,9 @@ impl ParseHeaderExt for str {
     }
 }
 
-pub async fn parse_json_resp<T: DeserializeOwned>(response: Response) -> Outcome<T> {
-    response
-        .json()
-        .await
-        .map_err(|e| Errors::parse("Unable to parse json response", Some(Box::new(e))))
-}
+// ===== BASE64URL REWIRING ENGINE =================================================================
 
-pub async fn parse_text_resp(response: Response) -> Outcome<String> {
-    response
-        .text()
-        .await
-        .map_err(|e| Errors::parse("Unable to parse text response", Some(Box::new(e))))
-}
-
-pub fn parse_from_value<T: DeserializeOwned>(value: Value) -> Outcome<T> {
-    serde_json::from_value(value)
-        .map_err(|e| Errors::parse("Unable to parse from value", Some(Box::new(e))))
-}
-
-pub fn parse_from_str<T: DeserializeOwned>(data: &str) -> Outcome<T> {
-    serde_json::from_str(data)
-        .map_err(|e| Errors::parse("Unable to parse from value", Some(Box::new(e))))
-}
-
-pub fn parse_from_slice<T: DeserializeOwned>(data: &[u8]) -> Outcome<T> {
-    serde_json::from_slice(data).map_err(|e| {
-        Errors::format(
-            BadFormat::Received,
-            "Unable to parse from slice",
-            Some(Box::new(e)),
-        )
-    })
-}
-
-pub fn parse_to_value<T: Serialize>(value: &T) -> Outcome<Value> {
-    serde_json::to_value(value)
-        .map_err(|e| Errors::parse("Unable to serialize value", Some(Box::new(e))))
-}
-
-pub fn parse_to_string<T: Serialize>(value: &T) -> Outcome<String> {
-    serde_json::to_string(value)
-        .map_err(|e| Errors::parse("Unable to parse to string", Some(Box::new(e))))
-}
-
-pub fn get_rsa_key(key: &str) -> Outcome<EncodingKey> {
-    EncodingKey::from_rsa_pem(key.as_bytes())
-        .map_err(|e| Errors::parse("Unable to decode RSA key", Some(Box::new(e))))
-}
-
+/// Decodes an unpadded, URL-safe Base64 encoded payload back into raw vector bytes.
 pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
     URL_SAFE_NO_PAD.decode(data).map_err(|e| {
         Errors::parse(
@@ -103,6 +61,14 @@ pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
     })
 }
 
+/// Encodes an arbitrary byte matrix array slice into an unpadded, URL-safe Base64 string literal.
+pub fn encode_url_safe_no_pad(data: impl AsRef<[u8]>) -> String {
+    URL_SAFE_NO_PAD.encode(data)
+}
+
+// ===== FILESYSTEM RAW STORAGE PIPELINES ==========================================================
+
+/// Reads a local target asset track from disk into an unstructured textual string buffer.
 pub fn read<P>(path: P) -> Outcome<String>
 where
     P: AsRef<Path>,
@@ -118,16 +84,7 @@ where
     })
 }
 
-pub fn read_json<T, P>(path: P) -> Outcome<T>
-where
-    T: DeserializeOwned,
-    P: AsRef<Path>,
-{
-    let data = read(path)?;
-    serde_json::from_str(&data)
-        .map_err(|e| Errors::parse("Unable to parse JSON from file", Some(Box::new(e))))
-}
-
+/// Dispatches a standard serialized string output stream over a targeted filesystem layout vector.
 pub fn write<P>(path: P, content: String) -> Outcome<()>
 where
     P: AsRef<Path>,
@@ -143,6 +100,20 @@ where
     })
 }
 
+// ===== SERIALIZED JSON FILE WRAPPERS =============================================================
+
+/// Reads a text configuration asset from disk, marshalling its parameters into structured models `T`.
+pub fn read_json<T, P>(path: P) -> Outcome<T>
+where
+    T: DeserializeOwned,
+    P: AsRef<Path>,
+{
+    let data = read(path)?;
+    serde_json::from_str(&data)
+        .map_err(|e| Errors::parse("Unable to parse JSON from file", Some(Box::new(e))))
+}
+
+/// Transforms data matrices into pretty-printed JSON configurations before writing them to disk.
 pub fn write_json<T, P>(path: P, value: &T) -> Outcome<()>
 where
     T: Serialize,
@@ -153,38 +124,52 @@ where
     write(path, data)
 }
 
+// ===== SYSTEM ENVIRONMENT UTILITIES ==============================================================
+
+/// Forces a synchronous system variable resolution hook against host system scopes.
+///
+/// # Panics
+/// Direct unrecoverable panic occurs if the targeted environment token identifier remains unassigned.
 pub fn expect_from_env(env: &str) -> String {
-    env::var(env).expect(format!("Environment variable {} not set", env).as_str())
+    env::var(env).expect(&format!("Environment variable {} not set", env))
 }
 
-pub fn get_claim(claims: &Value, path: &[&str]) -> Outcome<String> {
-    let mut node = claims;
-    let field = path
-        .last()
-        .ok_or_else(|| Errors::parse("Path vector is empty", None))?;
-    for key in path.iter() {
-        node = node.get(key).ok_or_else(|| {
+// ===== DATA VALIDATION & STRUCTURAL EXTRACTORS ===================================================
+
+/// Extracts a single parameter field boundary mapping query out of an unstructured parsed [`Url`].
+pub fn get_query_param(parsed_uri: &Url, param_name: &str) -> Outcome<String> {
+    parsed_uri
+        .query_pairs()
+        .find(|(k, _)| k == param_name)
+        .map(|(_, v)| v.into_owned())
+        .ok_or_else(|| {
             Errors::format(
                 BadFormat::Received,
-                format!("Missing field '{}'", key),
+                format!("Missing query parameter '{}'", param_name),
                 None,
             )
-        })?
-    }
-    validate_data(node, field)
+        })
 }
 
-pub fn get_opt_claim(claims: &Value, path: &[&str]) -> Outcome<Option<String>> {
-    let mut node = claims;
-    let field = path
-        .last()
-        .ok_or_else(|| Errors::parse("Path vector is empty", None))?;
-    for key in path.iter() {
-        node = match node.get(key) {
-            Some(data) => data,
-            None => return Ok(None),
-        };
-    }
-    let data = validate_data(node, field)?;
-    Ok(Some(data))
+/// Evaluates options arrays, unwrapping raw targets or generating structured resource missing track errors.
+pub fn require_field<T>(opt: Option<T>, field: &str) -> Outcome<T> {
+    opt.ok_or_else(|| {
+        Errors::missing_resource(
+            field,
+            format!("Required field '{}' is missing", field),
+            None,
+        )
+    })
+}
+
+// ===== SHARED POLYMORPHIC DATA TYPES =============================================================
+
+/// Structural multi-format container mapping parameters that accept either solitary strings or raw string arrays.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum StringOrArr {
+    /// Singular text
+    String(String),
+    /// Array
+    Arr(Vec<String>),
 }

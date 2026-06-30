@@ -1,0 +1,40 @@
+/*
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+use serde::{Deserialize, Serialize};
+
+use crate::types::vcs::{InputDescriptor, VcType, W3cDataModelVersion};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VPDef {
+    pub id: String,
+    pub input_descriptors: Vec<InputDescriptor>,
+}
+
+impl VPDef {
+    pub fn new(id: impl Into<String>, vc_types: &[VcType], model: W3cDataModelVersion) -> Self {
+        let input_descriptors = vc_types
+            .iter()
+            .map(|vc_type| InputDescriptor::new(vc_type, model.clone()))
+            .collect();
+
+        VPDef {
+            id: id.into(),
+            input_descriptors,
+        }
+    }
+}

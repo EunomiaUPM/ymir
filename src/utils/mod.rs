@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod client;
 mod http;
 mod parse;
+mod present;
 mod token;
-mod validations;
 
+pub use client::http_client;
 pub use http::*;
 pub use parse::*;
+pub use present::*;
 pub use token::*;
-pub use validations::*;

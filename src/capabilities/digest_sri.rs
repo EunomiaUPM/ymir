@@ -16,24 +16,36 @@
  */
 
 use crate::errors::{Errors, Outcome};
-use crate::services::client::ClientTrait;
-use crate::utils::ResponseExt;
+use crate::types::crypto::Canon;
 use base64::{Engine, engine::general_purpose};
-use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::sync::Arc;
 
+/// Subresource Integrity (SRI) hashing utility for canonical data buffers.
+///
+/// Provides deterministic cryptographic checksum generation and verification
+/// over canonicalized structural envelopes ([`Canon`]) using standard web-integrity layouts.
 pub struct DigestSRI;
 
 impl DigestSRI {
-    pub fn digest(value: &Value) -> Outcome<String> {
-        let canonical = json_canon::to_string(value)?;
-        let hash = Sha256::digest(canonical.as_bytes());
+    // ===== DIGEST GENERATION =====================================================================
+
+    /// Computes the SHA-256 integrity hash over a canonical representation and encodes it as an SRI token.
+    ///
+    /// Returns a standardized formatted string: `sha256-<base64_payload>`.
+    pub fn digest(canonical: &Canon) -> String {
+        let hash = Sha256::digest(canonical.as_ref());
         let b64 = general_purpose::STANDARD.encode(hash);
-        Ok(format!("sha256-{}", b64))
+        format!("sha256-{}", b64)
     }
 
-    pub fn validate_json_sri(value: &Value, sri: impl Into<String>) -> Outcome<bool> {
+    // ===== VALIDATION PIPELINE ===================================================================
+
+    /// Assesses an inbound SRI metadata string pattern against a locally computed token.
+    ///
+    /// # Errors
+    /// Returns an [`Errors::FeatureNotImplError`] if the provided SRI string does not match the
+    /// required `sha256-` prefix taxonomy.
+    pub fn validate_json_sri(canonical: &Canon, sri: impl Into<String>) -> Outcome<bool> {
         let sri = sri.into();
 
         if !sri.starts_with("sha256-") {
@@ -43,23 +55,7 @@ impl DigestSRI {
             ));
         }
 
-        let computed = Self::digest(value)?;
+        let computed = Self::digest(canonical);
         Ok(computed == sri)
-    }
-
-    pub async fn validate_http_sri(
-        sri: impl Into<String>,
-        url: &str,
-        client: Arc<dyn ClientTrait>,
-    ) -> Outcome<bool> {
-        let sri = sri.into();
-        let res = client.get(url, None).await?;
-
-        if !res.status().is_success() {
-            return Ok(false);
-        }
-
-        let body: Value = res.parse_json().await?;
-        Self::validate_json_sri(&body, sri)
     }
 }

@@ -29,8 +29,14 @@ use crate::config::traits::DatabaseConfigTrait;
 use crate::errors::Outcome;
 use crate::services::vault::VaultTrait;
 
+/// Dispatcher Enum for Vault Strategies.
+///
+/// Wraps both the production-ready HTTP engine and the local file-system sandbox
+/// under a single runtime entity, abstracting identity signing and database connection orchestrations.
 pub enum VaultService {
+    /// Production client targeting an active HashiCorp Vault cluster.
     Real(RealVaultService),
+    /// Isolated file-based implementation designed for local testing and CI/CD pipelines.
     Fake(FakeVaultService),
 }
 
@@ -46,7 +52,7 @@ impl VaultTrait for VaultService {
         }
     }
 
-    async fn basic_read(&self, mount: &str, path: &str) -> Outcome<Value> {
+    async fn basic_read(&self, mount: Option<&str>, path: &str) -> Outcome<Value> {
         match self {
             VaultService::Real(v) => v.basic_read(mount, path).await,
             VaultService::Fake(v) => v.basic_read(mount, path).await,
@@ -70,13 +76,6 @@ impl VaultTrait for VaultService {
         }
     }
 
-    async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()> {
-        match self {
-            VaultService::Real(v) => v.write_local_secrets(map).await,
-            VaultService::Fake(v) => v.write_local_secrets(map).await,
-        }
-    }
-
     async fn check_mount(&self) -> Outcome<()> {
         match self {
             VaultService::Real(v) => v.check_mount().await,
@@ -84,7 +83,7 @@ impl VaultTrait for VaultService {
         }
     }
 
-    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
+    async fn get_db_connection<T>(&self, config: &T) -> Outcome<DatabaseConnection>
     where
         T: DatabaseConfigTrait + Send + Sync,
     {

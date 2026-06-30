@@ -14,79 +14,141 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
+use super::Continuation;
+use super::credential_response::CredentialResponse;
+use super::error_code::ErrorCode;
+use super::interact::InteractResponse;
+use super::subject::SubjectResponse;
+use crate::data::entities::received::interaction;
+use crate::data::entities::shared::resource_req;
+use crate::types::gnap::access_token::{AccessToken, ContinueToken};
+use crate::types::vcs::VcTypeConfig;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
-use crate::data::entities::{issuing, recv_interaction};
-use crate::errors::Outcome;
-use crate::types::gnap::credential_res::CredentialResponse;
-use crate::types::gnap::grant_request::InteractStart;
-use crate::types::gnap::grant_response::{
-    Continue4GResponse, Interact4GResponse, Subject4GResponse,
-};
-use crate::types::gnap::{AccessToken, ContinueToken};
-use crate::types::vcs::VcType;
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum GrantResponse {
+    Approved(ApprovedResponse),
+    Pending(PendingResponse),
+    Processing(ProcessingResponse),
+    Error(ErrorResponse),
+}
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GrantResponse {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ApprovedResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#continue: Option<Continue4GResponse>, /* REQUIRED for continuation calls are allowed for this client
-                                                 * instance on this grant request */
+    pub r#continue: Option<Continuation>,
+    #[serde(flatten)]
+    pub kind: GrantResponseKind,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub access_token: Option<AccessToken>, // REQUIRED if an access token is included
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub credential_response: Option<CredentialResponse>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub interact: Option<Interact4GResponse>, // REQUIRED if interaction is needed
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub subject: Option<Subject4GResponse>, // REQUIRED if subject information is included.
+    pub subject: Option<SubjectResponse>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PendingResponse {
+    pub r#continue: Continuation,
+    pub interact: InteractResponse,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
+    pub instance_id: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ProcessingResponse {
+    pub r#continue: Continuation,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instance_id: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ErrorResponse {
+    pub error: ErrorCode,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum GrantResponseKind {
+    AccessToken {
+        access_token: AccessToken,
+    },
+    CredentialResponse {
+        credential_response: CredentialResponse,
+    },
 }
 
 impl GrantResponse {
-    pub fn vc_approved(model: &issuing::Model) -> Outcome<Self> {
-        let vc_type = VcType::from_str(&model.vc_type)?;
-        Ok(Self {
+    pub fn token_approved(token: impl Into<String>, model: &resource_req::Model) -> Self {
+        let res = ApprovedResponse {
             r#continue: None,
-            access_token: None,
-            credential_response: Some(CredentialResponse::new(&model.uri, &vc_type)),
-            interact: None,
+            kind: GrantResponseKind::AccessToken {
+                access_token: AccessToken::new(token, model.clone()),
+            },
             subject: None,
             instance_id: None,
-            error: None,
+        };
+
+        GrantResponse::Approved(res)
+    }
+
+    pub fn vc_approved(uri: impl Into<String>, credential_type_config: Vec<VcTypeConfig>) -> Self {
+        let res = ApprovedResponse {
+            r#continue: None,
+            kind: GrantResponseKind::CredentialResponse {
+                credential_response: CredentialResponse {
+                    credential_uri: uri.into(),
+                    credential_type_config,
+                },
+            },
+            subject: None,
+            instance_id: None,
+        };
+
+        GrantResponse::Approved(res)
+    }
+
+    pub fn pending(uri: impl Into<String>, model: &interaction::Model) -> Self {
+        // BY DEFAULT IN THIS USE CASE, VERIFICATION IS DONE THROUGH OID4VC, THAT IS WHY THE REST REMAIN AS NONE
+        GrantResponse::Pending(PendingResponse {
+            r#continue: Continuation {
+                uri: model.continue_endpoint.clone(),
+                wait: None,
+                access_token: ContinueToken::new(model.continue_token.clone()),
+            },
+            interact: InteractResponse {
+                oid4vp: Some(uri.into()),
+                redirect: None,
+                app: None,
+                user_code: None,
+                user_code_uri: None,
+                finish: Some(model.as_nonce.clone()),
+                expires_in: None,
+            },
+            instance_id: Some(model.id.clone()),
         })
     }
-    pub fn pending(
-        option: &InteractStart,
-        model: &recv_interaction::Model,
-        uri: Option<&str>,
-    ) -> Self {
-        Self {
-            r#continue: Some(Continue4GResponse {
+
+    pub fn processing(model: &interaction::Model) -> Self {
+        GrantResponse::Processing(ProcessingResponse {
+            r#continue: Continuation {
                 uri: model.continue_endpoint.clone(),
-                wait: None, // TODO Manage wait time
-                access_token: ContinueToken::new(&model.continue_token),
-            }),
-            access_token: None,
-            credential_response: None,
-            interact: Some(Interact4GResponse::new(option, &model.as_nonce, uri)),
-            subject: None,
+                wait: None,
+                access_token: ContinueToken::new(model.continue_token.clone()),
+            },
             instance_id: Some(model.id.clone()),
-            error: None,
-        }
+        })
     }
-    pub fn error(error: String) -> Self {
-        Self {
-            r#continue: None,
-            access_token: None,
-            credential_response: None,
-            interact: None,
-            subject: None,
-            instance_id: None,
-            error: Some(error),
-        }
-    }
+    //
+    // pub fn error(code: ErrorCode) -> Self {
+    //     Self {
+    //         r#continue: None,
+    //         access_token: None,
+    //         credential_response: None,
+    //         interact: None,
+    //         subject: None,
+    //         instance_id: None,
+    //         error: Some(code),
+    //     }
+    // }
 }

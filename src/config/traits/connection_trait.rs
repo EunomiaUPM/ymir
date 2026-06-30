@@ -17,17 +17,27 @@
 
 use crate::config::types::ConnectionConfig;
 
+/// Shared behavior for structural configurations managing deployment flags and operational flags.
 pub trait ConnectionConfigTrait {
+    // ===== EXTRACTION ANCHORS ====================================================================
+
+    /// Returns a backing reference to the root connection configuration model.
     fn connection(&self) -> &ConnectionConfig;
-    fn is_local(&self) -> bool {
-        self.connection().is_local
-    }
+
+    // ===== ENVIRONMENT FLAG RESOLUTION ===========================================================
+
+    /// Evaluates whether the engine runtime is set to a production environment.
     fn is_prod(&self) -> bool {
         self.connection().is_prod
     }
+
+    /// Evaluates whether the engine is communicating with a real production Vault instance
+    /// or a mocked cryptographic provider state.
     fn is_vault_real(&self) -> bool {
         self.connection().is_vault_real
     }
+
+    /// Evaluates if network egress/ingress points sit behind a specialized upstream TLS terminate proxy.
     fn has_tls_proxy(&self) -> bool {
         self.connection().has_tls_proxy
     }

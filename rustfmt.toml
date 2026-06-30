@@ -2,7 +2,7 @@
 # Run:   cargo fmt
 # Check: cargo fmt --check
 
-edition = "2021"
+edition = "2024"
 
 # ── width ─────────────────────────────────────────────────────────────────────
 max_width            = 100
@@ -16,3 +16,4 @@ newline_style = "Unix"
 # ── imports ───────────────────────────────────────────────────────────────────
 reorder_imports = true
 reorder_modules = true
+group_imports = "StdExternalCrate"

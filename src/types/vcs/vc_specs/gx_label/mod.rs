@@ -15,8 +15,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod builder;
-mod core;
+use serde::{Deserialize, Serialize};
 
-pub use builder::*;
-pub use core::{CompliantCredential, GxLabelCredSubject};
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GxLabelCredSubject {
+    pub id: String,
+    #[serde(rename = "gx:labelLevel")]
+    pub label_level: String,
+    #[serde(rename = "gx:engineVersion")]
+    pub engine_version: String,
+    #[serde(rename = "gx:rulesVersion")]
+    pub rules_version: String,
+    #[serde(rename = "gx:compliantCredentials")]
+    pub compliant_credentials: Vec<CompliantCredential>,
+    #[serde(rename = "gx:validatedCriteria")]
+    pub validated_criteria: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CompliantCredential {
+    #[serde(rename = "gx:credentialType")]
+    pub credential_type: String,
+    #[serde(rename = "digestSRI")]
+    pub digest_sri: String,
+}

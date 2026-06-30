@@ -8,24 +8,14 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod m20250403_094651_business_mates;
-pub mod m20250403_094651_issuing;
-pub mod m20250403_094651_mates;
-pub mod m20250403_094651_minions;
-pub mod m20250403_094651_recv_interaction;
-pub mod m20250403_094651_recv_request;
-pub mod m20250403_094651_recv_verification;
-pub mod m20250403_094651_req_interaction;
-pub mod m20250403_094651_req_request;
-pub mod m20250403_094651_req_vc;
-pub mod m20250403_094651_req_verification;
-pub mod m20250403_094651_token_requirements;
-pub mod m20250403_094651_vc_request;
-pub mod migrator;
+pub mod received;
+pub mod sent;
+pub mod shared;
+pub mod wallet;

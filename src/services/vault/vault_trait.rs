@@ -26,20 +26,46 @@ use serde_json::Value;
 use crate::config::traits::DatabaseConfigTrait;
 use crate::errors::Outcome;
 
+/// Secure Secret Vault abstraction.
+///
+/// Provides an interface for reading and writing sensitive data, validating
+/// cryptographic storage mounts, and provisioning dynamic database connections.
 #[async_trait]
 pub trait VaultTrait: Send + Sync + 'static {
+    // ===== SECRET MANAGEMENT (READ / WRITE) ======================================================
+
+    /// Retrieves and deserializes a secret from the specified vault path.
+    ///
+    /// If no `mount` is provided, a default system secret engine mount will be assumed.
     async fn read<T>(&self, mount: Option<&str>, path: &str) -> Outcome<T>
     where
         T: DeserializeOwned + Send;
-    async fn basic_read(&self, mount: &str, path: &str) -> Outcome<Value>;
+
+    /// Retrieves a raw, unstructured JSON [`Value`] secret from the vault.
+    async fn basic_read(&self, mount: Option<&str>, path: &str) -> Outcome<Value>;
+
+    /// Stores a serializable secret into the specified vault path.
     async fn write<T>(&self, mount: Option<&str>, path: &str, secret: &T) -> Outcome<()>
     where
         T: Serialize + Send + Sync;
+
+    // ===== PROVISIONING & CONFIGURATION ==========================================================
+
+    /// Seeds multiple secrets into the vault at once.
+    ///
+    /// Useful during environment initialization or bootstrap sequences.
     async fn write_all_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()>;
-    async fn write_local_secrets(&self, map: Option<HashMap<String, Value>>) -> Outcome<()>;
+
+    /// Validates that the backend storage mount is initialized, unsealed, and reachable.
     async fn check_mount(&self) -> Outcome<()>;
 
-    async fn get_db_connection<T>(&self, config: &T) -> DatabaseConnection
+    // ===== INFRASTRUCTURE CONNECTIONS ============================================================
+
+    /// Establishes a database connection using configuration parameters retrieved via the vault.
+    ///
+    /// This may leverage dynamic credentials engines to safely acquire short-lived database
+    /// access tokens before wrapping the resulting connection pool into a [`DatabaseConnection`].
+    async fn get_db_connection<T>(&self, config: &T) -> Outcome<DatabaseConnection>
     where
         T: DatabaseConfigTrait + Send + Sync;
 }

@@ -19,11 +19,27 @@ use crate::config::types::ApiConfig;
 use crate::errors::Outcome;
 use crate::utils::read;
 
+/// Shared behavior for structural components managing core API gateway descriptors.
 pub trait ApiConfigTrait {
+    // ===== EXTRACTION ANCHORS ====================================================================
+
+    /// Returns a backing reference to the root API configuration model.
     fn api(&self) -> &ApiConfig;
+
+    // ===== METADATA & FILESYSTEM RESOLUTION ======================================================
+
+    /// Dispatches a synchronous file-system read operation to recover the target OpenAPI schema raw string.
+    ///
+    /// # Errors
+    /// Returns an [`Errors::ReadError`](crate::errors::Errors::ReadError) if the specified schema path matrix
+    /// cannot be resolved or accessed on the host system.
     fn get_openapi(&self) -> Outcome<String> {
         read(&self.api().openapi_path)
     }
+
+    /// Assembles the canonical API version prefix route path.
+    ///
+    /// Yields a standard string layout matching the pattern: `/api/<version>`.
     fn get_api_version(&self) -> String {
         format!("/api/{}", self.api().version)
     }

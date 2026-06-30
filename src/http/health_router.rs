@@ -19,11 +19,25 @@ use axum::Router;
 use axum::response::IntoResponse;
 use axum::routing::get;
 
+/// HTTP API Gateway Router governing infrastructure diagnostic probes.
+///
+/// Provisions standard stateless endpoints utilized by network proxies, load balancers,
+/// and container orchestrators (such as Kubernetes pods) to evaluate host operational availability.
 pub struct HealthRouter;
+
 impl HealthRouter {
+    /// Instantiates a new stateless network health diagnostic boundary layer.
     pub fn new() -> Self {
         Self {}
     }
+
+    /// Composes and registers standard diagnostic routes into a unified sub-routing architecture branch.
+    ///
+    /// # Exposed Map
+    /// * `GET /health`     - Standard environment availability check.
+    /// * `GET /healthz`    - Legacy and cloud-native container diagnostic check.
+    /// * `GET /liveness`   - Kubernetes liveness probe context (asserts container process is active).
+    /// * `GET /readiness`  - Kubernetes readiness probe context (asserts network instance is ready to ingest active traffic).
     pub fn router(self) -> Router {
         Router::new()
             .route("/health", get(Self::get_ok))
@@ -31,6 +45,8 @@ impl HealthRouter {
             .route("/liveness", get(Self::get_ok))
             .route("/readiness", get(Self::get_ok))
     }
+
+    /// Stateless Axum endpoint handler returning an immutable string indicator to validate thread execution.
     async fn get_ok() -> impl IntoResponse {
         "OK".into_response()
     }

@@ -15,15 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::config::traits::ConnectionConfigTrait;
 use serde::{Deserialize, Serialize};
 
-use crate::config::traits::ConnectionConfigTrait;
-
+/// Deployment deployment boundaries and infrastructure environment configuration tracks.
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ConnectionConfig {
-    pub is_local: bool,
+    /// Flag indicating if enforcement settings should lock parameters under production conditions.
     pub is_prod: bool,
+    /// Flag indicating whether secure key storage interacts with standard real Vault hardware infrastructure.
     pub is_vault_real: bool,
+    /// Flag checking if communication nodes are routed via reverse proxy TLS terminators.
     pub has_tls_proxy: bool,
 }
 

@@ -15,12 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod continue_resp;
+mod continuation;
+mod credential_response;
+mod error_code;
 mod grant_response;
-mod interact;
+pub mod interact;
 mod subject;
 
-pub use continue_resp::*;
+pub use continuation::Continuation;
+pub use credential_response::CredentialResponse;
+pub use error_code::ErrorCode;
 pub use grant_response::*;
-pub use interact::*;
-pub use subject::*;
+pub use subject::SubjectResponse;

@@ -15,6 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod config;
-pub mod service;
+mod config;
+mod service;
+
+pub use config::WaltIdConfig;
 pub use service::WaltIdService;

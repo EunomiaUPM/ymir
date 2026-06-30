@@ -15,17 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::config::traits::{HostsConfigTrait, SingleHostTrait};
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
-use serde::{Deserialize, Serialize};
-
-use crate::config::traits::{HostsConfigTrait, SingleHostTrait};
-
+/// Data representation wrapping single transport perimeter networking specs.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HostConfig {
+    /// Target routing scheme protocol (e.g. "http", "https").
     pub protocol: String,
+    /// Absolute domain address string, local node identifier, or IP matrix.
     pub url: String,
+    /// Network ingress point exposed to multi-tenant ecosystems.
     pub port: Option<String>,
+    /// Private cluster deployment container transport mapping boundary.
     pub internal_port: Option<String>,
 }
 
@@ -35,10 +38,14 @@ impl SingleHostTrait for HostConfig {
     }
 }
 
+/// Unified host transport layout controlling node exposure surfaces.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CommonHostsConfig {
+    /// Primary entry endpoint managing standard Web interactions.
     pub http: HostConfig,
+    /// Complementary endpoint handling low-latency high-throughput internal RPC tasks.
     pub grpc: Option<HostConfig>,
+    /// Complementary data query subsystem interface configuration mappings.
     pub graphql: Option<HostConfig>,
 }
 
@@ -48,6 +55,7 @@ impl HostsConfigTrait for CommonHostsConfig {
     }
 }
 
+/// Supported transport pipeline taxonomies within data space nodes.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum HostType {
     Http,

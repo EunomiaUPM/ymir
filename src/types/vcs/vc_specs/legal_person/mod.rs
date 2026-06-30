@@ -31,30 +31,55 @@ pub struct LegalPersonCredentialSubject {
     pub gx_headquarters_address: Address,
     #[serde(rename = "schema:name")]
     pub schema_name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "schema:description", skip_serializing_if = "Option::is_none")]
     pub schema_description: Option<String>,
 }
 
+/// Nested registration number embedded inside a `gx:LegalPerson` credential
+/// subject. Per `gx:RegistrationNumberShape` (sh:closed false) the expected
+/// pattern is to embed the subtype properties (gx:vatID, schema:leiCode, ...)
+/// directly. The `registrationNumberType`/`registrationNumberValue` pair below
+/// is a legacy shim we keep for backwards compat; consider replacing with the
+/// proper embedded subtype variants.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TypedRegistrationNumber {
-    pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[serde(rename = "gx:registrationNumberType")]
     pub gx_registration_number_type: String,
     #[serde(rename = "gx:registrationNumberValue")]
     pub gx_registration_number_value: String,
 }
 
+/// Address per `gx:AddressShape` (sh:closed true).
+///
+/// Most string properties live in the vCard namespace (`vcard:postal-code`,
+/// `vcard:locality`, `vcard:street-address`). Only `countryCode` and
+/// `countryName` are in the `gx:` namespace.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Address {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[serde(rename = "@type")]
     pub r#type: String,
-    pub gx_country: String,
-    pub gx_locality: String,
-    #[serde(rename = "gx:postalCode")]
-    pub gx_postal_code: String,
-    #[serde(rename = "gx:streetAddress")]
-    pub gx_street_address: String,
+    /// ISO 3166-1 alpha-2/alpha-3/numeric. REQUIRED per spec.
+    #[serde(rename = "gx:countryCode")]
+    pub country_code: String,
+    /// Plain-text country name. OPTIONAL per spec.
+    #[serde(rename = "gx:countryName", skip_serializing_if = "Option::is_none")]
+    pub country_name: Option<String>,
+    /// vCard locality (city/town). OPTIONAL.
+    #[serde(rename = "vcard:locality", skip_serializing_if = "Option::is_none")]
+    pub locality: Option<String>,
+    /// vCard postal code. OPTIONAL.
+    #[serde(rename = "vcard:postal-code", skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
+    /// vCard street address. OPTIONAL.
+    #[serde(
+        rename = "vcard:street-address",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub street_address: Option<String>,
 }
 
 impl LegalPersonCredentialSubject {
@@ -84,27 +109,31 @@ impl LegalPersonCredentialSubject {
         Ok(LegalPersonCredentialSubject {
             id: kid.to_string(),
             gx_registration_number: TypedRegistrationNumber {
-                id: kid.to_string(),
+                id: None,
                 gx_registration_number_type: vc_type.to_string(),
                 gx_registration_number_value: code.into(),
             },
             gx_legal_address: Address {
                 id: None,
                 r#type: "gx:Address".to_string(),
-                gx_country: "ES".to_string(),
-                gx_locality: "Madrid".to_string(),
-                gx_postal_code: "28035".to_string(),
-                gx_street_address: "Av. Complutense, 30, Moncloa - Aravaca, 28040 Madrid"
-                    .to_string(),
+                country_code: "ES".to_string(),
+                country_name: None,
+                locality: Some("Madrid".to_string()),
+                postal_code: Some("28040".to_string()),
+                street_address: Some(
+                    "Av. Complutense, 30, Moncloa - Aravaca, 28040 Madrid".to_string(),
+                ),
             },
             gx_headquarters_address: Address {
                 id: None,
                 r#type: "gx:Address".to_string(),
-                gx_country: "ES".to_string(),
-                gx_locality: "Madrid".to_string(),
-                gx_postal_code: "28035".to_string(),
-                gx_street_address: "Av. Complutense, 30, Moncloa - Aravaca, 28040 Madrid"
-                    .to_string(),
+                country_code: "ES".to_string(),
+                country_name: None,
+                locality: Some("Madrid".to_string()),
+                postal_code: Some("28040".to_string()),
+                street_address: Some(
+                    "Av. Complutense, 30, Moncloa - Aravaca, 28040 Madrid".to_string(),
+                ),
             },
             schema_name: "UPM to the sky".to_string(),
             schema_description: None,

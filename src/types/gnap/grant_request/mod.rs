@@ -15,17 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod acc_token_requirements;
-mod actions;
-mod client;
-mod credential_request_req;
+pub mod access;
+pub mod client;
+mod credential_request;
 mod grant_request;
-mod interact;
+mod grant_request_kind;
+pub mod interact;
 mod subject;
 
-pub use acc_token_requirements::*;
-pub use actions::*;
-pub use client::*;
-pub use grant_request::*;
-pub use interact::*;
-pub use subject::*;
+pub use grant_request::GrantRequest;
+pub use grant_request_kind::{GrantKind, GrantRequestKind};
+pub use subject::SubjectRequest;

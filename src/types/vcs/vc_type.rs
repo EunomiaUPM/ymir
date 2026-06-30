@@ -15,15 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use sea_orm::FromJsonQueryResult;
+use std::convert::Infallible;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use crate::impl_serde_via_str;
 
-use serde::{Deserialize, Serialize};
-
-use crate::errors::{BadFormat, Errors, Outcome};
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, FromJsonQueryResult)]
 pub enum VcType {
     Eori,
     Euid,
@@ -35,27 +34,25 @@ pub enum VcType {
     LegalPerson,
     TermsAndConditions,
     GxLabel,
+    Other(String),
 }
 
 impl FromStr for VcType {
-    type Err = Errors;
+    type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "gx:Eori" => Ok(VcType::Eori),
-            "gx:Euid" => Ok(VcType::Euid),
-            "gx:LeiCode" => Ok(VcType::LeiCode),
-            "gx:LocalRegistrationNumber" => Ok(VcType::LocalRegistrationNumber),
-            "gx:TaxId" => Ok(VcType::TaxId),
-            "gx:VatId" => Ok(VcType::VatId),
-            "DataSpaceParticipant" => Ok(VcType::DataspaceParticipant),
-            "gx:LegalPerson" => Ok(VcType::LegalPerson),
-            "gx:TermsAndConditions" => Ok(VcType::TermsAndConditions),
-            "gx:LabelCredential" => Ok(VcType::GxLabel),
-            format => Err(Errors::parse(
-                format!("Unknown credential format: {}", format),
-                None,
-            )),
+        match s.to_ascii_lowercase().as_str() {
+            "gx:eori" => Ok(VcType::Eori),
+            "gx:euid" => Ok(VcType::Euid),
+            "gx:leicode" => Ok(VcType::LeiCode),
+            "gx:localregistrationnumber" => Ok(VcType::LocalRegistrationNumber),
+            "gx:taxid" => Ok(VcType::TaxId),
+            "gx:vatid" => Ok(VcType::VatId),
+            "dataspaceparticipant" => Ok(VcType::DataspaceParticipant),
+            "gx:legalperson" => Ok(VcType::LegalPerson),
+            "gx:termsandconditions" => Ok(VcType::TermsAndConditions),
+            "gx:labelcredential" => Ok(VcType::GxLabel),
+            other => Ok(VcType::Other(other.to_string())),
         }
     }
 }
@@ -73,6 +70,7 @@ impl Display for VcType {
             VcType::LegalPerson => "gx:LegalPerson",
             VcType::TermsAndConditions => "gx:TermsAndConditions",
             VcType::GxLabel => "gx:LabelCredential",
+            VcType::Other(other) => other,
         };
 
         write!(f, "{s}")
@@ -80,44 +78,8 @@ impl Display for VcType {
 }
 
 impl VcType {
-    pub fn to_conf(&self) -> String {
-        match self {
-            VcType::Eori => "gx_Eori_jwt_vc_json",
-            VcType::Euid => "gx_Euid_jwt_vc_json",
-            VcType::LeiCode => "gx_LeiCode_jwt_vc_json",
-            VcType::LocalRegistrationNumber => "gx_LocalRegistrationNumber_jwt_vc_json",
-            VcType::TaxId => "gx_TaxId_jwt_vc_json",
-            VcType::VatId => "gx_VatId_jwt_vc_json",
-            VcType::DataspaceParticipant => "DataSpaceParticipant_jwt_vc_json",
-            VcType::LegalPerson => "gx_LegalPerson_jwt_vc_json",
-            VcType::TermsAndConditions => "gx_TermsAndConditions_jwt_vc_json",
-            VcType::GxLabel => "gx_LabelCredential_jwt_vc_json",
-        }
-        .to_string()
-    }
-
-    pub fn from_conf(s: &str) -> Result<Self, Errors> {
-        match s {
-            "gx_Eori_jwt_vc_json" => Ok(VcType::Eori),
-            "gx_Euid_jwt_vc_json" => Ok(VcType::Euid),
-            "gx_LeiCode_jwt_vc_json" => Ok(VcType::LeiCode),
-            "gx_LocalRegistrationNumber_jwt_vc_json" => Ok(VcType::LocalRegistrationNumber),
-            "gx_TaxId_jwt_vc_json" => Ok(VcType::TaxId),
-            "gx_VatId_jwt_vc_json" => Ok(VcType::VatId),
-            "DataSpaceParticipant_jwt_vc_json" => Ok(VcType::DataspaceParticipant),
-            "gx_LegalPerson_jwt_vc_json" => Ok(VcType::LegalPerson),
-            "gx_TermsAndConditions_jwt_vc_json" => Ok(VcType::TermsAndConditions),
-            "gx_LabelCredential_jwt_vc_json" => Ok(VcType::GxLabel),
-            _ => Err(Errors::format(
-                BadFormat::Received,
-                format!("Unknown credential configuration: {}", s),
-                None,
-            )),
-        }
-    }
-
-    pub fn variants() -> &'static [VcType] {
-        &[
+    pub fn supported() -> Vec<VcType> {
+        vec![
             VcType::Eori,
             VcType::Euid,
             VcType::LeiCode,
@@ -127,23 +89,19 @@ impl VcType {
             VcType::DataspaceParticipant,
             VcType::LegalPerson,
             VcType::TermsAndConditions,
+            VcType::GxLabel,
         ]
     }
-    pub fn to_gaia_weird(&self) -> Outcome<&str> {
-        match self {
-            VcType::Eori => Ok("gx:eori"),
-            VcType::Euid => Ok("gx:euid"),
-            VcType::LeiCode => Ok("gx:leiCode"),
-            VcType::LocalRegistrationNumber => Ok("gx:local"),
-            VcType::TaxId => Ok("gx:taxID"),
-            VcType::VatId => Ok("gx:vatID"),
-            VcType::LegalPerson => Ok("gx:legalPerson"),
-            VcType::TermsAndConditions => Ok("gx:termsAndConditions"),
-            vc_type => Err(Errors::format(
-                BadFormat::Received,
-                format!("Cannot implement this function with vc_type {}", vc_type),
-                None,
-            )),
-        }
+    pub fn is_legal_registration_number(&self) -> bool {
+        matches!(
+            self,
+            VcType::VatId
+                | VcType::LeiCode
+                | VcType::TaxId
+                | VcType::LocalRegistrationNumber
+                | VcType::Eori
+                | VcType::Euid
+        )
     }
 }
+impl_serde_via_str!(VcType);

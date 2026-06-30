@@ -20,9 +20,14 @@ use std::fmt::{Display, Formatter};
 
 use super::{AnyError, ErrorInfo, HttpContext, MissingAction, PetitionFailure};
 
+/// Centralized Operational Error Taxonomy for the Identity and Data Space Ecosystem.
+///
+/// Implements [`std::error::Error`] and provides structural variants capturing rich multiprotocol
+/// contexts, raw IO state tracks, dynamic source errors ([`AnyError`]), and automated stack [`Backtrace`] frames.
 #[derive(Debug)]
 pub enum Errors {
-    // HTTP CONTEXT
+    // ===== HTTP & ECOSYSTEM CONTEXT ERRORS =======================================================
+    /// Triggered when an outbound or inbound HTTP network request/handshake transaction fails.
     PetitionError {
         info: ErrorInfo,
         ctx: HttpContext,
@@ -31,6 +36,7 @@ pub enum Errors {
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Internal failure context originating from the core SSI Wallet subsystem operations.
     WalletError {
         info: ErrorInfo,
         ctx: HttpContext,
@@ -38,6 +44,7 @@ pub enum Errors {
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Data Space error context occurring when operating under the **Provider** role.
     ProviderError {
         info: ErrorInfo,
         ctx: HttpContext,
@@ -45,6 +52,7 @@ pub enum Errors {
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Data Space error context occurring when operating under the **Consumer** role.
     ConsumerError {
         info: ErrorInfo,
         ctx: HttpContext,
@@ -52,6 +60,7 @@ pub enum Errors {
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Authorization Server or trust anchor domain validation error context.
     AuthorityError {
         info: ErrorInfo,
         ctx: HttpContext,
@@ -59,7 +68,9 @@ pub enum Errors {
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
-    // ACTION
+
+    // ===== PROTOCOL LIFECYCLE ERRORS ============================================================
+    /// Occurs when a mandatory GNAP or OAuth transactional action state is requested but missing.
     MissingActionError {
         info: ErrorInfo,
         action: MissingAction,
@@ -67,7 +78,7 @@ pub enum Errors {
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
-    // ID
+    /// Occurs when a specific relational or unique entity resource cannot be resolved by its identifier.
     MissingResourceError {
         info: ErrorInfo,
         resource_id: String,
@@ -75,7 +86,9 @@ pub enum Errors {
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
-    // PATHS
+
+    // ===== FILESYSTEM & STORAGE IO ERRORS ========================================================
+    /// Read file-system IO block operations failure.
     ReadError {
         info: ErrorInfo,
         path: String,
@@ -83,6 +96,7 @@ pub enum Errors {
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Write/Serialization file-system IO block operations failure.
     WriteError {
         info: ErrorInfo,
         path: String,
@@ -90,67 +104,79 @@ pub enum Errors {
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
-    // BASICS
+
+    // ===== FOUNDATIONAL SECURITY & PLATFORM BASE ERRORS ==========================================
+    /// Data structures schema mismatch or unexpected envelope formats.
     FormatError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Client request lacks proper credentials or identity authentication indicators.
     UnauthorizedError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Client identity is authenticated but lacks required access privileges for the resource.
     ForbiddenError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Cryptographic validation or message signature verification failure.
     SecurityError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Internal engine database operational error originating from the Sea-ORM layer.
     DatabaseError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Executed code pathways pointing to non-implemented features or architectural stubs.
     FeatureNotImplError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Missing or corrupted environment variable declarations during host boot sequences.
     EnvVarError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Execution requested over a business logic module that has been flagged as inactive in configs.
     ModuleNotActiveError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Data transformations, serialization/deserialization, or string parsing failure steps.
     ParseError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Internal secure hardware enclave or Vault Service infrastructure failure.
     VaultError {
         info: ErrorInfo,
         reason: String,
         source: Option<AnyError>,
         backtrace: Backtrace,
     },
+    /// Fallback variant for unclassified, highly irregular, or panic-equivalent edge-cases.
     CrazyError {
         info: ErrorInfo,
         reason: String,
@@ -187,7 +213,7 @@ impl Display for Errors {
                 }
             }
             Errors::VaultError { info, .. } => write!(f, "{}\n", info.message),
-            Errors::CrazyError { info, .. } => write!(f, "{\n}", info.message),
+            Errors::CrazyError { info, .. } => write!(f, "{}\n", info.message),
         }
     }
 }

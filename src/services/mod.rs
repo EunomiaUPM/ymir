@@ -16,8 +16,11 @@
  */
 
 pub mod client;
+mod has_service_trait;
 pub mod issuer;
 pub mod repo;
 pub mod vault;
 pub mod verifier;
 pub mod wallet;
+pub mod identity;
+pub use has_service_trait::*;

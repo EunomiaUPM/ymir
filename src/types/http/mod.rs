@@ -21,10 +21,9 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::errors::{Errors, Outcome};
-use crate::utils::parse_to_value;
 
 #[derive(Clone)]
-pub enum Body {
+pub enum HttpBody {
     Json(Value),
     Raw(String),
     Bytes(Vec<u8>),
@@ -32,30 +31,37 @@ pub enum Body {
     None,
 }
 
-impl From<&str> for Body {
+impl From<&str> for HttpBody {
     fn from(value: &str) -> Self {
-        Body::Raw(value.to_string())
+        HttpBody::Raw(value.to_string())
     }
 }
 
-impl From<HashMap<String, String>> for Body {
+impl From<HashMap<String, String>> for HttpBody {
     fn from(value: HashMap<String, String>) -> Self {
-        Body::Form(value)
+        HttpBody::Form(value)
     }
 }
 
-impl Body {
-    pub fn json<T: Serialize>(value: &T) -> Outcome<Body> {
-        let body = parse_to_value(value)?;
-        Ok(Body::Json(body))
+impl HttpBody {
+    pub fn json<T: Serialize>(value: &T) -> Outcome<HttpBody> {
+        let body = serde_json::to_value(value)?;
+        Ok(HttpBody::Json(body))
+    }
+    pub fn form<T: Serialize>(value: &T) -> Outcome<HttpBody> {
+        let encoded = serde_urlencoded::to_string(value)
+            .map_err(|e| Errors::parse("Failed to encode form", Some(Box::new(e))))?;
+        let pairs: HashMap<String, String> = serde_urlencoded::from_str(&encoded)
+            .map_err(|e| Errors::parse("Failed to decode form back", Some(Box::new(e))))?;
+        Ok(HttpBody::Form(pairs))
     }
 
-    pub fn str(value: &str) -> Outcome<Body> {
-        Ok(Body::Raw(value.to_string()))
+    pub fn str(value: &str) -> Outcome<HttpBody> {
+        Ok(HttpBody::Raw(value.to_string()))
     }
-    pub fn from_json_bytes<T: Serialize>(value: &T) -> Outcome<(Body, Vec<u8>)> {
+    pub fn from_json_bytes<T: Serialize>(value: &T) -> Outcome<(HttpBody, Vec<u8>)> {
         let bytes = serde_json::to_vec(value)
             .map_err(|e| Errors::parse("Failed to serialize body to bytes", Some(Box::new(e))))?;
-        Ok((Body::Bytes(bytes.clone()), bytes))
+        Ok((HttpBody::Bytes(bytes.clone()), bytes))
     }
 }
