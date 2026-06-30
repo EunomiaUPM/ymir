@@ -1,6 +1,6 @@
 [package]
 name = "ymir"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 
 [dependencies]
@@ -13,34 +13,18 @@ urlencoding = { version = "2.1.3" }
 sea-orm-migration = { version = "1.1.1" }
 urn = { version = "0.7.0", features = ["serde"] }
 serde_urlencoded = "0.7.1"
-
-# ─── Serialisation ─────────────────────────────────────────────────────
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 chrono = { version = "0.4.44", features = ["serde"] }
-
-# ─── Observability ─────────────────────────────────────────────────────
 tracing = "0.1.44"
-
-# ─── Cryptography (RustCrypto family — pure Rust, no OpenSSL) ──────────
 ed25519-dalek = { version = "2", features = ["rand_core", "pkcs8"] }
 rsa = "0.9.10"
 sha2 = { version = "0.10", features = ["oid"] }
 rand = "0.8.5"
 pkcs8 = "0.11.0"
-
-# ─── Encoding ──────────────────────────────────────────────────────────
-bs58 = "0.5"                                          # multibase z-base58btc (DI proofs)
-base64 = { version = "0.22", features = ["alloc"] }    # base64url for JOSE / JWK
-hex = "0.4"                                            # seed encoding in config.yaml
-json-canon = "0.1.3"                                   # JCS canonicalisation (RFC 8785)
-
-# ─── HTTP client for did:web resolution ───────────────────────────────
-# rustls-tls avoids the OpenSSL system dependency; pure Rust TLS stack.
-reqwest = { version = "0.13.3", default-features = false, features = ["json", "rustls"]}
-# `executor` gives futures::executor::block_on — used by the bench to run
-# the (local, for did:jwk) async resolution once in setup without tokio.
-futures = { version = "0.3.32", features = ["executor"] }
+bs58 = "0.5"
+base64 = { version = "0.22", features = ["alloc"] }
+json-canon = "0.1.3"
+reqwest = { version = "0.13.3", default-features = false, features = ["json", "rustls"] }
 uuid = { version = "1.23.1", features = ["v4"] }
-rayon = "1.12.0"
 x509-parser = "0.18.1"
