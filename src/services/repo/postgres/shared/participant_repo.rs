@@ -94,6 +94,7 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
                         participant::Column::LastInteraction,
                         participant::Column::Token,
                         participant::Column::ParticipantNick,
+                        participant::Column::TenantId,
                     ])
                     .to_owned(),
             )

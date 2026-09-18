@@ -33,6 +33,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
+                    .col(ColumnDef::new(Participants::TenantId).string().not_null())
                     .col(
                         ColumnDef::new(Participants::ParticipantNick)
                             .string()
@@ -78,6 +79,7 @@ pub enum Participants {
     #[iden = "participants"]
     Table,
     ParticipantId,
+    TenantId,
     ParticipantNick,
     ParticipantType,
     BaseUrl,
