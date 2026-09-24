@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::types::crypto::{HasProofPurpose, ProofPurpose};
 use crate::types::vps::VpDocument;
 use serde::{Deserialize, Serialize};
 
@@ -35,4 +36,8 @@ pub struct VPJwtClaims {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub iat: Option<i64>,
     pub vp: VpDocument,
+}
+
+impl HasProofPurpose for VPJwtClaims {
+    const PURPOSE: ProofPurpose = ProofPurpose::Authentication;
 }

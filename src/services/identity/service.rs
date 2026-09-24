@@ -19,9 +19,9 @@ use crate::services::identity::IdentityTrait;
 use async_trait::async_trait;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use crate::capabilities::Did;
 use crate::data::entities::wallet::did::Model;
 use crate::errors::Outcome;
+use crate::types::dids::Did;
 use crate::types::wallet::Identity;
 
 /// Concrete implementation of the operational dynamic identity supervisor.

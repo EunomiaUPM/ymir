@@ -24,12 +24,13 @@ use urlencoding;
 
 use super::super::IssuerTrait;
 use super::IssuerConfig;
-use crate::capabilities::{Kid, Signer, Verifier};
+use crate::capabilities::{Signer, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::shared::issuance;
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::vault::{VaultService, VaultTrait};
+use crate::types::dids::Did;
 use crate::types::gnap::grant_request::GrantRequestKind;
 use crate::types::gnap::grant_request::client::{Client, KeyMaterial};
 use crate::types::issuance::{
@@ -226,12 +227,12 @@ impl IssuerTrait for IssuerService {
             }
         };
 
-        let (kid, claims) =
+        let (did, claims) =
             Verifier::verify_enveloped::<DidPossession>(&jwt, Some(&issuance.aud)).await?;
 
-        validate_did_possession(&claims, &kid, &issuance.nonce)?;
+        validate_did_possession(&claims, &did, &issuance.nonce)?;
         is_active(claims.iat)?;
-        Ok((kid.did().id().to_string(), vc_config))
+        Ok((did.id().to_string(), vc_config))
     }
 
     async fn sign_claims(&self, claims: &VCJwtClaims) -> Outcome<String> {
@@ -264,10 +265,10 @@ impl IssuerService {
 
 // ===== Free helpers ==========================================================
 
-fn validate_did_possession(claims: &DidPossession, kid: &Kid, nonce: &str) -> Outcome<()> {
+fn validate_did_possession(claims: &DidPossession, did: &Did, nonce: &str) -> Outcome<()> {
     info!("Validating did possession");
     if let Some(iss) = &claims.iss {
-        if iss != kid.did().id() {
+        if iss != did.id() {
             return Err(Errors::forbidden("Invalid proof of did possession", None));
         }
     }

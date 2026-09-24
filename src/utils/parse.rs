@@ -22,8 +22,8 @@ use axum::http::HeaderValue;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use reqwest::Url;
+use serde::Serialize;
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 
 use crate::errors::{BadFormat, Errors, Outcome};
 
@@ -160,16 +160,4 @@ pub fn require_field<T>(opt: Option<T>, field: &str) -> Outcome<T> {
             None,
         )
     })
-}
-
-// ===== SHARED POLYMORPHIC DATA TYPES =============================================================
-
-/// Structural multi-format container mapping parameters that accept either solitary strings or raw string arrays.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum StringOrArr {
-    /// Singular text
-    String(String),
-    /// Array
-    Arr(Vec<String>),
 }

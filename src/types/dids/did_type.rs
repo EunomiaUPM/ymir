@@ -46,86 +46,13 @@ impl FromStr for DidType {
     type Err = Errors;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Jwk" => Ok(DidType::Jwk),
-            "Web" => Ok(DidType::Web),
+        match s.to_lowercase().as_str() {
+            "jwk" => Ok(DidType::Jwk),
+            "web" => Ok(DidType::Web),
             did => Err(Errors::not_impl(
                 format!("DidType {did} not supported"),
                 None,
             )),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct JwkDid {
-    id: String,
-    jwk: String,
-}
-
-impl JwkDid {
-    pub fn new(id: impl Into<String>, jwk: impl Into<String>) -> JwkDid {
-        JwkDid {
-            id: id.into(),
-            jwk: jwk.into(),
-        }
-    }
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-    pub fn jwk(&self) -> &str {
-        &self.jwk
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct WebDid {
-    id: String,
-    domain: String,
-    path: Option<String>,
-    port: Option<String>,
-}
-
-impl WebDid {
-    pub fn new(
-        id: impl Into<String>,
-        domain: impl Into<String>,
-        path: Option<String>,
-        port: Option<String>,
-    ) -> WebDid {
-        WebDid {
-            id: id.into(),
-            domain: domain.into(),
-            path,
-            port,
-        }
-    }
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-    pub fn domain(&self) -> &str {
-        &self.domain
-    }
-    pub fn path(&self) -> &Option<String> {
-        &self.path
-    }
-    pub fn port(&self) -> &Option<String> {
-        &self.port
-    }
-
-    pub fn get_web_url(&self) -> String {
-        let port = match self.port().as_ref() {
-            Some(port) => format!(":{port}"),
-            None => "".to_string(),
-        };
-        let protocol = match self.domain() {
-            "127.0.0.1" | "localhost" | "host.docker.internal" => { "http" }
-            _ => "https"
-        };
-        if let Some(path) = &self.path() {
-            format!("{}://{}{}/{}/did.json", protocol, self.domain(), port, path)
-        } else {
-            format!("{}://{}{}/.well-known/did.json", protocol, self.domain(), port)
         }
     }
 }

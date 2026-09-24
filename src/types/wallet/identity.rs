@@ -16,8 +16,7 @@
  */
 
 use super::KeyRef;
-use crate::capabilities::Did;
-use crate::types::dids::DidDocument;
+use crate::types::dids::{Did, DidDocument};
 
 #[derive(Debug, Clone)]
 pub struct Identity {

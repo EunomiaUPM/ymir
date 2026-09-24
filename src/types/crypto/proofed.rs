@@ -15,22 +15,36 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::types::crypto::{Canon, HashAlg};
-use sha2::{Digest, Sha256, Sha384, Sha512};
+use super::{Canon, Proof};
+use crate::errors::Outcome;
+use crate::utils::OneOrMany;
+use serde::{Deserialize, Serialize};
 
-/// Integrity hashing utility for canonical data buffers.
-///
-/// Computes a raw digest over a canonicalized structural envelope ([`Canon`]);
-/// callers format it (SRI's `sha256-<base64>`, a content identifier's
-/// `sha256:<hex>`, ...) for their own purpose.
-pub struct DigestSRI;
+/// A document paired with one or more Data Integrity proofs over it.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Proofed<T> {
+    #[serde(flatten)]
+    document: T,
+    proof: OneOrMany<Proof>,
+}
 
-impl DigestSRI {
-    pub fn digest(canonical: &Canon, hash_alg: HashAlg) -> Vec<u8> {
-        match hash_alg {
-            HashAlg::Sha256 => Sha256::digest(canonical.as_ref()).to_vec(),
-            HashAlg::Sha384 => Sha384::digest(canonical.as_ref()).to_vec(),
-            HashAlg::Sha512 => Sha512::digest(canonical.as_ref()).to_vec(),
-        }
+impl<T> Proofed<T> {
+    pub fn new(document: T, proof: OneOrMany<Proof>) -> Self {
+        Proofed { document, proof }
+    }
+    pub fn doc(&self) -> &T {
+        &self.document
+    }
+    pub fn proof(&self) -> &OneOrMany<Proof> {
+        &self.proof
+    }
+}
+
+impl<T> Proofed<T>
+where
+    T: Serialize,
+{
+    pub fn canon(&self) -> Outcome<Canon> {
+        Canon::new(self.doc())
     }
 }

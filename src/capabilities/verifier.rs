@@ -15,11 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::Kid;
 use crate::errors::{BadFormat, Errors, Outcome};
-use crate::types::crypto::{Canon, Proof};
+use crate::types::crypto::{Canon, HasProofPurpose, Proof, ProofPurpose, Proofed};
+use crate::types::dids::Did;
 use crate::types::jwt::Jwt;
-use crate::types::keys::Alg;
+use crate::types::keys::{Alg, Cryptosuite};
+use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
@@ -32,41 +33,73 @@ pub struct Verifier;
 impl Verifier {
     // ===== EMBEDDED PROOF VALIDATION =============================================================
 
-    /// Evaluates structural embedded signature suites appended under the standard JSON `"proof"` property boundary.
+    /// Evaluates every proof attached to `value`, checking each against the
+    /// proof purpose that `T` requires.
     ///
     /// # Errors
-    /// Returns an [`Errors::FormatError`] if the data object lacks valid structural proofs or
-    /// if any single evaluated data cryptographic signature step encounters mathematical verification mismatches.
-    pub async fn verify_embed(value: &Value) -> Outcome<()> {
-        let mut value = value.clone();
-        let proof_value = value
-            .as_object_mut()
-            .and_then(|obj| obj.remove("proof"))
-            .ok_or_else(|| Errors::format(BadFormat::Received, "Missing proof", None))?;
+    /// Returns an [`Errors::FormatError`] if the document carries no proofs, or an
+    /// [`Errors::SecurityError`] if any proof fails to verify against `T::PURPOSE`.
+    pub async fn verify_embedded<T>(value: &Proofed<T>) -> Outcome<()>
+    where
+        T: Serialize + HasProofPurpose,
+    {
+        let proofs = value.proof();
+        let canon_doc = value.canon()?;
 
-        let proofs: Vec<Proof> = serde_json::from_value(proof_value)?;
-
-        let canonical = Canon::try_from(&value)?;
+        if proofs.is_empty() {
+            return Err(Errors::format(
+                BadFormat::Received,
+                "Object to verify has no proofs",
+                None,
+            ));
+        }
         for proof in proofs {
-            Self::verify_single_proof(&canonical, &proof).await?;
+            Self::verify_proof(&canon_doc, proof, T::PURPOSE).await?;
         }
         Ok(())
     }
 
-    /// Isolated logical runner verifying an individual extracted W3C structural [`Proof`] instance.
-    async fn verify_single_proof(value: &Canon, proof: &Proof) -> Outcome<()> {
-        let kid = Kid::parse(&proof.verification_method)?;
-        let alg = Alg::from_cryptosuite(&proof.cryptosuite);
-        let key = kid.get_key().await?;
+    /// Isolated logical runner verifying an individual extracted W3C structural [`Proof`] instance,
+    /// resolving its verification method and checking that the document's DID authorises it
+    /// for `proof_purpose` (CID v1.0's verification relationship requirement).
+    async fn verify_proof(
+        canon_doc: &Canon,
+        proof: &Proof,
+        proof_purpose: ProofPurpose,
+    ) -> Outcome<()> {
+        if proof.data.r#type != "DataIntegrityProof" || proof.data.cryptosuite != Cryptosuite::EddsaJcs2022 {
+            return Err(Errors::security("unexpected proof type or cryptosuite", None));
+        }
 
-        let b58 = proof.proof_value.strip_prefix('z').ok_or_else(|| {
-            Errors::parse("proofValue must start with 'z' (multibase base58btc)", None)
-        })?;
-        let sig = bs58::decode(b58)
-            .into_vec()
-            .map_err(|e| Errors::parse("base58 decode of proofValue failed", Some(Box::new(e))))?;
+        if let Some(ctx) = &proof.data.context {
+            if canon_doc.context() != Some(ctx) {
+                return Err(Errors::security(
+                    "proof @context does not match document",
+                    None,
+                ));
+            }
+        }
 
-        key.verify_bytes(value.as_ref(), &sig, &alg)
+        if proof.data.proof_purpose != proof_purpose {
+            return Err(Errors::security(
+                format!(
+                    "Unexpected proofPurpose: got {}, expected {}",
+                    proof.data.proof_purpose, proof_purpose
+                ),
+                None,
+            ));
+        }
+
+        let alg = Alg::from_cryptosuite(&proof.data.cryptosuite);
+        let kid = &proof.data.verification_method;
+        let did_doc = kid.did().resolve().await?;
+        let key = did_doc.resolve_key(kid, &proof_purpose)?;
+
+        let sig = proof.signature()?;
+
+        let hash_data = proof.data.hash_data(canon_doc)?;
+
+        key.verify_bytes(&hash_data, &sig, &alg)
     }
 
     // ===== ENVELOPED JWT VALIDATION ==============================================================
@@ -74,16 +107,20 @@ impl Verifier {
     /// Unwraps and verifies an authoritative compact network [`Jwt`], validating cryptographic bounds and audiences.
     ///
     /// Automatically performs dynamic deserialization into the requested payload model structure target `T`.
+    /// Resolves the signing key through the issuer's DID Document, requiring it be authorised for `T::PURPOSE`.
     ///
     /// # Errors
     /// Returns an [`Errors::FormatError`] if verification bounds break or if the token's structural
     /// target `"aud"` vector claims fail to match the expected parameter constraint layout.
-    pub async fn verify_enveloped<T: DeserializeOwned>(
-        jwt: &Jwt,
-        expected_aud: Option<&str>,
-    ) -> Outcome<(Kid, T)> {
-        let kid = Kid::parse(&jwt.header().kid)?;
-        let key = kid.get_key().await?;
+    pub async fn verify_enveloped<T>(jwt: &Jwt, expected_aud: Option<&str>) -> Outcome<(Did, T)>
+    where
+        T: DeserializeOwned + HasProofPurpose,
+    {
+        let kid = &jwt.header().kid;
+        let did = kid.did().clone();
+        let did_doc = did.resolve().await?;
+        let key = did_doc.resolve_key(kid, &T::PURPOSE)?;
+
         key.verify_bytes(jwt.signing_input(), jwt.signature(), &jwt.header().alg)?;
 
         let value_payload: Value = jwt.unsafe_claims()?;
@@ -94,14 +131,13 @@ impl Verifier {
                 _ => false,
             };
             if !matches {
-                return Err(Errors::format(
-                    BadFormat::Received,
+                return Err(Errors::unauthorized(
                     format!("audience mismatch: expected '{expected}'"),
                     None,
                 ));
             }
         }
         let payload: T = serde_json::from_value(value_payload)?;
-        Ok((kid, payload))
+        Ok((did, payload))
     }
 }

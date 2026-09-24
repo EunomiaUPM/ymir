@@ -19,7 +19,6 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use super::config::FafnirConfig;
-use crate::capabilities::Did;
 use crate::config::traits::{DidConfigTrait, WalletConfigTrait};
 use crate::config::types::{DidConfig, HostType};
 use crate::data::entities::wallet::{did, key, vc};
@@ -27,7 +26,7 @@ use crate::errors::{BadFormat, Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::services::wallet::WalletTrait;
-use crate::types::dids::{DidBuilder, DidDocument, DidService};
+use crate::types::dids::{Did, DidBuilder, DidDocument, DidService};
 use crate::types::http::HttpBody;
 use crate::types::secrets::PemHelper;
 use crate::types::wallet::{DidSearch, Identity, KeyRef, OidcUri, WalletInfo};
@@ -57,7 +56,7 @@ impl FafnirService {
         services: Vec<DidService>,
     ) -> Outcome<Self> {
         let (did_doc, keys) = Self::bootstrap(&config, vault, &services).await?;
-        let did = Did::parse(&did_doc.id)?;
+        let did = did_doc.id.clone();
         let identity = Identity::new(did, did_doc, keys);
         Ok(Self {
             config,

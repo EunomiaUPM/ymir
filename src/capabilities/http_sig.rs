@@ -50,7 +50,7 @@ impl HttpSig {
         authorization: Option<&str>,
     ) -> Outcome<HeaderMap> {
         let alg = alg.unwrap_or(priv_key.alg());
-        let key_id = key_source.thumbprint();
+        let key_id = key_source.thumbprint()?;
         let created = unix_now();
         let nonce = random_nonce_32();
         let content_digest = digest(body_bytes);
@@ -140,7 +140,7 @@ impl HttpSig {
         check_clock_skew(created)?;
 
         let keyid_in_sig = Self::extract_sig_param(&signature_input, "keyid")?;
-        let cert_thumbprint = key_source.thumbprint();
+        let cert_thumbprint = key_source.thumbprint()?;
 
         if keyid_in_sig != cert_thumbprint {
             return Err(Errors::security(
