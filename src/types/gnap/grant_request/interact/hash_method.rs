@@ -46,8 +46,8 @@ impl FromStr for HashMethod {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
             "sha-256" | "sha256" => Ok(HashMethod::Sha256),
-            "sha-384" | "sha384" => Ok(HashMethod::Sha256),
-            "sha-512" | "sha512" => Ok(HashMethod::Sha256),
+            "sha-384" | "sha384" => Ok(HashMethod::Sha384),
+            "sha-512" | "sha512" => Ok(HashMethod::Sha512),
             _ => Ok(HashMethod::Other(s.to_string())),
         }
     }
