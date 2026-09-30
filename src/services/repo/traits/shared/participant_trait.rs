@@ -17,28 +17,26 @@
 
 use crate::data::entities::shared::participant::{Model, Plan};
 use crate::errors::Outcome;
-use crate::services::repo::traits::CrudRepoTrait;
-use crate::types::participants::ParticipantType;
+use crate::types::listing::{ListPage, Listed, ParticipantListFilter, ParticipantSort};
 use async_trait::async_trait;
 
-/// Data Repository Contract for Participant Domain Management.
-///
-/// Extends the foundational [`CrudRepoTrait`] over Postgres tables to execute specific
-/// domain spaces queries, token authorization validations, and atomic batch fetches.
+/// Peers known to each tenant. A remote connector may be a peer of several tenants, so a
+/// participant is identified by `(tenant_id, participant_id)`.
 #[async_trait]
-pub trait ParticipantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
-    /// Resolves the operational identity context of the execution host ("me").
-    async fn get_me(&self) -> Outcome<Model>;
-
-    /// Queries multi-tenant environments filtering participants by their role type.
-    async fn filter_by_type(&self, participant_type: ParticipantType) -> Outcome<Vec<Model>>;
-
-    /// Locates an active participant bound to a specific API bearer or authorization token.
+pub trait ParticipantRepoTrait: Send + Sync + 'static {
+    async fn get_by_id(&self, tenant_id: &str, participant_id: &str) -> Outcome<Model>;
+    async fn get_batch(&self, tenant_id: &str, ids: &[String]) -> Outcome<Vec<Model>>;
+    /// Relationship holding the bearer `token`; tokens are unique across tenants.
     async fn get_by_token(&self, token: &str) -> Outcome<Model>;
-
-    /// Optimized vectorized query to retrieve multiple records simultaneously, reducing DB roundtrips.
-    async fn get_batch(&self, ids: &[String]) -> Outcome<Vec<Model>>;
-
-    /// Performs an upsert-style force update bypassing standard transaction mutation checks.
+    /// Lists one page of participants matching `filter`, filtered and paged in the database.
+    async fn find_page(
+        &self,
+        filter: &ParticipantListFilter,
+        page: &ListPage<ParticipantSort>,
+    ) -> Outcome<Listed<Model>>;
+    async fn create(&self, plan: Plan) -> Outcome<Model>;
+    async fn update(&self, model: Model) -> Outcome<Model>;
+    async fn delete(&self, tenant_id: &str, participant_id: &str) -> Outcome<()>;
+    /// Inserts the relationship or refreshes its contact data and token if it already exists.
     async fn force_update(&self, plan: Plan) -> Outcome<Model>;
 }

@@ -15,17 +15,44 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::services::client::ClientService;
 use std::sync::LazyLock;
+use std::time::Duration;
+
+use crate::services::client::ClientService;
 
 // ===== STATIC RUNTIME INSTANCES ==================================================================
 
-/// Centralized thread-safe network pool handling engine egress operations.
-static CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| ClientService::new(10, 10, 0));
+/// Process-wide pool for request/response calls: 10 s per call (retries included), one
+/// retry when idempotent, at most 16 in-flight calls per host and a breaker per host.
+static CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| {
+    ClientService::builder()
+        .concurrency(32)
+        .per_host_concurrency(16)
+        .deadline(Duration::from_secs(10))
+        .max_retries(1)
+        .circuit_breaker(5, Duration::from_secs(30))
+        .build()
+});
+
+/// Pool for proxies and long-lived streams: no overall deadline, tuned keep-alive.
+static STREAM_CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| {
+    ClientService::builder()
+        .concurrency(32)
+        .timeout(None)
+        .connect_timeout(Duration::from_secs(10))
+        .pool_idle_timeout(Duration::from_secs(90))
+        .tcp_keepalive(Duration::from_secs(60))
+        .build()
+});
 
 // ===== SUBSYSTEM HOOKS ===========================================================================
 
 /// Yields a static reference to the shared global [`ClientService`] management infrastructure.
 pub fn http_client() -> &'static ClientService {
     &CLIENT_SERVICE
+}
+
+/// Shared [`ClientService`] for proxied and streamed traffic; pair it with `ClientTrait::stream`.
+pub fn stream_client() -> &'static ClientService {
+    &STREAM_CLIENT_SERVICE
 }

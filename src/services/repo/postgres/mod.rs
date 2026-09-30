@@ -18,6 +18,7 @@
 mod crud_postgres_trait;
 mod to_active;
 
+pub mod listing;
 pub mod received;
 pub mod sent;
 pub mod shared;

@@ -30,8 +30,7 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Participants::ParticipantId)
                             .string()
-                            .not_null()
-                            .primary_key(),
+                            .not_null(),
                     )
                     .col(ColumnDef::new(Participants::TenantId).string().not_null())
                     .col(
@@ -61,7 +60,11 @@ impl MigrationTrait for Migration {
                             .json_binary()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(Participants::IsMe).boolean().not_null())
+                    .primary_key(
+                        Index::create()
+                            .col(Participants::TenantId)
+                            .col(Participants::ParticipantId),
+                    )
                     .to_owned(),
             )
             .await
@@ -87,5 +90,4 @@ pub enum Participants {
     SavedAt,
     LastInteraction,
     ExtraFields,
-    IsMe,
 }

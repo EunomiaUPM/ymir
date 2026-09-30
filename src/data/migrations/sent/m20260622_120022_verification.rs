@@ -33,6 +33,11 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
+                    .col(
+                        ColumnDef::new(SentVerifications::TenantId)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(SentVerifications::Uri).string().not_null())
                     .col(
                         ColumnDef::new(SentVerifications::Scheme)
@@ -94,6 +99,7 @@ pub enum SentVerifications {
     #[iden = "sent_verifications"]
     Table,
     Id,
+    TenantId,
     Uri,
     Scheme,
     ResponseType,

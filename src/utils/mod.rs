@@ -21,7 +21,7 @@ mod parse;
 mod present;
 mod token;
 
-pub use client::http_client;
+pub use client::{http_client, stream_client};
 pub use http::*;
 pub use parse::*;
 pub use present::*;

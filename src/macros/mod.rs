@@ -59,7 +59,6 @@ macro_rules! impl_serde_via_str {
     };
 }
 
-
 /// Declarative macro automatically deriving the required SeaORM traits to
 /// persist types as strings.
 ///

@@ -34,11 +34,20 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(
+                        ColumnDef::new(SentInteractions::TenantId)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
                         ColumnDef::new(SentInteractions::Start)
                             .json_binary()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(SentInteractions::Method).string_len(32).not_null())
+                    .col(
+                        ColumnDef::new(SentInteractions::Method)
+                            .string_len(32)
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(SentInteractions::CallbackUri)
                             .string()
@@ -79,6 +88,7 @@ pub enum SentInteractions {
     #[iden = "sent_interactions"]
     Table,
     Id,
+    TenantId,
     Start,
     Method,
     CallbackUri,

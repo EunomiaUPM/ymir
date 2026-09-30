@@ -49,7 +49,7 @@ impl VerifierService {
 
 #[async_trait]
 impl VerifierTrait for VerifierService {
-    fn build_vp_plan(&self, id: &str) -> Outcome<Plan> {
+    fn build_vp_plan(&self, tenant_id: &str, id: &str) -> Outcome<Plan> {
         info!("Managing OIDC4VP");
 
         let host_url = self.config.get_host(HostType::Http);
@@ -63,6 +63,7 @@ impl VerifierTrait for VerifierService {
         }
 
         Ok(Plan {
+            tenant_id: tenant_id.to_string(),
             id: id.to_string(),
             audience: client_id,
             vc_type: requested_vcs.to_vec(),

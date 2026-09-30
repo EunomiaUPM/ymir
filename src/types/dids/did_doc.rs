@@ -20,7 +20,7 @@ use crate::capabilities::Did;
 use crate::errors::Outcome;
 use crate::types::keys::PrivateKey;
 use crate::utils::StringOrArr;
-use sea_orm::{FromJsonQueryResult};
+use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
@@ -95,7 +95,6 @@ impl DidDocument {
     pub fn delete_key(&mut self, vm_frag: &str) {
         let did = Did::parse(&self.id).unwrap(); // THE CREATION MAKES PANIC IMPOSSIBLE
         let vm_id = format!("{}#{}", did.id(), vm_frag);
-        self.verification_method
-            .retain(|vm| vm.id != vm_id);
+        self.verification_method.retain(|vm| vm.id != vm_id);
     }
 }

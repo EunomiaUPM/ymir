@@ -36,6 +36,7 @@ impl Errors {
             PetitionFailure::BodyRead => (StatusCode::BAD_GATEWAY, 1600),
             PetitionFailure::Serialization => (StatusCode::INTERNAL_SERVER_ERROR, 1400),
             PetitionFailure::Concurrency => (StatusCode::SERVICE_UNAVAILABLE, 1500),
+            PetitionFailure::CircuitOpen => (StatusCode::SERVICE_UNAVAILABLE, 1700),
         };
 
         Errors::PetitionError {

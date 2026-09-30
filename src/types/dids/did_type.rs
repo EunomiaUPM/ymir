@@ -119,13 +119,18 @@ impl WebDid {
             None => "".to_string(),
         };
         let protocol = match self.domain() {
-            "127.0.0.1" | "localhost" | "host.docker.internal" => { "http" }
-            _ => "https"
+            "127.0.0.1" | "localhost" | "host.docker.internal" => "http",
+            _ => "https",
         };
         if let Some(path) = &self.path() {
             format!("{}://{}{}/{}/did.json", protocol, self.domain(), port, path)
         } else {
-            format!("{}://{}{}/.well-known/did.json", protocol, self.domain(), port)
+            format!(
+                "{}://{}{}/.well-known/did.json",
+                protocol,
+                self.domain(),
+                port
+            )
         }
     }
 }

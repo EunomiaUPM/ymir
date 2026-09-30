@@ -22,6 +22,8 @@ use serde_json::Value;
 
 use crate::errors::{Errors, Outcome};
 
+pub use reqwest::{Body as StreamBody, Method, Response, StatusCode};
+
 #[derive(Clone)]
 pub enum HttpBody {
     Json(Value),

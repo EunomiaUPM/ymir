@@ -16,14 +16,16 @@
  */
 
 use async_trait::async_trait;
+use sea_orm::sea_query::{Expr, Func};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use crate::data::entities::sent::grant;
 use crate::data::entities::sent::grant::Model;
-use crate::errors::{Errors, Outcome};
+use crate::errors::Outcome;
 use crate::services::repo::postgres::BasicPostgresRepo;
+use crate::services::repo::postgres::listing::KeysetPager;
 use crate::services::repo::traits::sent::SentGrantRepoTrait;
-use crate::types::gnap::grant_request::GrantKind;
+use crate::types::listing::{GrantSort, ListPage, Listed, SentGrantListFilter};
 
 pub struct SentGrantPostgresRepo {
     db: DatabaseConnection,
@@ -47,11 +49,42 @@ impl BasicPostgresRepo for SentGrantPostgresRepo {
 
 #[async_trait]
 impl SentGrantRepoTrait for SentGrantPostgresRepo {
-    async fn filter_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>> {
-        grant::Entity::find()
-            .filter(grant::Column::Kind.eq(kind))
-            .all(self.db())
-            .await
-            .map_err(|e| Errors::db("Unable to get grants by kind", Some(Box::new(e))))
+    async fn find_page(
+        &self,
+        filter: &SentGrantListFilter,
+        page: &ListPage<GrantSort>,
+    ) -> Outcome<Listed<Model>> {
+        let mut select = grant::Entity::find().filter(grant::Column::Kind.eq(filter.kind.clone()));
+        if let Some(tenant_id) = &filter.tenant_id {
+            select = select.filter(grant::Column::TenantId.eq(tenant_id.as_str()));
+        }
+        if let Some(id) = &filter.participant_id_contains {
+            select = select.filter(grant::Column::ParticipantId.like(KeysetPager::contains(id)));
+        }
+        if let Some(nick) = &filter.nick_contains {
+            select = select.filter(
+                Expr::expr(Func::lower(Expr::col(grant::Column::ParticipantNick)))
+                    .like(KeysetPager::contains(&nick.to_lowercase())),
+            );
+        }
+        if let Some(status) = &filter.status {
+            select = select.filter(grant::Column::Status.eq(status.clone()));
+        }
+        if let Some(after) = filter.created_after {
+            select = select.filter(grant::Column::CreatedAt.gte(after));
+        }
+        if let Some(before) = filter.created_before {
+            select = select.filter(grant::Column::CreatedAt.lte(before));
+        }
+        let timestamp = match page.sort {
+            GrantSort::Created => Expr::col(grant::Column::CreatedAt).into(),
+            // Open grants have no end yet; they sort by creation.
+            GrantSort::Updated => Func::coalesce([
+                Expr::col(grant::Column::EndedAt).into(),
+                Expr::col(grant::Column::CreatedAt).into(),
+            ])
+            .into(),
+        };
+        KeysetPager::fetch(self.db(), select, timestamp, grant::Column::Id, page).await
     }
 }

@@ -22,6 +22,7 @@ pub mod http;
 pub mod issuance;
 pub mod jwt;
 pub mod keys;
+pub mod listing;
 pub mod participants;
 pub mod secrets;
 pub mod vcs;

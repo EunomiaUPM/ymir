@@ -280,11 +280,7 @@ impl WalletTrait for FafnirService {
         Ok(model)
     }
 
-    async fn remove_key_from_did(
-        &self,
-        search: DidSearch,
-        key_id: String,
-    ) -> Outcome<did::Model> {
+    async fn remove_key_from_did(&self, search: DidSearch, key_id: String) -> Outcome<did::Model> {
         let id = self.resolve_to_id(&search).await?;
         let url = format!(
             "{}/dids/{}/key/{}",
@@ -462,9 +458,7 @@ impl FafnirService {
                 all.into_iter()
                     .find(|d| d.did == *did)
                     .map(|d| d.id)
-                    .ok_or_else(|| {
-                        Errors::missing_resource(did, "DID not stored in wallet", None)
-                    })
+                    .ok_or_else(|| Errors::missing_resource(did, "DID not stored in wallet", None))
             }
         }
     }

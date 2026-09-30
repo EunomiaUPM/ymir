@@ -15,14 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::services::identity::IdentityTrait;
-use async_trait::async_trait;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use crate::capabilities::Did;
 use crate::data::entities::wallet::did::Model;
 use crate::errors::Outcome;
+use crate::services::identity::IdentityTrait;
 use crate::types::wallet::Identity;
+use async_trait::async_trait;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 /// Concrete implementation of the operational dynamic identity supervisor.
 ///

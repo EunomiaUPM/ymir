@@ -33,6 +33,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
+                    .col(ColumnDef::new(ResourcesReqs::TenantId).string().not_null())
                     .col(
                         ColumnDef::new(ResourcesReqs::Type)
                             .string_len(32)
@@ -75,6 +76,7 @@ pub enum ResourcesReqs {
     #[iden = "resources_reqs"]
     Table,
     Id,
+    TenantId,
     Type,
     Actions,
     Locations,

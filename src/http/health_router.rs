@@ -15,9 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use axum::Router;
 use axum::response::IntoResponse;
 use axum::routing::get;
+use axum::{Json, Router};
+use serde_json::{Value, json};
+
+use crate::utils::http_client;
 
 /// HTTP API Gateway Router governing infrastructure diagnostic probes.
 ///
@@ -38,12 +41,29 @@ impl HealthRouter {
     /// * `GET /healthz`    - Legacy and cloud-native container diagnostic check.
     /// * `GET /liveness`   - Kubernetes liveness probe context (asserts container process is active).
     /// * `GET /readiness`  - Kubernetes readiness probe context (asserts network instance is ready to ingest active traffic).
+    /// * `GET /health/circuits` - Outbound hosts whose circuit breaker is open or probing.
     pub fn router(self) -> Router {
         Router::new()
             .route("/health", get(Self::get_ok))
             .route("/healthz", get(Self::get_ok))
             .route("/liveness", get(Self::get_ok))
             .route("/readiness", get(Self::get_ok))
+            .route("/health/circuits", get(Self::get_circuits))
+    }
+
+    /// Always 200: a failing peer must not take this instance out of rotation.
+    async fn get_circuits() -> Json<Value> {
+        let degraded: Vec<Value> = http_client()
+            .degraded_hosts()
+            .into_iter()
+            .map(|(host, state)| json!({ "host": host, "state": state.as_str() }))
+            .collect();
+        let status = if degraded.is_empty() {
+            "ok"
+        } else {
+            "degraded"
+        };
+        Json(json!({ "status": status, "circuits": degraded }))
     }
 
     /// Stateless Axum endpoint handler returning an immutable string indicator to validate thread execution.

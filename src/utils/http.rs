@@ -20,7 +20,7 @@ use std::str::FromStr;
 
 use async_trait::async_trait;
 use axum::extract::rejection::{FormRejection, JsonRejection};
-use axum::http::header::{ACCEPT, CONTENT_TYPE};
+use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::http::{HeaderMap, HeaderValue};
 use axum::{Form, Json};
 use reqwest::Response;
@@ -55,29 +55,62 @@ pub fn json_headers() -> HeaderMap {
     headers
 }
 
+/// [`json_headers`] plus `Authorization: Bearer <token>`, sent per request instead of stored.
+pub fn bearer_headers(token: &str) -> Outcome<HeaderMap> {
+    let mut headers = json_headers();
+    let value = HeaderValue::from_str(&format!("Bearer {token}"))
+        .map_err(|e| Errors::parse("Bearer token is not a valid header value", Some(Box::new(e))))?;
+    headers.insert(AUTHORIZATION, value);
+    Ok(headers)
+}
+
 // ===== ASYNC NETWORK RESPONSE EXTENSIONS =========================================================
 
 /// Extended asynchronous trait provisioning high-level deserialization shortcuts over network raw [`Response`] objects.
 #[async_trait]
-pub trait ResponseExt {
+pub trait ResponseExt: Sized {
+    /// Passes 2xx responses through; any other status becomes a petition error carrying the body.
+    async fn ensure_success(self) -> Outcome<Self>;
     /// Deserializes the target network wire packet payload safely into structural model representations `T`.
     async fn parse_json<T: DeserializeOwned>(self) -> Outcome<T>;
     /// Consumes the wire packet context completely, yielding a raw text payload representation.
     async fn parse_text(self) -> Outcome<String>;
 }
 
+/// Longest slice of an unparseable body echoed back in the error.
+const RAW_BODY_PREVIEW: usize = 512;
+
 #[async_trait]
 impl ResponseExt for Response {
+    async fn ensure_success(self) -> Outcome<Self> {
+        let status = self.status();
+        if status.is_success() {
+            return Ok(self);
+        }
+        let url = self.url().to_string();
+        let message = self.text().await.unwrap_or_default();
+        Err(Errors::petition(
+            &url,
+            "unknown",
+            Some(status),
+            PetitionFailure::HttpStatus(status),
+            message,
+            None,
+        ))
+    }
+
     async fn parse_json<T: DeserializeOwned>(self) -> Outcome<T> {
         let url = self.url().to_string();
         let status = self.status();
-        self.json().await.map_err(|e| {
+        let raw = self.parse_text().await?;
+        serde_json::from_str(&raw).map_err(|e| {
+            let preview: String = raw.chars().take(RAW_BODY_PREVIEW).collect();
             Errors::petition(
                 &url,
                 "unknown",
                 Some(status),
                 PetitionFailure::BodyDeserialization,
-                "Error deserializing body",
+                format!("Error deserializing body: {preview}"),
                 Some(Box::new(e)),
             )
         })

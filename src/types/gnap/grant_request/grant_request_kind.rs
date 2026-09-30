@@ -15,9 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use sea_orm::entity::prelude::*;
 
 use super::access::AccessTokenRequest;
 use crate::types::gnap::grant_request::credential_request::AccessCredentialRequest;

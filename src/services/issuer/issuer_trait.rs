@@ -38,6 +38,7 @@ pub trait IssuerTrait: Send + Sync + 'static {
     /// Provisions an internal transactional issuance plan derived from an authenticated client request.
     async fn build_issuance_plan(
         &self,
+        tenant_id: &str,
         id: &str,
         grant_request_kind: GrantRequestKind,
         client: Client,

@@ -33,6 +33,11 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
+                    .col(
+                        ColumnDef::new(RecvVerification::TenantId)
+                            .string()
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(RecvVerification::State).string().not_null())
                     .col(ColumnDef::new(RecvVerification::Nonce).string().not_null())
                     .col(
@@ -52,7 +57,11 @@ impl MigrationTrait for Migration {
                             .array(ColumnType::String(StringLen::None))
                             .not_null(),
                     )
-                    .col(ColumnDef::new(RecvVerification::Status).string_len(32).not_null())
+                    .col(
+                        ColumnDef::new(RecvVerification::Status)
+                            .string_len(32)
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(RecvVerification::CreatedAt)
                             .timestamp_with_time_zone()
@@ -76,6 +85,7 @@ pub enum RecvVerification {
     #[iden = "recv_verification"]
     Table,
     Id,
+    TenantId,
     State,
     Nonce,
     VcType,

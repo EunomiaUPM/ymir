@@ -101,11 +101,7 @@ impl WalletTrait for WaltIdService {
         todo!()
     }
 
-    async fn add_key_to_did(
-        &self,
-        _search: DidSearch,
-        _key_id: String,
-    ) -> Outcome<did::Model> {
+    async fn add_key_to_did(&self, _search: DidSearch, _key_id: String) -> Outcome<did::Model> {
         todo!()
     }
 
@@ -117,11 +113,7 @@ impl WalletTrait for WaltIdService {
         todo!()
     }
 
-    async fn set_default_key(
-        &self,
-        _search: DidSearch,
-        _key_id: String,
-    ) -> Outcome<did::Model> {
+    async fn set_default_key(&self, _search: DidSearch, _key_id: String) -> Outcome<did::Model> {
         todo!()
     }
 

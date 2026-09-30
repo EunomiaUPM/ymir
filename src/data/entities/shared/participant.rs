@@ -25,9 +25,10 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "participants")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub participant_id: String, // REQUEST
-    pub tenant_id: String,                 // TENANT
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub tenant_id: String,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub participant_id: String,
     pub participant_nick: String,          // REQUEST
     pub participant_type: ParticipantType, // REQUEST
     pub base_url: String,                  // REQUEST
@@ -35,7 +36,6 @@ pub struct Model {
     pub saved_at: DateTime<Utc>,           // DEFAULT
     pub last_interaction: DateTime<Utc>,   // DEFAULT
     pub extra_fields: serde_json::Value,   // REQUEST
-    pub is_me: bool,                       // REQUEST
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -47,7 +47,6 @@ pub struct Plan {
     pub base_url: String,
     pub token: Option<String>,
     pub extra_fields: Option<serde_json::Value>,
-    pub is_me: bool,
 }
 
 impl IntoOverwriteActive<ActiveModel> for Plan {
@@ -62,7 +61,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             saved_at: ActiveValue::Set(Utc::now()),
             last_interaction: ActiveValue::Set(Utc::now()),
             extra_fields: ActiveValue::Set(self.extra_fields.unwrap_or(serde_json::json!({}))),
-            is_me: ActiveValue::Set(self.is_me),
         }
     }
 }
@@ -79,7 +77,6 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             saved_at: ActiveValue::Set(self.saved_at),
             last_interaction: ActiveValue::Set(Utc::now()),
             extra_fields: ActiveValue::Set(self.extra_fields),
-            is_me: ActiveValue::Set(self.is_me),
         }
     }
 }

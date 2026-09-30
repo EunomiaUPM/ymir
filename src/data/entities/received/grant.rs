@@ -29,6 +29,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
+    pub tenant_id: String,
     pub participant_nick: String, // REQUEST
     pub kind: GrantKind,
     pub token: Option<String>, // COMPLETION
@@ -41,6 +42,7 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
+    pub tenant_id: String,
     pub id: String,
     pub participant_nick: String,
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
@@ -50,6 +52,7 @@ pub struct Plan {
 impl IntoOverwriteActive<ActiveModel> for Plan {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
+            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             participant_nick: ActiveValue::Set(self.participant_nick),
             kind: ActiveValue::Set(self.kind),
@@ -65,6 +68,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
+            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             participant_nick: ActiveValue::Set(self.participant_nick),
             kind: ActiveValue::Set(self.kind),

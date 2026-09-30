@@ -29,6 +29,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // ID of request
+    pub tenant_id: String,
     pub participant_id: String, // ID of participant to who which we do the request
     pub participant_nick: String, // Nick of participant
     pub grant_endpoint: String,
@@ -46,6 +47,7 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
+    pub tenant_id: String,
     pub id: String,
     pub participant_id: String,
     pub participant_nick: String,
@@ -58,6 +60,7 @@ pub struct Plan {
 impl IntoOverwriteActive<ActiveModel> for Plan {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
+            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             participant_id: ActiveValue::Set(self.participant_id),
             participant_nick: ActiveValue::Set(self.participant_nick),
@@ -78,6 +81,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
+            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             participant_id: ActiveValue::Set(self.participant_id),
             participant_nick: ActiveValue::Set(self.participant_nick),

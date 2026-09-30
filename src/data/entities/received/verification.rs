@@ -30,22 +30,24 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub state: String,              // RANDOM
-    pub nonce: String,              // RANDOM
+    pub tenant_id: String,
+    pub state: String, // RANDOM
+    pub nonce: String, // RANDOM
     #[sea_orm(column_type = "JsonBinary")]
-    pub vc_type: Vec<VcType>,       // REQUEST
-    pub audience: String,           // SEMI-RANDOM
-    pub holder: Option<String>,     // RESPONSE
-    pub vpt: Option<String>,        // RESPONSE
-    pub vcs: Vec<String>,           // RESPONSE
+    pub vc_type: Vec<VcType>, // REQUEST
+    pub audience: String, // SEMI-RANDOM
+    pub holder: Option<String>, // RESPONSE
+    pub vpt: Option<String>, // RESPONSE
+    pub vcs: Vec<String>, // RESPONSE
     pub status: VerificationStatus, // DEFAULT
-    pub created_at: DateTime<Utc>,  // DEFAULT
+    pub created_at: DateTime<Utc>, // DEFAULT
     pub ended_at: Option<DateTime<Utc>>, // RESPONSE
-                                    // pub requirements: Value, TODO
+                       // pub requirements: Value, TODO
 }
 
 #[derive(Clone, Debug)]
 pub struct Plan {
+    pub tenant_id: String,
     pub id: String,           // REQUEST
     pub audience: String,     // SEMI-RANDOM
     pub vc_type: Vec<VcType>, // REQUEST
@@ -65,6 +67,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             .collect();
         let audience = format!("{}/{}", self.audience, &state);
         ActiveModel {
+            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             state: ActiveValue::Set(state),
             nonce: ActiveValue::Set(nonce),
@@ -83,6 +86,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
+            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             state: ActiveValue::Set(self.state),
             nonce: ActiveValue::Set(self.nonce),

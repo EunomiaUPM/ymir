@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::{Arc};
-use tokio::sync::{RwLock};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 use async_trait::async_trait;
 use tracing::info;
@@ -55,7 +55,11 @@ pub struct IssuerService {
 }
 
 impl IssuerService {
-    pub fn new(config: IssuerConfig, vault: Arc<VaultService>, identity: Arc<RwLock<Identity>>) -> Self {
+    pub fn new(
+        config: IssuerConfig,
+        vault: Arc<VaultService>,
+        identity: Arc<RwLock<Identity>>,
+    ) -> Self {
         Self {
             config,
             vault,
@@ -68,6 +72,7 @@ impl IssuerService {
 impl IssuerTrait for IssuerService {
     async fn build_issuance_plan(
         &self,
+        tenant_id: &str,
         id: &str,
         grant_request_kind: GrantRequestKind,
         client: Client,
@@ -111,6 +116,7 @@ impl IssuerTrait for IssuerService {
         let issuer_did = lock.did().id().to_string();
 
         let issuance = issuance::Plan {
+            tenant_id: tenant_id.to_string(),
             id: id.to_string(),
             subject_name: participant_nick.to_string(),
             vc_type_config: vc_configs,

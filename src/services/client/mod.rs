@@ -15,8 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod client_ext;
 mod client_trait;
+mod metrics;
+mod resilience;
 mod rod_client;
+mod trace_context;
 
+pub use client_ext::ClientExt;
 pub use client_trait::ClientTrait;
-pub use rod_client::ClientService;
+pub use resilience::BreakerState;
+pub use rod_client::{ClientConfig, ClientService};
+pub use trace_context::TraceContext;

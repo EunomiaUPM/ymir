@@ -18,7 +18,7 @@
 use crate::data::entities::received::grant::{Model, Plan};
 use crate::errors::Outcome;
 use crate::services::repo::traits::CrudRepoTrait;
-use crate::types::gnap::grant_request::GrantKind;
+use crate::types::listing::{GrantSort, ListPage, Listed, RecvGrantListFilter};
 use async_trait::async_trait;
 
 /// Data Repository Contract for Inbound GNAP Grant Requests (*Received Grants*).
@@ -27,6 +27,10 @@ use async_trait::async_trait;
 /// for an Authorization Server (AS), tracking incoming authorization requests pending negotiation.
 #[async_trait]
 pub trait RecvGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
-    /// Filters incoming grants by their specific operational request nature ([`GrantKind`]).
-    async fn filter_by_type(&self, kind: GrantKind) -> Outcome<Vec<Model>>;
+    /// Lists one page of grants matching `filter`, filtered and paged in the database.
+    async fn find_page(
+        &self,
+        filter: &RecvGrantListFilter,
+        page: &ListPage<GrantSort>,
+    ) -> Outcome<Listed<Model>>;
 }

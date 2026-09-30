@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use async_trait::async_trait;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use crate::data::entities::wallet::did;
 use crate::errors::Outcome;
 use crate::types::wallet::Identity;
+use async_trait::async_trait;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 /// Core interface for orchestrating the active decentralized identity loaded in memory.
 ///

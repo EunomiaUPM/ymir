@@ -85,29 +85,17 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
     }
 
     /// Attaches an existing key to an existing DID.
-    async fn add_key_to_did(
-        &self,
-        search: DidSearch,
-        key_id: String,
-    ) -> Outcome<did::Model> {
+    async fn add_key_to_did(&self, search: DidSearch, key_id: String) -> Outcome<did::Model> {
         self.wallet().add_key_to_did(search, key_id).await
     }
 
     /// Removes a key from an existing DID.
-    async fn remove_key_from_did(
-        &self,
-        search: DidSearch,
-        key_id: String,
-    ) -> Outcome<did::Model> {
+    async fn remove_key_from_did(&self, search: DidSearch, key_id: String) -> Outcome<did::Model> {
         self.wallet().remove_key_from_did(search, key_id).await
     }
 
     /// Sets which of the DID's attached keys becomes the default for signing.
-    async fn set_default_key(
-        &self,
-        search: DidSearch,
-        key_id: String,
-    ) -> Outcome<did::Model> {
+    async fn set_default_key(&self, search: DidSearch, key_id: String) -> Outcome<did::Model> {
         self.wallet().set_default_key(search, key_id).await
     }
 

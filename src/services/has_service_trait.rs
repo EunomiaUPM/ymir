@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::services::identity::IdentityTrait;
 use crate::services::issuer::IssuerTrait;
 use crate::services::vault::VaultService;
 use crate::services::verifier::VerifierTrait;
 use crate::services::wallet::WalletTrait;
 use std::sync::Arc;
-use crate::services::identity::IdentityTrait;
 
 /// Capability provider for the Decentralized Identity Wallet core service.
 ///

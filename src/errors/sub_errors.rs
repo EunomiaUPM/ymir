@@ -63,6 +63,8 @@ pub enum PetitionFailure {
     Serialization,
     /// Multi-threaded internal rate-limiter or synchronization backpressure semaphore blockades.
     Concurrency,
+    /// The target host's circuit breaker is open; the call was not attempted.
+    CircuitOpen,
 }
 
 impl Display for PetitionFailure {
@@ -74,6 +76,7 @@ impl Display for PetitionFailure {
             PetitionFailure::BodyRead => write!(f, "Failed to read response body"),
             PetitionFailure::Serialization => write!(f, "Serialization failed"),
             PetitionFailure::Concurrency => write!(f, "Concurrency limit reached"),
+            PetitionFailure::CircuitOpen => write!(f, "Circuit open"),
         }
     }
 }

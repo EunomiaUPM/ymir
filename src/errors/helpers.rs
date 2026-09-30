@@ -148,26 +148,126 @@ impl Errors {
     /// Gathers technical debugging stacks combining backtraces and dynamic standard error boxes.
     pub fn rest(&self) -> String {
         let (reason, source, backtrace) = match self {
-            Errors::PetitionError { reason, source, backtrace, .. }
-            | Errors::WalletError { reason, source, backtrace, .. }
-            | Errors::ProviderError { reason, source, backtrace, .. }
-            | Errors::ConsumerError { reason, source, backtrace, .. }
-            | Errors::AuthorityError { reason, source, backtrace, .. }
-            | Errors::MissingActionError { reason, source, backtrace, .. }
-            | Errors::MissingResourceError { reason, source, backtrace, .. }
-            | Errors::ReadError { reason, source, backtrace, .. }
-            | Errors::WriteError { reason, source, backtrace, .. }
-            | Errors::FormatError { reason, source, backtrace, .. }
-            | Errors::UnauthorizedError { reason, source, backtrace, .. }
-            | Errors::ForbiddenError { reason, source, backtrace, .. }
-            | Errors::SecurityError { reason, source, backtrace, .. }
-            | Errors::DatabaseError { reason, source, backtrace, .. }
-            | Errors::FeatureNotImplError { reason, source, backtrace, .. }
-            | Errors::EnvVarError { reason, source, backtrace, .. }
-            | Errors::ModuleNotActiveError { reason, source, backtrace, .. }
-            | Errors::ParseError { reason, source, backtrace, .. }
-            | Errors::VaultError { reason, source, backtrace, .. }
-            | Errors::CrazyError { reason, source, backtrace, .. } => (reason, source, backtrace),
+            Errors::PetitionError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::WalletError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::ProviderError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::ConsumerError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::AuthorityError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::MissingActionError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::MissingResourceError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::ReadError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::WriteError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::FormatError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::UnauthorizedError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::ForbiddenError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::SecurityError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::DatabaseError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::FeatureNotImplError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::EnvVarError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::ModuleNotActiveError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::ParseError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::VaultError {
+                reason,
+                source,
+                backtrace,
+                ..
+            }
+            | Errors::CrazyError {
+                reason,
+                source,
+                backtrace,
+                ..
+            } => (reason, source, backtrace),
         };
 
         let reason = format!("Reason: {}", reason);

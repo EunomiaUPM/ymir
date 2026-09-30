@@ -15,39 +15,68 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::time::Duration;
+
 use async_trait::async_trait;
 use axum::http::HeaderMap;
-use reqwest::Response;
+use reqwest::{Method, Response};
 
 use crate::errors::Outcome;
-use crate::types::http::HttpBody;
+use crate::types::http::{HttpBody, StreamBody};
 
 /// Abstract Asynchronous HTTP Client interface.
 ///
-/// Provides a unified contract for executing network petitions across data spaces,
-/// managing raw responses and isolating business logic from specific HTTP runtimes.
+/// Returns the raw [`Response`] for any status below `5xx`, so callers can read protocol
+/// error bodies (e.g. GNAP); [`super::ClientExt`] adds strict, typed shortcuts on top.
 #[async_trait]
 pub trait ClientTrait: Send + Sync {
-    /// Executes an HTTP GET request against the target URL.
-    async fn get(&self, url: &str, headers: Option<HeaderMap>) -> Outcome<Response>;
+    /// Executes an HTTP request of any method, retrying transient failures when idempotent.
+    async fn request(
+        &self,
+        method: Method,
+        url: &str,
+        headers: Option<HeaderMap>,
+        body: HttpBody,
+    ) -> Outcome<Response>;
 
-    /// Executes an HTTP POST request transmitting the specified operational payload.
+    /// Sends a streamed body once (it cannot be replayed) and returns whatever status arrives.
+    async fn stream(
+        &self,
+        method: Method,
+        url: &str,
+        headers: Option<HeaderMap>,
+        body: StreamBody,
+        timeout: Option<Duration>,
+    ) -> Outcome<Response>;
+
+    async fn get(&self, url: &str, headers: Option<HeaderMap>) -> Outcome<Response> {
+        self.request(Method::GET, url, headers, HttpBody::None).await
+    }
+
     async fn post(
         &self,
         url: &str,
         headers: Option<HeaderMap>,
         body: HttpBody,
-    ) -> Outcome<Response>;
+    ) -> Outcome<Response> {
+        self.request(Method::POST, url, headers, body).await
+    }
 
-    /// Executes an HTTP PUT request to modify target cloud resources.
-    async fn put(&self, url: &str, headers: Option<HeaderMap>, body: HttpBody)
-    -> Outcome<Response>;
+    async fn put(
+        &self,
+        url: &str,
+        headers: Option<HeaderMap>,
+        body: HttpBody,
+    ) -> Outcome<Response> {
+        self.request(Method::PUT, url, headers, body).await
+    }
 
-    /// Executes an HTTP DELETE request to remove remote transactional assets.
     async fn delete(
         &self,
         url: &str,
         headers: Option<HeaderMap>,
         body: HttpBody,
-    ) -> Outcome<Response>;
+    ) -> Outcome<Response> {
+        self.request(Method::DELETE, url, headers, body).await
+    }
 }
