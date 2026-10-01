@@ -33,7 +33,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(RecvGrants::TenantId).string().not_null())
+                    .col(ColumnDef::new(RecvGrants::Role).string().not_null())
                     .col(
                         ColumnDef::new(RecvGrants::ParticipantNick)
                             .string()
@@ -66,7 +66,7 @@ pub enum RecvGrants {
     #[iden = "recv_grants"]
     Table,
     Id,
-    TenantId,
+    Role,
     ParticipantNick,
     Kind,
     Token,

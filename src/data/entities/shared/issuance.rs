@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String,
-    pub tenant_id: String,
+    pub role: String,
     pub subject_name: String,
     pub pre_auth_code: String,
     #[sea_orm(column_type = "JsonBinary")]
@@ -44,7 +44,7 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub tenant_id: String,
+    pub role: String,
     pub id: String,
     pub subject_name: String,
     pub vc_type_config: Vec<VcTypeConfig>,
@@ -60,7 +60,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
         let nonce = create_opaque_token();
         let credential_id = format!("urn:uuid:{}", Uuid::new_v4().to_string());
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
+            role: ActiveValue::Set(self.role),
             id: ActiveValue::Set(self.id),
             subject_name: ActiveValue::Set(self.subject_name),
             pre_auth_code: ActiveValue::Set(code),
@@ -80,7 +80,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
+            role: ActiveValue::Set(self.role),
             id: ActiveValue::Set(self.id),
             subject_name: ActiveValue::Set(self.subject_name),
             pre_auth_code: ActiveValue::Set(self.pre_auth_code),

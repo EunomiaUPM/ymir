@@ -54,8 +54,7 @@ impl RecvGrantRepoTrait for RecvGrantPostgresRepo {
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<grant::Model>> {
         let mut select = grant::Entity::find().filter(grant::Column::Kind.eq(filter.kind.clone()));
-            select = select.filter(grant::Column::TenantId.eq(filter.tenant_id.as_str()));
-        
+        select = select.filter(grant::Column::Role.eq(filter.role.as_str()));
         if let Some(nick) = &filter.nick_contains {
             select = select.filter(
                 Expr::expr(Func::lower(Expr::col(grant::Column::ParticipantNick)))

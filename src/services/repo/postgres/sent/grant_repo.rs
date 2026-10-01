@@ -55,7 +55,8 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<Model>> {
         let mut select = grant::Entity::find().filter(grant::Column::Kind.eq(filter.kind.clone()));
-        select = select.filter(grant::Column::TenantId.eq(filter.tenant_id.as_str()));
+        select = select.filter(grant::Column::Role.eq(filter.role.as_str()));
+        select = select.filter(grant::Column::UserId.eq(filter.user_id.as_str()));
         if let Some(id) = &filter.participant_id_contains {
             select = select.filter(grant::Column::ParticipantId.like(KeysetPager::contains(id)));
         }

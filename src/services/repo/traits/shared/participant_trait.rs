@@ -21,8 +21,7 @@ use crate::types::listing::{ListPage, Listed, ParticipantListFilter, Participant
 use async_trait::async_trait;
 use crate::services::repo::traits::CrudRepoTrait;
 
-/// Peers known to each tenant. A remote connector may be a peer of several tenants, so a
-/// participant is identified by `(tenant_id, participant_id)`.
+/// Peers known to the whole organisation, one row per `participant_id`.
 #[async_trait]
 pub trait ParticipantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
     async fn get_batch(&self, ids: &[String]) -> Outcome<Vec<Model>>;

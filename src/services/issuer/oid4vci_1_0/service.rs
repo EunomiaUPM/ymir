@@ -72,7 +72,7 @@ impl IssuerService {
 impl IssuerTrait for IssuerService {
     async fn build_issuance_plan(
         &self,
-        tenant_id: &str,
+        role: &str,
         id: &str,
         grant_request_kind: GrantRequestKind,
         client: Client,
@@ -116,7 +116,7 @@ impl IssuerTrait for IssuerService {
         let issuer_did = lock.did().id().to_string();
 
         let issuance = issuance::Plan {
-            tenant_id: tenant_id.to_string(),
+            role: role.to_string(),
             id: id.to_string(),
             subject_name: participant_nick.to_string(),
             vc_type_config: vc_configs,

@@ -80,8 +80,9 @@ pub enum GrantSort {
 /// Filter over grants this connector sent.
 #[derive(Debug, Clone)]
 pub struct SentGrantListFilter {
-    /// Tenant whose grants are listed; `None` lists every tenant (admins).
-    pub tenant_id: String,
+    /// Role the grants were requested under.
+    pub role: String,
+    /// User who requested the grants.
     pub user_id: String,
     pub kind: GrantKind,
     pub participant_id_contains: Option<String>,
@@ -94,8 +95,8 @@ pub struct SentGrantListFilter {
 /// Filter over grants this connector received.
 #[derive(Debug, Clone)]
 pub struct RecvGrantListFilter {
-    /// Tenant whose grants are listed; `None` lists every tenant (admins).
-    pub tenant_id: String,
+    /// Role allowed to see and handle the received grants.
+    pub role: String,
     pub kind: GrantKind,
     pub nick_contains: Option<String>,
     pub status: Option<GrantStatus>,
