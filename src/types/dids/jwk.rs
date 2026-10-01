@@ -14,15 +14,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct JwkDid {
+    id: String,
+    jwk: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TermsOfUse {
-    pub r#type: String,
-    pub id: String,
-    #[serde(rename = "digestSRI")]
-    pub digest_sri: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub anchor: Option<Vec<String>>,
+pub struct JwkDidConfig {
+    pub pem: String,
+}
+
+impl JwkDid {
+    pub fn new(id: impl Into<String>, jwk: impl Into<String>) -> JwkDid {
+        JwkDid {
+            id: id.into(),
+            jwk: jwk.into(),
+        }
+    }
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    pub fn jwk(&self) -> &str {
+        &self.jwk
+    }
 }

@@ -16,7 +16,7 @@
  */
 
 use super::super::{VcIssuer, VcType, W3cDataModelVersion};
-use super::{TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus, VcDocument};
+use super::{VCEvidence, VCRefreshService, VCSchema, VCStatus, VcDocument};
 use crate::utils::{Missing, Present};
 use chrono::{DateTime, Utc};
 use serde_json::Value;
@@ -36,7 +36,7 @@ pub struct VcDocumentBuilder<ID, ISS, CS> {
     pub credential_status: Option<VCStatus>,
     pub credential_schema: Option<Vec<VCSchema>>,
     pub refresh_service: Option<VCRefreshService>,
-    pub terms_of_use: Option<TermsOfUse>,
+    pub terms_of_use: Option<Value>,
     pub evidence: Option<Vec<VCEvidence>>,
     _marker: PhantomData<(ID, ISS, CS)>,
 }
@@ -161,7 +161,7 @@ impl<ID, ISS, CS> VcDocumentBuilder<ID, ISS, CS> {
         self
     }
 
-    pub fn terms_of_use(mut self, terms_of_use: TermsOfUse) -> Self {
+    pub fn terms_of_use(mut self, terms_of_use: Value) -> Self {
         self.terms_of_use = Some(terms_of_use);
         self
     }

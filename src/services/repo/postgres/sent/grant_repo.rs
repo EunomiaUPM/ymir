@@ -16,7 +16,7 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::sea_query::{Expr, Func};
+use sea_orm::sea_query::{Condition, Expr, Func};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use crate::data::entities::sent::grant;
@@ -55,8 +55,12 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<Model>> {
         let mut select = grant::Entity::find().filter(grant::Column::Kind.eq(filter.kind.clone()));
-        select = select.filter(grant::Column::Role.eq(filter.role.as_str()));
-        select = select.filter(grant::Column::UserId.eq(filter.user_id.as_str()));
+        // Own grants, or grants requested under a role strictly below the caller's.
+        select = select.filter(
+            Condition::any()
+                .add(grant::Column::UserId.eq(filter.user_id.as_str()))
+                .add(grant::Column::Role.like(KeysetPager::below(&filter.role))),
+        );
         if let Some(id) = &filter.participant_id_contains {
             select = select.filter(grant::Column::ParticipantId.like(KeysetPager::contains(id)));
         }
@@ -82,7 +86,7 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
                 Expr::col(grant::Column::EndedAt).into(),
                 Expr::col(grant::Column::CreatedAt).into(),
             ])
-                .into(),
+            .into(),
         };
         KeysetPager::fetch(self.db(), select, timestamp, grant::Column::Id, page).await
     }

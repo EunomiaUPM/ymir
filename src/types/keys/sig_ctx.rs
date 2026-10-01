@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::capabilities::Did;
+use crate::types::dids::Did;
 use crate::types::keys::PrivateKey;
 
 pub struct SigningCtx {
@@ -38,7 +38,7 @@ impl SigningCtx {
     pub fn key(&self) -> &PrivateKey {
         &self.key
     }
-    pub fn keys_frag(&self) -> &String {
+    pub fn keys_frag(&self) -> &str {
         &self.keys_frag
     }
 }

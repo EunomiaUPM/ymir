@@ -33,7 +33,8 @@ pub trait ClientExt: ClientTrait {
     where
         R: DeserializeOwned + Send,
     {
-        self.send_json(Method::GET, url, headers, HttpBody::None).await
+        self.send_json(Method::GET, url, headers, HttpBody::None)
+            .await
     }
 
     async fn post_json<T, R>(&self, url: &str, headers: Option<HeaderMap>, body: &T) -> Outcome<R>
@@ -64,7 +65,7 @@ pub trait ClientExt: ClientTrait {
             .await
     }
 
-    /// Any method and body, expecting a 2xx JSON answer.
+    /// Any method and body, expecting a 2xx JSON answer. Status and body errors carry `method`.
     async fn send_json<R>(
         &self,
         method: Method,
@@ -75,15 +76,19 @@ pub trait ClientExt: ClientTrait {
     where
         R: DeserializeOwned + Send,
     {
+        let method_name = method.to_string();
         self.request(method, url, headers, body)
             .await?
             .ensure_success()
-            .await?
+            .await
+            .map_err(|e| e.with_method(&method_name))?
             .parse_json()
             .await
+            .map_err(|e| e.with_method(&method_name))
     }
 
-    /// Any method and body, expecting a 2xx whose body is discarded.
+    /// Any method and body, expecting a 2xx whose body is discarded. Status errors carry
+    /// `method`.
     async fn send_ok(
         &self,
         method: Method,
@@ -91,10 +96,12 @@ pub trait ClientExt: ClientTrait {
         headers: Option<HeaderMap>,
         body: HttpBody,
     ) -> Outcome<()> {
+        let method_name = method.to_string();
         self.request(method, url, headers, body)
             .await?
             .ensure_success()
-            .await?;
+            .await
+            .map_err(|e| e.with_method(&method_name))?;
         Ok(())
     }
 }

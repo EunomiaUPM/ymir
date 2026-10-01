@@ -15,19 +15,28 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! Cryptographic data types embedded in VDS / VAR / VC / VP documents.
+//! Cryptographic data types for signed and canonicalised documents.
 //!
-//! - [`Proof`] — a W3C Data Integrity Proof entry (`type`, `cryptosuite`,
-//!   `verificationMethod`, `proofValue`). Serializable to JSON, embedded
-//!   in the `proof` array of signed documents.
+//! - [`Proof`] / [`ProofOptions`] — a W3C Data Integrity Proof entry
+//!   (`type`, `cryptosuite`, `proofPurpose`, `verificationMethod`,
+//!   `proofValue`), split so the signed fields (`ProofOptions`) are
+//!   distinct from the signature itself.
 //! - [`Canon`] — newtype around the JCS-canonicalised string form of a
-//!   `serde_json::Value`. The only constructor is `TryFrom<&Value>`, so
-//!   having a `Canon` is a compile-time guarantee that the bytes are
-//!   canonical. Callers that take `&Canon` cannot accidentally receive
-//!   non-canonical data.
+//!   serializable value. The only constructor is [`Canon::new`], so having
+//!   a `Canon` is a compile-time guarantee that the bytes are canonical.
+//! - [`HashAlg`] — the hash algorithms usable for content digests.
+//! - [`ProofPurpose`] / [`HasProofPurpose`] — the purpose a proof declares,
+//!   and the purpose a given document type requires.
+//! - [`Proofed`] — a document paired with its proof(s).
 
 mod canon;
+mod hash_alg;
 mod proof;
+mod proofed;
+mod purpose;
 
 pub use canon::Canon;
-pub use proof::Proof;
+pub use hash_alg::HashAlg;
+pub use proof::{Proof, ProofOptions};
+pub use proofed::Proofed;
+pub use purpose::{HasProofPurpose, ProofPurpose};

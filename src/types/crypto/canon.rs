@@ -15,20 +15,33 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::Errors;
-use serde_json::Value;
+use crate::errors::{Errors, Outcome};
+use crate::utils::OneOrMany;
+use serde::Serialize;
 
 pub struct Canon {
     value: String,
+    context: Option<OneOrMany<String>>,
 }
 
-impl TryFrom<&Value> for Canon {
-    type Error = Errors;
+impl Canon {
+    pub fn new<T>(value: &T) -> Outcome<Self>
+    where
+        T: Serialize + ?Sized,
+    {
+        let json = serde_json::to_value(value)?;
 
-    fn try_from(value: &Value) -> Result<Self, Self::Error> {
-        let s = json_canon::to_string(value)
+        let context = json
+            .get("@context")
+            .map(|ctx| {
+                serde_json::from_value::<OneOrMany<String>>(ctx.clone())
+                    .map_err(|e| Errors::parse("invalid @context", Some(Box::new(e))))
+            })
+            .transpose()?;
+
+        let value = json_canon::to_string(&json)
             .map_err(|e| Errors::parse("canonicalization failed", Some(Box::new(e))))?;
-        Ok(Canon { value: s })
+        Ok(Canon { value, context })
     }
 }
 
@@ -41,5 +54,11 @@ impl AsRef<[u8]> for Canon {
 impl Canon {
     pub fn as_str(&self) -> &str {
         &self.value
+    }
+    pub fn as_bytes(&self) -> &[u8] {
+        self.value.as_bytes()
+    }
+    pub fn context(&self) -> Option<&OneOrMany<String>> {
+        self.context.as_ref()
     }
 }

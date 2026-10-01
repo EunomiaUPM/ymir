@@ -23,3 +23,4 @@ mod vp_doc;
 
 pub use status::VerificationStatus;
 pub use verify_payload::VerifyPayload;
+pub use vp_doc::VpDocument;

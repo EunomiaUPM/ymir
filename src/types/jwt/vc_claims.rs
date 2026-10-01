@@ -16,6 +16,7 @@
  */
 
 use super::{VcJwtClaimsV1, VcJwtClaimsV2};
+use crate::types::crypto::{HasProofPurpose, ProofPurpose};
 use crate::types::vcs::doc::VcDocument;
 use serde::{Deserialize, Serialize};
 
@@ -70,4 +71,12 @@ impl VCJwtClaims {
             VCJwtClaims::V2(claims) => &claims.vc,
         }
     }
+}
+
+impl HasProofPurpose for VCJwtClaims {
+    // Per the Data Integrity spec: "assertionMethod indicates that a proof can
+    // only be used for making assertions, for example signing a verifiable
+    // credential." The issuer's key must be authorised for that, not for
+    // authentication.
+    const PURPOSE: ProofPurpose = ProofPurpose::AssertionMethod;
 }

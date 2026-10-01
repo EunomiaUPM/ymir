@@ -16,9 +16,11 @@
  */
 
 mod issuance_trait;
+mod participant_relation_trait;
 mod participant_trait;
 mod resource_req_trait;
 
 pub use issuance_trait::IssuanceRepoTrait;
+pub use participant_relation_trait::ParticipantRelationRepoTrait;
 pub use participant_trait::ParticipantRepoTrait;
 pub use resource_req_trait::ResourceReqRepoTrait;

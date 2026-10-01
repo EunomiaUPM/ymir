@@ -15,17 +15,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::data::entities::shared::participant;
+use crate::data::entities::shared::participant::Plan;
+use crate::data::entities::shared::{participant, participant_relation};
 use crate::errors::{Errors, Outcome};
-use crate::services::repo::postgres::{BasicPostgresRepo, IntoOverwriteActive};
 use crate::services::repo::postgres::listing::KeysetPager;
+use crate::services::repo::postgres::{BasicPostgresRepo, IntoOverwriteActive};
 use crate::services::repo::traits::shared::ParticipantRepoTrait;
 use crate::types::listing::{ListPage, Listed, ParticipantListFilter, ParticipantSort};
-use crate::types::participants::ParticipantType;
+use crate::types::participants::{ParticipantType, ParticipantVisibility};
 use async_trait::async_trait;
-use sea_orm::sea_query::{Expr, Func, OnConflict};
+use sea_orm::sea_query::{Condition, Expr, Func, OnConflict, Query};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use crate::data::entities::shared::participant::{Plan};
 
 pub struct ParticipantPostgresRepo {
     db: DatabaseConnection,
@@ -57,13 +57,28 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
             .map_err(|e| Errors::db("Unable to get participant batch", Some(Box::new(e))))
     }
 
-
     async fn find_page(
         &self,
         filter: &ParticipantListFilter,
         page: &ListPage<ParticipantSort>,
     ) -> Outcome<Listed<participant::Model>> {
         let mut select = participant::Entity::find();
+        if !filter.see_all {
+            // Peers the caller added, or that someone added as `Anonymous` or `Public`.
+            let visible = Query::select()
+                .column(participant_relation::Column::ParticipantId)
+                .from(participant_relation::Entity)
+                .cond_where(
+                    Condition::any()
+                        .add(participant_relation::Column::UserId.eq(filter.user_id.as_str()))
+                        .add(
+                            participant_relation::Column::Visibility
+                                .ne(ParticipantVisibility::Private),
+                        ),
+                )
+                .to_owned();
+            select = select.filter(participant::Column::ParticipantId.in_subquery(visible));
+        }
         if filter.participant_type != ParticipantType::All {
             select = select
                 .filter(participant::Column::ParticipantType.eq(filter.participant_type.clone()));
@@ -97,15 +112,13 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
             participant::Column::ParticipantId,
             page,
         )
-            .await
+        .await
     }
 
     async fn force_update(&self, plan: participant::Plan) -> Outcome<participant::Model> {
         participant::Entity::insert(plan.into_active())
             .on_conflict(
-                OnConflict::columns([
-                    participant::Column::ParticipantId,
-                ])
+                OnConflict::columns([participant::Column::ParticipantId])
                     .update_columns([
                         participant::Column::BaseUrl,
                         participant::Column::LastInteraction,

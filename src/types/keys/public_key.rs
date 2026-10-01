@@ -15,7 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::capabilities::DigestSRI;
 use crate::errors::{BadFormat, Errors, Outcome};
+use crate::types::crypto::{Canon, HashAlg};
 use crate::types::dids::{VerificationMaterial, VerificationMethod};
 use crate::types::keys::{Alg, Crv, Kty};
 use crate::types::secrets::PemHelper;
@@ -28,7 +30,7 @@ use rsa::signature::Verifier;
 use rsa::traits::PublicKeyParts;
 use rsa::{BigUint, RsaPublicKey};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256, Sha384, Sha512};
+use sha2::{Sha256, Sha384, Sha512};
 use std::str::FromStr;
 use x509_parser::pem::parse_x509_pem;
 use x509_parser::prelude::*;
@@ -159,7 +161,7 @@ impl PublicKey {
                         Some(Box::new(e)),
                     )
                 })?;
-                pk.verify(data, &signature)
+                pk.verify_strict(data, &signature)
                     .map_err(|e| Errors::forbidden("Invalid Signature", Some(Box::new(e))))
             }
         }
@@ -177,14 +179,12 @@ impl PublicKey {
             Self::Ed25519 { .. } => Some(Crv::Ed25519),
         }
     }
-    pub fn jwk_thumbprint(&self) -> String {
+    pub fn jwk_thumbprint(&self) -> Outcome<String> {
         let jwk_json = self.public_jwk();
+        let canon = Canon::new(&jwk_json)?;
 
-        let serialized = serde_json::to_vec(&jwk_json).unwrap();
-
-        let hash = Sha256::digest(&serialized);
-
-        encode_url_safe_no_pad(hash)
+        let hash = DigestSRI::digest(&canon, HashAlg::Sha256);
+        Ok(encode_url_safe_no_pad(hash))
     }
 
     pub fn public_jwk(&self) -> Value {

@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! Keyset pagination and substring matching shared by the Postgres repositories.
+//! Keyset pagination, substring and role-path matching shared by the Postgres repositories.
 
 use sea_orm::sea_query::{Condition, Expr, LikeExpr, SimpleExpr};
 use sea_orm::{
@@ -25,6 +25,7 @@ use sea_orm::{
 
 use crate::errors::{Errors, Outcome};
 use crate::types::listing::{Keyset, ListPage, Listed, SortDirection};
+use crate::types::roles::RolePath;
 
 /// Runs a filtered listing as one page in the database, never in memory.
 pub struct KeysetPager;
@@ -95,10 +96,18 @@ impl KeysetPager {
 
     /// `LIKE` pattern matching `text` anywhere, with its wildcards taken literally.
     pub fn contains(text: &str) -> LikeExpr {
-        let escaped = text
-            .replace('\\', "\\\\")
+        LikeExpr::new(format!("%{}%", Self::escape(text))).escape('\\')
+    }
+
+    /// `LIKE` pattern matching every role path strictly below `role`; never `role` itself.
+    pub fn below(role: &RolePath) -> LikeExpr {
+        LikeExpr::new(format!("{}/%", Self::escape(role.as_str()))).escape('\\')
+    }
+
+    /// Escapes the `LIKE` wildcards in `text` so they match literally.
+    fn escape(text: &str) -> String {
+        text.replace('\\', "\\\\")
             .replace('%', "\\%")
-            .replace('_', "\\_");
-        LikeExpr::new(format!("%{escaped}%")).escape('\\')
+            .replace('_', "\\_")
     }
 }

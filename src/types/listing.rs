@@ -22,6 +22,7 @@ use chrono::{DateTime, Utc};
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
 use crate::types::participants::ParticipantType;
+use crate::types::roles::RolePath;
 
 /// Order a listing runs in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -61,8 +62,15 @@ pub enum ParticipantSort {
 }
 
 /// Participant filter; `ParticipantType::All` matches every type.
+///
+/// Visibility: the caller sees the peers it added and those someone added as `Anonymous` or
+/// `Public`; `see_all` (admins) also shows `Private` ones and peers nobody added.
 #[derive(Debug, Clone)]
 pub struct ParticipantListFilter {
+    /// Caller; peers it added are always listed.
+    pub user_id: String,
+    /// Lists every peer regardless of who added it or how.
+    pub see_all: bool,
     pub participant_type: ParticipantType,
     pub nick_contains: Option<String>,
     pub id_contains: Option<String>,
@@ -78,12 +86,15 @@ pub enum GrantSort {
 }
 
 /// Filter over grants this connector sent.
+///
+/// Visibility: the caller's own grants, plus those requested under a role strictly below
+/// the caller's. Users sharing the caller's exact role do not see each other's.
 #[derive(Debug, Clone)]
 pub struct SentGrantListFilter {
-    /// Role the grants were requested under.
-    pub role: String,
-    /// User who requested the grants.
+    /// Caller; its own grants are always listed.
     pub user_id: String,
+    /// Caller's role.
+    pub role: RolePath,
     pub kind: GrantKind,
     pub participant_id_contains: Option<String>,
     pub nick_contains: Option<String>,
@@ -93,10 +104,12 @@ pub struct SentGrantListFilter {
 }
 
 /// Filter over grants this connector received.
+///
+/// Visibility: grants assigned to the caller's role or to a role below it.
 #[derive(Debug, Clone)]
 pub struct RecvGrantListFilter {
-    /// Role allowed to see and handle the received grants.
-    pub role: String,
+    /// Caller's role.
+    pub role: RolePath,
     pub kind: GrantKind,
     pub nick_contains: Option<String>,
     pub status: Option<GrantStatus>,

@@ -18,6 +18,7 @@
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
+use crate::types::roles::RolePath;
 use crate::types::vcs::VcTypeConfig;
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
@@ -29,7 +30,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // ID of request
-    pub role: String,
+    pub role: RolePath,
     pub user_id: String,
     pub participant_id: String, // ID of participant to who which we do the request
     pub participant_nick: String, // Nick of participant
@@ -49,7 +50,7 @@ pub struct Model {
 #[derive(Clone, Debug)]
 pub struct Plan {
     pub id: String,
-    pub role: String,
+    pub role: RolePath,
     pub user_id: String,
     pub participant_id: String,
     pub participant_nick: String,

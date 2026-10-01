@@ -19,7 +19,6 @@ mod evidence;
 mod refresh_service;
 mod schema;
 mod status;
-mod terms_of_use;
 mod vc_builder;
 mod vc_doc;
 
@@ -27,6 +26,5 @@ pub use evidence::VCEvidence;
 pub use refresh_service::VCRefreshService;
 pub use schema::*;
 pub use status::VCStatus;
-pub use terms_of_use::TermsOfUse;
 pub use vc_builder::VcDocumentBuilder;
 pub use vc_doc::VcDocument;

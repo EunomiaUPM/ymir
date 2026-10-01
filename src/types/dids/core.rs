@@ -8,26 +8,27 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use super::{DidDocument, DidType, JwkDid, VerificationMaterial, VerificationMethod, WebDid};
 use crate::errors::{BadFormat, Errors, Outcome, PetitionFailure};
+use crate::impl_serde_via_str;
 use crate::services::client::ClientTrait;
-use crate::types::dids::{
-    DidDocument, DidType, JwkDid, VerificationMaterial, VerificationMethod, WebDid,
-};
-use crate::utils::{ResponseExt, StringOrArr, decode_url_safe_no_pad, http_client};
+use crate::utils::{ResponseExt, decode_url_safe_no_pad, http_client};
 use serde_json::Value;
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 /// Decentralized Identifier (DID) polymorphic enum wrapper.
 ///
 /// Dispatches execution flows for structural parsing, lifecycle attribute extraction,
 /// and cross-protocol cryptographic identifier resolution according to W3C Core 1.1 specifications.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Did {
     /// JSON Web Key derived self-contained identifier scheme (`did:jwk:`).
     Jwk(JwkDid),
@@ -102,13 +103,13 @@ impl Did {
     /// Executes the complete state resolution workflow, mapping the instance into a valid W3C [`DidDocument`].
     pub async fn resolve(&self) -> Outcome<DidDocument> {
         match self {
-            Did::Jwk(j) => Self::resolve_jwk(j),
+            Did::Jwk(j) => self.resolve_jwk(j),
             Did::Web(w) => Self::resolve_web(w).await,
         }
     }
 
     /// Parses internal data parameters to reconstruct a self-contained `did:jwk` Document locally.
-    fn resolve_jwk(did: &JwkDid) -> Outcome<DidDocument> {
+    fn resolve_jwk(&self, did: &JwkDid) -> Outcome<DidDocument> {
         let jwk_bytes = decode_url_safe_no_pad(did.jwk())?;
 
         let jwk: Value = serde_json::from_slice(&jwk_bytes).map_err(|e| {
@@ -131,19 +132,7 @@ impl Did {
             revoked: None,
         };
 
-        Ok(DidDocument {
-            context: StringOrArr::Arr(vec!["https://www.w3.org/ns/did/v1.1".to_string()]),
-            id: did.id().to_string(),
-            controller: None,
-            also_known_as: None,
-            service: None,
-            verification_method: vec![vm],
-            authentication: None,
-            assertion_method: None,
-            key_agreement: None,
-            capability_invocation: None,
-            capability_delegation: None,
-        })
+        Ok(DidDocument::from_vms(self, vec![vm]))
     }
 
     /// Dispatches an asynchronous network outbound call to recover a remote `did:web` document.
@@ -165,13 +154,13 @@ impl Did {
 
         let doc: DidDocument = res.parse_json().await?;
 
-        if doc.id != did.id() {
+        if *doc.get_did() != Did::Web(did.clone()) {
             return Err(Errors::format(
                 BadFormat::Received,
                 format!(
                     "DID Document id mismatch: expected {}, got {}",
                     did.id(),
-                    doc.id
+                    doc.get_did()
                 ),
                 None,
             ));
@@ -180,3 +169,19 @@ impl Did {
         Ok(doc)
     }
 }
+
+impl Display for Did {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.id())
+    }
+}
+
+impl FromStr for Did {
+    type Err = Errors;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Did::parse(s)
+    }
+}
+
+impl_serde_via_str!(Did);

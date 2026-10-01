@@ -18,6 +18,7 @@
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
+use crate::types::roles::RolePath;
 use crate::types::vcs::VcTypeConfig;
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
@@ -29,7 +30,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub role: String,
+    pub role: RolePath,
     pub participant_nick: String, // REQUEST
     pub kind: GrantKind,
     pub token: Option<String>, // COMPLETION
@@ -43,7 +44,7 @@ pub struct Model {
 #[derive(Clone, Debug)]
 pub struct Plan {
     pub id: String,
-    pub role: String,
+    pub role: RolePath,
     pub participant_nick: String,
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub kind: GrantKind,

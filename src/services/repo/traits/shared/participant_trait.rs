@@ -17,9 +17,9 @@
 
 use crate::data::entities::shared::participant::{Model, Plan};
 use crate::errors::Outcome;
+use crate::services::repo::traits::CrudRepoTrait;
 use crate::types::listing::{ListPage, Listed, ParticipantListFilter, ParticipantSort};
 use async_trait::async_trait;
-use crate::services::repo::traits::CrudRepoTrait;
 
 /// Peers known to the whole organisation, one row per `participant_id`.
 #[async_trait]

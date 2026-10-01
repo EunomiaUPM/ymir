@@ -26,9 +26,9 @@ pub enum KeySource {
 }
 
 impl KeySource {
-    pub fn thumbprint(&self) -> String {
+    pub fn thumbprint(&self) -> Outcome<String> {
         match self {
-            KeySource::Cert(cert) => cert.thumbprint_sha256(),
+            KeySource::Cert(cert) => Ok(cert.thumbprint_sha256()),
             KeySource::PublicKey(key) => key.jwk_thumbprint(),
         }
     }

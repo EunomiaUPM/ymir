@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::types::crypto::{HasProofPurpose, ProofPurpose};
 use serde::{Deserialize, Serialize};
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -41,4 +42,8 @@ pub struct DidPossession {
     /// Echo of the `c_nonce` issued by the AS. REQUIRED when `c_nonce` was
     /// provided in the token response.
     pub nonce: String,
+}
+
+impl HasProofPurpose for DidPossession {
+    const PURPOSE: ProofPurpose = ProofPurpose::Authentication;
 }

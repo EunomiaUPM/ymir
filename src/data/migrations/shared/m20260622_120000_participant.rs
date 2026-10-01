@@ -30,7 +30,8 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Participants::ParticipantId)
                             .string()
-                            .not_null().primary_key(),
+                            .not_null()
+                            .primary_key(),
                     )
                     .col(
                         ColumnDef::new(Participants::ParticipantNick)
@@ -58,7 +59,8 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(Participants::ExtraFields)
                             .json_binary()
                             .not_null(),
-                    ).to_owned(),
+                    )
+                    .to_owned(),
             )
             .await
     }

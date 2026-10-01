@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::capabilities::Did;
+use super::Did;
 use crate::types::keys::PrivateKey;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

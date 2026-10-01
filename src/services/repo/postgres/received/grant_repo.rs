@@ -16,7 +16,7 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::sea_query::{Expr, Func};
+use sea_orm::sea_query::{Condition, Expr, Func};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use crate::data::entities::received::grant;
@@ -54,7 +54,12 @@ impl RecvGrantRepoTrait for RecvGrantPostgresRepo {
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<grant::Model>> {
         let mut select = grant::Entity::find().filter(grant::Column::Kind.eq(filter.kind.clone()));
-        select = select.filter(grant::Column::Role.eq(filter.role.as_str()));
+        // Grants assigned to the caller's role or to a role below it.
+        select = select.filter(
+            Condition::any()
+                .add(grant::Column::Role.eq(filter.role.clone()))
+                .add(grant::Column::Role.like(KeysetPager::below(&filter.role))),
+        );
         if let Some(nick) = &filter.nick_contains {
             select = select.filter(
                 Expr::expr(Func::lower(Expr::col(grant::Column::ParticipantNick)))

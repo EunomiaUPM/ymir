@@ -15,12 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::Outcome;
-use crate::types::crypto::{Canon, Proof};
+use crate::errors::{BadFormat, Errors, Outcome};
+use crate::types::crypto::{Canon, HasProofPurpose, Proof, ProofOptions, ProofPurpose, Proofed};
+use crate::types::dids::kid::Kid;
 use crate::types::jwt::{Jwt, JwtHeader};
-use crate::types::keys::{Alg, SigningCtx};
+use crate::types::keys::{Alg, Crv, SigningCtx};
+use crate::utils::OneOrMany;
+use serde::Serialize;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
-use serde_json::Value;
 
 /// Centralized Signing Engine managing payload cryptographic proof enrichment.
 ///
@@ -31,34 +33,87 @@ pub struct Signer;
 impl Signer {
     // ===== EMBEDDED DATA INTEGRITY PROOFS ========================================================
 
-    /// Generates an attached compliant W3C [`Proof`] entity calculated over canonicalized buffers.
-    ///
-    /// The resulting structure encodes the computed cryptographic signature payload into a standard
-    /// Multibase Base58 string pattern prefixed with the structural literal 'z'.
-    pub fn sign_embed(sig_ctx: &SigningCtx, canonical: &Canon, alg: Alg) -> Outcome<Proof> {
-        let cryptosuite = sig_ctx.key().cryptosuite()?;
-        let sig_bytes = sig_ctx.key().sign_bytes(canonical.as_ref(), alg)?;
-        let proof_value = format!("z{}", bs58::encode(&sig_bytes).into_string());
-        let verification_method = format!("{}#{}", sig_ctx.did().id(), sig_ctx.keys_frag());
+    /// Produces a single [`Proof`] over `canon_doc`, hashed per `eddsa-jcs-2022`
+    /// (`hash(proofConfig) || hash(doc)`) and signed with `sig_ctx`'s key.
+    fn sign_proof(
+        sig_ctx: &SigningCtx,
+        canon_doc: &Canon,
+        proof_purpose: ProofPurpose,
+    ) -> Outcome<Proof> {
+        let key = sig_ctx.key();
 
-        Ok(Proof {
+        if key.alg() != Alg::EdDsa {
+            return Err(Errors::not_impl("Only EdDSA signing is supported", None));
+        }
+
+        if key.crv() != Some(Crv::Ed25519) {
+            return Err(Errors::not_impl("Only Ed25519 signing is supported", None));
+        }
+
+        let cryptosuite = key.cryptosuite()?;
+        let verification_method = Kid::new(sig_ctx.did().clone(), sig_ctx.keys_frag());
+
+        let options = ProofOptions {
+            context: canon_doc.context().cloned(),
             r#type: "DataIntegrityProof".to_string(),
             cryptosuite,
+            proof_purpose,
             verification_method,
-            proof_value,
+        };
+
+        let hash_data = options.hash_data(canon_doc)?;
+
+        let sig = sig_ctx.key().sign_bytes(&hash_data, key.alg())?;
+
+        Ok(Proof {
+            data: options,
+            proof_value: format!("z{}", bs58::encode(&sig).into_string()),
         })
+    }
+
+    /// Secures a document with a single proof, reading the proof purpose from
+    /// the document type itself.
+    pub fn sign_embedded<T>(document: T, sig_ctx: &SigningCtx) -> Outcome<Proofed<T>>
+    where
+        T: Serialize + HasProofPurpose,
+    {
+        let canon = Canon::new(&document)?;
+        let proof = Self::sign_proof(sig_ctx, &canon, T::PURPOSE)?;
+
+        Ok(Proofed::new(document, OneOrMany::One(proof)))
+    }
+
+    /// Secures a document with the proof of every signing context, reading the
+    /// proof purpose from the document type itself.
+    pub fn sign_embedded_set<T>(document: T, sigs_ctx: &[SigningCtx]) -> Outcome<Proofed<T>>
+    where
+        T: Serialize + HasProofPurpose,
+    {
+        if sigs_ctx.is_empty() {
+            return Err(Errors::format(
+                BadFormat::Sent,
+                "Empty signature context",
+                None,
+            ));
+        }
+
+        let canon = Canon::new(&document)?;
+        let proof = sigs_ctx
+            .iter()
+            .map(|ctx| Self::sign_proof(ctx, &canon, T::PURPOSE))
+            .collect::<Outcome<Vec<Proof>>>()?;
+
+        Ok(Proofed::new(document, OneOrMany::Many(proof)))
     }
 
     // ===== ENVELOPED JSON WEB TOKENS =============================================================
 
     /// Encapsulates dynamic structured JSON data inside an authoritative compact cryptographic [`Jwt`] envelope.
-    pub fn sign_enveloped(
-        sig_ctx: &SigningCtx,
-        typ: &str,
-        cty: &str,
-        value: &Value,
-    ) -> Outcome<Jwt> {
-        let kid = format!("{}#{}", sig_ctx.did().id(), sig_ctx.keys_frag());
+    pub fn sign_enveloped<T>(sig_ctx: &SigningCtx, typ: &str, cty: &str, value: &T) -> Outcome<Jwt>
+    where
+        T: Serialize + ?Sized,
+    {
+        let kid = Kid::new(sig_ctx.did().clone(), sig_ctx.keys_frag());
         let header = JwtHeader {
             alg: sig_ctx.key().alg(),
             typ: Some(typ.to_string()),

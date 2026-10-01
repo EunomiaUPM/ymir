@@ -62,6 +62,21 @@ impl Errors {
         self
     }
 
+    /// Sets the HTTP method of the error's request context. Variants without one are left
+    /// unchanged. Meant for callers that know the method when the error was raised from a
+    /// bare response, which does not carry it.
+    pub fn with_method<S: Into<String>>(mut self, method: S) -> Self {
+        match &mut self {
+            Errors::PetitionError { ctx, .. }
+            | Errors::WalletError { ctx, .. }
+            | Errors::ProviderError { ctx, .. }
+            | Errors::ConsumerError { ctx, .. }
+            | Errors::AuthorityError { ctx, .. } => ctx.method = method.into(),
+            _ => {}
+        }
+        self
+    }
+
     /// Reflective extraction yielding access to the shared core metadata [`ErrorInfo`].
     pub fn info(&self) -> &ErrorInfo {
         match self {

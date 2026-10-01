@@ -16,6 +16,7 @@
  */
 
 use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::types::roles::RolePath;
 use crate::types::vcs::{BuildCtx, VcTypeConfig};
 use crate::utils::create_opaque_token;
 use sea_orm::ActiveValue;
@@ -27,7 +28,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String,
-    pub role: String,
+    pub role: RolePath,
     pub subject_name: String,
     pub pre_auth_code: String,
     #[sea_orm(column_type = "JsonBinary")]
@@ -44,7 +45,7 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub role: String,
+    pub role: RolePath,
     pub id: String,
     pub subject_name: String,
     pub vc_type_config: Vec<VcTypeConfig>,

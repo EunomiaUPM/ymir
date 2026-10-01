@@ -24,6 +24,7 @@ pub mod jwt;
 pub mod keys;
 pub mod listing;
 pub mod participants;
+pub mod roles;
 pub mod secrets;
 pub mod vcs;
 pub mod verification;
