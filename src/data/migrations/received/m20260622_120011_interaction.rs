@@ -34,11 +34,6 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(
-                        ColumnDef::new(RecvInteractions::TenantId)
-                            .string()
-                            .not_null(),
-                    )
-                    .col(
                         ColumnDef::new(RecvInteractions::Start)
                             .json_binary()
                             .not_null(),
@@ -113,7 +108,6 @@ pub enum RecvInteractions {
     #[iden = "recv_interactions"]
     Table,
     Id,
-    TenantId,
     Start,
     Method,
     CallbackUri,

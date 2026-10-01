@@ -32,7 +32,6 @@ use sha2::{Digest, Sha256, Sha384, Sha512};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // RESPONSE
-    pub tenant_id: String,
     #[sea_orm(column_type = "JsonBinary")]
     pub start: Vec<InteractStart>, // RESPONSE
     pub method: FinishMethod,       // RESPONSE
@@ -52,7 +51,6 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub tenant_id: String,
     pub id: String,                      // REQUEST
     pub start: Vec<InteractStart>,       // REQUEST
     pub method: FinishMethod,            // REQUEST
@@ -116,7 +114,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
         let hash = URL_SAFE_NO_PAD.encode(hash_result);
 
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
@@ -139,7 +136,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),

@@ -63,8 +63,6 @@ pub enum ParticipantSort {
 /// Participant filter; `ParticipantType::All` matches every type.
 #[derive(Debug, Clone)]
 pub struct ParticipantListFilter {
-    /// Tenant whose peers are listed; `None` lists every tenant (admins).
-    pub tenant_id: Option<String>,
     pub participant_type: ParticipantType,
     pub nick_contains: Option<String>,
     pub id_contains: Option<String>,
@@ -83,7 +81,8 @@ pub enum GrantSort {
 #[derive(Debug, Clone)]
 pub struct SentGrantListFilter {
     /// Tenant whose grants are listed; `None` lists every tenant (admins).
-    pub tenant_id: Option<String>,
+    pub tenant_id: String,
+    pub user_id: String,
     pub kind: GrantKind,
     pub participant_id_contains: Option<String>,
     pub nick_contains: Option<String>,
@@ -96,7 +95,7 @@ pub struct SentGrantListFilter {
 #[derive(Debug, Clone)]
 pub struct RecvGrantListFilter {
     /// Tenant whose grants are listed; `None` lists every tenant (admins).
-    pub tenant_id: Option<String>,
+    pub tenant_id: String,
     pub kind: GrantKind,
     pub nick_contains: Option<String>,
     pub status: Option<GrantStatus>,

@@ -34,6 +34,7 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(SentGrants::TenantId).string().not_null())
+                    .col(ColumnDef::new(SentGrants::UserId).string().not_null())
                     .col(
                         ColumnDef::new(SentGrants::ParticipantId)
                             .string()
@@ -80,6 +81,7 @@ pub enum SentGrants {
     Table,
     Id,
     TenantId,
+    UserId,
     ParticipantId,
     ParticipantNick,
     GrantEndpoint,

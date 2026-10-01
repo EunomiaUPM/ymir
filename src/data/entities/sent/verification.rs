@@ -27,7 +27,6 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub tenant_id: String,
     pub uri: String,                     // REQUEST
     pub scheme: String,                  // REQUEST
     pub response_type: String,           // REQUEST
@@ -44,7 +43,6 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub tenant_id: String,
     pub id: String,               // REQUEST
     pub uri: String,              // REQUEST
     pub scheme: String,           // REQUEST
@@ -60,7 +58,6 @@ pub struct Plan {
 impl IntoOverwriteActive<ActiveModel> for Plan {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             uri: ActiveValue::Set(self.uri),
             scheme: ActiveValue::Set(self.scheme),
@@ -81,7 +78,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             uri: ActiveValue::Set(self.uri),
             scheme: ActiveValue::Set(self.scheme),

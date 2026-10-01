@@ -19,24 +19,19 @@ use crate::data::entities::shared::participant::{Model, Plan};
 use crate::errors::Outcome;
 use crate::types::listing::{ListPage, Listed, ParticipantListFilter, ParticipantSort};
 use async_trait::async_trait;
+use crate::services::repo::traits::CrudRepoTrait;
 
 /// Peers known to each tenant. A remote connector may be a peer of several tenants, so a
 /// participant is identified by `(tenant_id, participant_id)`.
 #[async_trait]
-pub trait ParticipantRepoTrait: Send + Sync + 'static {
-    async fn get_by_id(&self, tenant_id: &str, participant_id: &str) -> Outcome<Model>;
-    async fn get_batch(&self, tenant_id: &str, ids: &[String]) -> Outcome<Vec<Model>>;
-    /// Relationship holding the bearer `token`; tokens are unique across tenants.
-    async fn get_by_token(&self, token: &str) -> Outcome<Model>;
+pub trait ParticipantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
+    async fn get_batch(&self, ids: &[String]) -> Outcome<Vec<Model>>;
     /// Lists one page of participants matching `filter`, filtered and paged in the database.
     async fn find_page(
         &self,
         filter: &ParticipantListFilter,
         page: &ListPage<ParticipantSort>,
     ) -> Outcome<Listed<Model>>;
-    async fn create(&self, plan: Plan) -> Outcome<Model>;
-    async fn update(&self, model: Model) -> Outcome<Model>;
-    async fn delete(&self, tenant_id: &str, participant_id: &str) -> Outcome<()>;
     /// Inserts the relationship or refreshes its contact data and token if it already exists.
     async fn force_update(&self, plan: Plan) -> Outcome<Model>;
 }

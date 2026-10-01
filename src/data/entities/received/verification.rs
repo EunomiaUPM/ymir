@@ -30,7 +30,6 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub tenant_id: String,
     pub state: String, // RANDOM
     pub nonce: String, // RANDOM
     #[sea_orm(column_type = "JsonBinary")]
@@ -47,7 +46,6 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub tenant_id: String,
     pub id: String,           // REQUEST
     pub audience: String,     // SEMI-RANDOM
     pub vc_type: Vec<VcType>, // REQUEST
@@ -67,7 +65,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             .collect();
         let audience = format!("{}/{}", self.audience, &state);
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             state: ActiveValue::Set(state),
             nonce: ActiveValue::Set(nonce),
@@ -86,7 +83,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             state: ActiveValue::Set(self.state),
             nonce: ActiveValue::Set(self.nonce),

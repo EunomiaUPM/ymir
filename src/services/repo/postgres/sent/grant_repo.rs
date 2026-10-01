@@ -55,9 +55,7 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<Model>> {
         let mut select = grant::Entity::find().filter(grant::Column::Kind.eq(filter.kind.clone()));
-        if let Some(tenant_id) = &filter.tenant_id {
-            select = select.filter(grant::Column::TenantId.eq(tenant_id.as_str()));
-        }
+        select = select.filter(grant::Column::TenantId.eq(filter.tenant_id.as_str()));
         if let Some(id) = &filter.participant_id_contains {
             select = select.filter(grant::Column::ParticipantId.like(KeysetPager::contains(id)));
         }
@@ -83,7 +81,7 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
                 Expr::col(grant::Column::EndedAt).into(),
                 Expr::col(grant::Column::CreatedAt).into(),
             ])
-            .into(),
+                .into(),
         };
         KeysetPager::fetch(self.db(), select, timestamp, grant::Column::Id, page).await
     }

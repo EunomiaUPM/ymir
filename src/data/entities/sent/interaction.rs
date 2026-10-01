@@ -28,7 +28,6 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub tenant_id: String,
     #[sea_orm(column_type = "JsonBinary")]
     pub start: Vec<InteractStart>, // REQUEST
     pub method: FinishMethod,              // REQUEST
@@ -47,7 +46,6 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub tenant_id: String,
     pub id: String,                      // REQUEST
     pub start: Vec<InteractStart>,       // REQUEST
     pub method: FinishMethod,            // REQUEST
@@ -65,7 +63,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             .collect();
         let hash_method = self.hash_method.unwrap_or(HashMethod::Sha256);
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
@@ -87,7 +84,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
