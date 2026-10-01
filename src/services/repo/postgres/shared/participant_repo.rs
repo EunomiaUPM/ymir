@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::data::entities::received::grant as recv_grant;
 use crate::data::entities::shared::participant::Plan;
 use crate::data::entities::shared::{participant, participant_relation};
 use crate::errors::{Errors, Outcome};
@@ -63,22 +64,38 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
         page: &ListPage<ParticipantSort>,
     ) -> Outcome<Listed<participant::Model>> {
         let mut select = participant::Entity::find();
-        if !filter.see_all {
-            // Peers the caller added, or that someone added as `Anonymous` or `Public`.
-            let visible = Query::select()
-                .column(participant_relation::Column::ParticipantId)
-                .from(participant_relation::Entity)
-                .cond_where(
-                    Condition::any()
-                        .add(participant_relation::Column::UserId.eq(filter.user_id.as_str()))
-                        .add(
-                            participant_relation::Column::Visibility
-                                .ne(ParticipantVisibility::Private),
-                        ),
-                )
-                .to_owned();
-            select = select.filter(participant::Column::ParticipantId.in_subquery(visible));
-        }
+        // (a) added by the caller, (b) shared by someone, (c) added under a role below the
+        // caller's.
+        let by_relation = Query::select()
+            .column(participant_relation::Column::ParticipantId)
+            .from(participant_relation::Entity)
+            .cond_where(
+                Condition::any()
+                    .add(participant_relation::Column::UserId.eq(filter.tenant.user_id()))
+                    .add(
+                        participant_relation::Column::Visibility.ne(ParticipantVisibility::Private),
+                    )
+                    .add(
+                        participant_relation::Column::Role
+                            .like(KeysetPager::below(filter.tenant.role())),
+                    ),
+            )
+            .to_owned();
+        // (d) has a received grant under the caller's role or one below it.
+        let by_recv_grant = Query::select()
+            .column(recv_grant::Column::ParticipantId)
+            .from(recv_grant::Entity)
+            .cond_where(
+                Condition::any()
+                    .add(recv_grant::Column::Role.eq(filter.tenant.role().clone()))
+                    .add(recv_grant::Column::Role.like(KeysetPager::below(filter.tenant.role()))),
+            )
+            .to_owned();
+        select = select.filter(
+            Condition::any()
+                .add(participant::Column::ParticipantId.in_subquery(by_relation))
+                .add(participant::Column::ParticipantId.in_subquery(by_recv_grant)),
+        );
         if filter.participant_type != ParticipantType::All {
             select = select
                 .filter(participant::Column::ParticipantType.eq(filter.participant_type.clone()));
@@ -122,7 +139,6 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
                     .update_columns([
                         participant::Column::BaseUrl,
                         participant::Column::LastInteraction,
-                        participant::Column::Token,
                         participant::Column::ParticipantNick,
                     ])
                     .to_owned(),

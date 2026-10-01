@@ -21,8 +21,8 @@ use chrono::{DateTime, Utc};
 
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
+use crate::types::oauth::{RolePath, UserInfo};
 use crate::types::participants::ParticipantType;
-use crate::types::roles::RolePath;
 
 /// Order a listing runs in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -63,14 +63,13 @@ pub enum ParticipantSort {
 
 /// Participant filter; `ParticipantType::All` matches every type.
 ///
-/// Visibility: the caller sees the peers it added and those someone added as `Anonymous` or
-/// `Public`; `see_all` (admins) also shows `Private` ones and peers nobody added.
+/// Visibility: a peer is listed if (a) the caller added it, (b) someone added it as not
+/// `Private`, (c) someone whose role is strictly below the caller's added it, or (d) it has a
+/// received grant under the caller's role or one below it.
 #[derive(Debug, Clone)]
 pub struct ParticipantListFilter {
-    /// Caller; peers it added are always listed.
-    pub user_id: String,
-    /// Lists every peer regardless of who added it or how.
-    pub see_all: bool,
+    /// Caller and the role it acts under.
+    pub tenant: UserInfo,
     pub participant_type: ParticipantType,
     pub nick_contains: Option<String>,
     pub id_contains: Option<String>,
@@ -85,17 +84,27 @@ pub enum GrantSort {
     Updated,
 }
 
-/// Filter over grants this connector sent.
+/// Filter over the access-token grants this connector sent.
 ///
 /// Visibility: the caller's own grants, plus those requested under a role strictly below
 /// the caller's. Users sharing the caller's exact role do not see each other's.
 #[derive(Debug, Clone)]
 pub struct SentGrantListFilter {
-    /// Caller; its own grants are always listed.
-    pub user_id: String,
-    /// Caller's role.
-    pub role: RolePath,
-    pub kind: GrantKind,
+    /// Caller and the role it acts under; its own grants are always listed.
+    pub tenant: UserInfo,
+    pub participant_id_contains: Option<String>,
+    pub nick_contains: Option<String>,
+    pub status: Option<GrantStatus>,
+    pub created_after: Option<DateTime<Utc>>,
+    pub created_before: Option<DateTime<Utc>>,
+}
+
+/// Filter over the VC requests this connector sent.
+///
+/// Visibility: every request, whoever made it. Credentials belong to the whole connector;
+/// who requested them is stored for the record but does not restrict the listing.
+#[derive(Debug, Clone)]
+pub struct VcRequestListFilter {
     pub participant_id_contains: Option<String>,
     pub nick_contains: Option<String>,
     pub status: Option<GrantStatus>,

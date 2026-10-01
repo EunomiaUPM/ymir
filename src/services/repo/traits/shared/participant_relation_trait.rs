@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::data::entities::shared::participant_relation::{Model, Plan};
+use crate::data::entities::shared::participant_relation::Model;
 use crate::errors::Outcome;
 use async_trait::async_trait;
 
@@ -30,8 +30,8 @@ pub trait ParticipantRelationRepoTrait: Send + Sync + 'static {
     /// of `Anonymous` ones is up to the caller.
     async fn get_by_participant(&self, participant_id: &str) -> Outcome<Vec<Model>>;
 
-    /// Creates the relation, or updates its visibility if the user already had one.
-    async fn upsert(&self, plan: Plan) -> Outcome<Model>;
+    /// Creates the relation, or updates its role and visibility if the user already had one.
+    async fn upsert(&self, relation: Model) -> Outcome<Model>;
 
     async fn delete(&self, user_id: &str, participant_id: &str) -> Outcome<()>;
 }

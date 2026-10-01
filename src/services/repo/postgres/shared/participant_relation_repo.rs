@@ -19,7 +19,7 @@ use async_trait::async_trait;
 use sea_orm::sea_query::OnConflict;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
-use crate::data::entities::shared::participant_relation::{self, Model, Plan};
+use crate::data::entities::shared::participant_relation::{self, Model};
 use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::services::repo::traits::shared::ParticipantRelationRepoTrait;
@@ -58,14 +58,17 @@ impl ParticipantRelationRepoTrait for ParticipantRelationPostgresRepo {
             .map_err(|e| Errors::db("Unable to get participant relations", Some(Box::new(e))))
     }
 
-    async fn upsert(&self, plan: Plan) -> Outcome<Model> {
-        participant_relation::Entity::insert(plan.into_active())
+    async fn upsert(&self, relation: Model) -> Outcome<Model> {
+        participant_relation::Entity::insert(relation.into_active())
             .on_conflict(
                 OnConflict::columns([
                     participant_relation::Column::UserId,
                     participant_relation::Column::ParticipantId,
                 ])
-                .update_column(participant_relation::Column::Visibility)
+                .update_columns([
+                    participant_relation::Column::Role,
+                    participant_relation::Column::Visibility,
+                ])
                 .to_owned(),
             )
             .exec_with_returning(&self.db)

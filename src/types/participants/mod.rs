@@ -66,9 +66,7 @@ impl FromStr for ParticipantType {
 }
 
 /// Who else in the organisation sees a participant a user added.
-#[derive(
-    Clone, Debug, Default, Eq, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize,
-)]
+#[derive(Clone, Debug, Eq, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::N(16))")]
 pub enum ParticipantVisibility {
     /// Only the user who added it (and admins) see the participant.
@@ -78,7 +76,6 @@ pub enum ParticipantVisibility {
     #[sea_orm(string_value = "Anonymous")]
     Anonymous,
     /// Everyone sees the participant and who added it.
-    #[default]
     #[sea_orm(string_value = "Public")]
     Public,
 }

@@ -16,8 +16,9 @@
  */
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use sea_orm::sea_query::{Condition, Expr, Func};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Select};
 
 use crate::data::entities::sent::grant;
 use crate::data::entities::sent::grant::Model;
@@ -25,7 +26,11 @@ use crate::errors::Outcome;
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::postgres::listing::KeysetPager;
 use crate::services::repo::traits::sent::SentGrantRepoTrait;
-use crate::types::listing::{GrantSort, ListPage, Listed, SentGrantListFilter};
+use crate::types::gnap::GrantStatus;
+use crate::types::gnap::grant_request::GrantKind;
+use crate::types::listing::{
+    GrantSort, ListPage, Listed, SentGrantListFilter, VcRequestListFilter,
+};
 
 pub struct SentGrantPostgresRepo {
     db: DatabaseConnection,
@@ -47,36 +52,30 @@ impl BasicPostgresRepo for SentGrantPostgresRepo {
     }
 }
 
-#[async_trait]
-impl SentGrantRepoTrait for SentGrantPostgresRepo {
-    async fn find_page(
+impl SentGrantPostgresRepo {
+    /// Applies the filters both listings share and fetches the page.
+    async fn fetch_page(
         &self,
-        filter: &SentGrantListFilter,
+        mut select: Select<grant::Entity>,
+        common: CommonFilter<'_>,
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<Model>> {
-        let mut select = grant::Entity::find().filter(grant::Column::Kind.eq(filter.kind.clone()));
-        // Own grants, or grants requested under a role strictly below the caller's.
-        select = select.filter(
-            Condition::any()
-                .add(grant::Column::UserId.eq(filter.user_id.as_str()))
-                .add(grant::Column::Role.like(KeysetPager::below(&filter.role))),
-        );
-        if let Some(id) = &filter.participant_id_contains {
+        if let Some(id) = common.participant_id_contains {
             select = select.filter(grant::Column::ParticipantId.like(KeysetPager::contains(id)));
         }
-        if let Some(nick) = &filter.nick_contains {
+        if let Some(nick) = common.nick_contains {
             select = select.filter(
                 Expr::expr(Func::lower(Expr::col(grant::Column::ParticipantNick)))
                     .like(KeysetPager::contains(&nick.to_lowercase())),
             );
         }
-        if let Some(status) = &filter.status {
+        if let Some(status) = common.status {
             select = select.filter(grant::Column::Status.eq(status.clone()));
         }
-        if let Some(after) = filter.created_after {
+        if let Some(after) = common.created_after {
             select = select.filter(grant::Column::CreatedAt.gte(after));
         }
-        if let Some(before) = filter.created_before {
+        if let Some(before) = common.created_before {
             select = select.filter(grant::Column::CreatedAt.lte(before));
         }
         let timestamp = match page.sort {
@@ -89,5 +88,59 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
             .into(),
         };
         KeysetPager::fetch(self.db(), select, timestamp, grant::Column::Id, page).await
+    }
+}
+
+/// Filters shared by the access-token and VC-request listings.
+struct CommonFilter<'a> {
+    participant_id_contains: Option<&'a String>,
+    nick_contains: Option<&'a String>,
+    status: Option<&'a GrantStatus>,
+    created_after: Option<DateTime<Utc>>,
+    created_before: Option<DateTime<Utc>>,
+}
+
+#[async_trait]
+impl SentGrantRepoTrait for SentGrantPostgresRepo {
+    async fn find_page(
+        &self,
+        filter: &SentGrantListFilter,
+        page: &ListPage<GrantSort>,
+    ) -> Outcome<Listed<Model>> {
+        // Kind fixed here so this private listing never returns VC requests, and vice versa.
+        let select = grant::Entity::find()
+            .filter(grant::Column::Kind.eq(GrantKind::AccessToken))
+            // Own grants, or grants requested under a role strictly below the caller's.
+            .filter(
+                Condition::any()
+                    .add(grant::Column::UserId.eq(filter.tenant.user_id()))
+                    .add(grant::Column::Role.like(KeysetPager::below(filter.tenant.role()))),
+            );
+        let common = CommonFilter {
+            participant_id_contains: filter.participant_id_contains.as_ref(),
+            nick_contains: filter.nick_contains.as_ref(),
+            status: filter.status.as_ref(),
+            created_after: filter.created_after,
+            created_before: filter.created_before,
+        };
+        self.fetch_page(select, common, page).await
+    }
+
+    async fn find_vc_requests_page(
+        &self,
+        filter: &VcRequestListFilter,
+        page: &ListPage<GrantSort>,
+    ) -> Outcome<Listed<Model>> {
+        // Every VC request, whoever made it.
+        let select =
+            grant::Entity::find().filter(grant::Column::Kind.eq(GrantKind::CredentialRequest));
+        let common = CommonFilter {
+            participant_id_contains: filter.participant_id_contains.as_ref(),
+            nick_contains: filter.nick_contains.as_ref(),
+            status: filter.status.as_ref(),
+            created_after: filter.created_after,
+            created_before: filter.created_before,
+        };
+        self.fetch_page(select, common, page).await
     }
 }

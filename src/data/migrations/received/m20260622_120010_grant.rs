@@ -39,6 +39,7 @@ impl MigrationTrait for Migration {
                             .string()
                             .not_null(),
                     )
+                    .col(ColumnDef::new(RecvGrants::ParticipantId).string())
                     .col(ColumnDef::new(RecvGrants::Kind).string().not_null())
                     .col(ColumnDef::new(RecvGrants::Token).string())
                     .col(ColumnDef::new(RecvGrants::VcTypeConfig).json_binary())
@@ -68,6 +69,7 @@ pub enum RecvGrants {
     Id,
     Role,
     ParticipantNick,
+    ParticipantId,
     Kind,
     Token,
     VcTypeConfig,

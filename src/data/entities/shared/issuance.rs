@@ -16,7 +16,7 @@
  */
 
 use crate::services::repo::postgres::IntoOverwriteActive;
-use crate::types::roles::RolePath;
+use crate::types::oauth::RolePath;
 use crate::types::vcs::{BuildCtx, VcTypeConfig};
 use crate::utils::create_opaque_token;
 use sea_orm::ActiveValue;

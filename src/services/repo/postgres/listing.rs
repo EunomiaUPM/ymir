@@ -25,7 +25,7 @@ use sea_orm::{
 
 use crate::errors::{Errors, Outcome};
 use crate::types::listing::{Keyset, ListPage, Listed, SortDirection};
-use crate::types::roles::RolePath;
+use crate::types::oauth::RolePath;
 
 /// Runs a filtered listing as one page in the database, never in memory.
 pub struct KeysetPager;

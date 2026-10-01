@@ -36,6 +36,11 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(SentGrants::Role).string().not_null())
                     .col(ColumnDef::new(SentGrants::UserId).string().not_null())
                     .col(
+                        ColumnDef::new(SentGrants::Visibility)
+                            .string_len(16)
+                            .not_null(),
+                    )
+                    .col(
                         ColumnDef::new(SentGrants::ParticipantId)
                             .string()
                             .not_null(),
@@ -82,6 +87,7 @@ pub enum SentGrants {
     Id,
     Role,
     UserId,
+    Visibility,
     ParticipantId,
     ParticipantNick,
     GrantEndpoint,

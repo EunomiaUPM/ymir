@@ -24,7 +24,7 @@ use crate::types::issuance::{
     VcTransmissionOffer,
 };
 use crate::types::jwt::VCJwtClaims;
-use crate::types::roles::RolePath;
+use crate::types::oauth::RolePath;
 use crate::types::vcs::{VcType, VcTypeConfig};
 use async_trait::async_trait;
 

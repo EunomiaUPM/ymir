@@ -18,7 +18,7 @@
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
-use crate::types::roles::RolePath;
+use crate::types::oauth::RolePath;
 use crate::types::vcs::VcTypeConfig;
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
@@ -32,6 +32,8 @@ pub struct Model {
     pub id: String, // REQUEST
     pub role: RolePath,
     pub participant_nick: String, // REQUEST
+    /// Peer that obtained access; set once the grant is approved.
+    pub participant_id: Option<String>, // COMPLETION
     pub kind: GrantKind,
     pub token: Option<String>, // COMPLETION
     #[sea_orm(column_type = "JsonBinary")]
@@ -56,6 +58,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             id: ActiveValue::Set(self.id),
             role: ActiveValue::Set(self.role),
             participant_nick: ActiveValue::Set(self.participant_nick),
+            participant_id: ActiveValue::Set(None),
             kind: ActiveValue::Set(self.kind),
             token: ActiveValue::Set(None),
             vc_type_config: ActiveValue::Set(self.vc_type_config),
@@ -72,6 +75,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             id: ActiveValue::Set(self.id),
             role: ActiveValue::Set(self.role),
             participant_nick: ActiveValue::Set(self.participant_nick),
+            participant_id: ActiveValue::Set(self.participant_id),
             kind: ActiveValue::Set(self.kind),
             token: ActiveValue::Set(self.token),
             vc_type_config: ActiveValue::Set(self.vc_type_config),

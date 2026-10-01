@@ -30,7 +30,6 @@ pub struct Model {
     pub participant_nick: String,          // REQUEST
     pub participant_type: ParticipantType, // REQUEST
     pub base_url: String,                  // REQUEST
-    pub token: Option<String>,             // REQUEST
     pub saved_at: DateTime<Utc>,           // DEFAULT
     pub last_interaction: DateTime<Utc>,   // DEFAULT
     pub extra_fields: serde_json::Value,   // REQUEST
@@ -42,7 +41,6 @@ pub struct Plan {
     pub participant_nick: String,
     pub participant_type: ParticipantType,
     pub base_url: String,
-    pub token: Option<String>,
     pub extra_fields: Option<serde_json::Value>,
 }
 
@@ -53,7 +51,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             participant_nick: ActiveValue::Set(self.participant_nick),
             participant_type: ActiveValue::Set(self.participant_type),
             base_url: ActiveValue::Set(self.base_url),
-            token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(Utc::now()),
             last_interaction: ActiveValue::Set(Utc::now()),
             extra_fields: ActiveValue::Set(self.extra_fields.unwrap_or(serde_json::json!({}))),
@@ -68,7 +65,6 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             participant_nick: ActiveValue::Set(self.participant_nick),
             participant_type: ActiveValue::Set(self.participant_type),
             base_url: ActiveValue::Set(self.base_url),
-            token: ActiveValue::Set(self.token),
             saved_at: ActiveValue::Set(self.saved_at),
             last_interaction: ActiveValue::Set(Utc::now()),
             extra_fields: ActiveValue::Set(self.extra_fields),

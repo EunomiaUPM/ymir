@@ -18,7 +18,8 @@
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
-use crate::types::roles::RolePath;
+use crate::types::oauth::RolePath;
+use crate::types::participants::ParticipantVisibility;
 use crate::types::vcs::VcTypeConfig;
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
@@ -34,6 +35,8 @@ pub struct Model {
     pub user_id: String,
     pub participant_id: String, // ID of participant to who which we do the request
     pub participant_nick: String, // Nick of participant
+    /// Visibility the peer's relation gets once the grant completes.
+    pub visibility: ParticipantVisibility,
     pub grant_endpoint: String,
     pub kind: GrantKind, // Type of request, (token or vc)
     pub status: GrantStatus,
@@ -54,6 +57,7 @@ pub struct Plan {
     pub user_id: String,
     pub participant_id: String,
     pub participant_nick: String,
+    pub visibility: ParticipantVisibility,
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub grant_endpoint: String,
     pub kind: GrantKind,
@@ -68,6 +72,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             user_id: ActiveValue::Set(self.user_id),
             participant_id: ActiveValue::Set(self.participant_id),
             participant_nick: ActiveValue::Set(self.participant_nick),
+            visibility: ActiveValue::Set(self.visibility),
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
             kind: ActiveValue::Set(self.kind),
             auto: ActiveValue::Set(self.auto.unwrap_or(false)),
@@ -90,6 +95,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             user_id: ActiveValue::Set(self.user_id),
             participant_id: ActiveValue::Set(self.participant_id),
             participant_nick: ActiveValue::Set(self.participant_nick),
+            visibility: ActiveValue::Set(self.visibility),
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
             kind: ActiveValue::Set(self.kind),
             auto: ActiveValue::Set(self.auto),

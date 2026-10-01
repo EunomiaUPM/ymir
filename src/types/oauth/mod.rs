@@ -8,25 +8,14 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod crypto;
-pub mod dids;
-pub mod gnap;
-pub mod http;
-pub mod issuance;
-pub mod jwt;
-pub mod keys;
-pub mod listing;
-pub mod participants;
-pub mod secrets;
-pub mod oauth;
-pub mod vcs;
-pub mod verification;
-pub mod vps;
-pub mod wallet;
+mod roles;
+mod user_info;
+pub use roles::RolePath;
+pub use user_info::UserInfo;

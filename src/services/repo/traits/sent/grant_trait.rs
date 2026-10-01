@@ -18,7 +18,9 @@
 use crate::data::entities::sent::grant::{Model, Plan};
 use crate::errors::Outcome;
 use crate::services::repo::traits::CrudRepoTrait;
-use crate::types::listing::{GrantSort, ListPage, Listed, SentGrantListFilter};
+use crate::types::listing::{
+    GrantSort, ListPage, Listed, SentGrantListFilter, VcRequestListFilter,
+};
 use async_trait::async_trait;
 
 /// Data Repository Contract for Outbound Grant Requests (*Sent Grants*).
@@ -28,10 +30,18 @@ use async_trait::async_trait;
 /// serving as the client-side audit ledger for active security negotiations.
 #[async_trait]
 pub trait SentGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
-    /// Lists one page of grants matching `filter`, filtered and paged in the database.
+    /// Lists one page of access-token grants visible to `filter.tenant`, filtered and paged in
+    /// the database.
     async fn find_page(
         &self,
         filter: &SentGrantListFilter,
+        page: &ListPage<GrantSort>,
+    ) -> Outcome<Listed<Model>>;
+
+    /// Lists one page of VC requests, whoever made them, filtered and paged in the database.
+    async fn find_vc_requests_page(
+        &self,
+        filter: &VcRequestListFilter,
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<Model>>;
 }

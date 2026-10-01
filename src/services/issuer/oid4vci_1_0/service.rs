@@ -39,8 +39,8 @@ use crate::types::issuance::{
 };
 use crate::types::jwt::{Jwt, VCJwtClaims};
 use crate::types::keys::{PrivateKey, SigningCtx};
-use crate::types::roles::RolePath;
 use crate::types::secrets::PemHelper;
+use crate::types::oauth::RolePath;
 use crate::types::vcs::{BuildCtx, VcType, VcTypeConfig};
 use crate::types::wallet::Identity;
 use crate::utils::is_active;

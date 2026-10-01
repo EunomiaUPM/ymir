@@ -31,6 +31,7 @@ pub trait ParticipantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'stat
         filter: &ParticipantListFilter,
         page: &ListPage<ParticipantSort>,
     ) -> Outcome<Listed<Model>>;
-    /// Inserts the relationship or refreshes its contact data and token if it already exists.
+    /// Inserts the participant, or refreshes its nick, base URL and last interaction if it
+    /// already exists.
     async fn force_update(&self, plan: Plan) -> Outcome<Model>;
 }
