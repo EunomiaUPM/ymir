@@ -22,6 +22,7 @@ use crate::types::listing::{ListPage, Listed, ParticipantListFilter, Participant
 use async_trait::async_trait;
 
 /// Peers known to the whole organisation, one row per `participant_id`.
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
 pub trait ParticipantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
     async fn get_batch(&self, ids: &[String]) -> Outcome<Vec<Model>>;

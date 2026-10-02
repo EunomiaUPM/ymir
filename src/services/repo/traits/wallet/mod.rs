@@ -20,5 +20,11 @@ mod key_trait;
 mod vc_trait;
 
 pub use did_trait::DidRepoTrait;
+#[cfg(feature = "mock")]
+pub use did_trait::MockDidRepoTrait;
 pub use key_trait::KeyRepoTrait;
+#[cfg(feature = "mock")]
+pub use key_trait::MockKeyRepoTrait;
+#[cfg(feature = "mock")]
+pub use vc_trait::MockVcRepoTrait;
 pub use vc_trait::VcRepoTrait;

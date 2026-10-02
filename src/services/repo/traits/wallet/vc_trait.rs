@@ -42,3 +42,23 @@ pub trait VcRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {
     /// to satisfy the verifier's requested evaluation criteria.
     async fn filter_by_desc(&self, input_descriptor: &InputDescriptor) -> Outcome<Vec<Model>>;
 }
+
+#[cfg(feature = "mock")]
+mockall::mock! {
+    pub VcRepoTrait {}
+
+    #[async_trait]
+    impl CrudRepoTrait<Model, Model> for VcRepoTrait {
+        async fn get_all(&self, limit: Option<u64>, offset: Option<u64>) -> Outcome<Vec<Model>>;
+        async fn get_by_id(&self, id: &str) -> Outcome<Model>;
+        async fn create(&self, plan: Model) -> Outcome<Model>;
+        async fn update(&self, model: Model) -> Outcome<Model>;
+        async fn delete(&self, id: &str) -> Outcome<()>;
+    }
+
+    #[async_trait]
+    impl VcRepoTrait for VcRepoTrait {
+        async fn filter_by_type(&self, r#type: VcType) -> Outcome<Vec<Model>>;
+        async fn filter_by_desc(&self, input_descriptor: &InputDescriptor) -> Outcome<Vec<Model>>;
+    }
+}

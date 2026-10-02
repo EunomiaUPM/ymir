@@ -19,4 +19,6 @@ mod identity_trait;
 mod service;
 
 pub use identity_trait::IdentityTrait;
+#[cfg(feature = "mock")]
+pub use identity_trait::MockIdentityTrait;
 pub use service::IdentityManager;

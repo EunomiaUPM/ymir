@@ -18,3 +18,5 @@
 mod issuer_trait;
 pub mod oid4vci_1_0;
 pub use issuer_trait::IssuerTrait;
+#[cfg(feature = "mock")]
+pub use issuer_trait::MockIssuerTrait;

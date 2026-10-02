@@ -32,3 +32,22 @@ pub trait RecvVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 
     /// back to the initial authorization transactional context.
     async fn get_by_state(&self, state: &str) -> Outcome<Model>;
 }
+
+#[cfg(feature = "mock")]
+mockall::mock! {
+    pub RecvVerificationRepoTrait {}
+
+    #[async_trait]
+    impl CrudRepoTrait<Model, Plan> for RecvVerificationRepoTrait {
+        async fn get_all(&self, limit: Option<u64>, offset: Option<u64>) -> Outcome<Vec<Model>>;
+        async fn get_by_id(&self, id: &str) -> Outcome<Model>;
+        async fn create(&self, plan: Plan) -> Outcome<Model>;
+        async fn update(&self, model: Model) -> Outcome<Model>;
+        async fn delete(&self, id: &str) -> Outcome<()>;
+    }
+
+    #[async_trait]
+    impl RecvVerificationRepoTrait for RecvVerificationRepoTrait {
+        async fn get_by_state(&self, state: &str) -> Outcome<Model>;
+    }
+}

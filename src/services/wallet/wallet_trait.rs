@@ -27,6 +27,7 @@ use tokio::sync::RwLock;
 ///
 /// This trait represents the full wallet capability set:
 /// identity management, DID/VC storage, and protocol handling (OID4VCI/OID4VP).
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
 pub trait WalletTrait: Send + Sync + 'static {
     // ===== CORE WALLET STATE =====================================================================

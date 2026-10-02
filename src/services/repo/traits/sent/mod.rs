@@ -19,6 +19,12 @@ mod grant_trait;
 mod interaction_trait;
 mod verification_trait;
 
+#[cfg(feature = "mock")]
+pub use grant_trait::MockSentGrantRepoTrait;
 pub use grant_trait::SentGrantRepoTrait;
+#[cfg(feature = "mock")]
+pub use interaction_trait::MockSentInteractionRepoTrait;
 pub use interaction_trait::SentInteractionRepoTrait;
+#[cfg(feature = "mock")]
+pub use verification_trait::MockSentVerificationRepoTrait;
 pub use verification_trait::SentVerificationRepoTrait;

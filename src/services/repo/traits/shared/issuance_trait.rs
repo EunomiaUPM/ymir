@@ -41,3 +41,23 @@ pub trait IssuanceRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static 
     /// possesses authorized coverage over the requested Verifiable Credentials configuration layout.
     async fn get_by_token(&self, token: &str) -> Outcome<Model>;
 }
+
+#[cfg(feature = "mock")]
+mockall::mock! {
+    pub IssuanceRepoTrait {}
+
+    #[async_trait]
+    impl CrudRepoTrait<Model, Plan> for IssuanceRepoTrait {
+        async fn get_all(&self, limit: Option<u64>, offset: Option<u64>) -> Outcome<Vec<Model>>;
+        async fn get_by_id(&self, id: &str) -> Outcome<Model>;
+        async fn create(&self, plan: Plan) -> Outcome<Model>;
+        async fn update(&self, model: Model) -> Outcome<Model>;
+        async fn delete(&self, id: &str) -> Outcome<()>;
+    }
+
+    #[async_trait]
+    impl IssuanceRepoTrait for IssuanceRepoTrait {
+        async fn get_by_pre_auth_code(&self, code: &str) -> Outcome<Model>;
+        async fn get_by_token(&self, token: &str) -> Outcome<Model>;
+    }
+}

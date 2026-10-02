@@ -18,4 +18,6 @@
 pub mod oid4vp_draft20;
 mod verifier_trait;
 
+#[cfg(feature = "mock")]
+pub use verifier_trait::MockVerifierTrait;
 pub use verifier_trait::VerifierTrait;

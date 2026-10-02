@@ -16,6 +16,8 @@
  */
 
 use crate::data::entities::wallet::key::Model;
+#[cfg(feature = "mock")]
+use crate::errors::Outcome;
 use crate::services::repo::traits::CrudRepoTrait;
 use async_trait::async_trait;
 
@@ -26,3 +28,20 @@ use async_trait::async_trait;
 /// and DID fragment pointers, serving as the relational anchor for the secure cryptographic Vault.
 #[async_trait]
 pub trait KeyRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {}
+
+#[cfg(feature = "mock")]
+mockall::mock! {
+    pub KeyRepoTrait {}
+
+    #[async_trait]
+    impl CrudRepoTrait<Model, Model> for KeyRepoTrait {
+        async fn get_all(&self, limit: Option<u64>, offset: Option<u64>) -> Outcome<Vec<Model>>;
+        async fn get_by_id(&self, id: &str) -> Outcome<Model>;
+        async fn create(&self, plan: Model) -> Outcome<Model>;
+        async fn update(&self, model: Model) -> Outcome<Model>;
+        async fn delete(&self, id: &str) -> Outcome<()>;
+    }
+
+    #[async_trait]
+    impl KeyRepoTrait for KeyRepoTrait {}
+}

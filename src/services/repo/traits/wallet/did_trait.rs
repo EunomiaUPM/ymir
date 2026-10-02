@@ -46,3 +46,26 @@ pub trait DidRepoTrait: CrudRepoTrait<Model, Model> + Send + Sync + 'static {
     async fn set_default_by_did(&self, did: &str) -> Outcome<Model>;
     async fn delete_by_did(&self, did: &str) -> Outcome<()>;
 }
+
+#[cfg(feature = "mock")]
+mockall::mock! {
+    pub DidRepoTrait {}
+
+    #[async_trait]
+    impl CrudRepoTrait<Model, Model> for DidRepoTrait {
+        async fn get_all(&self, limit: Option<u64>, offset: Option<u64>) -> Outcome<Vec<Model>>;
+        async fn get_by_id(&self, id: &str) -> Outcome<Model>;
+        async fn create(&self, plan: Model) -> Outcome<Model>;
+        async fn update(&self, model: Model) -> Outcome<Model>;
+        async fn delete(&self, id: &str) -> Outcome<()>;
+    }
+
+    #[async_trait]
+    impl DidRepoTrait for DidRepoTrait {
+        async fn get_by_did(&self, did: &str) -> Outcome<Model>;
+        async fn get_default(&self) -> Outcome<Model>;
+        async fn set_default_id(&self, id: &str) -> Outcome<Model>;
+        async fn set_default_by_did(&self, did: &str) -> Outcome<Model>;
+        async fn delete_by_did(&self, did: &str) -> Outcome<()>;
+    }
+}

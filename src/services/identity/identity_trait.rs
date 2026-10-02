@@ -26,6 +26,7 @@ use tokio::sync::RwLock;
 ///
 /// Provides thread-safe, non-blocking asynchronous routines to serialize database structures
 /// into dynamic runtime configurations, synchronization boundaries, and hot-swappable key material.
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
 pub trait IdentityTrait: Send + Sync + 'static {
     /// Commits a database DID model snapshot into the active dynamic runtime state.

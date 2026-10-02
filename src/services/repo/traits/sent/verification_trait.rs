@@ -16,6 +16,8 @@
  */
 
 use crate::data::entities::sent::verification::{Model, Plan};
+#[cfg(feature = "mock")]
+use crate::errors::Outcome;
 use crate::services::repo::traits::CrudRepoTrait;
 use async_trait::async_trait;
 
@@ -26,3 +28,20 @@ use async_trait::async_trait;
 /// to evaluate incoming Verifiable Presentations against the Presentation Exchange rules.
 #[async_trait]
 pub trait SentVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {}
+
+#[cfg(feature = "mock")]
+mockall::mock! {
+    pub SentVerificationRepoTrait {}
+
+    #[async_trait]
+    impl CrudRepoTrait<Model, Plan> for SentVerificationRepoTrait {
+        async fn get_all(&self, limit: Option<u64>, offset: Option<u64>) -> Outcome<Vec<Model>>;
+        async fn get_by_id(&self, id: &str) -> Outcome<Model>;
+        async fn create(&self, plan: Plan) -> Outcome<Model>;
+        async fn update(&self, model: Model) -> Outcome<Model>;
+        async fn delete(&self, id: &str) -> Outcome<()>;
+    }
+
+    #[async_trait]
+    impl SentVerificationRepoTrait for SentVerificationRepoTrait {}
+}

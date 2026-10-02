@@ -32,6 +32,7 @@ use async_trait::async_trait;
 ///
 /// Defines the core contract for managing the credential issuance lifecycle, covering
 /// cryptographic handshake validations, metadata compilation, and secure signature generation.
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
 pub trait IssuerTrait: Send + Sync + 'static {
     // ===== ISSUANCE INITIALIZATION & OFFERS ======================================================
