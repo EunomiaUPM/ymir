@@ -22,6 +22,7 @@ use async_trait::async_trait;
 
 /// Peers known to each tenant. A remote connector may be a peer of several tenants, so a
 /// participant is identified by `(tenant_id, participant_id)`.
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
 pub trait ParticipantRepoTrait: Send + Sync + 'static {
     async fn get_by_id(&self, tenant_id: &str, participant_id: &str) -> Outcome<Model>;

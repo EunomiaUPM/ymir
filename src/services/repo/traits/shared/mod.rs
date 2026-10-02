@@ -20,5 +20,11 @@ mod participant_trait;
 mod resource_req_trait;
 
 pub use issuance_trait::IssuanceRepoTrait;
+#[cfg(feature = "mock")]
+pub use issuance_trait::MockIssuanceRepoTrait;
+#[cfg(feature = "mock")]
+pub use participant_trait::MockParticipantRepoTrait;
 pub use participant_trait::ParticipantRepoTrait;
+#[cfg(feature = "mock")]
+pub use resource_req_trait::MockResourceReqRepoTrait;
 pub use resource_req_trait::ResourceReqRepoTrait;

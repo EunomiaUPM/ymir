@@ -16,6 +16,8 @@
  */
 
 use crate::data::entities::sent::interaction::{Model, Plan};
+#[cfg(feature = "mock")]
+use crate::errors::Outcome;
 use crate::services::repo::traits::CrudRepoTrait;
 use async_trait::async_trait;
 
@@ -26,3 +28,20 @@ use async_trait::async_trait;
 /// external Authorization Servers to complete a dynamic grant approval loop.
 #[async_trait]
 pub trait SentInteractionRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {}
+
+#[cfg(feature = "mock")]
+mockall::mock! {
+    pub SentInteractionRepoTrait {}
+
+    #[async_trait]
+    impl CrudRepoTrait<Model, Plan> for SentInteractionRepoTrait {
+        async fn get_all(&self, limit: Option<u64>, offset: Option<u64>) -> Outcome<Vec<Model>>;
+        async fn get_by_id(&self, id: &str) -> Outcome<Model>;
+        async fn create(&self, plan: Plan) -> Outcome<Model>;
+        async fn update(&self, model: Model) -> Outcome<Model>;
+        async fn delete(&self, id: &str) -> Outcome<()>;
+    }
+
+    #[async_trait]
+    impl SentInteractionRepoTrait for SentInteractionRepoTrait {}
+}

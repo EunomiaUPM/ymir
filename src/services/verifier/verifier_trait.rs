@@ -25,6 +25,7 @@ use async_trait::async_trait;
 /// Responsible for generating presentation definitions,
 /// creating verification requests and validating received
 /// VP tokens against the requested requirements.
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
 pub trait VerifierTrait: Send + Sync + 'static {
     /// Creates a new verification plan associated with a grant.

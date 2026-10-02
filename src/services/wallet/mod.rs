@@ -19,4 +19,6 @@ pub mod fafnir;
 mod wallet_trait;
 pub mod walt_id;
 
+#[cfg(feature = "mock")]
+pub use wallet_trait::MockWalletTrait;
 pub use wallet_trait::WalletTrait;
