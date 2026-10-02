@@ -62,5 +62,6 @@ mockall::mock! {
     #[async_trait]
     impl SentGrantRepoTrait for SentGrantRepoTrait {
         async fn find_page(&self, filter: &SentGrantListFilter, page: &ListPage<GrantSort>) -> Outcome<Listed<Model>>;
+        async fn find_vc_requests_page(&self, filter: &VcRequestListFilter, page: &ListPage<GrantSort>) -> Outcome<Listed<Model>>;
     }
 }

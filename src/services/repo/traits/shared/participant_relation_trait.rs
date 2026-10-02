@@ -21,6 +21,7 @@ use async_trait::async_trait;
 
 /// Which user added which participant, and with what visibility. Keyed by
 /// `(user_id, participant_id)`.
+#[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
 pub trait ParticipantRelationRepoTrait: Send + Sync + 'static {
     /// The relation of `user_id` with `participant_id`; missing-resource error if none.
