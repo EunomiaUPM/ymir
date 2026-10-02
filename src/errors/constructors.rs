@@ -40,17 +40,17 @@ impl Errors {
         };
 
         Errors::PetitionError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Petition Error".to_string(),
                 error_code,
                 status_code,
                 details: None,
-            },
+            }),
             ctx: Errors::build_ctx(http_code, url, method),
             failure,
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -63,16 +63,16 @@ impl Errors {
         source: Option<AnyError>,
     ) -> Self {
         Errors::WalletError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Wallet Error".to_string(),
                 error_code: 1200,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
-            },
+            }),
             ctx: Errors::build_ctx(http_code, url, method),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -85,32 +85,32 @@ impl Errors {
         source: Option<AnyError>,
     ) -> Self {
         Errors::ProviderError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Provider Error".to_string(),
                 error_code: 1300,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
-            },
+            }),
             ctx: Errors::build_ctx(http_code, url, method),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Shorthand constructor tracking failures at the inbound Provider Grant endpoint.
     pub fn provider_grant(reason: impl Into<String>) -> Self {
         Errors::ProviderError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Provider Error".to_string(),
                 error_code: 1300,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
-            },
+            }),
             ctx: Errors::build_ctx(None, "Provider Grant Endpoint", "POST"),
             reason: reason.into(),
             source: None,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -123,16 +123,16 @@ impl Errors {
         source: Option<AnyError>,
     ) -> Self {
         Errors::ConsumerError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Consumer Error".to_string(),
                 error_code: 1400,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
-            },
+            }),
             ctx: Errors::build_ctx(http_code, url, method),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -145,32 +145,32 @@ impl Errors {
         source: Option<AnyError>,
     ) -> Self {
         Errors::AuthorityError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Authority Error".to_string(),
                 error_code: 1500,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
-            },
+            }),
             ctx: Errors::build_ctx(http_code, url, method),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Shorthand constructor targeting transactional authorization loops at raw AS continuation endpoints.
     pub fn authority_grant(reason: impl Into<String>) -> Self {
         Errors::AuthorityError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Authority Error".to_string(),
                 error_code: 1500,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
-            },
+            }),
             ctx: Errors::build_ctx(None, "Authority Grant Endpoint", "POST"),
             reason: reason.into(),
             source: None,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -189,16 +189,16 @@ impl Errors {
             _ => 3100,
         };
         Errors::MissingActionError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Missing Action Error".to_string(),
                 error_code,
                 status_code: StatusCode::PRECONDITION_FAILED,
                 details: None,
-            },
+            }),
             action,
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -209,16 +209,16 @@ impl Errors {
         source: Option<AnyError>,
     ) -> Self {
         Errors::MissingResourceError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Missing Resource Error".to_string(),
                 error_code: 3200,
                 status_code: StatusCode::NOT_FOUND,
                 details: None,
-            },
+            }),
             resource_id: id.into(),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -230,120 +230,120 @@ impl Errors {
             _ => (3100, StatusCode::BAD_REQUEST),
         };
         Errors::FormatError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Format Error".to_string(),
                 error_code,
                 status_code,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Standard identity validation tracking builder.
     pub fn unauthorized(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::UnauthorizedError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Unauthorized Error".to_string(),
                 error_code: 4200,
                 status_code: StatusCode::UNAUTHORIZED,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Resource access privilege denial tracking builder.
     pub fn forbidden(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::ForbiddenError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Forbidden Error".to_string(),
                 error_code: 4300,
                 status_code: StatusCode::FORBIDDEN,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Cryptographic verify, decryption, or message tracking integrity error factory.
     pub fn security(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::SecurityError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Security Error".to_string(),
                 error_code: 4400,
                 status_code: StatusCode::UNPROCESSABLE_ENTITY,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Standard internal database mapping tracker.
     pub fn db(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::DatabaseError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Database Error".to_string(),
                 error_code: 5100,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Stubs development tracking engine constructor.
     pub fn not_impl(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::FeatureNotImplError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Feature Not Implemented".to_string(),
                 error_code: 5200,
                 status_code: StatusCode::NOT_IMPLEMENTED,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Runtime application setting extraction failure constructor.
     pub fn env_var(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::EnvVarError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Environment Variable Error".to_string(),
                 error_code: 5300,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Dynamic configurations operational module gating check failure builder.
     pub fn not_active(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::ModuleNotActiveError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Module Not Active Error".to_string(),
                 error_code: 5400,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -354,16 +354,16 @@ impl Errors {
         source: Option<AnyError>,
     ) -> Self {
         Errors::ReadError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Read Error".to_string(),
                 error_code: 5510,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
-            },
+            }),
             path: path.into(),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -374,31 +374,31 @@ impl Errors {
         source: Option<AnyError>,
     ) -> Self {
         Errors::WriteError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Write Error".to_string(),
                 error_code: 5520,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
-            },
+            }),
             path: path.into(),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Data transformations parsing evaluation step failure tracker.
     pub fn parse(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::ParseError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Parse Error".to_string(),
                 error_code: 5530,
                 status_code: StatusCode::BAD_REQUEST,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -406,45 +406,45 @@ impl Errors {
     pub fn validation(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         let reason = reason.into();
         Errors::ParseError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Error validating connector template".to_string(),
                 error_code: 5531,
                 status_code: StatusCode::BAD_REQUEST,
                 details: Some(reason.clone()),
-            },
+            }),
             reason,
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// Hardware enclave or cryptographic Key Vault subsystem failure tracking builder.
     pub fn vault(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::VaultError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Vault Error".to_string(),
                 error_code: 5600,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
     /// High level irregular fallback tracking panic-equivalent entry point factory.
     pub fn crazy(reason: impl Into<String>, source: Option<AnyError>) -> Self {
         Errors::CrazyError {
-            info: ErrorInfo {
+            info: Box::new(ErrorInfo {
                 message: "Something unexpected happened".to_string(),
                 error_code: 6000,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
-            },
+            }),
             reason: reason.into(),
             source,
-            backtrace: Backtrace::capture(),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 }

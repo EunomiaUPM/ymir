@@ -29,159 +29,159 @@ pub enum Errors {
     // ===== HTTP & ECOSYSTEM CONTEXT ERRORS =======================================================
     /// Triggered when an outbound or inbound HTTP network request/handshake transaction fails.
     PetitionError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         ctx: HttpContext,
         failure: PetitionFailure,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Internal failure context originating from the core SSI Wallet subsystem operations.
     WalletError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         ctx: HttpContext,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Data Space error context occurring when operating under the **Provider** role.
     ProviderError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         ctx: HttpContext,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Data Space error context occurring when operating under the **Consumer** role.
     ConsumerError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         ctx: HttpContext,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Authorization Server or trust anchor domain validation error context.
     AuthorityError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         ctx: HttpContext,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
 
     // ===== PROTOCOL LIFECYCLE ERRORS ============================================================
     /// Occurs when a mandatory GNAP or OAuth transactional action state is requested but missing.
     MissingActionError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         action: MissingAction,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Occurs when a specific relational or unique entity resource cannot be resolved by its identifier.
     MissingResourceError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         resource_id: String,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
 
     // ===== FILESYSTEM & STORAGE IO ERRORS ========================================================
     /// Read file-system IO block operations failure.
     ReadError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         path: String,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Write/Serialization file-system IO block operations failure.
     WriteError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         path: String,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
 
     // ===== FOUNDATIONAL SECURITY & PLATFORM BASE ERRORS ==========================================
     /// Data structures schema mismatch or unexpected envelope formats.
     FormatError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Client request lacks proper credentials or identity authentication indicators.
     UnauthorizedError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Client identity is authenticated but lacks required access privileges for the resource.
     ForbiddenError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Cryptographic validation or message signature verification failure.
     SecurityError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Internal engine database operational error originating from the Sea-ORM layer.
     DatabaseError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Executed code pathways pointing to non-implemented features or architectural stubs.
     FeatureNotImplError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Missing or corrupted environment variable declarations during host boot sequences.
     EnvVarError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Execution requested over a business logic module that has been flagged as inactive in configs.
     ModuleNotActiveError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Data transformations, serialization/deserialization, or string parsing failure steps.
     ParseError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Internal secure hardware enclave or Vault Service infrastructure failure.
     VaultError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
     /// Fallback variant for unclassified, highly irregular, or panic-equivalent edge-cases.
     CrazyError {
-        info: ErrorInfo,
+        info: Box<ErrorInfo>,
         reason: String,
         source: Option<AnyError>,
-        backtrace: Backtrace,
+        backtrace: Box<Backtrace>,
     },
 }
 

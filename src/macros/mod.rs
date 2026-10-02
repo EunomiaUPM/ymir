@@ -22,7 +22,29 @@
 ///
 /// # Examples
 /// ```rust
-/// impl_serde_via_str!(CustomDid, TargetUrn);
+/// use std::fmt;
+/// use std::str::FromStr;
+/// use ymir::impl_serde_via_str;
+///
+/// struct Colour(String);
+///
+/// impl fmt::Display for Colour {
+///     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+///         f.write_str(&self.0)
+///     }
+/// }
+///
+/// impl FromStr for Colour {
+///     type Err = std::convert::Infallible;
+///     fn from_str(s: &str) -> Result<Self, Self::Err> {
+///         Ok(Colour(s.to_string()))
+///     }
+/// }
+///
+/// impl_serde_via_str!(Colour);
+///
+/// let json = serde_json::to_string(&Colour("red".into())).unwrap();
+/// assert_eq!(json, "\"red\"");
 /// ```
 #[macro_export]
 macro_rules! impl_serde_via_str {
