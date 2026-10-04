@@ -15,13 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod health_router;
-mod oauth_middleware;
-mod openapi_router;
-mod user_extractor;
-mod wallet_router;
+use async_trait::async_trait;
 
-pub use health_router::HealthRouter;
-pub use oauth_middleware::OauthHttpMiddleware;
-pub use openapi_router::OpenapiRouter;
-pub use wallet_router::WalletRouter;
+use crate::errors::Outcome;
+use crate::types::oauth::UserInfo;
+
+/// Port each identity provider implements: who is behind a request's bearer token.
+#[cfg_attr(feature = "mock", mockall::automock)]
+#[async_trait]
+pub trait TokenValidatorTrait: Send + Sync + 'static {
+    /// The user behind `token`, `None` when the request carries none; any failure is a 401.
+    async fn validate_token<'a>(&self, token: Option<&'a str>) -> Outcome<UserInfo>;
+}

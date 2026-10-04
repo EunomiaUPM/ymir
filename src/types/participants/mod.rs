@@ -65,17 +65,17 @@ impl FromStr for ParticipantType {
     }
 }
 
-/// Who else in the organisation sees a participant a user added.
+/// Who sees a record beyond those its role already lets in (its author and the roles above).
 #[derive(Clone, Debug, Eq, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::N(16))")]
-pub enum ParticipantVisibility {
-    /// Only the user who added it (and admins) see the participant.
+pub enum Visibility {
+    /// Nobody else.
     #[sea_orm(string_value = "Private")]
     Private,
-    /// Everyone sees the participant, but not who added it.
+    /// Everyone, but not who created it.
     #[sea_orm(string_value = "Anonymous")]
     Anonymous,
-    /// Everyone sees the participant and who added it.
+    /// Everyone, whole.
     #[sea_orm(string_value = "Public")]
     Public,
 }

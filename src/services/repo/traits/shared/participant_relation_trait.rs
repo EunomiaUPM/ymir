@@ -17,22 +17,34 @@
 
 use crate::data::entities::shared::participant_relation::Model;
 use crate::errors::Outcome;
+use crate::types::oauth::UserInfo;
 use async_trait::async_trait;
 
-/// Which user added which participant, and with what visibility. Keyed by
-/// `(user_id, participant_id)`.
+/// Which user added which participant, under which role and with what visibility. Keyed by
+/// `(user_id, participant_id)`, so it has no `CrudRepoTrait` (single-key ids) nor `Plan`.
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
 pub trait ParticipantRelationRepoTrait: Send + Sync + 'static {
     /// The relation of `user_id` with `participant_id`; missing-resource error if none.
     async fn get(&self, user_id: &str, participant_id: &str) -> Outcome<Model>;
 
-    /// Every relation a participant has, whoever added it. Hiding `Private` ones or the author
-    /// of `Anonymous` ones is up to the caller.
+    /// Every relation a participant has, whoever added it. For system flows; anything done for
+    /// a user goes through [`get_visible_by_participant`](Self::get_visible_by_participant).
     async fn get_by_participant(&self, participant_id: &str) -> Outcome<Vec<Model>>;
 
-    /// Creates the relation, or updates its role and visibility if the user already had one.
-    async fn upsert(&self, relation: Model) -> Outcome<Model>;
+    /// The relations of `participant_id` that `user` sees: its own and those added under a role
+    /// below its own, whole; those of anyone else unless `Private`, and if `Anonymous` without
+    /// who added them (`user_id` set to [`ANONYMOUS_USER_ID`](crate::data::entities::shared::participant_relation::ANONYMOUS_USER_ID), no `username`). The root sees
+    /// them all, whole.
+    async fn get_visible_by_participant(
+        &self,
+        user: &UserInfo,
+        participant_id: &str,
+    ) -> Outcome<Vec<Model>>;
+
+    /// Creates the relation, or updates its username, role and visibility if the user already had
+    /// one.
+    async fn force_update(&self, relation: Model) -> Outcome<Model>;
 
     async fn delete(&self, user_id: &str, participant_id: &str) -> Outcome<()>;
 }

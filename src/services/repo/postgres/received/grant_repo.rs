@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use crate::types::participants::Visibility;
 use async_trait::async_trait;
 use sea_orm::sea_query::{Condition, Expr, Func};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
@@ -54,11 +55,12 @@ impl RecvGrantRepoTrait for RecvGrantPostgresRepo {
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<grant::Model>> {
         let mut select = grant::Entity::find().filter(grant::Column::Kind.eq(filter.kind.clone()));
-        // Grants assigned to the caller's role or to a role below it.
+        // Grants assigned to the caller's role or to a role below it, and any public one.
         select = select.filter(
             Condition::any()
                 .add(grant::Column::Role.eq(filter.role.clone()))
-                .add(grant::Column::Role.like(KeysetPager::below(&filter.role))),
+                .add(grant::Column::Role.like(KeysetPager::below(&filter.role)))
+                .add(grant::Column::Visibility.eq(Visibility::Public)),
         );
         if let Some(nick) = &filter.nick_contains {
             select = select.filter(

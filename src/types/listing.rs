@@ -86,8 +86,9 @@ pub enum GrantSort {
 
 /// Filter over the access-token grants this connector sent.
 ///
-/// Visibility: the caller's own grants, plus those requested under a role strictly below
-/// the caller's. Users sharing the caller's exact role do not see each other's.
+/// Visibility: the caller's own grants, those requested under a role strictly below the
+/// caller's, and those of anyone that are not `Private`. Users sharing the caller's exact role do
+/// not see each other's private grants; the root sees them all.
 #[derive(Debug, Clone)]
 pub struct SentGrantListFilter {
     /// Caller and the role it acts under; its own grants are always listed.
@@ -101,10 +102,12 @@ pub struct SentGrantListFilter {
 
 /// Filter over the VC requests this connector sent.
 ///
-/// Visibility: every request, whoever made it. Credentials belong to the whole connector;
-/// who requested them is stored for the record but does not restrict the listing.
+/// Visibility: as for access-token grants; VC requests are created `Public`, since credentials
+/// belong to the whole connector.
 #[derive(Debug, Clone)]
 pub struct VcRequestListFilter {
+    /// Caller and the role it acts under.
+    pub tenant: UserInfo,
     pub participant_id_contains: Option<String>,
     pub nick_contains: Option<String>,
     pub status: Option<GrantStatus>,
@@ -114,7 +117,7 @@ pub struct VcRequestListFilter {
 
 /// Filter over grants this connector received.
 ///
-/// Visibility: grants assigned to the caller's role or to a role below it.
+/// Visibility: grants assigned to the caller's role or to a role below it, and any `Public` one.
 #[derive(Debug, Clone)]
 pub struct RecvGrantListFilter {
     /// Caller's role.

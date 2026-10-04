@@ -8,20 +8,21 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod client;
-mod has_service_trait;
-pub mod identity;
-pub mod issuer;
-pub mod repo;
-pub mod token_validator;
-pub mod vault;
-pub mod verifier;
-pub mod wallet;
-pub use has_service_trait::*;
+//! Turning the bearer token of a request into the user behind it.
+
+mod fixed;
+mod proxied;
+mod token_validator_trait;
+
+pub use fixed::FixedUserValidator;
+pub use proxied::ProxiedTokenValidator;
+#[cfg(feature = "mock")]
+pub use token_validator_trait::MockTokenValidatorTrait;
+pub use token_validator_trait::TokenValidatorTrait;

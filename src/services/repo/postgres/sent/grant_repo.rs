@@ -31,6 +31,8 @@ use crate::types::gnap::grant_request::GrantKind;
 use crate::types::listing::{
     GrantSort, ListPage, Listed, SentGrantListFilter, VcRequestListFilter,
 };
+use crate::types::oauth::UserInfo;
+use crate::types::participants::Visibility;
 
 pub struct SentGrantPostgresRepo {
     db: DatabaseConnection,
@@ -53,6 +55,18 @@ impl BasicPostgresRepo for SentGrantPostgresRepo {
 }
 
 impl SentGrantPostgresRepo {
+    /// Grants `user` sees: its own, those requested under a role below its own, and any not
+    /// `Private`; every grant for the root.
+    fn visible_to(user: &UserInfo) -> Condition {
+        if user.is_root() {
+            return Condition::all();
+        }
+        Condition::any()
+            .add(grant::Column::UserId.eq(user.user_id()))
+            .add(grant::Column::Role.like(KeysetPager::below(user.role())))
+            .add(grant::Column::Visibility.ne(Visibility::Private))
+    }
+
     /// Applies the filters both listings share and fetches the page.
     async fn fetch_page(
         &self,
@@ -110,12 +124,7 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
         // Kind fixed here so this private listing never returns VC requests, and vice versa.
         let select = grant::Entity::find()
             .filter(grant::Column::Kind.eq(GrantKind::AccessToken))
-            // Own grants, or grants requested under a role strictly below the caller's.
-            .filter(
-                Condition::any()
-                    .add(grant::Column::UserId.eq(filter.tenant.user_id()))
-                    .add(grant::Column::Role.like(KeysetPager::below(filter.tenant.role()))),
-            );
+            .filter(Self::visible_to(&filter.tenant));
         let common = CommonFilter {
             participant_id_contains: filter.participant_id_contains.as_ref(),
             nick_contains: filter.nick_contains.as_ref(),
@@ -131,9 +140,9 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
         filter: &VcRequestListFilter,
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<Model>> {
-        // Every VC request, whoever made it.
-        let select =
-            grant::Entity::find().filter(grant::Column::Kind.eq(GrantKind::CredentialRequest));
+        let select = grant::Entity::find()
+            .filter(grant::Column::Kind.eq(GrantKind::CredentialRequest))
+            .filter(Self::visible_to(&filter.tenant));
         let common = CommonFilter {
             participant_id_contains: filter.participant_id_contains.as_ref(),
             nick_contains: filter.nick_contains.as_ref(),

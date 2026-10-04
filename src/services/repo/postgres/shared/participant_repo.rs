@@ -23,7 +23,8 @@ use crate::services::repo::postgres::listing::KeysetPager;
 use crate::services::repo::postgres::{BasicPostgresRepo, IntoOverwriteActive};
 use crate::services::repo::traits::shared::ParticipantRepoTrait;
 use crate::types::listing::{ListPage, Listed, ParticipantListFilter, ParticipantSort};
-use crate::types::participants::{ParticipantType, ParticipantVisibility};
+use crate::types::oauth::UserInfo;
+use crate::types::participants::{ParticipantType, Visibility};
 use async_trait::async_trait;
 use sea_orm::sea_query::{Condition, Expr, Func, OnConflict, Query};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
@@ -35,6 +36,37 @@ pub struct ParticipantPostgresRepo {
 impl ParticipantPostgresRepo {
     pub fn new(db: DatabaseConnection) -> Self {
         Self { db }
+    }
+
+    /// Participants `user` sees; see [`ParticipantRepoTrait`] for rules (a) to (d).
+    fn visible_to(user: &UserInfo) -> Condition {
+        // (a) added by the user, (b) shared by someone, (c) added under a role below the user's.
+        let by_relation = Query::select()
+            .column(participant_relation::Column::ParticipantId)
+            .from(participant_relation::Entity)
+            .cond_where(
+                Condition::any()
+                    .add(participant_relation::Column::UserId.eq(user.user_id()))
+                    .add(
+                        participant_relation::Column::Visibility.ne(Visibility::Private),
+                    )
+                    .add(participant_relation::Column::Role.like(KeysetPager::below(user.role()))),
+            )
+            .to_owned();
+        // (d) has a received grant under the user's role or one below it, or a public one.
+        let by_recv_grant = Query::select()
+            .column(recv_grant::Column::ParticipantId)
+            .from(recv_grant::Entity)
+            .cond_where(
+                Condition::any()
+                    .add(recv_grant::Column::Role.eq(user.role().clone()))
+                    .add(recv_grant::Column::Role.like(KeysetPager::below(user.role())))
+                    .add(recv_grant::Column::Visibility.eq(Visibility::Public)),
+            )
+            .to_owned();
+        Condition::any()
+            .add(participant::Column::ParticipantId.in_subquery(by_relation))
+            .add(participant::Column::ParticipantId.in_subquery(by_recv_grant))
     }
 }
 
@@ -58,44 +90,34 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
             .map_err(|e| Errors::db("Unable to get participant batch", Some(Box::new(e))))
     }
 
+    async fn get_visible(&self, user: &UserInfo, id: &str) -> Outcome<participant::Model> {
+        participant::Entity::find_by_id(id)
+            .filter(Self::visible_to(user))
+            .one(&self.db)
+            .await
+            .map_err(|e| Errors::db("Unable to get participant", Some(Box::new(e))))?
+            .ok_or_else(|| Errors::missing_resource(id, "participant not found", None))
+    }
+
+    async fn get_visible_batch(
+        &self,
+        user: &UserInfo,
+        ids: &[String],
+    ) -> Outcome<Vec<participant::Model>> {
+        participant::Entity::find()
+            .filter(participant::Column::ParticipantId.is_in(ids))
+            .filter(Self::visible_to(user))
+            .all(&self.db)
+            .await
+            .map_err(|e| Errors::db("Unable to get participant batch", Some(Box::new(e))))
+    }
+
     async fn find_page(
         &self,
         filter: &ParticipantListFilter,
         page: &ListPage<ParticipantSort>,
     ) -> Outcome<Listed<participant::Model>> {
-        let mut select = participant::Entity::find();
-        // (a) added by the caller, (b) shared by someone, (c) added under a role below the
-        // caller's.
-        let by_relation = Query::select()
-            .column(participant_relation::Column::ParticipantId)
-            .from(participant_relation::Entity)
-            .cond_where(
-                Condition::any()
-                    .add(participant_relation::Column::UserId.eq(filter.tenant.user_id()))
-                    .add(
-                        participant_relation::Column::Visibility.ne(ParticipantVisibility::Private),
-                    )
-                    .add(
-                        participant_relation::Column::Role
-                            .like(KeysetPager::below(filter.tenant.role())),
-                    ),
-            )
-            .to_owned();
-        // (d) has a received grant under the caller's role or one below it.
-        let by_recv_grant = Query::select()
-            .column(recv_grant::Column::ParticipantId)
-            .from(recv_grant::Entity)
-            .cond_where(
-                Condition::any()
-                    .add(recv_grant::Column::Role.eq(filter.tenant.role().clone()))
-                    .add(recv_grant::Column::Role.like(KeysetPager::below(filter.tenant.role()))),
-            )
-            .to_owned();
-        select = select.filter(
-            Condition::any()
-                .add(participant::Column::ParticipantId.in_subquery(by_relation))
-                .add(participant::Column::ParticipantId.in_subquery(by_recv_grant)),
-        );
+        let mut select = participant::Entity::find().filter(Self::visible_to(&filter.tenant));
         if filter.participant_type != ParticipantType::All {
             select = select
                 .filter(participant::Column::ParticipantType.eq(filter.participant_type.clone()));
@@ -146,5 +168,23 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
             .exec_with_returning(&self.db)
             .await
             .map_err(|e| Errors::db("Unable to upsert participant", Some(Box::new(e))))
+    }
+
+    async fn create_if_absent(&self, plan: participant::Plan) -> Outcome<participant::Model> {
+        let id = plan.participant_id.clone();
+        participant::Entity::insert(plan.into_active())
+            .on_conflict(
+                OnConflict::column(participant::Column::ParticipantId)
+                    .do_nothing()
+                    .to_owned(),
+            )
+            .exec_without_returning(&self.db)
+            .await
+            .map_err(|e| Errors::db("Unable to create participant", Some(Box::new(e))))?;
+        participant::Entity::find_by_id(id.clone())
+            .one(&self.db)
+            .await
+            .map_err(|e| Errors::db("Unable to get participant", Some(Box::new(e))))?
+            .ok_or_else(|| Errors::missing_resource(id, "participant not found", None))
     }
 }

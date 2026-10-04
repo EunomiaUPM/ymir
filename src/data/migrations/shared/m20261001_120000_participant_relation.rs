@@ -37,6 +37,7 @@ impl MigrationTrait for Migration {
                             .string()
                             .not_null(),
                     )
+                    .col(ColumnDef::new(ParticipantRelations::Username).string())
                     .col(
                         ColumnDef::new(ParticipantRelations::Role)
                             .string()
@@ -70,6 +71,7 @@ pub enum ParticipantRelations {
     Table,
     UserId,
     ParticipantId,
+    Username,
     Role,
     Visibility,
 }

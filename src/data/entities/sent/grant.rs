@@ -18,8 +18,9 @@
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
-use crate::types::oauth::RolePath;
-use crate::types::participants::ParticipantVisibility;
+use crate::data::entities::shared::participant_relation::ANONYMOUS_USER_ID;
+use crate::types::oauth::{RolePath, UserInfo};
+use crate::types::participants::Visibility;
 use crate::types::vcs::VcTypeConfig;
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
@@ -33,10 +34,12 @@ pub struct Model {
     pub id: String, // ID of request
     pub role: RolePath,
     pub user_id: String,
+    /// Login name of `user_id` when the grant was requested, to show who asked for it.
+    pub username: Option<String>,
     pub participant_id: String, // ID of participant to who which we do the request
     pub participant_nick: String, // Nick of participant
     /// Visibility the peer's relation gets once the grant completes.
-    pub visibility: ParticipantVisibility,
+    pub visibility: Visibility,
     pub grant_endpoint: String,
     pub kind: GrantKind, // Type of request, (token or vc)
     pub status: GrantStatus,
@@ -50,14 +53,33 @@ pub struct Model {
     pub ended_at: Option<DateTime<Utc>>,
 }
 
+impl Model {
+    /// The grant as `user` may get it: whole if it reaches the grant (its author, a role above,
+    /// or the root); otherwise without its secrets (the peer's token, the credential offer URI)
+    /// and, if `Anonymous`, without its author.
+    pub fn seen_by(mut self, user: &UserInfo) -> Self {
+        if user.reaches(&self.user_id, &self.role) {
+            return self;
+        }
+        self.token = None;
+        self.vc_uri = None;
+        if self.visibility == Visibility::Anonymous {
+            self.user_id = ANONYMOUS_USER_ID.to_string();
+            self.username = None;
+        }
+        self
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Plan {
     pub id: String,
     pub role: RolePath,
     pub user_id: String,
+    pub username: Option<String>,
     pub participant_id: String,
     pub participant_nick: String,
-    pub visibility: ParticipantVisibility,
+    pub visibility: Visibility,
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub grant_endpoint: String,
     pub kind: GrantKind,
@@ -70,6 +92,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             id: ActiveValue::Set(self.id),
             role: ActiveValue::Set(self.role),
             user_id: ActiveValue::Set(self.user_id),
+            username: ActiveValue::Set(self.username),
             participant_id: ActiveValue::Set(self.participant_id),
             participant_nick: ActiveValue::Set(self.participant_nick),
             visibility: ActiveValue::Set(self.visibility),
@@ -93,6 +116,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             id: ActiveValue::Set(self.id),
             role: ActiveValue::Set(self.role),
             user_id: ActiveValue::Set(self.user_id),
+            username: ActiveValue::Set(self.username),
             participant_id: ActiveValue::Set(self.participant_id),
             participant_nick: ActiveValue::Set(self.participant_nick),
             visibility: ActiveValue::Set(self.visibility),

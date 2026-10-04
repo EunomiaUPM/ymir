@@ -19,6 +19,7 @@ use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
 use crate::types::oauth::RolePath;
+use crate::types::participants::Visibility;
 use crate::types::vcs::VcTypeConfig;
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
@@ -31,6 +32,8 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
     pub role: RolePath,
+    /// Who sees the grant beyond the roles that handle it.
+    pub visibility: Visibility,
     pub participant_nick: String, // REQUEST
     /// Peer that obtained access; set once the grant is approved.
     pub participant_id: Option<String>, // COMPLETION
@@ -47,6 +50,7 @@ pub struct Model {
 pub struct Plan {
     pub id: String,
     pub role: RolePath,
+    pub visibility: Visibility,
     pub participant_nick: String,
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub kind: GrantKind,
@@ -57,6 +61,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
         ActiveModel {
             id: ActiveValue::Set(self.id),
             role: ActiveValue::Set(self.role),
+            visibility: ActiveValue::Set(self.visibility),
             participant_nick: ActiveValue::Set(self.participant_nick),
             participant_id: ActiveValue::Set(None),
             kind: ActiveValue::Set(self.kind),
@@ -74,6 +79,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
         ActiveModel {
             id: ActiveValue::Set(self.id),
             role: ActiveValue::Set(self.role),
+            visibility: ActiveValue::Set(self.visibility),
             participant_nick: ActiveValue::Set(self.participant_nick),
             participant_id: ActiveValue::Set(self.participant_id),
             kind: ActiveValue::Set(self.kind),

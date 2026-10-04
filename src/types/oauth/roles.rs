@@ -22,18 +22,30 @@ use crate::errors::{BadFormat, Errors};
 use crate::{impl_seaorm_via_str, impl_serde_via_str};
 
 /// Role of a user, written as its full path in the organisation's role tree
-/// (e.g. `/org/sales/manager`). A shorter path sits higher in the tree.
+/// (e.g. `/admin/upm/dit`). A shorter path sits higher in the tree; the tree hangs from
+/// [`RolePath::root`].
 ///
-/// Only valid paths can be built: they start with `/`, do not end with `/`, have no empty
-/// segments and are not the bare root `/`. An empty or malformed role therefore never turns
-/// into a prefix that matches every other role.
+/// Only valid paths can be built: they start with `/`, do not end with `/` and have no empty
+/// segments. An empty or malformed role therefore never turns into a prefix that matches every
+/// other role.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RolePath(String);
 
 impl RolePath {
+    const ROOT: &'static str = "/admin";
+
+    /// The superuser role `/admin`, from which every other role hangs.
+    pub fn root() -> Self {
+        Self(Self::ROOT.to_string())
+    }
+
     /// The path as stored and compared.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+
+    pub fn is_root(&self) -> bool {
+        self.0 == Self::ROOT
     }
 
     /// Whether `self` hangs strictly below `other` in the tree. A path is not below itself,

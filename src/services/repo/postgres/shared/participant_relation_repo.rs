@@ -16,13 +16,16 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::sea_query::OnConflict;
+use sea_orm::sea_query::{Condition, OnConflict};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
-use crate::data::entities::shared::participant_relation::{self, Model};
+use crate::data::entities::shared::participant_relation::{self, ANONYMOUS_USER_ID, Model};
 use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::IntoOverwriteActive;
+use crate::services::repo::postgres::listing::KeysetPager;
 use crate::services::repo::traits::shared::ParticipantRelationRepoTrait;
+use crate::types::oauth::UserInfo;
+use crate::types::participants::Visibility;
 
 pub struct ParticipantRelationPostgresRepo {
     db: DatabaseConnection,
@@ -58,7 +61,42 @@ impl ParticipantRelationRepoTrait for ParticipantRelationPostgresRepo {
             .map_err(|e| Errors::db("Unable to get participant relations", Some(Box::new(e))))
     }
 
-    async fn upsert(&self, relation: Model) -> Outcome<Model> {
+    async fn get_visible_by_participant(
+        &self,
+        user: &UserInfo,
+        participant_id: &str,
+    ) -> Outcome<Vec<Model>> {
+        let mut select = participant_relation::Entity::find()
+            .filter(participant_relation::Column::ParticipantId.eq(participant_id));
+        if !user.is_root() {
+            select = select.filter(
+                Condition::any()
+                    .add(participant_relation::Column::UserId.eq(user.user_id()))
+                    .add(participant_relation::Column::Role.like(KeysetPager::below(user.role())))
+                    .add(
+                        participant_relation::Column::Visibility.ne(Visibility::Private),
+                    ),
+            );
+        }
+        let relations = select
+            .all(&self.db)
+            .await
+            .map_err(|e| Errors::db("Unable to get participant relations", Some(Box::new(e))))?;
+        Ok(relations
+            .into_iter()
+            .map(|mut relation| {
+                let anonymous = relation.visibility == Visibility::Anonymous
+                    && !user.reaches(&relation.user_id, &relation.role);
+                if anonymous {
+                    relation.user_id = ANONYMOUS_USER_ID.to_string();
+                    relation.username = None;
+                }
+                relation
+            })
+            .collect())
+    }
+
+    async fn force_update(&self, relation: Model) -> Outcome<Model> {
         participant_relation::Entity::insert(relation.into_active())
             .on_conflict(
                 OnConflict::columns([
@@ -66,6 +104,7 @@ impl ParticipantRelationRepoTrait for ParticipantRelationPostgresRepo {
                     participant_relation::Column::ParticipantId,
                 ])
                 .update_columns([
+                    participant_relation::Column::Username,
                     participant_relation::Column::Role,
                     participant_relation::Column::Visibility,
                 ])

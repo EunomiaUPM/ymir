@@ -15,13 +15,26 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod health_router;
-mod oauth_middleware;
-mod openapi_router;
-mod user_extractor;
-mod wallet_router;
+use async_trait::async_trait;
 
-pub use health_router::HealthRouter;
-pub use oauth_middleware::OauthHttpMiddleware;
-pub use openapi_router::OpenapiRouter;
-pub use wallet_router::WalletRouter;
+use super::TokenValidatorTrait;
+use crate::errors::Outcome;
+use crate::types::oauth::UserInfo;
+
+/// Authenticates every request as the same user, token or not. For local development only.
+pub struct FixedUserValidator {
+    user: UserInfo,
+}
+
+impl FixedUserValidator {
+    pub fn new(user: UserInfo) -> Self {
+        Self { user }
+    }
+}
+
+#[async_trait]
+impl TokenValidatorTrait for FixedUserValidator {
+    async fn validate_token<'a>(&self, _token: Option<&'a str>) -> Outcome<UserInfo> {
+        Ok(self.user.clone())
+    }
+}

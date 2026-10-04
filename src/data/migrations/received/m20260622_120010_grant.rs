@@ -34,6 +34,7 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(ColumnDef::new(RecvGrants::Role).string().not_null())
+                    .col(ColumnDef::new(RecvGrants::Visibility).string_len(16).not_null())
                     .col(
                         ColumnDef::new(RecvGrants::ParticipantNick)
                             .string()
@@ -68,6 +69,7 @@ pub enum RecvGrants {
     Table,
     Id,
     Role,
+    Visibility,
     ParticipantNick,
     ParticipantId,
     Kind,
