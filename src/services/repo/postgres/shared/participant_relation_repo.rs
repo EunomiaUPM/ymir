@@ -24,7 +24,7 @@ use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::services::repo::postgres::listing::KeysetPager;
 use crate::services::repo::traits::shared::ParticipantRelationRepoTrait;
-use crate::types::oauth::UserInfo;
+use crate::types::oauth::{RoleTrait, UserInfo, UserTrait};
 use crate::types::participants::Visibility;
 
 pub struct ParticipantRelationPostgresRepo {
@@ -71,7 +71,7 @@ impl ParticipantRelationRepoTrait for ParticipantRelationPostgresRepo {
         if !user.is_root() {
             select = select.filter(
                 Condition::any()
-                    .add(participant_relation::Column::UserId.eq(user.user_id()))
+                    .add(participant_relation::Column::UserId.eq(user.id()))
                     .add(participant_relation::Column::Role.like(KeysetPager::below(user.role())))
                     .add(
                         participant_relation::Column::Visibility.ne(Visibility::Private),

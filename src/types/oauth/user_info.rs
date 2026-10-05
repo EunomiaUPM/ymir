@@ -18,8 +18,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use super::RolePath;
-use crate::types::participants::Visibility;
+use super::{RolePath, RoleTrait, UserTrait};
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::utils::{OneOrMany, decode_url_safe_no_pad};
 
@@ -29,15 +28,8 @@ pub const SYSTEM_USER_ID: &str = "system";
 /// Who is acting: the user, the role it acts under and the rest of its profile. Travels as one
 /// value so a user id is never paired with someone else's role.
 ///
-/// It also carries the access rules over the role tree:
-/// - a user **reaches** a record with an author (its own, or created under a role hanging below
-///   its own; users sharing a role do not reach each other's) and **handles** a record with only
-///   a role (the same role or one below it). The root [`RolePath::root`] reaches and handles
-///   everything. Reaching or handling lets the user read **and act on** the record;
-/// - a user **sees** a record it reaches or handles, or one whose [`Visibility`] opens it to
-///   everyone. Seeing only lets it read;
-/// - a user **manages** (creates, changes, deletes) only identities whose role hangs below its
-///   own; the root manages all of them.
+/// The access rules over the role tree (reaches, handles, sees) come from [`RoleTrait`] and
+/// [`UserTrait`], which it implements with its role and its user id.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserInfo {
     user_id: String,
@@ -128,16 +120,17 @@ impl UserInfo {
         Self::new(SYSTEM_USER_ID, None, RolePath::root(), Map::new())
     }
 
-    pub fn user_id(&self) -> &str {
+    /// The user id (the token's `sub`).
+    pub fn id(&self) -> &str {
         &self.user_id
-    }
-
-    pub fn email(&self) -> Option<&str> {
-        self.email.as_deref()
     }
 
     pub fn role(&self) -> &RolePath {
         &self.role
+    }
+
+    pub fn email(&self) -> Option<&str> {
+        self.email.as_deref()
     }
 
     pub fn extra(&self) -> &Map<String, Value> {
@@ -147,31 +140,6 @@ impl UserInfo {
     /// The login name (`preferred_username`), when the token carried one.
     pub fn username(&self) -> Option<&str> {
         self.extra.get("preferred_username").and_then(Value::as_str)
-    }
-
-    pub fn is_root(&self) -> bool {
-        self.role.is_root()
-    }
-
-    pub fn require_root(&self) -> Outcome<()> {
-        match self.role.is_root() {
-            true => Ok(()),
-            false => Err(Errors::forbidden("Only admins can perform this action", None)),
-        }
-    }
-
-    /// Whether the user reaches a record created by `owner_id` under `owner_role`.
-    pub fn reaches(&self, owner_id: &str, owner_role: &RolePath) -> bool {
-        self.is_root() || owner_id == self.user_id || owner_role.is_below(&self.role)
-    }
-
-    /// Fails unless the user reaches the record; an unreachable record looks like a missing one.
-    pub fn ensure_reaches(&self, owner_id: &str, owner_role: &RolePath, id: &str) -> Outcome<()> {
-        if self.reaches(owner_id, owner_role) {
-            Ok(())
-        } else {
-            Err(Errors::missing_resource(id, "resource not found", None))
-        }
     }
 
 //     /// Whether the user may manage an identity holding `role`.
@@ -190,55 +158,18 @@ impl UserInfo {
 //             ))
 //         }
 //     }
+}
 
-    /// Whether the user handles a record assigned to `role`: the same role, one below it, or any
-    /// for the root.
-    pub fn handles(&self, role: &RolePath) -> bool {
-        self.is_root() || *role == self.role || role.is_below(&self.role)
+/// The base of the role-tree rules, through the public getters: the rules themselves come from
+/// the traits.
+impl RoleTrait for UserInfo {
+    fn role(&self) -> &RolePath {
+        UserInfo::role(self)
     }
+}
 
-    /// Fails unless the user handles the record; an unhandled record looks like a missing one.
-    pub fn ensure_handles(&self, role: &RolePath, id: &str) -> Outcome<()> {
-        if self.handles(role) {
-            Ok(())
-        } else {
-            Err(Errors::missing_resource(id, "resource not found", None))
-        }
-    }
-
-    /// Whether the user sees a record created by `owner_id` under `owner_role`: it reaches it,
-    /// or its visibility is not `Private` (an `Anonymous` one is seen without its author).
-    pub fn sees(&self, owner_id: &str, owner_role: &RolePath, visibility: &Visibility) -> bool {
-        *visibility != Visibility::Private || self.reaches(owner_id, owner_role)
-    }
-
-    /// Fails unless the user [sees](Self::sees) the record, which then looks like a missing one.
-    pub fn ensure_sees(
-        &self,
-        owner_id: &str,
-        owner_role: &RolePath,
-        visibility: &Visibility,
-        id: &str,
-    ) -> Outcome<()> {
-        if self.sees(owner_id, owner_role, visibility) {
-            Ok(())
-        } else {
-            Err(Errors::missing_resource(id, "resource not found", None))
-        }
-    }
-
-    /// Whether the user sees a record assigned to `role`: it handles it, or it is `Public`.
-    pub fn sees_team(&self, role: &RolePath, visibility: &Visibility) -> bool {
-        *visibility == Visibility::Public || self.handles(role)
-    }
-
-    /// Fails unless the user [sees](Self::sees_team) the record, which then looks like a missing
-    /// one.
-    pub fn ensure_sees_team(&self, role: &RolePath, visibility: &Visibility, id: &str) -> Outcome<()> {
-        if self.sees_team(role, visibility) {
-            Ok(())
-        } else {
-            Err(Errors::missing_resource(id, "resource not found", None))
-        }
+impl UserTrait for UserInfo {
+    fn id(&self) -> &str {
+        UserInfo::id(self)
     }
 }

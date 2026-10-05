@@ -19,7 +19,7 @@ use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
 use crate::data::entities::shared::participant_relation::ANONYMOUS_USER_ID;
-use crate::types::oauth::{RolePath, UserInfo};
+use crate::types::oauth::{RolePath, UserInfo, UserTrait};
 use crate::types::participants::Visibility;
 use crate::types::vcs::VcTypeConfig;
 use chrono::{DateTime, Utc};

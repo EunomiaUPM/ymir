@@ -16,6 +16,9 @@
  */
 
 mod roles;
+mod traits;
 mod user_info;
+
 pub use roles::RolePath;
+pub use traits::{RoleTrait, UserTrait};
 pub use user_info::UserInfo;

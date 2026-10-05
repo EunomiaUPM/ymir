@@ -18,6 +18,7 @@
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
+use super::RoleTrait;
 use crate::errors::{BadFormat, Errors};
 use crate::{impl_seaorm_via_str, impl_serde_via_str};
 
@@ -28,11 +29,15 @@ use crate::{impl_seaorm_via_str, impl_serde_via_str};
 /// Only valid paths can be built: they start with `/`, do not end with `/` and have no empty
 /// segments. An empty or malformed role therefore never turns into a prefix that matches every
 /// other role.
+///
+/// The comparisons over the tree (`is_root`, `is_below`, `handles`…) come from
+/// [`RoleTrait`](super::RoleTrait), which a path implements as its own role.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RolePath(String);
 
 impl RolePath {
-    const ROOT: &'static str = "/admin";
+    /// Path of the superuser role, from which every other role hangs.
+    pub const ROOT: &'static str = "/admin";
 
     /// The superuser role `/admin`, from which every other role hangs.
     pub fn root() -> Self {
@@ -43,15 +48,12 @@ impl RolePath {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+}
 
-    pub fn is_root(&self) -> bool {
-        self.0 == Self::ROOT
-    }
-
-    /// Whether `self` hangs strictly below `other` in the tree. A path is not below itself,
-    /// and siblings are not below each other.
-    pub fn is_below(&self, other: &RolePath) -> bool {
-        self.0.starts_with(&format!("{}/", other.0))
+/// A path is its own role, so paths compare with each other through the trait.
+impl RoleTrait for RolePath {
+    fn role(&self) -> &RolePath {
+        self
     }
 }
 

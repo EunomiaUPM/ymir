@@ -31,7 +31,7 @@ use crate::types::gnap::grant_request::GrantKind;
 use crate::types::listing::{
     GrantSort, ListPage, Listed, SentGrantListFilter, VcRequestListFilter,
 };
-use crate::types::oauth::UserInfo;
+use crate::types::oauth::{RoleTrait, UserInfo};
 use crate::types::participants::Visibility;
 
 pub struct SentGrantPostgresRepo {
@@ -62,7 +62,7 @@ impl SentGrantPostgresRepo {
             return Condition::all();
         }
         Condition::any()
-            .add(grant::Column::UserId.eq(user.user_id()))
+            .add(grant::Column::UserId.eq(user.id()))
             .add(grant::Column::Role.like(KeysetPager::below(user.role())))
             .add(grant::Column::Visibility.ne(Visibility::Private))
     }

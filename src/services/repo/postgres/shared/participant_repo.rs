@@ -46,7 +46,7 @@ impl ParticipantPostgresRepo {
             .from(participant_relation::Entity)
             .cond_where(
                 Condition::any()
-                    .add(participant_relation::Column::UserId.eq(user.user_id()))
+                    .add(participant_relation::Column::UserId.eq(user.id()))
                     .add(
                         participant_relation::Column::Visibility.ne(Visibility::Private),
                     )
