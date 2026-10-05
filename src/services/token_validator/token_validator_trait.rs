@@ -23,7 +23,7 @@ use crate::types::oauth::UserInfo;
 /// Port each identity provider implements: who is behind a request's bearer token.
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
-pub trait TokenValidatorTrait: Send + Sync + 'static {
+pub trait OauthTokenValidatorTrait: Send + Sync + 'static {
     /// The user behind `token`, `None` when the request carries none; any failure is a 401.
     async fn validate_token<'a>(&self, token: Option<&'a str>) -> Outcome<UserInfo>;
 }

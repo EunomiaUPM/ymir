@@ -17,7 +17,7 @@
 
 use async_trait::async_trait;
 
-use super::TokenValidatorTrait;
+use super::OauthTokenValidatorTrait;
 use crate::errors::{Errors, Outcome};
 use crate::types::oauth::UserInfo;
 
@@ -29,7 +29,7 @@ use crate::types::oauth::UserInfo;
 pub struct ProxiedTokenValidator;
 
 #[async_trait]
-impl TokenValidatorTrait for ProxiedTokenValidator {
+impl OauthTokenValidatorTrait for ProxiedTokenValidator {
     async fn validate_token<'a>(&self, token: Option<&'a str>) -> Outcome<UserInfo> {
         let token = token.ok_or_else(|| Errors::unauthorized("missing bearer token", None))?;
         UserInfo::from_token(token)

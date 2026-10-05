@@ -21,6 +21,8 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse};
 use axum::routing::get;
 
+use crate::http::routes::openapi;
+
 /// HTTP API Gateway Router governing self-contained API documentation assets.
 ///
 /// Serves the standardized OpenAPI 3.0/3.1 specification metadata alongside a
@@ -44,8 +46,12 @@ impl OpenapiRouter {
     /// * `GET /openapi`      - Renders an interactive Swagger UI documentation dashboard.
     pub fn router(self) -> Router {
         Router::new()
-            .route("/openapi.json", get(Self::get_json))
-            .route("/openapi", get(|| Self::get_swagger("openapi.json")))
+            .route(openapi::JSON, get(Self::get_json))
+            // Relative to the Swagger page, so it works under any mount point.
+            .route(
+                openapi::SWAGGER,
+                get(|| Self::get_swagger(openapi::JSON.trim_start_matches('/'))),
+            )
             .with_state(self.openapi)
     }
 

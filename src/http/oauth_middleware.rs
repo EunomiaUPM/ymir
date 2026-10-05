@@ -27,36 +27,36 @@ use axum::response::{IntoResponse, Response};
 use serde_json::json;
 use crate::errors::{AppResult, Errors, Outcome};
 
-use crate::services::token_validator::TokenValidatorTrait;
+use crate::services::token_validator::OauthTokenValidatorTrait;
 
 /// Authenticates the requests of a router: reads the bearer token (header, or `token` /
 /// `access_token` query parameter), asks the validator for the user and stores it in the request,
 /// where handlers take it as a `UserInfo` extractor.
 #[derive(Clone)]
 pub struct OauthHttpMiddleware {
-    validator: Option<Arc<dyn TokenValidatorTrait>>,
+    validator: Option<Arc<dyn OauthTokenValidatorTrait>>,
     strict: bool,
 }
 
 impl OauthHttpMiddleware {
     /// `strict` rejects requests without a valid token; otherwise they pass unauthenticated.
-    pub fn new(validator: Option<Arc<dyn TokenValidatorTrait>>, strict: bool) -> Self {
+    pub fn new(validator: Option<Arc<dyn OauthTokenValidatorTrait>>, strict: bool) -> Self {
         Self { validator, strict }
     }
 
     /// Creates a strict auth middleware with a required token validator.
-    pub fn strict(validator: Arc<dyn TokenValidatorTrait>) -> Self {
+    pub fn strict(validator: Arc<dyn OauthTokenValidatorTrait>) -> Self {
         Self::new(Some(validator), true)
     }
 
     /// Creates a permissive auth middleware where unauthenticated requests pass through.
-    pub fn permissive(validator: Option<Arc<dyn TokenValidatorTrait>>) -> Self {
+    pub fn permissive(validator: Option<Arc<dyn OauthTokenValidatorTrait>>) -> Self {
         Self::new(validator, false)
     }
 
     /// Axum middleware function extracting and validating token from state.
     pub async fn run(
-        State(validator): State<Arc<dyn TokenValidatorTrait>>,
+        State(validator): State<Arc<dyn OauthTokenValidatorTrait>>,
         mut req: Request,
         next: Next,
     ) -> AppResult<Response> {

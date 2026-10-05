@@ -20,6 +20,7 @@ use std::sync::Arc;
 use crate::data::entities::wallet::vc::Model;
 use crate::data::entities::wallet::{did, key};
 use crate::errors::AppResult;
+use crate::http::routes::wallet;
 use crate::modules::WalletModuleTrait;
 use crate::types::dids::{DidBuilder, DidDocument, DidService};
 use crate::types::wallet::{DidSearch, OidcUri, WalletInfo};
@@ -83,29 +84,26 @@ impl WalletRouter {
     /// * `GET  /vcs`            - Collects full relational credential arrays.
     /// * `POST /oidc4vci`       - Dispatches inbound OpenID4VCI credential offers.
     /// * `POST /oidc4vp`        - Resolves outbound presentation request validation targets.
-    pub fn router(self) -> Router {
+    pub fn internal(self) -> Router {
         Router::new()
-            .route("/is-linked", get(Self::is_linked))
-            .route("/link", post(Self::link))
-            .route("/key", post(Self::register_key))
-            .route("/keys", get(Self::get_wallet_keys))
-            .route("/key/{id}", delete(Self::delete_key))
-            .route("/did", get(Self::get_wallet_did).post(Self::register_did))
-            .route("/did/{id}", delete(Self::delete_did))
-            .route("/did/{id}/default", post(Self::set_default_did))
+            .route(wallet::IS_LINKED, get(Self::is_linked))
+            .route(wallet::LINK, post(Self::link))
+            .route(wallet::KEY, post(Self::register_key))
+            .route(wallet::KEYS, get(Self::get_wallet_keys))
+            .route(wallet::KEY_BY_ID, delete(Self::delete_key))
+            .route(wallet::DID, get(Self::get_wallet_did).post(Self::register_did))
+            .route(wallet::DID_BY_ID, delete(Self::delete_did))
+            .route(wallet::DID_DEFAULT, post(Self::set_default_did))
             .route(
-                "/did/{id}/key/{key_id}",
+                wallet::DID_KEY,
                 post(Self::add_key_to_did).delete(Self::remove_key_from_did),
             )
-            .route(
-                "/did/{id}/key/default/{key_id}",
-                post(Self::set_default_key),
-            )
-            .route("/credential/{id}", delete(Self::delete_credential))
-            .route("/info", get(Self::get_wallet_info))
-            .route("/vcs", get(Self::get_wallet_credentials))
-            .route("/oid4vci", post(Self::process_oidc4vci))
-            .route("/oid4vp", post(Self::process_oidc4vp))
+            .route(wallet::DID_DEFAULT_KEY, post(Self::set_default_key))
+            .route(wallet::CREDENTIAL_BY_ID, delete(Self::delete_credential))
+            .route(wallet::INFO, get(Self::get_wallet_info))
+            .route(wallet::VCS, get(Self::get_wallet_credentials))
+            .route(wallet::OID4VCI, post(Self::process_oidc4vci))
+            .route(wallet::OID4VP, post(Self::process_oidc4vp))
             .with_state(self.holder)
     }
 
@@ -115,7 +113,7 @@ impl WalletRouter {
     /// without coupling corporate administrative boundaries into the open discovery web.
     pub fn well_known(&self) -> Router {
         Router::new()
-            .route("/.well-known/did.json", get(Self::get_did_doc))
+            .route(wallet::DID_DOC, get(Self::get_did_doc))
             .with_state(self.holder.clone())
     }
 

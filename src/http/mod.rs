@@ -18,6 +18,7 @@
 mod health_router;
 mod oauth_middleware;
 mod openapi_router;
+pub mod routes;
 mod user_extractor;
 mod wallet_router;
 

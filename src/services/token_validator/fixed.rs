@@ -17,7 +17,7 @@
 
 use async_trait::async_trait;
 
-use super::TokenValidatorTrait;
+use super::OauthTokenValidatorTrait;
 use crate::errors::Outcome;
 use crate::types::oauth::UserInfo;
 
@@ -33,7 +33,7 @@ impl FixedUserValidator {
 }
 
 #[async_trait]
-impl TokenValidatorTrait for FixedUserValidator {
+impl OauthTokenValidatorTrait for FixedUserValidator {
     async fn validate_token<'a>(&self, _token: Option<&'a str>) -> Outcome<UserInfo> {
         Ok(self.user.clone())
     }

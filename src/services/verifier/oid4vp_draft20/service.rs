@@ -27,6 +27,7 @@ use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::{BadFormat, Errors, Outcome};
+use crate::http::routes::{base, fill, verifier};
 use crate::types::dids::Did;
 use crate::types::jwt::{Jwt, VCJwtClaims, VPJwtClaims};
 use crate::types::vcs::{VPDef, W3cDataModelVersion};
@@ -54,7 +55,13 @@ impl VerifierTrait for VerifierService {
         info!("Managing OIDC4VP");
 
         let host_url = self.config.get_host(HostType::Http);
-        let client_id = format!("{}{}/verifier/verify", host_url, self.config.get_api_path());
+        let client_id = format!(
+            "{}{}{}{}",
+            host_url,
+            self.config.get_api_path(),
+            verifier::PREFIX,
+            base(verifier::VERIFY)
+        );
         let requested_vcs = self.config.get_requested_vcs();
         if requested_vcs.is_empty() {
             return Err(Errors::unauthorized(
@@ -74,12 +81,13 @@ impl VerifierTrait for VerifierService {
         info!("Generating verification exchange URI");
 
         let host_url = format!(
-            "{}{}/verifier",
+            "{}{}{}",
             self.config.get_host(HostType::Http),
-            self.config.get_api_path()
+            self.config.get_api_path(),
+            verifier::PREFIX
         );
-        let pd_uri = format!("{}/pd/{}", host_url, model.state);
-        let response_uri = format!("{}/verify/{}", host_url, model.state);
+        let pd_uri = format!("{}{}", host_url, fill(verifier::PD, &model.state));
+        let response_uri = format!("{}{}", host_url, fill(verifier::VERIFY, &model.state));
 
         let uri = format!(
             "openid4vp://authorize\
