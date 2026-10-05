@@ -18,11 +18,11 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sea_orm::sea_query::{Condition, Expr, Func};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Select};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Select};
 
 use crate::data::entities::sent::grant;
 use crate::data::entities::sent::grant::Model;
-use crate::errors::Outcome;
+use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::postgres::listing::KeysetPager;
 use crate::services::repo::traits::sent::SentGrantRepoTrait;
@@ -151,5 +151,22 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
             created_before: filter.created_before,
         };
         self.fetch_page(select, common, page).await
+    }
+
+    async fn get_active_access(
+        &self,
+        user_id: &str,
+        participant_id: &str,
+    ) -> Outcome<Option<Model>> {
+        grant::Entity::find()
+            .filter(grant::Column::UserId.eq(user_id))
+            .filter(grant::Column::ParticipantId.eq(participant_id))
+            .filter(grant::Column::Kind.eq(GrantKind::AccessToken))
+            .filter(grant::Column::Status.eq(GrantStatus::Approved))
+            .filter(grant::Column::Token.is_not_null())
+            .order_by_desc(grant::Column::CreatedAt)
+            .one(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to get active access grant", Some(Box::new(e))))
     }
 }

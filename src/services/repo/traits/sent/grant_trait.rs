@@ -44,6 +44,14 @@ pub trait SentGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
         filter: &VcRequestListFilter,
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<Model>>;
+
+    /// The latest approved access-token grant `user_id` holds with `participant_id`, with its
+    /// token; `None` if the user has none.
+    async fn get_active_access(
+        &self,
+        user_id: &str,
+        participant_id: &str,
+    ) -> Outcome<Option<Model>>;
 }
 
 #[cfg(feature = "mock")]
@@ -63,5 +71,6 @@ mockall::mock! {
     impl SentGrantRepoTrait for SentGrantRepoTrait {
         async fn find_page(&self, filter: &SentGrantListFilter, page: &ListPage<GrantSort>) -> Outcome<Listed<Model>>;
         async fn find_vc_requests_page(&self, filter: &VcRequestListFilter, page: &ListPage<GrantSort>) -> Outcome<Listed<Model>>;
+        async fn get_active_access(&self, user_id: &str, participant_id: &str) -> Outcome<Option<Model>>;
     }
 }

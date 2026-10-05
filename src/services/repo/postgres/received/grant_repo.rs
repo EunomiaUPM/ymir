@@ -21,10 +21,12 @@ use sea_orm::sea_query::{Condition, Expr, Func};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use crate::data::entities::received::grant;
-use crate::errors::Outcome;
+use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::postgres::listing::KeysetPager;
 use crate::services::repo::traits::received::RecvGrantRepoTrait;
+use crate::types::gnap::GrantStatus;
+use crate::types::gnap::grant_request::GrantKind;
 use crate::types::listing::{GrantSort, ListPage, Listed, RecvGrantListFilter};
 
 pub struct RecvGrantPostgresRepo {
@@ -87,5 +89,17 @@ impl RecvGrantRepoTrait for RecvGrantPostgresRepo {
             .into(),
         };
         KeysetPager::fetch(self.db(), select, timestamp, grant::Column::Id, page).await
+    }
+
+    async fn get_approved_by_token(&self, token: &str) -> Outcome<grant::Model> {
+        grant::Entity::find()
+            .filter(grant::Column::Token.eq(token))
+            .filter(grant::Column::Kind.eq(GrantKind::AccessToken))
+            .filter(grant::Column::Status.eq(GrantStatus::Approved))
+            .one(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to get grant by token", Some(Box::new(e))))?
+            // The token itself stays out of the error, which ends up in the logs.
+            .ok_or_else(|| Errors::missing_resource("token", "no approved grant for this token", None))
     }
 }

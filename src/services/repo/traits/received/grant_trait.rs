@@ -33,6 +33,10 @@ pub trait RecvGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
         filter: &RecvGrantListFilter,
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<Model>>;
+
+    /// The approved access-token grant that issued `token`; missing-resource error if no such
+    /// grant exists (unknown token, or a grant not approved yet).
+    async fn get_approved_by_token(&self, token: &str) -> Outcome<Model>;
 }
 
 #[cfg(feature = "mock")]
@@ -51,5 +55,6 @@ mockall::mock! {
     #[async_trait]
     impl RecvGrantRepoTrait for RecvGrantRepoTrait {
         async fn find_page(&self, filter: &RecvGrantListFilter, page: &ListPage<GrantSort>) -> Outcome<Listed<Model>>;
+        async fn get_approved_by_token(&self, token: &str) -> Outcome<Model>;
     }
 }
