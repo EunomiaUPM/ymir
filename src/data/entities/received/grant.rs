@@ -38,12 +38,23 @@ pub struct Model {
     /// Peer that obtained access; set once the grant is approved.
     pub participant_id: Option<String>, // COMPLETION
     pub kind: GrantKind,
-    pub token: Option<String>, // COMPLETION
+    pub final_token_hash: Option<String>,
+    pub final_expires_at: Option<DateTime<Utc>>,
+    pub managing_id: Option<String>,
+    pub managing_token_hash: Option<String>,
+    pub managing_expires_at: Option<DateTime<Utc>>,
     #[sea_orm(column_type = "JsonBinary")]
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub status: GrantStatus,             // DEFAULT
     pub created_at: DateTime<Utc>,       // DEFAULT
     pub ended_at: Option<DateTime<Utc>>, // COMPLETION
+}
+
+#[derive(Clone, Debug)]
+pub struct FinalRotation {
+    pub final_token_hash: String,
+    pub final_expires_at: DateTime<Utc>,
+    pub managing_token_hash: String,
 }
 
 #[derive(Clone, Debug)]
@@ -65,7 +76,11 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             participant_nick: ActiveValue::Set(self.participant_nick),
             participant_id: ActiveValue::Set(None),
             kind: ActiveValue::Set(self.kind),
-            token: ActiveValue::Set(None),
+            final_token_hash: ActiveValue::Set(None),
+            final_expires_at: ActiveValue::Set(None),
+            managing_id: ActiveValue::Set(None),
+            managing_token_hash: ActiveValue::Set(None),
+            managing_expires_at: ActiveValue::Set(None),
             vc_type_config: ActiveValue::Set(self.vc_type_config),
             status: ActiveValue::Set(GrantStatus::Pending),
             created_at: ActiveValue::Set(Utc::now()),
@@ -83,7 +98,11 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             participant_nick: ActiveValue::Set(self.participant_nick),
             participant_id: ActiveValue::Set(self.participant_id),
             kind: ActiveValue::Set(self.kind),
-            token: ActiveValue::Set(self.token),
+            final_token_hash: ActiveValue::Set(self.final_token_hash),
+            final_expires_at: ActiveValue::Set(self.final_expires_at),
+            managing_id: ActiveValue::Set(self.managing_id),
+            managing_token_hash: ActiveValue::Set(self.managing_token_hash),
+            managing_expires_at: ActiveValue::Set(self.managing_expires_at),
             vc_type_config: ActiveValue::Set(self.vc_type_config),
             status: ActiveValue::Set(self.status),
             created_at: ActiveValue::Set(self.created_at),

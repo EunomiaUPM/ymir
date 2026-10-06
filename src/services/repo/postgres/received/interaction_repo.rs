@@ -46,9 +46,9 @@ impl BasicPostgresRepo for RecvInteractionPostgresRepo {
 
 #[async_trait]
 impl RecvInteractionRepoTrait for RecvInteractionPostgresRepo {
-    async fn get_by_cont_id(&self, cont_id: &str) -> Outcome<Model> {
-        let query = interaction::Entity::find().filter(interaction::Column::ContinueId.eq(cont_id));
+    async fn get_by_continuation_id(&self, continuation_id: &str) -> Outcome<Model> {
+        let query = interaction::Entity::find().filter(interaction::Column::ContinuationId.eq(continuation_id));
 
-        self.basic_filter(query, "cont_id", cont_id).await
+        self.basic_filter(query, "continuation_id", continuation_id).await
     }
 }

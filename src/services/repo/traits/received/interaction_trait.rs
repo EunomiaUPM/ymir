@@ -27,11 +27,11 @@ use crate::services::repo::traits::CrudRepoTrait;
 /// by external entities that must be resolved by the local platform's users.
 #[async_trait]
 pub trait RecvInteractionRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync {
-    /// Locates an interaction record using its unique GNAP Continuation Identifier (`cont_id`).
+    /// Locates an interaction record using its unique GNAP Continuation Identifier (`continuation_id`).
     ///
     /// Executed when a client returns to the continuation endpoint to claim tokens
     /// after the out-of-band user interaction has finalized successfully.
-    async fn get_by_cont_id(&self, cont_id: &str) -> Outcome<Model>;
+    async fn get_by_continuation_id(&self, continuation_id: &str) -> Outcome<Model>;
 }
 
 #[cfg(feature = "mock")]
@@ -49,6 +49,6 @@ mockall::mock! {
 
     #[async_trait]
     impl RecvInteractionRepoTrait for RecvInteractionRepoTrait {
-        async fn get_by_cont_id(&self, cont_id: &str) -> Outcome<Model>;
+        async fn get_by_continuation_id(&self, continuation_id: &str) -> Outcome<Model>;
     }
 }

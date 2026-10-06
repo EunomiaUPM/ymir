@@ -16,7 +16,9 @@
  */
 
 mod access_token;
-mod continue_token;
+mod bound_token;
+mod token_management;
 
 pub use access_token::AccessToken;
-pub use continue_token::ContinueToken;
+pub use bound_token::BoundToken;
+pub use token_management::TokenManagement;

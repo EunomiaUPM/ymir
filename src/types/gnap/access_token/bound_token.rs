@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use crate::types::gnap::grant_request::access::AccessTokenFlag;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ContinueToken {
+pub struct BoundToken {
     pub value: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
@@ -30,13 +30,18 @@ pub struct ContinueToken {
     pub flags: Option<Vec<AccessTokenFlag>>,
 }
 
-impl ContinueToken {
+impl BoundToken {
     pub fn new<T: Into<String>>(value: T) -> Self {
         Self {
             value: value.into(),
             label: None,
-            expires_in: None, // TODO
+            expires_in: None,
             flags: None,
         }
+    }
+
+    pub fn with_expires_in(mut self, secs: u64) -> Self {
+        self.expires_in = Some(secs);
+        self
     }
 }

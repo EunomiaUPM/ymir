@@ -18,7 +18,10 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sea_orm::sea_query::{Condition, Expr, Func};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Select};
+use sea_orm::{
+    ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, Select,
+};
 
 use crate::data::entities::sent::grant;
 use crate::data::entities::sent::grant::Model;
@@ -163,10 +166,60 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
             .filter(grant::Column::ParticipantId.eq(participant_id))
             .filter(grant::Column::Kind.eq(GrantKind::AccessToken))
             .filter(grant::Column::Status.eq(GrantStatus::Approved))
-            .filter(grant::Column::Token.is_not_null())
+            .filter(grant::Column::FinalToken.is_not_null())
             .order_by_desc(grant::Column::CreatedAt)
             .one(self.db())
             .await
             .map_err(|e| Errors::db("Unable to get active access grant", Some(Box::new(e))))
+    }
+
+    async fn has_open_access(
+        &self,
+        user_id: &str,
+        participant_id: &str,
+        processing_since: DateTime<Utc>,
+    ) -> Outcome<bool> {
+        let open = grant::Entity::find()
+            .filter(grant::Column::UserId.eq(user_id))
+            .filter(grant::Column::ParticipantId.eq(participant_id))
+            .filter(grant::Column::Kind.eq(GrantKind::AccessToken))
+            .filter(
+                Condition::any()
+                    .add(grant::Column::Status.eq(GrantStatus::Pending))
+                    .add(
+                        Condition::all()
+                            .add(grant::Column::Status.eq(GrantStatus::Processing))
+                            .add(grant::Column::CreatedAt.gt(processing_since)),
+                    ),
+            )
+            .count(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to count open access grants", Some(Box::new(e))))?;
+        Ok(open > 0)
+    }
+
+    async fn finalize_expired(&self, now: DateTime<Utc>) -> Outcome<u64> {
+        let changes = grant::ActiveModel {
+            status: ActiveValue::Set(GrantStatus::Finalized),
+            ended_at: ActiveValue::Set(Some(now)),
+            ..Default::default()
+        };
+        let result = grant::Entity::update_many()
+            .set(changes)
+            .filter(grant::Column::Kind.eq(GrantKind::AccessToken))
+            .filter(grant::Column::Status.eq(GrantStatus::Approved))
+            .filter(
+                Condition::any()
+                    .add(grant::Column::ManagingExpiresAt.lt(now))
+                    .add(
+                        Condition::all()
+                            .add(grant::Column::ManagingUri.is_null())
+                            .add(grant::Column::FinalExpiresAt.lt(now)),
+                    ),
+            )
+            .exec(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to finalize expired grants", Some(Box::new(e))))?;
+        Ok(result.rows_affected)
     }
 }

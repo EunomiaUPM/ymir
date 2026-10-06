@@ -42,7 +42,18 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(RecvGrants::ParticipantId).string())
                     .col(ColumnDef::new(RecvGrants::Kind).string().not_null())
-                    .col(ColumnDef::new(RecvGrants::Token).string())
+                    .col(
+                        ColumnDef::new(RecvGrants::FinalTokenHash)
+                            .string()
+                            .unique_key(),
+                    )
+                    .col(ColumnDef::new(RecvGrants::FinalExpiresAt).timestamp_with_time_zone())
+                    .col(ColumnDef::new(RecvGrants::ManagingId).string().unique_key())
+                    .col(ColumnDef::new(RecvGrants::ManagingTokenHash).string())
+                    .col(
+                        ColumnDef::new(RecvGrants::ManagingExpiresAt)
+                            .timestamp_with_time_zone(),
+                    )
                     .col(ColumnDef::new(RecvGrants::VcTypeConfig).json_binary())
                     .col(ColumnDef::new(RecvGrants::Status).string().not_null())
                     .col(
@@ -73,7 +84,11 @@ pub enum RecvGrants {
     ParticipantNick,
     ParticipantId,
     Kind,
-    Token,
+    FinalTokenHash,
+    FinalExpiresAt,
+    ManagingId,
+    ManagingTokenHash,
+    ManagingExpiresAt,
     VcTypeConfig,
     Status,
     CreatedAt,

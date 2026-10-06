@@ -43,7 +43,11 @@ pub struct Model {
     pub grant_endpoint: String,
     pub kind: GrantKind, // Type of request, (token or vc)
     pub status: GrantStatus,
-    pub token: Option<String>,
+    pub final_token: Option<String>,
+    pub final_expires_at: Option<DateTime<Utc>>,
+    pub managing_uri: Option<String>,
+    pub managing_token: Option<String>,
+    pub managing_expires_at: Option<DateTime<Utc>>,
     #[sea_orm(column_type = "JsonBinary")]
     pub vc_type_config: Option<Vec<VcTypeConfig>>,
     pub vc_uri: Option<String>,
@@ -55,13 +59,15 @@ pub struct Model {
 
 impl Model {
     /// The grant as `user` may get it: whole if it reaches the grant (its author, a role above,
-    /// or the root); otherwise without its secrets (the peer's token, the credential offer URI)
-    /// and, if `Anonymous`, without its author.
+    /// or the root); otherwise without its secrets (the peer's tokens and managing URI, the
+    /// credential offer URI) and, if `Anonymous`, without its author.
     pub fn seen_by(mut self, user: &UserInfo) -> Self {
         if user.reaches(&self.user_id, &self.role) {
             return self;
         }
-        self.token = None;
+        self.final_token = None;
+        self.managing_uri = None;
+        self.managing_token = None;
         self.vc_uri = None;
         if self.visibility == Visibility::Anonymous {
             self.user_id = ANONYMOUS_USER_ID.to_string();
@@ -100,7 +106,11 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             kind: ActiveValue::Set(self.kind),
             auto: ActiveValue::Set(self.auto.unwrap_or(false)),
             status: ActiveValue::Set(GrantStatus::Processing),
-            token: ActiveValue::Set(None),
+            final_token: ActiveValue::Set(None),
+            final_expires_at: ActiveValue::Set(None),
+            managing_uri: ActiveValue::Set(None),
+            managing_token: ActiveValue::Set(None),
+            managing_expires_at: ActiveValue::Set(None),
             vc_type_config: ActiveValue::Set(self.vc_type_config),
             vc_uri: ActiveValue::Set(None),
             as_assigned_id: ActiveValue::Set(None),
@@ -124,7 +134,11 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             kind: ActiveValue::Set(self.kind),
             auto: ActiveValue::Set(self.auto),
             status: ActiveValue::Set(self.status),
-            token: ActiveValue::Set(self.token),
+            final_token: ActiveValue::Set(self.final_token),
+            final_expires_at: ActiveValue::Set(self.final_expires_at),
+            managing_uri: ActiveValue::Set(self.managing_uri),
+            managing_token: ActiveValue::Set(self.managing_token),
+            managing_expires_at: ActiveValue::Set(self.managing_expires_at),
             vc_type_config: ActiveValue::Set(self.vc_type_config),
             vc_uri: ActiveValue::Set(self.vc_uri),
             as_assigned_id: ActiveValue::Set(self.as_assigned_id),

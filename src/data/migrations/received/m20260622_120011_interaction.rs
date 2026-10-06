@@ -65,21 +65,21 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(RecvInteractions::Hints).string())
                     .col(
-                        ColumnDef::new(RecvInteractions::ContinueEndpoint)
+                        ColumnDef::new(RecvInteractions::ContinuationEndpoint)
                             .string()
                             .not_null(),
                     )
                     .col(
-                        ColumnDef::new(RecvInteractions::ContinueId)
+                        ColumnDef::new(RecvInteractions::ContinuationId)
                             .string()
                             .not_null(),
                     )
                     .col(
-                        ColumnDef::new(RecvInteractions::ContinueToken)
+                        ColumnDef::new(RecvInteractions::ContinuationToken)
                             .string()
                             .not_null(),
                     )
-                    .col(ColumnDef::new(RecvInteractions::ContinueWait).big_integer())
+                    .col(ColumnDef::new(RecvInteractions::ContinuationWait).big_integer())
                     .col(
                         ColumnDef::new(RecvInteractions::AsNonce)
                             .string()
@@ -115,10 +115,10 @@ pub enum RecvInteractions {
     ClientNonce,
     HashMethod,
     Hints,
-    ContinueEndpoint,
-    ContinueId,
-    ContinueToken,
-    ContinueWait,
+    ContinuationEndpoint,
+    ContinuationId,
+    ContinuationToken,
+    ContinuationWait,
     AsNonce,
     InteractRef,
     Hash,

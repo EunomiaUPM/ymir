@@ -40,10 +40,10 @@ pub struct Model {
     pub client_nonce: String,       // RESPONSE
     pub hash_method: HashMethod,    // RESPONSE
     pub hints: Option<String>,      // RESPONSE
-    pub continue_endpoint: String,  // RESPONSE
-    pub continue_id: String,        // RESPONSE
-    pub continue_token: String,     // RESPONSE
-    pub continue_wait: Option<i64>, // RESPONSE
+    pub continuation_endpoint: String,  // RESPONSE
+    pub continuation_id: String,        // RESPONSE
+    pub continuation_token: String,     // RESPONSE
+    pub continuation_wait: Option<i64>, // RESPONSE
     pub as_nonce: String,           // RANDOM
     pub interact_ref: String,       // RANDOM
     pub hash: String,               // RANDOM
@@ -60,9 +60,9 @@ pub struct Plan {
     pub hash_method: Option<HashMethod>, // REQUEST
     pub hints: Option<String>,           // REQUEST
     pub grant_endpoint: String,          // REQUEST
-    pub continue_endpoint: String,       // RESPONSE
-    pub continue_token: String,          // RESPONSE
-    pub continue_wait: Option<i64>,      // RESPONSE
+    pub continuation_endpoint: String,       // RESPONSE
+    pub continuation_token: String,          // RESPONSE
+    pub continuation_wait: Option<i64>,      // RESPONSE
 }
 
 impl IntoOverwriteActive<ActiveModel> for Plan {
@@ -77,7 +77,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             .take(16)
             .map(char::from)
             .collect();
-        let continue_id: String = rand::thread_rng()
+        let continuation_id: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)
             .take(12)
             .map(char::from)
@@ -109,7 +109,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             _ => unreachable!(),
         };
 
-        let cont_endpoint = format!("{}/{}", self.continue_endpoint, continue_id);
+        let cont_endpoint = format!("{}/{}", self.continuation_endpoint, continuation_id);
 
         let hash = URL_SAFE_NO_PAD.encode(hash_result);
 
@@ -122,10 +122,10 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             client_nonce: ActiveValue::Set(self.client_nonce),
             hash_method: ActiveValue::Set(hash_method),
             hints: ActiveValue::Set(self.hints),
-            continue_endpoint: ActiveValue::Set(cont_endpoint),
-            continue_id: ActiveValue::Set(continue_id),
-            continue_token: ActiveValue::Set(self.continue_token),
-            continue_wait: ActiveValue::Set(self.continue_wait),
+            continuation_endpoint: ActiveValue::Set(cont_endpoint),
+            continuation_id: ActiveValue::Set(continuation_id),
+            continuation_token: ActiveValue::Set(self.continuation_token),
+            continuation_wait: ActiveValue::Set(self.continuation_wait),
             as_nonce: ActiveValue::Set(as_nonce),
             interact_ref: ActiveValue::Set(interact_ref),
             hash: ActiveValue::Set(hash),
@@ -144,10 +144,10 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             client_nonce: ActiveValue::Set(self.client_nonce),
             hash_method: ActiveValue::Set(self.hash_method),
             hints: ActiveValue::Set(self.hints),
-            continue_endpoint: ActiveValue::Set(self.continue_endpoint),
-            continue_id: ActiveValue::Set(self.continue_id),
-            continue_token: ActiveValue::Set(self.continue_token),
-            continue_wait: ActiveValue::Set(self.continue_wait),
+            continuation_endpoint: ActiveValue::Set(self.continuation_endpoint),
+            continuation_id: ActiveValue::Set(self.continuation_id),
+            continuation_token: ActiveValue::Set(self.continuation_token),
+            continuation_wait: ActiveValue::Set(self.continuation_wait),
             as_nonce: ActiveValue::Set(self.as_nonce),
             interact_ref: ActiveValue::Set(self.interact_ref),
             hash: ActiveValue::Set(self.hash),

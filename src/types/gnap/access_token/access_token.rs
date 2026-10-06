@@ -16,6 +16,7 @@
  */
 
 use crate::data::entities::shared::resource_req;
+use crate::types::gnap::access_token::TokenManagement;
 use crate::types::gnap::grant_request::access::{AccessTokenFlag, ResourceAccess};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -26,7 +27,7 @@ pub struct AccessToken {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub manage: Option<Value>,
+    pub manage: Option<TokenManagement>,
     pub access: ResourceAccess,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<u64>,
@@ -54,5 +55,15 @@ impl AccessToken {
             key: None,
             flags: model.flags,
         }
+    }
+
+    pub fn with_expires_in(mut self, secs: u64) -> Self {
+        self.expires_in = Some(secs);
+        self
+    }
+
+    pub fn with_manage(mut self, manage: TokenManagement) -> Self {
+        self.manage = Some(manage);
+        self
     }
 }

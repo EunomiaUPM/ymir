@@ -58,7 +58,14 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(SentGrants::Kind).string_len(32).not_null())
                     .col(ColumnDef::new(SentGrants::Status).string_len(32).not_null())
-                    .col(ColumnDef::new(SentGrants::Token).string())
+                    .col(ColumnDef::new(SentGrants::FinalToken).string())
+                    .col(ColumnDef::new(SentGrants::FinalExpiresAt).timestamp_with_time_zone())
+                    .col(ColumnDef::new(SentGrants::ManagingUri).string())
+                    .col(ColumnDef::new(SentGrants::ManagingToken).string())
+                    .col(
+                        ColumnDef::new(SentGrants::ManagingExpiresAt)
+                            .timestamp_with_time_zone(),
+                    )
                     .col(ColumnDef::new(SentGrants::VcTypeConfig).json_binary())
                     .col(ColumnDef::new(SentGrants::VcUri).string())
                     .col(ColumnDef::new(SentGrants::AsAssignedId).string())
@@ -95,7 +102,11 @@ pub enum SentGrants {
     GrantEndpoint,
     Kind,
     Status,
-    Token,
+    FinalToken,
+    FinalExpiresAt,
+    ManagingUri,
+    ManagingToken,
+    ManagingExpiresAt,
     VcTypeConfig,
     VcUri,
     AsAssignedId,

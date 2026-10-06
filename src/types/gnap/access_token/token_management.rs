@@ -20,9 +20,16 @@ use serde::{Deserialize, Serialize};
 use crate::types::gnap::access_token::BoundToken;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Continuation {
+pub struct TokenManagement {
     pub uri: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub wait: Option<u64>,
     pub access_token: BoundToken,
+}
+
+impl TokenManagement {
+    pub fn new(uri: impl Into<String>, access_token: BoundToken) -> Self {
+        Self {
+            uri: uri.into(),
+            access_token,
+        }
+    }
 }
