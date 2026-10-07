@@ -53,6 +53,7 @@ pub struct Model {
     pub vc_uri: Option<String>,
     pub as_assigned_id: Option<String>,
     pub auto: bool, // If active, redeeming credentials or presented them is automatic
+    pub requested: bool,
     pub created_at: DateTime<Utc>,
     pub ended_at: Option<DateTime<Utc>>,
 }
@@ -90,6 +91,7 @@ pub struct Plan {
     pub grant_endpoint: String,
     pub kind: GrantKind,
     pub auto: Option<bool>,
+    pub requested: bool,
 }
 
 impl IntoOverwriteActive<ActiveModel> for Plan {
@@ -105,6 +107,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
             kind: ActiveValue::Set(self.kind),
             auto: ActiveValue::Set(self.auto.unwrap_or(false)),
+            requested: ActiveValue::Set(self.requested),
             status: ActiveValue::Set(GrantStatus::Processing),
             final_token: ActiveValue::Set(None),
             final_expires_at: ActiveValue::Set(None),
@@ -133,6 +136,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             grant_endpoint: ActiveValue::Set(self.grant_endpoint),
             kind: ActiveValue::Set(self.kind),
             auto: ActiveValue::Set(self.auto),
+            requested: ActiveValue::Set(self.requested),
             status: ActiveValue::Set(self.status),
             final_token: ActiveValue::Set(self.final_token),
             final_expires_at: ActiveValue::Set(self.final_expires_at),

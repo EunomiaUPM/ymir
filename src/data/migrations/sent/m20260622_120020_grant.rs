@@ -71,6 +71,12 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(SentGrants::AsAssignedId).string())
                     .col(ColumnDef::new(SentGrants::Auto).boolean().not_null())
                     .col(
+                        ColumnDef::new(SentGrants::Requested)
+                            .boolean()
+                            .not_null()
+                            .default(true),
+                    )
+                    .col(
                         ColumnDef::new(SentGrants::CreatedAt)
                             .timestamp_with_time_zone()
                             .not_null(),
@@ -111,6 +117,7 @@ pub enum SentGrants {
     VcUri,
     AsAssignedId,
     Auto,
+    Requested,
     CreatedAt,
     EndedAt,
 }
