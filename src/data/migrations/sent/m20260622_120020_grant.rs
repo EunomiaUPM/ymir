@@ -33,7 +33,14 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(SentGrants::TenantId).string().not_null())
+                    .col(ColumnDef::new(SentGrants::Role).string().not_null())
+                    .col(ColumnDef::new(SentGrants::UserId).string().not_null())
+                    .col(ColumnDef::new(SentGrants::Username).string())
+                    .col(
+                        ColumnDef::new(SentGrants::Visibility)
+                            .string_len(16)
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(SentGrants::ParticipantId)
                             .string()
@@ -51,11 +58,24 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(SentGrants::Kind).string_len(32).not_null())
                     .col(ColumnDef::new(SentGrants::Status).string_len(32).not_null())
-                    .col(ColumnDef::new(SentGrants::Token).string())
+                    .col(ColumnDef::new(SentGrants::FinalToken).string())
+                    .col(ColumnDef::new(SentGrants::FinalExpiresAt).timestamp_with_time_zone())
+                    .col(ColumnDef::new(SentGrants::ManagingUri).string())
+                    .col(ColumnDef::new(SentGrants::ManagingToken).string())
+                    .col(
+                        ColumnDef::new(SentGrants::ManagingExpiresAt)
+                            .timestamp_with_time_zone(),
+                    )
                     .col(ColumnDef::new(SentGrants::VcTypeConfig).json_binary())
                     .col(ColumnDef::new(SentGrants::VcUri).string())
                     .col(ColumnDef::new(SentGrants::AsAssignedId).string())
                     .col(ColumnDef::new(SentGrants::Auto).boolean().not_null())
+                    .col(
+                        ColumnDef::new(SentGrants::Requested)
+                            .boolean()
+                            .not_null()
+                            .default(true),
+                    )
                     .col(
                         ColumnDef::new(SentGrants::CreatedAt)
                             .timestamp_with_time_zone()
@@ -79,17 +99,25 @@ pub enum SentGrants {
     #[iden = "sent_grants"]
     Table,
     Id,
-    TenantId,
+    Role,
+    UserId,
+    Username,
+    Visibility,
     ParticipantId,
     ParticipantNick,
     GrantEndpoint,
     Kind,
     Status,
-    Token,
+    FinalToken,
+    FinalExpiresAt,
+    ManagingUri,
+    ManagingToken,
+    ManagingExpiresAt,
     VcTypeConfig,
     VcUri,
     AsAssignedId,
     Auto,
+    Requested,
     CreatedAt,
     EndedAt,
 }

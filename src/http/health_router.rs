@@ -20,6 +20,7 @@ use axum::routing::get;
 use axum::{Json, Router};
 use serde_json::{Value, json};
 
+use crate::http::routes::health;
 use crate::utils::http_client;
 
 /// HTTP API Gateway Router governing infrastructure diagnostic probes.
@@ -44,11 +45,11 @@ impl HealthRouter {
     /// * `GET /health/circuits` - Outbound hosts whose circuit breaker is open or probing.
     pub fn router(self) -> Router {
         Router::new()
-            .route("/health", get(Self::get_ok))
-            .route("/healthz", get(Self::get_ok))
-            .route("/liveness", get(Self::get_ok))
-            .route("/readiness", get(Self::get_ok))
-            .route("/health/circuits", get(Self::get_circuits))
+            .route(health::HEALTH, get(Self::get_ok))
+            .route(health::HEALTHZ, get(Self::get_ok))
+            .route(health::LIVENESS, get(Self::get_ok))
+            .route(health::READINESS, get(Self::get_ok))
+            .route(health::CIRCUITS, get(Self::get_circuits))
     }
 
     /// Always 200: a failing peer must not take this instance out of rotation.

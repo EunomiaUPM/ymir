@@ -17,12 +17,12 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::types::gnap::access_token::ContinueToken;
+use crate::types::gnap::access_token::BoundToken;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Continuation {
     pub uri: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wait: Option<u64>,
-    pub access_token: ContinueToken,
+    pub access_token: BoundToken,
 }

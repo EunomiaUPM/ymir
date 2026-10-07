@@ -15,47 +15,22 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::errors::{Errors, Outcome};
-use crate::types::crypto::Canon;
-use base64::{Engine, engine::general_purpose};
-use sha2::{Digest, Sha256};
+use crate::types::crypto::{Canon, HashAlg};
+use sha2::{Digest, Sha256, Sha384, Sha512};
 
-/// Subresource Integrity (SRI) hashing utility for canonical data buffers.
+/// Integrity hashing utility for canonical data buffers.
 ///
-/// Provides deterministic cryptographic checksum generation and verification
-/// over canonicalized structural envelopes ([`Canon`]) using standard web-integrity layouts.
+/// Computes a raw digest over a canonicalized structural envelope ([`Canon`]);
+/// callers format it (SRI's `sha256-<base64>`, a content identifier's
+/// `sha256:<hex>`, ...) for their own purpose.
 pub struct DigestSRI;
 
 impl DigestSRI {
-    // ===== DIGEST GENERATION =====================================================================
-
-    /// Computes the SHA-256 integrity hash over a canonical representation and encodes it as an SRI token.
-    ///
-    /// Returns a standardized formatted string: `sha256-<base64_payload>`.
-    pub fn digest(canonical: &Canon) -> String {
-        let hash = Sha256::digest(canonical.as_ref());
-        let b64 = general_purpose::STANDARD.encode(hash);
-        format!("sha256-{}", b64)
-    }
-
-    // ===== VALIDATION PIPELINE ===================================================================
-
-    /// Assesses an inbound SRI metadata string pattern against a locally computed token.
-    ///
-    /// # Errors
-    /// Returns an [`Errors::FeatureNotImplError`] if the provided SRI string does not match the
-    /// required `sha256-` prefix taxonomy.
-    pub fn validate_json_sri(canonical: &Canon, sri: impl Into<String>) -> Outcome<bool> {
-        let sri = sri.into();
-
-        if !sri.starts_with("sha256-") {
-            return Err(Errors::not_impl(
-                "Digest SRI only accepts sha 256 right now",
-                None,
-            ));
+    pub fn digest(canonical: &Canon, hash_alg: HashAlg) -> Vec<u8> {
+        match hash_alg {
+            HashAlg::Sha256 => Sha256::digest(canonical.as_ref()).to_vec(),
+            HashAlg::Sha384 => Sha384::digest(canonical.as_ref()).to_vec(),
+            HashAlg::Sha512 => Sha512::digest(canonical.as_ref()).to_vec(),
         }
-
-        let computed = Self::digest(canonical);
-        Ok(computed == sri)
     }
 }

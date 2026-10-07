@@ -18,6 +18,7 @@
 use super::{Alg, Crv, Cryptosuite, Kty, PublicKey};
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::secrets::PemHelper;
+use ed25519_dalek::ed25519::signature::rand_core::OsRng;
 use ed25519_dalek::SigningKey as Ed25519SigningKey;
 use rsa::RsaPrivateKey;
 use rsa::pkcs1v15::SigningKey as PkcsSigningKey;
@@ -34,6 +35,12 @@ pub enum PrivateKey {
 }
 
 impl PrivateKey {
+    pub fn generate_ed25519() -> Self {
+        PrivateKey::Ed25519 {
+            sk: Ed25519SigningKey::generate(&mut OsRng),
+        }
+    }
+
     pub fn try_from_pkcs8_pem(pem: &str) -> Outcome<Self> {
         if let Ok(sk) = parse_rsa(pem) {
             return Ok(Self::Rsa { sk });

@@ -33,7 +33,7 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Issuance::TenantId).string().not_null())
+                    .col(ColumnDef::new(Issuance::Role).string().not_null())
                     .col(ColumnDef::new(Issuance::SubjectName).string().not_null())
                     .col(ColumnDef::new(Issuance::PreAuthCode).string().not_null())
                     .col(
@@ -70,7 +70,7 @@ pub enum Issuance {
     #[iden = "issuance"]
     Table,
     Id,
-    TenantId,
+    Role,
     SubjectName,
     PreAuthCode,
     VcTypeConfig,

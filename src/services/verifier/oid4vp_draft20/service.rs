@@ -22,11 +22,13 @@ use urlencoding::encode;
 
 use super::super::VerifierTrait;
 use super::VerifierConfig;
-use crate::capabilities::{Did, Kid, Verifier};
+use crate::capabilities::Verifier;
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::{BadFormat, Errors, Outcome};
+use crate::http::routes::{base, fill, verifier};
+use crate::types::dids::Did;
 use crate::types::jwt::{Jwt, VCJwtClaims, VPJwtClaims};
 use crate::types::vcs::{VPDef, W3cDataModelVersion};
 use crate::types::verification::VerificationStatus;
@@ -49,11 +51,17 @@ impl VerifierService {
 
 #[async_trait]
 impl VerifierTrait for VerifierService {
-    fn build_vp_plan(&self, tenant_id: &str, id: &str) -> Outcome<Plan> {
+    fn build_vp_plan(&self, id: &str) -> Outcome<Plan> {
         info!("Managing OIDC4VP");
 
         let host_url = self.config.get_host(HostType::Http);
-        let client_id = format!("{}{}/verifier/verify", host_url, self.config.get_api_path());
+        let client_id = format!(
+            "{}{}{}{}",
+            host_url,
+            self.config.get_api_path(),
+            verifier::PREFIX,
+            base(verifier::VERIFY)
+        );
         let requested_vcs = self.config.get_requested_vcs();
         if requested_vcs.is_empty() {
             return Err(Errors::unauthorized(
@@ -63,7 +71,6 @@ impl VerifierTrait for VerifierService {
         }
 
         Ok(Plan {
-            tenant_id: tenant_id.to_string(),
             id: id.to_string(),
             audience: client_id,
             vc_type: requested_vcs.to_vec(),
@@ -74,12 +81,13 @@ impl VerifierTrait for VerifierService {
         info!("Generating verification exchange URI");
 
         let host_url = format!(
-            "{}{}/verifier",
+            "{}{}{}",
             self.config.get_host(HostType::Http),
-            self.config.get_api_path()
+            self.config.get_api_path(),
+            verifier::PREFIX
         );
-        let pd_uri = format!("{}/pd/{}", host_url, model.state);
-        let response_uri = format!("{}/verify/{}", host_url, model.state);
+        let pd_uri = format!("{}{}", host_url, fill(verifier::PD, &model.state));
+        let response_uri = format!("{}{}", host_url, fill(verifier::VERIFY, &model.state));
 
         let uri = format!(
             "openid4vp://authorize\
@@ -144,25 +152,25 @@ impl VerifierService {
         model.vpt = Some(vp_token.to_string());
 
         let jwt = Jwt::parse(vp_token)?;
-        let (holder_kid, claims) =
+        let (holder_did, claims) =
             Verifier::verify_enveloped::<VPJwtClaims>(&jwt, Some(&model.audience)).await?;
 
-        validate_vp_holder(&claims, &holder_kid)?;
-        model.holder = Some(holder_kid.did().id().to_string());
+        validate_vp_holder(&claims, &holder_did)?;
+        model.holder = Some(holder_did.id().to_string());
         validate_vp_id(&claims, model)?;
         validate_nonce(&claims, model)?;
 
         info!("VP verification successful");
-        Ok((claims.vp.verifiable_credential, holder_kid.did().to_owned()))
+        Ok((claims.vp.verifiable_credential, holder_did))
     }
 
     async fn verify_vc(&self, vc_token: &str, holder_did: &Did) -> Outcome<()> {
         info!("Verifying vc");
 
         let jwt = Jwt::parse(vc_token)?;
-        let (iss_kid, claims) = Verifier::verify_enveloped::<VCJwtClaims>(&jwt, None).await?;
+        let (issuer_did, claims) = Verifier::verify_enveloped::<VCJwtClaims>(&jwt, None).await?;
 
-        validate_vc_issuer(&claims, &iss_kid)?;
+        validate_vc_issuer(&claims, &issuer_did)?;
         validate_vc_id(&claims)?;
         validate_vc_sub(&claims, holder_did)?;
         // TODO: trusted-issuer list once available
@@ -185,21 +193,13 @@ fn validate_nonce(claims: &VPJwtClaims, model: &Model) -> Outcome<()> {
     Ok(())
 }
 
-fn validate_vp_holder(claims: &VPJwtClaims, holder_kid: &Kid) -> Outcome<()> {
+fn validate_vp_holder(claims: &VPJwtClaims, holder_did: &Did) -> Outcome<()> {
     info!("Validating VP subject");
-    check_eq_opt(
-        claims.sub.as_deref(),
-        holder_kid.did().id(),
-        "VPT sub & kid",
-    )?;
-    check_eq_opt(
-        claims.iss.as_deref(),
-        holder_kid.did().id(),
-        "VPT iss & kid",
-    )?;
+    check_eq_opt(claims.sub.as_deref(), holder_did.id(), "VPT sub & kid")?;
+    check_eq_opt(claims.iss.as_deref(), holder_did.id(), "VPT iss & kid")?;
     check_eq_opt(
         claims.vp.holder.as_deref(),
-        holder_kid.did().id(),
+        holder_did.id(),
         "VP holder & kid",
     )?;
     Ok(())
@@ -214,10 +214,10 @@ fn validate_vp_id(claims: &VPJwtClaims, model: &Model) -> Outcome<()> {
     Ok(())
 }
 
-fn validate_vc_issuer(claims: &VCJwtClaims, issuer_did: &Kid) -> Outcome<()> {
+fn validate_vc_issuer(claims: &VCJwtClaims, issuer_did: &Did) -> Outcome<()> {
     info!("Validating VC issuer");
-    check_eq_opt(claims.iss(), issuer_did.did().id(), "VCT iss & kid")?;
-    if claims.vc_doc().issuer.id() != issuer_did.did().id() {
+    check_eq_opt(claims.iss(), issuer_did.id(), "VCT iss & kid")?;
+    if claims.vc_doc().issuer.id() != issuer_did.id() {
         return Err(Errors::security(
             "VCT token issuer & kid does not match",
             None,

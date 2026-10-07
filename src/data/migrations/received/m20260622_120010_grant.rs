@@ -33,14 +33,27 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(RecvGrants::TenantId).string().not_null())
+                    .col(ColumnDef::new(RecvGrants::Role).string().not_null())
+                    .col(ColumnDef::new(RecvGrants::Visibility).string_len(16).not_null())
                     .col(
                         ColumnDef::new(RecvGrants::ParticipantNick)
                             .string()
                             .not_null(),
                     )
+                    .col(ColumnDef::new(RecvGrants::ParticipantId).string())
                     .col(ColumnDef::new(RecvGrants::Kind).string().not_null())
-                    .col(ColumnDef::new(RecvGrants::Token).string())
+                    .col(
+                        ColumnDef::new(RecvGrants::FinalTokenHash)
+                            .string()
+                            .unique_key(),
+                    )
+                    .col(ColumnDef::new(RecvGrants::FinalExpiresAt).timestamp_with_time_zone())
+                    .col(ColumnDef::new(RecvGrants::ManagingId).string().unique_key())
+                    .col(ColumnDef::new(RecvGrants::ManagingTokenHash).string())
+                    .col(
+                        ColumnDef::new(RecvGrants::ManagingExpiresAt)
+                            .timestamp_with_time_zone(),
+                    )
                     .col(ColumnDef::new(RecvGrants::VcTypeConfig).json_binary())
                     .col(ColumnDef::new(RecvGrants::Status).string().not_null())
                     .col(
@@ -66,10 +79,16 @@ pub enum RecvGrants {
     #[iden = "recv_grants"]
     Table,
     Id,
-    TenantId,
+    Role,
+    Visibility,
     ParticipantNick,
+    ParticipantId,
     Kind,
-    Token,
+    FinalTokenHash,
+    FinalExpiresAt,
+    ManagingId,
+    ManagingTokenHash,
+    ManagingExpiresAt,
     VcTypeConfig,
     Status,
     CreatedAt,

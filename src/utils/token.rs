@@ -20,6 +20,7 @@ use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::Utc;
 use rand::Rng;
+use sha2::{Digest, Sha256};
 
 const CLOCK_SKEW_LEEWAY: i64 = 30;
 
@@ -33,6 +34,10 @@ pub fn create_opaque_token() -> String {
     let mut bytes = [0u8; 32];
     rand::thread_rng().fill(&mut bytes);
     URL_SAFE_NO_PAD.encode(&bytes)
+}
+
+pub fn hash_token(token: &str) -> String {
+    URL_SAFE_NO_PAD.encode(Sha256::digest(token.as_bytes()))
 }
 
 // ===== TEMPORAL EVALUATION ENGINE ================================================================

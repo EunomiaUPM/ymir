@@ -15,10 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::capabilities::Did;
 use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::Outcome;
-use crate::types::dids::DidDocument;
+use crate::types::dids::{Did, DidDocument};
 use crate::types::wallet::{DidSearch, Identity, WalletInfo};
 use async_trait::async_trait;
 use std::sync::Arc;

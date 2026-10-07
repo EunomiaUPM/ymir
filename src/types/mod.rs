@@ -25,6 +25,7 @@ pub mod keys;
 pub mod listing;
 pub mod participants;
 pub mod secrets;
+pub mod oauth;
 pub mod vcs;
 pub mod verification;
 pub mod vps;

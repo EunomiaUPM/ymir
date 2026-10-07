@@ -15,14 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Deserialize, Serialize};
+mod roles;
+mod traits;
+mod user_info;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TermsOfUse {
-    pub r#type: String,
-    pub id: String,
-    #[serde(rename = "digestSRI")]
-    pub digest_sri: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub anchor: Option<Vec<String>>,
-}
+pub use roles::RolePath;
+pub use traits::{RoleTrait, UserTrait};
+pub use user_info::{UserInfo, SYSTEM_USER_ID};

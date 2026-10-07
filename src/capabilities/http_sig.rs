@@ -47,10 +47,11 @@ impl HttpSig {
         method: &str,
         url: &str,
         body_bytes: &[u8],
+        content_type: &str,
         authorization: Option<&str>,
     ) -> Outcome<HeaderMap> {
         let alg = alg.unwrap_or(priv_key.alg());
-        let key_id = key_source.thumbprint();
+        let key_id = key_source.thumbprint()?;
         let created = unix_now();
         let nonce = random_nonce_32();
         let content_digest = digest(body_bytes);
@@ -61,6 +62,7 @@ impl HttpSig {
             url,
             &content_digest,
             content_length,
+            content_type,
             created,
             &key_id,
             &nonce,
@@ -82,6 +84,12 @@ impl HttpSig {
             "content-length",
             content_length.to_string().parse().map_err(|e| {
                 Errors::parse("Failed to parse content-length header", Some(Box::new(e)))
+            })?,
+        );
+        headers.insert(
+            "content-type",
+            content_type.parse().map_err(|e| {
+                Errors::parse("Failed to parse content-type header", Some(Box::new(e)))
             })?,
         );
         headers.insert(
@@ -113,6 +121,7 @@ impl HttpSig {
         let signature_input = Self::extract_header(headers, "signature-input")?;
         let signature_header = Self::extract_header(headers, "signature")?;
         let content_digest = Self::extract_header(headers, "content-digest")?;
+        let content_type = Self::extract_header(headers, "content-type")?;
 
         key_source.check_validity()?;
 
@@ -140,7 +149,7 @@ impl HttpSig {
         check_clock_skew(created)?;
 
         let keyid_in_sig = Self::extract_sig_param(&signature_input, "keyid")?;
-        let cert_thumbprint = key_source.thumbprint();
+        let cert_thumbprint = key_source.thumbprint()?;
 
         if keyid_in_sig != cert_thumbprint {
             return Err(Errors::security(
@@ -171,6 +180,7 @@ impl HttpSig {
             url,
             &content_digest,
             content_length,
+            &content_type,
             created,
             &keyid_in_sig,
             &nonce,
@@ -189,6 +199,7 @@ impl HttpSig {
         url: &str,
         content_digest: &str,
         content_length: usize,
+        content_type: &str,
         created: u64,
         key_id: &str,
         nonce: &str,
@@ -227,7 +238,7 @@ impl HttpSig {
             format!("\"@target-uri\": {url}"),
             format!("\"content-digest\": {content_digest}"),
             format!("\"content-length\": {content_length}"),
-            "\"content-type\": application/json".to_string(),
+            format!("\"content-type\": {content_type}"),
         ];
 
         if let Some(auth) = authorization {

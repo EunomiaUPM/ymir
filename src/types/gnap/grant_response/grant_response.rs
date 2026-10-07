@@ -22,7 +22,7 @@ use super::interact::InteractResponse;
 use super::subject::SubjectResponse;
 use crate::data::entities::received::interaction;
 use crate::data::entities::shared::resource_req;
-use crate::types::gnap::access_token::{AccessToken, ContinueToken};
+use crate::types::gnap::access_token::{AccessToken, BoundToken, TokenManagement};
 use crate::types::vcs::VcTypeConfig;
 use serde::{Deserialize, Serialize};
 
@@ -79,17 +79,21 @@ pub enum GrantResponseKind {
 }
 
 impl GrantResponse {
-    pub fn token_approved(token: impl Into<String>, model: &resource_req::Model) -> Self {
-        let res = ApprovedResponse {
+    pub fn token_issued(
+        token: impl Into<String>,
+        model: &resource_req::Model,
+        expires_in: u64,
+        manage: TokenManagement,
+    ) -> Self {
+        let access_token = AccessToken::new(token, model.clone())
+            .with_expires_in(expires_in)
+            .with_manage(manage);
+        GrantResponse::Approved(ApprovedResponse {
             r#continue: None,
-            kind: GrantResponseKind::AccessToken {
-                access_token: AccessToken::new(token, model.clone()),
-            },
+            kind: GrantResponseKind::AccessToken { access_token },
             subject: None,
             instance_id: None,
-        };
-
-        GrantResponse::Approved(res)
+        })
     }
 
     pub fn vc_approved(uri: impl Into<String>, credential_type_config: Vec<VcTypeConfig>) -> Self {
@@ -112,9 +116,9 @@ impl GrantResponse {
         // BY DEFAULT IN THIS USE CASE, VERIFICATION IS DONE THROUGH OID4VC, THAT IS WHY THE REST REMAIN AS NONE
         GrantResponse::Pending(PendingResponse {
             r#continue: Continuation {
-                uri: model.continue_endpoint.clone(),
+                uri: model.continuation_endpoint.clone(),
                 wait: None,
-                access_token: ContinueToken::new(model.continue_token.clone()),
+                access_token: BoundToken::new(model.continuation_token.clone()),
             },
             interact: InteractResponse {
                 oid4vp: Some(uri.into()),
@@ -132,9 +136,9 @@ impl GrantResponse {
     pub fn processing(model: &interaction::Model) -> Self {
         GrantResponse::Processing(ProcessingResponse {
             r#continue: Continuation {
-                uri: model.continue_endpoint.clone(),
+                uri: model.continuation_endpoint.clone(),
                 wait: None,
-                access_token: ContinueToken::new(model.continue_token.clone()),
+                access_token: BoundToken::new(model.continuation_token.clone()),
             },
             instance_id: Some(model.id.clone()),
         })

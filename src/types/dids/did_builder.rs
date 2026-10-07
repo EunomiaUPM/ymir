@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::capabilities::Did;
-use crate::errors::{Errors, Outcome};
+use super::{Did, JwkDidConfig, WebDidConfig};
+use crate::errors::Outcome;
 use crate::types::keys::PrivateKey;
 use crate::utils::encode_url_safe_no_pad;
 use serde::{Deserialize, Serialize};
@@ -25,19 +25,6 @@ use serde::{Deserialize, Serialize};
 pub enum DidBuilder {
     Jwk(JwkDidConfig),
     Web(WebDidConfig),
-    Other(String),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct WebDidConfig {
-    domain: String,
-    path: Option<String>,
-    port: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct JwkDidConfig {
-    pem: String,
 }
 
 impl DidBuilder {
@@ -47,8 +34,8 @@ impl DidBuilder {
     pub fn new_web(domain: &str, path: Option<&str>, port: Option<&str>) -> DidBuilder {
         DidBuilder::Web(WebDidConfig {
             domain: domain.to_string(),
-            path: path.and_then(|s| Some(s.to_string())),
-            port: port.and_then(|s| Some(s.to_string())),
+            path: path.map(|s| s.to_string()),
+            port: port.map(|s| s.to_string()),
         })
     }
     pub fn build(&self) -> Outcome<Did> {
@@ -67,12 +54,6 @@ impl DidBuilder {
                     did = format!("{did}:{}", path.replace('/', ":"));
                 }
                 did
-            }
-            DidBuilder::Other(method) => {
-                return Err(Errors::not_impl(
-                    format!("did method '{method}' not supported"),
-                    None,
-                ));
             }
         };
 

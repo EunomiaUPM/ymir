@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-use super::{TermsOfUse, VCEvidence, VCRefreshService, VCSchema, VCStatus};
+use super::{VCEvidence, VCRefreshService, VCSchema, VCStatus};
 use crate::types::vcs::{VcIssuer, VcType};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -45,7 +45,7 @@ pub struct VcDocument {
     #[serde(rename = "refreshService", skip_serializing_if = "Option::is_none")]
     pub refresh_service: Option<VCRefreshService>,
     #[serde(rename = "termsOfUse", skip_serializing_if = "Option::is_none")]
-    pub terms_of_use: Option<TermsOfUse>,
+    pub terms_of_use: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub evidence: Option<Vec<VCEvidence>>,
 }

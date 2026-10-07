@@ -24,6 +24,7 @@ use crate::types::issuance::{
     VcTransmissionOffer,
 };
 use crate::types::jwt::VCJwtClaims;
+use crate::types::oauth::RolePath;
 use crate::types::vcs::{VcType, VcTypeConfig};
 use async_trait::async_trait;
 
@@ -36,10 +37,11 @@ use async_trait::async_trait;
 pub trait IssuerTrait: Send + Sync + 'static {
     // ===== ISSUANCE INITIALIZATION & OFFERS ======================================================
 
-    /// Provisions an internal transactional issuance plan derived from an authenticated client request.
+    /// Builds the issuance plan for an authenticated client request. `role` is the role
+    /// allowed to see and handle the resulting issuance.
     async fn build_issuance_plan(
         &self,
-        tenant_id: &str,
+        role: &RolePath,
         id: &str,
         grant_request_kind: GrantRequestKind,
         client: Client,

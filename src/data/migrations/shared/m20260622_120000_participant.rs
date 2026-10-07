@@ -30,9 +30,9 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Participants::ParticipantId)
                             .string()
-                            .not_null(),
+                            .not_null()
+                            .primary_key(),
                     )
-                    .col(ColumnDef::new(Participants::TenantId).string().not_null())
                     .col(
                         ColumnDef::new(Participants::ParticipantNick)
                             .string()
@@ -60,11 +60,6 @@ impl MigrationTrait for Migration {
                             .json_binary()
                             .not_null(),
                     )
-                    .primary_key(
-                        Index::create()
-                            .col(Participants::TenantId)
-                            .col(Participants::ParticipantId),
-                    )
                     .to_owned(),
             )
             .await
@@ -82,7 +77,6 @@ pub enum Participants {
     #[iden = "participants"]
     Table,
     ParticipantId,
-    TenantId,
     ParticipantNick,
     ParticipantType,
     BaseUrl,

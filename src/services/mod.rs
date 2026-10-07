@@ -20,6 +20,7 @@ mod has_service_trait;
 pub mod identity;
 pub mod issuer;
 pub mod repo;
+pub mod token_validator;
 pub mod vault;
 pub mod verifier;
 pub mod wallet;

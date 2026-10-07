@@ -27,7 +27,6 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub tenant_id: String,
     pub r#type: AccessType, // REQUEST
     #[sea_orm(column_type = "JsonBinary")]
     pub actions: Vec<InteractAction>, // REQUEST
@@ -43,7 +42,6 @@ pub struct Model {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             r#type: ActiveValue::Set(self.r#type),
             actions: ActiveValue::Set(self.actions),

@@ -34,11 +34,6 @@ impl MigrationTrait for Migration {
                             .primary_key(),
                     )
                     .col(
-                        ColumnDef::new(SentInteractions::TenantId)
-                            .string()
-                            .not_null(),
-                    )
-                    .col(
                         ColumnDef::new(SentInteractions::Start)
                             .json_binary()
                             .not_null(),
@@ -64,9 +59,9 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(ColumnDef::new(SentInteractions::Hints).string())
-                    .col(ColumnDef::new(SentInteractions::ContinueEndpoint).string())
-                    .col(ColumnDef::new(SentInteractions::ContinueToken).string())
-                    .col(ColumnDef::new(SentInteractions::ContinueWait).big_integer())
+                    .col(ColumnDef::new(SentInteractions::ContinuationEndpoint).string())
+                    .col(ColumnDef::new(SentInteractions::ContinuationToken).string())
+                    .col(ColumnDef::new(SentInteractions::ContinuationWait).big_integer())
                     .col(ColumnDef::new(SentInteractions::AsNonce).string())
                     .col(ColumnDef::new(SentInteractions::OidcVpUri).string())
                     .col(ColumnDef::new(SentInteractions::InteractRef).string())
@@ -88,16 +83,15 @@ pub enum SentInteractions {
     #[iden = "sent_interactions"]
     Table,
     Id,
-    TenantId,
     Start,
     Method,
     CallbackUri,
     ClientNonce,
     HashMethod,
     Hints,
-    ContinueEndpoint,
-    ContinueToken,
-    ContinueWait,
+    ContinuationEndpoint,
+    ContinuationToken,
+    ContinuationWait,
     AsNonce,
     OidcVpUri,
     InteractRef,

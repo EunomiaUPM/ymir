@@ -17,4 +17,5 @@
 
 pub mod issuance;
 pub mod participant;
+pub mod participant_relation;
 pub mod resource_req;

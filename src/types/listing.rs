@@ -21,6 +21,7 @@ use chrono::{DateTime, Utc};
 
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
+use crate::types::oauth::{RolePath, UserInfo};
 use crate::types::participants::ParticipantType;
 
 /// Order a listing runs in.
@@ -61,10 +62,14 @@ pub enum ParticipantSort {
 }
 
 /// Participant filter; `ParticipantType::All` matches every type.
+///
+/// Visibility: a peer is listed if (a) the caller added it, (b) someone added it as not
+/// `Private`, (c) someone whose role is strictly below the caller's added it, or (d) it has a
+/// received grant under the caller's role or one below it.
 #[derive(Debug, Clone)]
 pub struct ParticipantListFilter {
-    /// Tenant whose peers are listed; `None` lists every tenant (admins).
-    pub tenant_id: Option<String>,
+    /// Caller and the role it acts under.
+    pub tenant: UserInfo,
     pub participant_type: ParticipantType,
     pub nick_contains: Option<String>,
     pub id_contains: Option<String>,
@@ -79,12 +84,30 @@ pub enum GrantSort {
     Updated,
 }
 
-/// Filter over grants this connector sent.
+/// Filter over the access-token grants this connector sent.
+///
+/// Visibility: the caller's own grants, those requested under a role strictly below the
+/// caller's, and those of anyone that are not `Private`. Users sharing the caller's exact role do
+/// not see each other's private grants; the root sees them all.
 #[derive(Debug, Clone)]
 pub struct SentGrantListFilter {
-    /// Tenant whose grants are listed; `None` lists every tenant (admins).
-    pub tenant_id: Option<String>,
-    pub kind: GrantKind,
+    /// Caller and the role it acts under; its own grants are always listed.
+    pub tenant: UserInfo,
+    pub participant_id_contains: Option<String>,
+    pub nick_contains: Option<String>,
+    pub status: Option<GrantStatus>,
+    pub created_after: Option<DateTime<Utc>>,
+    pub created_before: Option<DateTime<Utc>>,
+}
+
+/// Filter over the VC requests this connector sent.
+///
+/// Visibility: as for access-token grants; VC requests are created `Public`, since credentials
+/// belong to the whole connector.
+#[derive(Debug, Clone)]
+pub struct VcRequestListFilter {
+    /// Caller and the role it acts under.
+    pub tenant: UserInfo,
     pub participant_id_contains: Option<String>,
     pub nick_contains: Option<String>,
     pub status: Option<GrantStatus>,
@@ -93,10 +116,12 @@ pub struct SentGrantListFilter {
 }
 
 /// Filter over grants this connector received.
+///
+/// Visibility: grants assigned to the caller's role or to a role below it, and any `Public` one.
 #[derive(Debug, Clone)]
 pub struct RecvGrantListFilter {
-    /// Tenant whose grants are listed; `None` lists every tenant (admins).
-    pub tenant_id: Option<String>,
+    /// Caller's role.
+    pub role: RolePath,
     pub kind: GrantKind,
     pub nick_contains: Option<String>,
     pub status: Option<GrantStatus>,

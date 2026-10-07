@@ -15,16 +15,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::data::entities::shared::participant;
+use crate::data::entities::received::grant as recv_grant;
+use crate::data::entities::shared::participant::Plan;
+use crate::data::entities::shared::{participant, participant_relation};
 use crate::errors::{Errors, Outcome};
-use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::services::repo::postgres::listing::KeysetPager;
+use crate::services::repo::postgres::{BasicPostgresRepo, IntoOverwriteActive};
 use crate::services::repo::traits::shared::ParticipantRepoTrait;
 use crate::types::listing::{ListPage, Listed, ParticipantListFilter, ParticipantSort};
-use crate::types::participants::ParticipantType;
+use crate::types::oauth::UserInfo;
+use crate::types::participants::{ParticipantType, Visibility};
 use async_trait::async_trait;
-use sea_orm::sea_query::{Expr, Func, OnConflict};
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::sea_query::{Condition, Expr, Func, OnConflict, Query};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 pub struct ParticipantPostgresRepo {
     db: DatabaseConnection,
@@ -35,41 +38,78 @@ impl ParticipantPostgresRepo {
         Self { db }
     }
 
-    fn missing(participant_id: &str) -> Errors {
-        Errors::missing_resource(participant_id, "participant not found", None)
+    /// Participants `user` sees; see [`ParticipantRepoTrait`] for rules (a) to (d).
+    fn visible_to(user: &UserInfo) -> Condition {
+        // (a) added by the user, (b) shared by someone, (c) added under a role below the user's.
+        let by_relation = Query::select()
+            .column(participant_relation::Column::ParticipantId)
+            .from(participant_relation::Entity)
+            .cond_where(
+                Condition::any()
+                    .add(participant_relation::Column::UserId.eq(user.id()))
+                    .add(
+                        participant_relation::Column::Visibility.ne(Visibility::Private),
+                    )
+                    .add(participant_relation::Column::Role.like(KeysetPager::below(user.role()))),
+            )
+            .to_owned();
+        // (d) has a received grant under the user's role or one below it, or a public one.
+        let by_recv_grant = Query::select()
+            .column(recv_grant::Column::ParticipantId)
+            .from(recv_grant::Entity)
+            .cond_where(
+                Condition::any()
+                    .add(recv_grant::Column::Role.eq(user.role().clone()))
+                    .add(recv_grant::Column::Role.like(KeysetPager::below(user.role())))
+                    .add(recv_grant::Column::Visibility.eq(Visibility::Public)),
+            )
+            .to_owned();
+        Condition::any()
+            .add(participant::Column::ParticipantId.in_subquery(by_relation))
+            .add(participant::Column::ParticipantId.in_subquery(by_recv_grant))
+    }
+}
+
+#[async_trait]
+impl BasicPostgresRepo for ParticipantPostgresRepo {
+    type Entity = participant::Entity;
+    type Plan = Plan;
+
+    fn db(&self) -> &DatabaseConnection {
+        &self.db
     }
 }
 
 #[async_trait]
 impl ParticipantRepoTrait for ParticipantPostgresRepo {
-    async fn get_by_id(
-        &self,
-        tenant_id: &str,
-        participant_id: &str,
-    ) -> Outcome<participant::Model> {
-        participant::Entity::find_by_id((tenant_id.to_string(), participant_id.to_string()))
-            .one(&self.db)
-            .await
-            .map_err(|e| Errors::db("Unable to get participant", Some(Box::new(e))))?
-            .ok_or_else(|| Self::missing(participant_id))
-    }
-
-    async fn get_batch(&self, tenant_id: &str, ids: &[String]) -> Outcome<Vec<participant::Model>> {
+    async fn get_batch(&self, ids: &[String]) -> Outcome<Vec<participant::Model>> {
         participant::Entity::find()
-            .filter(participant::Column::TenantId.eq(tenant_id))
             .filter(participant::Column::ParticipantId.is_in(ids))
             .all(&self.db)
             .await
             .map_err(|e| Errors::db("Unable to get participant batch", Some(Box::new(e))))
     }
 
-    async fn get_by_token(&self, token: &str) -> Outcome<participant::Model> {
-        participant::Entity::find()
-            .filter(participant::Column::Token.eq(token))
+    async fn get_visible(&self, user: &UserInfo, id: &str) -> Outcome<participant::Model> {
+        participant::Entity::find_by_id(id)
+            .filter(Self::visible_to(user))
             .one(&self.db)
             .await
-            .map_err(|e| Errors::db("Unable to get participant by token", Some(Box::new(e))))?
-            .ok_or_else(|| Errors::missing_resource("token", "participant not found", None))
+            .map_err(|e| Errors::db("Unable to get participant", Some(Box::new(e))))?
+            .ok_or_else(|| Errors::missing_resource(id, "participant not found", None))
+    }
+
+    async fn get_visible_batch(
+        &self,
+        user: &UserInfo,
+        ids: &[String],
+    ) -> Outcome<Vec<participant::Model>> {
+        participant::Entity::find()
+            .filter(participant::Column::ParticipantId.is_in(ids))
+            .filter(Self::visible_to(user))
+            .all(&self.db)
+            .await
+            .map_err(|e| Errors::db("Unable to get participant batch", Some(Box::new(e))))
     }
 
     async fn find_page(
@@ -77,10 +117,7 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
         filter: &ParticipantListFilter,
         page: &ListPage<ParticipantSort>,
     ) -> Outcome<Listed<participant::Model>> {
-        let mut select = participant::Entity::find();
-        if let Some(tenant_id) = &filter.tenant_id {
-            select = select.filter(participant::Column::TenantId.eq(tenant_id.as_str()));
-        }
+        let mut select = participant::Entity::find().filter(Self::visible_to(&filter.tenant));
         if filter.participant_type != ParticipantType::All {
             select = select
                 .filter(participant::Column::ParticipantType.eq(filter.participant_type.clone()));
@@ -117,50 +154,37 @@ impl ParticipantRepoTrait for ParticipantPostgresRepo {
         .await
     }
 
-    async fn create(&self, plan: participant::Plan) -> Outcome<participant::Model> {
-        plan.into_active()
-            .insert(&self.db)
-            .await
-            .map_err(|e| Errors::db("Unable to create participant", Some(Box::new(e))))
-    }
-
-    async fn update(&self, model: participant::Model) -> Outcome<participant::Model> {
-        model
-            .into_active()
-            .update(&self.db)
-            .await
-            .map_err(|e| Errors::db("Unable to update participant", Some(Box::new(e))))
-    }
-
-    async fn delete(&self, tenant_id: &str, participant_id: &str) -> Outcome<()> {
-        let res =
-            participant::Entity::delete_by_id((tenant_id.to_string(), participant_id.to_string()))
-                .exec(&self.db)
-                .await
-                .map_err(|e| Errors::db("Unable to delete participant", Some(Box::new(e))))?;
-        if res.rows_affected == 0 {
-            return Err(Self::missing(participant_id));
-        }
-        Ok(())
-    }
-
     async fn force_update(&self, plan: participant::Plan) -> Outcome<participant::Model> {
         participant::Entity::insert(plan.into_active())
             .on_conflict(
-                OnConflict::columns([
-                    participant::Column::TenantId,
-                    participant::Column::ParticipantId,
-                ])
-                .update_columns([
-                    participant::Column::BaseUrl,
-                    participant::Column::LastInteraction,
-                    participant::Column::Token,
-                    participant::Column::ParticipantNick,
-                ])
-                .to_owned(),
+                OnConflict::columns([participant::Column::ParticipantId])
+                    .update_columns([
+                        participant::Column::BaseUrl,
+                        participant::Column::LastInteraction,
+                        participant::Column::ParticipantNick,
+                    ])
+                    .to_owned(),
             )
             .exec_with_returning(&self.db)
             .await
             .map_err(|e| Errors::db("Unable to upsert participant", Some(Box::new(e))))
+    }
+
+    async fn create_if_absent(&self, plan: participant::Plan) -> Outcome<participant::Model> {
+        let id = plan.participant_id.clone();
+        participant::Entity::insert(plan.into_active())
+            .on_conflict(
+                OnConflict::column(participant::Column::ParticipantId)
+                    .do_nothing()
+                    .to_owned(),
+            )
+            .exec_without_returning(&self.db)
+            .await
+            .map_err(|e| Errors::db("Unable to create participant", Some(Box::new(e))))?;
+        participant::Entity::find_by_id(id.clone())
+            .one(&self.db)
+            .await
+            .map_err(|e| Errors::db("Unable to get participant", Some(Box::new(e))))?
+            .ok_or_else(|| Errors::missing_resource(id, "participant not found", None))
     }
 }

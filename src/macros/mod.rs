@@ -67,14 +67,11 @@ macro_rules! impl_serde_via_str {
                 {
                     let s: String = serde::Deserialize::deserialize(deserializer)?;
 
-                    // NOTE: To safely reject malformed network strings without panicking,
-                    // you can refactor this binding to capture the error into Serde:
-                    //
-                    // <$t as ::std::str::FromStr>::from_str(&s)
-                    //     .map_err(serde::de::Error::custom)
-
-                    let Ok(value) = <$t as ::std::str::FromStr>::from_str(&s);
-                    Ok(value)
+                    // Malformed network strings are rejected as a Serde error rather
+                    // than panicking, so this works whether `FromStr::Err` is
+                    // `Infallible` or a real error type.
+                    <$t as ::std::str::FromStr>::from_str(&s)
+                        .map_err(serde::de::Error::custom)
                 }
             }
         )+

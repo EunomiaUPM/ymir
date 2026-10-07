@@ -16,9 +16,11 @@
  */
 
 mod issuance_repo;
+mod participant_relation_repo;
 mod participant_repo;
 mod resource_req_repo;
 
 pub use issuance_repo::IssuancePostgresRepo;
+pub use participant_relation_repo::ParticipantRelationPostgresRepo;
 pub use participant_repo::ParticipantPostgresRepo;
 pub use resource_req_repo::ResourceReqPostgresRepo;

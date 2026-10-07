@@ -15,15 +15,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod did;
 mod digest_sri;
 mod http_sig;
-mod kid;
 mod signer;
 mod verifier;
-pub use did::*;
 pub use digest_sri::*;
 pub use http_sig::*;
-pub use kid::*;
 pub use signer::*;
 pub use verifier::*;

@@ -28,7 +28,6 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub tenant_id: String,
     #[sea_orm(column_type = "JsonBinary")]
     pub start: Vec<InteractStart>, // REQUEST
     pub method: FinishMethod,              // REQUEST
@@ -36,9 +35,9 @@ pub struct Model {
     pub client_nonce: String,              // RANDOM
     pub hash_method: HashMethod,           // REQUEST
     pub hints: Option<String>,             // REQUEST
-    pub continue_endpoint: Option<String>, // RESPONSE
-    pub continue_token: Option<String>,    // RESPONSE
-    pub continue_wait: Option<i64>,        // RESPONSE
+    pub continuation_endpoint: Option<String>, // RESPONSE
+    pub continuation_token: Option<String>,    // RESPONSE
+    pub continuation_wait: Option<i64>,        // RESPONSE
     pub as_nonce: Option<String>,          // RESPONSE
     pub oidc_vp_uri: Option<String>,       // RESPONSE
     pub interact_ref: Option<String>,      // POST-RESPONSE
@@ -47,7 +46,6 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub tenant_id: String,
     pub id: String,                      // REQUEST
     pub start: Vec<InteractStart>,       // REQUEST
     pub method: FinishMethod,            // REQUEST
@@ -65,7 +63,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             .collect();
         let hash_method = self.hash_method.unwrap_or(HashMethod::Sha256);
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
@@ -73,9 +70,9 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             client_nonce: ActiveValue::Set(nonce),
             hash_method: ActiveValue::Set(hash_method),
             hints: ActiveValue::Set(self.hints),
-            continue_endpoint: ActiveValue::Set(None),
-            continue_token: ActiveValue::Set(None),
-            continue_wait: ActiveValue::Set(None),
+            continuation_endpoint: ActiveValue::Set(None),
+            continuation_token: ActiveValue::Set(None),
+            continuation_wait: ActiveValue::Set(None),
             as_nonce: ActiveValue::Set(None),
             oidc_vp_uri: ActiveValue::Set(None),
             interact_ref: ActiveValue::Set(None),
@@ -87,7 +84,6 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
 impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
-            tenant_id: ActiveValue::Set(self.tenant_id),
             id: ActiveValue::Set(self.id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
@@ -95,9 +91,9 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             client_nonce: ActiveValue::Set(self.client_nonce),
             hash_method: ActiveValue::Set(self.hash_method),
             hints: ActiveValue::Set(self.hints),
-            continue_endpoint: ActiveValue::Set(self.continue_endpoint),
-            continue_token: ActiveValue::Set(self.continue_token),
-            continue_wait: ActiveValue::Set(self.continue_wait),
+            continuation_endpoint: ActiveValue::Set(self.continuation_endpoint),
+            continuation_token: ActiveValue::Set(self.continuation_token),
+            continuation_wait: ActiveValue::Set(self.continuation_wait),
             as_nonce: ActiveValue::Set(self.as_nonce),
             oidc_vp_uri: ActiveValue::Set(self.oidc_vp_uri),
             interact_ref: ActiveValue::Set(self.interact_ref),

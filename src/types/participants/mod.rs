@@ -64,3 +64,18 @@ impl FromStr for ParticipantType {
         }
     }
 }
+
+/// Who sees a record beyond those its role already lets in (its author and the roles above).
+#[derive(Clone, Debug, Eq, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::N(16))")]
+pub enum Visibility {
+    /// Nobody else.
+    #[sea_orm(string_value = "Private")]
+    Private,
+    /// Everyone, but not who created it.
+    #[sea_orm(string_value = "Anonymous")]
+    Anonymous,
+    /// Everyone, whole.
+    #[sea_orm(string_value = "Public")]
+    Public,
+}
