@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::{AnyError, BadFormat, ErrorInfo, Errors, MissingAction, PetitionFailure};
+use super::{AnyError, BadFormat, ErrorInfo, ErrorReason, Errors, MissingAction, PetitionFailure};
 use axum::http::StatusCode;
 use std::backtrace::Backtrace;
 
@@ -45,6 +45,7 @@ impl Errors {
                 error_code,
                 status_code,
                 details: None,
+                reasons: Vec::new(),
             }),
             ctx: Errors::build_ctx(http_code, url, method),
             failure,
@@ -68,6 +69,7 @@ impl Errors {
                 error_code: 1200,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
+                reasons: Vec::new(),
             }),
             ctx: Errors::build_ctx(http_code, url, method),
             reason: reason.into(),
@@ -90,6 +92,7 @@ impl Errors {
                 error_code: 1300,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
+                reasons: Vec::new(),
             }),
             ctx: Errors::build_ctx(http_code, url, method),
             reason: reason.into(),
@@ -106,6 +109,7 @@ impl Errors {
                 error_code: 1300,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
+                reasons: Vec::new(),
             }),
             ctx: Errors::build_ctx(None, "Provider Grant Endpoint", "POST"),
             reason: reason.into(),
@@ -128,6 +132,7 @@ impl Errors {
                 error_code: 1400,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
+                reasons: Vec::new(),
             }),
             ctx: Errors::build_ctx(http_code, url, method),
             reason: reason.into(),
@@ -150,6 +155,7 @@ impl Errors {
                 error_code: 1500,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
+                reasons: Vec::new(),
             }),
             ctx: Errors::build_ctx(http_code, url, method),
             reason: reason.into(),
@@ -166,6 +172,7 @@ impl Errors {
                 error_code: 1500,
                 status_code: StatusCode::BAD_GATEWAY,
                 details: None,
+                reasons: Vec::new(),
             }),
             ctx: Errors::build_ctx(None, "Authority Grant Endpoint", "POST"),
             reason: reason.into(),
@@ -194,6 +201,7 @@ impl Errors {
                 error_code,
                 status_code: StatusCode::PRECONDITION_FAILED,
                 details: None,
+                reasons: Vec::new(),
             }),
             action,
             reason: reason.into(),
@@ -214,6 +222,7 @@ impl Errors {
                 error_code: 3200,
                 status_code: StatusCode::NOT_FOUND,
                 details: None,
+                reasons: Vec::new(),
             }),
             resource_id: id.into(),
             reason: reason.into(),
@@ -235,6 +244,7 @@ impl Errors {
                 error_code,
                 status_code,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -250,6 +260,7 @@ impl Errors {
                 error_code: 4200,
                 status_code: StatusCode::UNAUTHORIZED,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -265,6 +276,7 @@ impl Errors {
                 error_code: 4300,
                 status_code: StatusCode::FORBIDDEN,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -280,6 +292,7 @@ impl Errors {
                 error_code: 4400,
                 status_code: StatusCode::UNPROCESSABLE_ENTITY,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -295,6 +308,7 @@ impl Errors {
                 error_code: 5100,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -310,6 +324,7 @@ impl Errors {
                 error_code: 5200,
                 status_code: StatusCode::NOT_IMPLEMENTED,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -325,6 +340,7 @@ impl Errors {
                 error_code: 5300,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -340,6 +356,7 @@ impl Errors {
                 error_code: 5400,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -359,6 +376,7 @@ impl Errors {
                 error_code: 5510,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
+                reasons: Vec::new(),
             }),
             path: path.into(),
             reason: reason.into(),
@@ -379,6 +397,7 @@ impl Errors {
                 error_code: 5520,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
+                reasons: Vec::new(),
             }),
             path: path.into(),
             reason: reason.into(),
@@ -395,6 +414,7 @@ impl Errors {
                 error_code: 5530,
                 status_code: StatusCode::BAD_REQUEST,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -411,9 +431,31 @@ impl Errors {
                 error_code: 5531,
                 status_code: StatusCode::BAD_REQUEST,
                 details: Some(reason.clone()),
+                reasons: Vec::new(),
             }),
             reason,
             source,
+            backtrace: Box::new(Backtrace::capture()),
+        }
+    }
+
+    /// Validation failure carrying every failed check, so the client sees all of them at once.
+    pub fn validation_with(reasons: Vec<ErrorReason>) -> Self {
+        let reason = reasons
+            .iter()
+            .map(|r| format!("{}: {}", r.path, r.message))
+            .collect::<Vec<_>>()
+            .join("; ");
+        Errors::ParseError {
+            info: Box::new(ErrorInfo {
+                message: "Validation failed".to_string(),
+                error_code: 5532,
+                status_code: StatusCode::BAD_REQUEST,
+                details: Some(reason.clone()),
+                reasons,
+            }),
+            reason,
+            source: None,
             backtrace: Box::new(Backtrace::capture()),
         }
     }
@@ -426,6 +468,7 @@ impl Errors {
                 error_code: 5600,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,
@@ -441,6 +484,7 @@ impl Errors {
                 error_code: 6000,
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 details: None,
+                reasons: Vec::new(),
             }),
             reason: reason.into(),
             source,

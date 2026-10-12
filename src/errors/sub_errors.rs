@@ -35,6 +35,17 @@ pub struct ErrorInfo {
     pub status_code: StatusCode,
     /// Enriched operational context, debugging insights, or underlying message breakdowns.
     pub details: Option<String>,
+    /// One entry per failed check, so a client can tell which field failed and why.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub reasons: Vec<ErrorReason>,
+}
+
+/// A single failed check: where in the payload, a stable code and a readable message.
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub struct ErrorReason {
+    pub path: String,
+    pub code: u32,
+    pub message: String,
 }
 
 /// HTTP network interaction metrics tracking the targeted perimeter endpoint properties.
