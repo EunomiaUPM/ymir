@@ -64,9 +64,10 @@ impl WebDid {
             Some(port) => format!(":{port}"),
             None => "".to_string(),
         };
-        let protocol = match self.domain() {
-            "127.0.0.1" | "localhost" | "host.docker.internal" => "http",
-            _ => "https",
+        let protocol = if is_local_domain(self.domain()) {
+            "http"
+        } else {
+            "https"
         };
         if let Some(path) = &self.path() {
             format!("{}://{}{}/{}/did.json", protocol, self.domain(), port, path)
@@ -79,4 +80,12 @@ impl WebDid {
             )
         }
     }
+}
+
+fn is_local_domain(domain: &str) -> bool {
+    let domain = domain.to_ascii_lowercase();
+    matches!(
+        domain.as_str(),
+        "127.0.0.1" | "localhost" | "host.docker.internal"
+    ) || domain.ends_with(".localhost")
 }
