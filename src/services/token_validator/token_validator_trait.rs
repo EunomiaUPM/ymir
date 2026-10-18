@@ -18,6 +18,7 @@
 use async_trait::async_trait;
 
 use crate::errors::Outcome;
+use crate::http::USER_TOKEN_HEADER;
 use crate::types::oauth::UserInfo;
 
 /// Port each identity provider implements: who is behind a request's bearer token.
@@ -26,4 +27,10 @@ use crate::types::oauth::UserInfo;
 pub trait OauthTokenValidatorTrait: Send + Sync + 'static {
     /// The user behind `token`, `None` when the request carries none; any failure is a 401.
     async fn validate_token<'a>(&self, token: Option<&'a str>) -> Outcome<UserInfo>;
+
+    /// Header where the user's token comes (lowercase); the HTTP middleware reads it before
+    /// `Authorization`.
+    fn user_header(&self) -> &str {
+        USER_TOKEN_HEADER
+    }
 }

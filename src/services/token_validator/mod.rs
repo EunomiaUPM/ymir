@@ -20,9 +20,11 @@
 mod fixed;
 mod proxied;
 mod token_validator_trait;
+mod verified;
 
 pub use fixed::FixedUserValidator;
 pub use proxied::ProxiedTokenValidator;
 #[cfg(feature = "mock")]
 pub use token_validator_trait::MockOauthTokenValidatorTrait;
 pub use token_validator_trait::OauthTokenValidatorTrait;
+pub use verified::VerifiedTokenValidator;

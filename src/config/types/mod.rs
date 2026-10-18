@@ -20,6 +20,7 @@ mod connection;
 mod db;
 mod dids;
 mod hosts;
+mod oauth;
 mod verify_req;
 mod wallet;
 
@@ -28,5 +29,6 @@ pub use connection::*;
 pub use db::*;
 pub use dids::*;
 pub use hosts::*;
+pub use oauth::*;
 pub use verify_req::*;
 pub use wallet::*;

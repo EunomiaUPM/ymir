@@ -29,15 +29,17 @@ use crate::errors::{AppResult, Errors, Outcome};
 
 use crate::services::token_validator::OauthTokenValidatorTrait;
 
-/// Header where the authenticating proxy in front (oauth2-proxy with `--pass-access-token`)
-/// forwards the signed-in user's token. `Authorization` stays for the protocols (GNAP, DSP,
-/// OID4VCI), whose tokens have to reach the server untouched.
-pub const USER_TOKEN_HEADER: &str = "x-forwarded-access-token";
+/// Default header where the proxy in front forwards the signed-in user's token; each validator
+/// says its own (`user_header` of the `keycloak` config). `Authorization` stays for the
+/// protocols (GNAP, DSP, OID4VCI), whose tokens have to reach the server untouched.
+pub const USER_TOKEN_HEADER: &str = "x-eunomia-user-token";
 
-/// Authenticates the requests of a router: reads the user's token ([`USER_TOKEN_HEADER`], then
-/// the bearer of `Authorization`, then the `token` / `access_token` query parameter), asks the
-/// validator for the user and stores it in the request, where handlers take it as a `UserInfo`
-/// extractor.
+/// Authenticates the requests of a router: reads the user's token (the validator's
+/// [`user_header`], then the bearer of `Authorization`, then the `token` / `access_token` query
+/// parameter), asks the validator for the user and stores it in the request, where handlers take
+/// it as a `UserInfo` extractor.
+///
+/// [`user_header`]: OauthTokenValidatorTrait::user_header
 #[derive(Clone)]
 pub struct OauthHttpMiddleware {
     validator: Option<Arc<dyn OauthTokenValidatorTrait>>,
@@ -66,7 +68,7 @@ impl OauthHttpMiddleware {
         mut req: Request,
         next: Next,
     ) -> AppResult<Response> {
-        let token = Self::extract_token(&req);
+        let token = Self::extract_token_from(&req, validator.user_header());
         let user = validator.validate_token(token.as_deref()).await?;
         req.extensions_mut().insert(user);
         let mut resp = next.run(req).await;
@@ -77,7 +79,12 @@ impl OauthHttpMiddleware {
     /// Extracts the user's token: from [`USER_TOKEN_HEADER`] when a proxy forwards it, else from
     /// the Authorization bearer or the URL query string (`token`/`access_token`).
     pub fn extract_token(req: &Request) -> Option<String> {
-        if let Some(token) = Self::user_token(req.headers()) {
+        Self::extract_token_from(req, USER_TOKEN_HEADER)
+    }
+
+    /// Like [`extract_token`](Self::extract_token), with the user's token in `user_header`.
+    pub fn extract_token_from(req: &Request, user_header: &str) -> Option<String> {
+        if let Some(token) = Self::user_token_from(req.headers(), user_header) {
             return Some(token.to_string());
         }
 
@@ -100,8 +107,13 @@ impl OauthHttpMiddleware {
 
     /// The user's token forwarded by the proxy in [`USER_TOKEN_HEADER`], if any.
     pub fn user_token(headers: &HeaderMap) -> Option<&str> {
+        Self::user_token_from(headers, USER_TOKEN_HEADER)
+    }
+
+    /// The user's token forwarded by the proxy in `user_header`, if any.
+    pub fn user_token_from<'a>(headers: &'a HeaderMap, user_header: &str) -> Option<&'a str> {
         headers
-            .get(USER_TOKEN_HEADER)
+            .get(user_header)
             .and_then(|v| v.to_str().ok())
             .map(str::trim)
             .filter(|s| !s.is_empty())
@@ -121,7 +133,7 @@ impl OauthHttpMiddleware {
     /// Middleware handler injecting security headers and validating identity.
     pub async fn handle(&self, mut req: Request, next: Next) -> Response {
         if let Some(validator) = &self.validator {
-            let token = Self::extract_token(&req);
+            let token = Self::extract_token_from(&req, validator.user_header());
             match validator.validate_token(token.as_deref()).await {
                 Ok(user) => {
                     req.extensions_mut().insert(user);
