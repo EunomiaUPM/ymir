@@ -23,6 +23,6 @@ mod user_extractor;
 mod wallet_router;
 
 pub use health_router::HealthRouter;
-pub use oauth_middleware::OauthHttpMiddleware;
+pub use oauth_middleware::{OauthHttpMiddleware, USER_TOKEN_HEADER};
 pub use openapi_router::OpenapiRouter;
 pub use wallet_router::WalletRouter;

@@ -29,9 +29,15 @@ use crate::errors::{AppResult, Errors, Outcome};
 
 use crate::services::token_validator::OauthTokenValidatorTrait;
 
-/// Authenticates the requests of a router: reads the bearer token (header, or `token` /
-/// `access_token` query parameter), asks the validator for the user and stores it in the request,
-/// where handlers take it as a `UserInfo` extractor.
+/// Header where the authenticating proxy in front (oauth2-proxy with `--pass-access-token`)
+/// forwards the signed-in user's token. `Authorization` stays for the protocols (GNAP, DSP,
+/// OID4VCI), whose tokens have to reach the server untouched.
+pub const USER_TOKEN_HEADER: &str = "x-forwarded-access-token";
+
+/// Authenticates the requests of a router: reads the user's token ([`USER_TOKEN_HEADER`], then
+/// the bearer of `Authorization`, then the `token` / `access_token` query parameter), asks the
+/// validator for the user and stores it in the request, where handlers take it as a `UserInfo`
+/// extractor.
 #[derive(Clone)]
 pub struct OauthHttpMiddleware {
     validator: Option<Arc<dyn OauthTokenValidatorTrait>>,
@@ -68,8 +74,13 @@ impl OauthHttpMiddleware {
         Ok(resp)
     }
 
-    /// Extracts bearer token from Authorization header or URL query string (`token`/`access_token`).
+    /// Extracts the user's token: from [`USER_TOKEN_HEADER`] when a proxy forwards it, else from
+    /// the Authorization bearer or the URL query string (`token`/`access_token`).
     pub fn extract_token(req: &Request) -> Option<String> {
+        if let Some(token) = Self::user_token(req.headers()) {
+            return Some(token.to_string());
+        }
+
         if let Ok(token) = Self::bearer(req.headers()) {
             return Some(token.to_string());
         }
@@ -85,6 +96,15 @@ impl OauthHttpMiddleware {
         }
 
         None
+    }
+
+    /// The user's token forwarded by the proxy in [`USER_TOKEN_HEADER`], if any.
+    pub fn user_token(headers: &HeaderMap) -> Option<&str> {
+        headers
+            .get(USER_TOKEN_HEADER)
+            .and_then(|v| v.to_str().ok())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
     }
 
     /// Extracts the Bearer token string from the HTTP Authorization header.
