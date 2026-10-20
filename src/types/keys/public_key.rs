@@ -25,6 +25,7 @@ use crate::utils::{decode_url_safe_no_pad, encode_url_safe_no_pad};
 use ed25519_dalek::{Signature as Ed25519Signature, VerifyingKey as Ed25519VerifyingKey};
 use rsa::pkcs1v15::{Signature as PkcsSignature, VerifyingKey as PkcsVerifyingKey};
 use rsa::pkcs8::DecodePublicKey;
+use rsa::pkcs8::AssociatedOid;
 use rsa::pss::{Signature as PssSignature, VerifyingKey as PssVerifyingKey};
 use rsa::signature::Verifier;
 use rsa::traits::PublicKeyParts;
@@ -217,9 +218,10 @@ impl TryFrom<PemHelper> for PublicKey {
 
 fn verify_rs<T>(pk: &RsaPublicKey, data: &[u8], sig: &[u8]) -> Outcome<()>
 where
-    T: rsa::signature::digest::Digest,
+    T: rsa::signature::digest::Digest + AssociatedOid,
 {
-    let vk = PkcsVerifyingKey::<T>::from(pk.clone());
+    // With the DigestInfo prefix, as RS256/384/512 require (RFC 7518 §3.3).
+    let vk = PkcsVerifyingKey::<T>::new(pk.clone());
 
     let signature = PkcsSignature::try_from(sig).map_err(|e| {
         Errors::format(

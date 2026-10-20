@@ -23,6 +23,7 @@ use ed25519_dalek::SigningKey as Ed25519SigningKey;
 use rsa::RsaPrivateKey;
 use rsa::pkcs1v15::SigningKey as PkcsSigningKey;
 use rsa::pkcs8::DecodePrivateKey;
+use rsa::pkcs8::AssociatedOid;
 use rsa::pss::SigningKey as PssSigningKey;
 use rsa::signature::Signer;
 use rsa::signature::{RandomizedSigner, SignatureEncoding};
@@ -148,9 +149,10 @@ impl TryFrom<PemHelper> for PrivateKey {
 
 fn sign_rs<T>(pk: &RsaPrivateKey, data: &[u8]) -> Outcome<Vec<u8>>
 where
-    T: rsa::signature::digest::Digest,
+    T: rsa::signature::digest::Digest + AssociatedOid,
 {
-    let sk = PkcsSigningKey::<T>::from(pk.clone());
+    // With the DigestInfo prefix, as RS256/384/512 require (RFC 7518 §3.3).
+    let sk = PkcsSigningKey::<T>::new(pk.clone());
     let sig = sk.sign(data);
     Ok(sig.to_bytes().to_vec())
 }
