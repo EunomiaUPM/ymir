@@ -222,4 +222,23 @@ impl SentGrantRepoTrait for SentGrantPostgresRepo {
             .map_err(|e| Errors::db("Unable to finalize expired grants", Some(Box::new(e))))?;
         Ok(result.rows_affected)
     }
+    async fn finalize_stale_pending(
+        &self,
+        created_before: DateTime<Utc>,
+        now: DateTime<Utc>,
+    ) -> Outcome<u64> {
+        let changes = grant::ActiveModel {
+            status: ActiveValue::Set(GrantStatus::Finalized),
+            ended_at: ActiveValue::Set(Some(now)),
+            ..Default::default()
+        };
+        let result = grant::Entity::update_many()
+            .set(changes)
+            .filter(grant::Column::Status.is_in([GrantStatus::Processing, GrantStatus::Pending]))
+            .filter(grant::Column::CreatedAt.lt(created_before))
+            .exec(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to finalize stale grants", Some(Box::new(e))))?;
+        Ok(result.rows_affected)
+    }
 }

@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::errors::Errors;
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum W3cDataModelVersion {
     V1,
     V2,
@@ -32,8 +32,28 @@ pub enum W3cDataModelVersion {
 impl W3cDataModelVersion {
     pub fn context(&self) -> &'static str {
         match self {
-            W3cDataModelVersion::V1 => "https://www.w3.org/ns/credentials/v1",
+            // W3cDataModelVersion::V1 => "https://www.w3.org/ns/credentials/v1",
+            W3cDataModelVersion::V1 => "https://www.w3.org/2018/credentials/v1",
             W3cDataModelVersion::V2 => "https://www.w3.org/ns/credentials/v2",
+        }
+    }
+
+    /// The version whose base context is in `contexts`, if any.
+    pub fn from_context<S: AsRef<str>>(contexts: &[S]) -> Option<Self> {
+        [W3cDataModelVersion::V2, W3cDataModelVersion::V1]
+            .into_iter()
+            .find(|v| contexts.iter().any(|c| c.as_ref() == v.context()))
+    }
+
+    /// The version of a JSON document, from its `@context` (a string or an array).
+    pub fn from_document(doc: &serde_json::Value) -> Option<Self> {
+        match doc.get("@context")? {
+            serde_json::Value::String(c) => Self::from_context(&[c]),
+            serde_json::Value::Array(cs) => {
+                let cs: Vec<&str> = cs.iter().filter_map(|c| c.as_str()).collect();
+                Self::from_context(&cs)
+            }
+            _ => None,
         }
     }
 }

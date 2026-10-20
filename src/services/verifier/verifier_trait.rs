@@ -16,9 +16,12 @@
  */
 
 use crate::data::entities::received::verification::{Model, Plan};
-use crate::errors::Outcome;
+use crate::errors::{Errors, Outcome};
 use crate::types::vcs::VPDef;
 use async_trait::async_trait;
+use crate::types::jwt::Jwt;
+use crate::types::vps::VpPayload;
+use crate::utils::Verified;
 
 /// Verifiable Presentation verification service.
 ///
@@ -39,7 +42,21 @@ pub trait VerifierTrait: Send + Sync + 'static {
     ///
     /// Compiles an `openid4vp://` scheme deployment utilizing `direct_post` mode
     /// and points the wallet to the ephemeral presentation definition endpoint.
-    fn generate_verification_uri(&self, verification_model: &Model) -> String;
+    /// Async and fallible: a request by reference names the Verifier by its DID.
+    async fn generate_verification_uri(&self, verification_model: &Model) -> Outcome<String>;
+
+    /// The signed Request Object that a request by reference (`request_uri`) points to,
+    /// echoing the `wallet_nonce` the wallet posted, if any. Only OpenID4VP 1.0 has one.
+    async fn request_object(
+        &self,
+        _verification_model: &Model,
+        _wallet_nonce: Option<String>,
+    ) -> Outcome<String> {
+        Err(Errors::not_impl(
+            "This verifier passes its requests by value",
+            None,
+        ))
+    }
 
     /// Builds the Presentation Definition describing the
     /// credentials that must be presented.
@@ -54,5 +71,5 @@ pub trait VerifierTrait: Send + Sync + 'static {
     /// This validates the outer VP envelope (nonce, holder signature, expiration)
     /// as well as each nested Verifiable Credential inside the token. Updates
     /// the mutable [`Model`] status to reflect success or failure.
-    async fn verify_all(&self, verification_model: &mut Model, vp_token: &str) -> Outcome<()>;
+    async fn verify_all(&self, verification_model: &mut Model, vp_token: &str) -> Outcome<Verified<Jwt<VpPayload>>>;
 }

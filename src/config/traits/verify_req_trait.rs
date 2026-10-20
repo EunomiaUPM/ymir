@@ -17,6 +17,7 @@
 
 use crate::config::types::VerifyReqConfig;
 use crate::types::vcs::VcType;
+use crate::types::verification::RequestPassing;
 
 /// Shared behavior for evaluation contexts demanding data space verification checks.
 pub trait VerifyReqConfigTrait {
@@ -40,5 +41,8 @@ pub trait VerifyReqConfigTrait {
     /// Recovers the precise array of requested Verifiable Credential taxonomy schemas.
     fn get_requested_vcs(&self) -> &[VcType] {
         &self.verify_req_config().vcs_requested
+    }
+    fn get_request_passing(&self) -> &RequestPassing {
+        &self.verify_req_config().request_passing
     }
 }

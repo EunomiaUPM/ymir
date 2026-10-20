@@ -26,13 +26,16 @@ use crate::capabilities::Verifier;
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::received::verification::{Model, Plan};
-use crate::errors::{BadFormat, Errors, Outcome};
+use crate::errors::{Errors, Outcome};
 use crate::http::routes::{base, fill, verifier};
+use crate::services::verifier::validators::{validate_nonce, validate_valid_from, validate_valid_until, validate_vc_id, validate_vc_issuer, validate_vc_sub, validate_vp_holder, validate_vp_id};
 use crate::types::dids::Did;
-use crate::types::jwt::{Jwt, VCJwtClaims, VPJwtClaims};
+use crate::types::jwt::{Jwt, JwtHeaderTrait};
+use crate::types::vcs::{VcPayload};
+use crate::types::vps::{VpPayload};
 use crate::types::vcs::{VPDef, W3cDataModelVersion};
 use crate::types::verification::VerificationStatus;
-use crate::utils::{has_expired, is_active};
+use crate::utils::{Verified};
 
 /// Verifiable Presentation verification service backed by an OpenID4VP implementation.
 ///
@@ -54,14 +57,6 @@ impl VerifierTrait for VerifierService {
     fn build_vp_plan(&self, id: &str) -> Outcome<Plan> {
         info!("Managing OIDC4VP");
 
-        let host_url = self.config.get_host(HostType::Http);
-        let client_id = format!(
-            "{}{}{}{}",
-            host_url,
-            self.config.get_api_path(),
-            verifier::PREFIX,
-            base(verifier::VERIFY)
-        );
         let requested_vcs = self.config.get_requested_vcs();
         if requested_vcs.is_empty() {
             return Err(Errors::unauthorized(
@@ -72,22 +67,16 @@ impl VerifierTrait for VerifierService {
 
         Ok(Plan {
             id: id.to_string(),
-            audience: client_id,
+            audience: format!("{}{}", self.verifier_url(), base(verifier::VERIFY)),
             vc_type: requested_vcs.to_vec(),
         })
     }
 
-    fn generate_verification_uri(&self, model: &Model) -> String {
+    async fn generate_verification_uri(&self, model: &Model) -> Outcome<String> {
         info!("Generating verification exchange URI");
 
-        let host_url = format!(
-            "{}{}{}",
-            self.config.get_host(HostType::Http),
-            self.config.get_api_path(),
-            verifier::PREFIX
-        );
-        let pd_uri = format!("{}{}", host_url, fill(verifier::PD, &model.state));
-        let response_uri = format!("{}{}", host_url, fill(verifier::VERIFY, &model.state));
+        let pd_uri = format!("{}{}", self.verifier_url(), fill(verifier::PD, &model.state));
+        let response_uri = format!("{}{}", self.verifier_url(), fill(verifier::VERIFY, &model.state));
 
         let uri = format!(
             "openid4vp://authorize\
@@ -104,7 +93,7 @@ impl VerifierTrait for VerifierService {
             encode(&response_uri),
         );
         info!("Uri generated successfully: {uri}");
-        uri
+        Ok(uri)
     }
 
     fn generate_vpd(&self, verification: &Model) -> Outcome<VPDef> {
@@ -117,23 +106,27 @@ impl VerifierTrait for VerifierService {
         ))
     }
 
-    async fn verify_all(&self, model: &mut Model, vp_token: &str) -> Outcome<()> {
+    async fn verify_all(&self, model: &mut Model, vp_token: &str) -> Outcome<Verified<Jwt<VpPayload>>> {
         info!("Verifying all");
 
-        let result: Outcome<()> = async {
-            let (vcs, holder_did) = self.verify_vp(model, vp_token).await?;
+        let result: Outcome<Verified<Jwt<VpPayload>>> = async {
+            let vp = Jwt::<VpPayload>::parse(vp_token)?;
+            let vp = self.verify_vp(model, vp).await?;
+            let holder = vp.kid()?.did();
+            let vcs = vp.claims().vp_doc().credential_jwts()?;
 
             for vc in vcs {
-                self.verify_vc(&vc, &holder_did).await?;
-                model.vcs.push(vc)
+                self.verify_vc(&vc, holder).await?;
+                model.vcs.push(vc);
             }
-            Ok(())
+
+            Ok(vp)
         }
-        .await;
+            .await;
 
         model.ended_at = Some(Utc::now());
         model.status = match &result {
-            Ok(()) => {
+            Ok(_) => {
                 info!("VP & VC validated successfully");
                 VerificationStatus::Verified
             }
@@ -147,158 +140,44 @@ impl VerifierTrait for VerifierService {
 // ===== Internal helpers ======================================================
 
 impl VerifierService {
-    async fn verify_vp(&self, model: &mut Model, vp_token: &str) -> Outcome<(Vec<String>, Did)> {
+    fn verifier_url(&self) -> String {
+        format!(
+            "{}{}{}",
+            self.config.get_host(HostType::Http),
+            self.config.get_api_path(),
+            verifier::PREFIX
+        )
+    }
+    async fn verify_vp(&self, model: &mut Model, vp: Jwt<VpPayload>) -> Outcome<Verified<Jwt<VpPayload>>> {
         info!("Verifying vp");
-        model.vpt = Some(vp_token.to_string());
+        model.vpt = Some(vp.to_string());
 
-        let jwt = Jwt::parse(vp_token)?;
-        let (holder_did, claims) =
-            Verifier::verify_enveloped::<VPJwtClaims>(&jwt, Some(&model.audience)).await?;
+        let vp = Verifier::verify_enveloped(vp, Some(model.audience.clone())).await?;
 
-        validate_vp_holder(&claims, &holder_did)?;
-        model.holder = Some(holder_did.id().to_string());
-        validate_vp_id(&claims, model)?;
-        validate_nonce(&claims, model)?;
+        validate_vp_holder(&vp)?;
+        model.holder = Some(vp.kid()?.did().id().to_string());
+        validate_vp_id(&vp, model)?;
+        validate_nonce(&vp, model)?;
 
         info!("VP verification successful");
-        Ok((claims.vp.verifiable_credential, holder_did))
+        Ok(vp)
     }
 
     async fn verify_vc(&self, vc_token: &str, holder_did: &Did) -> Outcome<()> {
         info!("Verifying vc");
 
-        let jwt = Jwt::parse(vc_token)?;
-        let (issuer_did, claims) = Verifier::verify_enveloped::<VCJwtClaims>(&jwt, None).await?;
+        let vc = Jwt::<VcPayload>::parse(vc_token)?;
+        let vc = Verifier::verify_enveloped(vc, None).await?;
 
-        validate_vc_issuer(&claims, &issuer_did)?;
-        validate_vc_id(&claims)?;
-        validate_vc_sub(&claims, holder_did)?;
+        validate_vc_issuer(&vc)?;
+        validate_vc_id(&vc)?;
+        validate_vc_sub(&vc, holder_did)?;
         // TODO: trusted-issuer list once available
-        validate_valid_from(&claims)?;
-        validate_valid_until(&claims)?;
+        validate_valid_from(&vc)?;
+        validate_valid_until(&vc)?;
 
         info!("VC verification successful");
         Ok(())
     }
 }
 
-// ===== Free validators (pure logic, no `self`) ===============================
-
-fn validate_nonce(claims: &VPJwtClaims, model: &Model) -> Outcome<()> {
-    info!("Validating nonce");
-    if model.nonce != claims.nonce {
-        return Err(Errors::security("Invalid nonce, it does not match", None));
-    }
-    info!("VPT nonce matches");
-    Ok(())
-}
-
-fn validate_vp_holder(claims: &VPJwtClaims, holder_did: &Did) -> Outcome<()> {
-    info!("Validating VP subject");
-    check_eq_opt(claims.sub.as_deref(), holder_did.id(), "VPT sub & kid")?;
-    check_eq_opt(claims.iss.as_deref(), holder_did.id(), "VPT iss & kid")?;
-    check_eq_opt(
-        claims.vp.holder.as_deref(),
-        holder_did.id(),
-        "VP holder & kid",
-    )?;
-    Ok(())
-}
-
-fn validate_vp_id(claims: &VPJwtClaims, model: &Model) -> Outcome<()> {
-    info!("Validating vp id");
-    if model.id != claims.vp.id {
-        return Err(Errors::security("Invalid id, it does not match", None));
-    }
-    info!("Exchange is valid");
-    Ok(())
-}
-
-fn validate_vc_issuer(claims: &VCJwtClaims, issuer_did: &Did) -> Outcome<()> {
-    info!("Validating VC issuer");
-    check_eq_opt(claims.iss(), issuer_did.id(), "VCT iss & kid")?;
-    if claims.vc_doc().issuer.id() != issuer_did.id() {
-        return Err(Errors::security(
-            "VCT token issuer & kid does not match",
-            None,
-        ));
-    }
-    info!("VC issuer & kid match");
-    Ok(())
-}
-
-fn validate_vc_id(claims: &VCJwtClaims) -> Outcome<()> {
-    info!("Validating VC id");
-    check_eq_opt(claims.jti(), &claims.vc_doc().id, "VCT jti and vc id")
-}
-
-fn validate_vc_sub(claims: &VCJwtClaims, holder_did: &Did) -> Outcome<()> {
-    info!("Validating VC subject");
-    let cred_sub_id = claims
-        .vc_doc()
-        .credential_subject
-        .get("id")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| {
-            Errors::format(
-                BadFormat::Received,
-                "credentialSubject.id missing or not a string",
-                None,
-            )
-        })?;
-
-    check_eq_opt(
-        claims.sub(),
-        holder_did.id(),
-        "VCT sub & and holder from vp",
-    )?;
-    if cred_sub_id != holder_did.id() {
-        return Err(Errors::security(
-            "VC credentialSubject does not match holder",
-            None,
-        ));
-    }
-    info!("VC subject & holder match");
-    Ok(())
-}
-
-fn validate_valid_from(claims: &VCJwtClaims) -> Outcome<()> {
-    info!("Validating issuance date");
-    if let Some(nbf) = claims.nbf() {
-        is_active(nbf)?;
-    }
-    if let Some(iat) = claims.iat() {
-        is_active(iat)?;
-    }
-    if let Some(valid_from) = claims.vc_doc().valid_from {
-        if valid_from > Utc::now() {
-            return Err(Errors::security("VC is not valid yet", None));
-        }
-        info!("VC has started its validity period");
-    }
-    Ok(())
-}
-
-fn validate_valid_until(claims: &VCJwtClaims) -> Outcome<()> {
-    info!("Validating expiration date");
-    if let Some(exp) = claims.exp() {
-        has_expired(exp)?;
-    }
-    if let Some(valid_until) = claims.vc_doc().valid_until {
-        if Utc::now() > valid_until {
-            return Err(Errors::security("VC has expired", None));
-        }
-        info!("VC has not expired yet");
-    }
-    Ok(())
-}
-
-fn check_eq_opt(actual: Option<&str>, expected: &str, ctx: &str) -> Outcome<()> {
-    if let Some(a) = actual {
-        if a != expected {
-            return Err(Errors::security(format!("{ctx} does not match"), None));
-        }
-        info!("{ctx} match");
-    }
-    Ok(())
-}

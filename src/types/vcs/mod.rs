@@ -16,6 +16,7 @@
  */
 
 pub mod doc;
+pub mod jwt;
 mod vc_format;
 pub mod vc_issuer;
 pub mod vc_specs;
@@ -26,6 +27,7 @@ mod w3c_data_model;
 pub use crate::types::issuance::build_ctx::BuildCtx;
 pub use crate::types::verification::input_descriptor::InputDescriptor;
 pub use crate::types::verification::vp_def::VPDef;
+pub use jwt::{VcJwtClaimsBuilder, VcPayload, VcPayloadV1};
 pub use vc_format::VcFormat;
 pub use vc_issuer::*;
 pub use vc_type::VcType;

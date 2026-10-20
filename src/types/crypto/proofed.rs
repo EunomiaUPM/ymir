@@ -15,10 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::{Canon, Proof};
-use crate::errors::Outcome;
-use crate::utils::OneOrMany;
+use async_trait::async_trait;
+use super::{Canon, HasProofPurpose, Proof};
+use crate::errors::{BadFormat, Errors, Outcome};
+use crate::utils::{OneOrMany, Verifiable, Verified};
 use serde::{Deserialize, Serialize};
+use crate::capabilities::Verifier;
+use crate::types::dids::Did;
 
 /// A document paired with one or more Data Integrity proofs over it.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -32,19 +35,51 @@ impl<T> Proofed<T> {
     pub fn new(document: T, proof: OneOrMany<Proof>) -> Self {
         Proofed { document, proof }
     }
-    pub fn doc(&self) -> &T {
-        &self.document
-    }
     pub fn proof(&self) -> &OneOrMany<Proof> {
         &self.proof
     }
 }
 
-impl<T> Proofed<T>
-where
-    T: Serialize,
-{
-    pub fn canon(&self) -> Outcome<Canon> {
-        Canon::new(self.doc())
+impl<T> Proofed<T> {
+    pub fn unverified_doc(&self) -> &T { &self.document }
+}
+
+impl<T> Verified<Proofed<T>> {
+    pub fn doc(&self) -> &T { &self.document }
+    pub fn signers(&self) -> Vec<&Did> {
+        self.proof.iter().map(|p| p.data.verification_method.did()).collect()
     }
 }
+
+
+impl<T: Serialize> Proofed<T> {
+    pub fn canon(&self) -> Outcome<Canon> {
+        Canon::new(&self.document)
+    }
+}
+
+#[async_trait]
+impl<T> Verifiable for Proofed<T>
+where
+    T: HasProofPurpose + Serialize + Send + Sync,
+{
+    type Context = ();
+
+    async fn check(&self, _ctx: &Self::Context) -> Outcome<()> {
+        let proofs = self.proof();
+        let canon_doc = self.canon()?;
+
+        if proofs.is_empty() {
+            return Err(Errors::format(
+                BadFormat::Received,
+                "Object to verify has no proofs",
+                None,
+            ));
+        }
+        for proof in proofs {
+            Verifier::verify_proof(&canon_doc, proof, T::PURPOSE).await?;
+        }
+        Ok(())
+    }
+}
+

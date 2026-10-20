@@ -16,7 +16,11 @@
  */
 
 use crate::services::repo::postgres::IntoOverwriteActive;
-use crate::types::verification::VerificationStatus;
+use crate::errors::Outcome;
+use crate::types::verification::{
+    AuthorizationRequest, DIRECT_POST, DefinitionSource, Draft20Request, RequestReference,
+    VerificationStatus,
+};
 use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
@@ -53,6 +57,69 @@ pub struct Plan {
     pub client_id_scheme: String, // REQUEST
     pub nonce: String,            // REQUEST
     pub response_uri: String,     // REQUEST
+}
+
+impl Plan {
+    /// The request at `uri`, whatever its version: draft 20, 1.0 by value, or 1.0 by reference,
+    /// which carries only `client_id` and `request_uri` (the rest is in the Request Object, kept
+    /// empty here; `pd_uri` holds the `request_uri`).
+    pub fn from_uri(id: &str, uri: &str) -> Outcome<Plan> {
+        let base = |client_id: String| Plan {
+            id: id.to_string(),
+            uri: uri.to_string(),
+            scheme: "openid4vp".to_string(),
+            response_type: String::new(),
+            client_id_scheme: client_id_prefix(&client_id),
+            client_id,
+            response_mode: String::new(),
+            pd_uri: String::new(),
+            nonce: String::new(),
+            response_uri: String::new(),
+        };
+
+        if let Some(reference) = RequestReference::parse(uri)? {
+            return Ok(Plan {
+                pd_uri: reference.request_uri,
+                ..base(reference.client_id)
+            });
+        }
+        if AuthorizationRequest::is_1_0(uri) {
+            let request = AuthorizationRequest::parse(uri)?;
+            return Ok(Plan {
+                response_type: "vp_token".to_string(),
+                response_mode: DIRECT_POST.to_string(),
+                nonce: request.nonce,
+                response_uri: request.response_uri,
+                ..base(request.client_id)
+            });
+        }
+
+        let request = Draft20Request::parse(uri)?;
+        let pd_uri = match request.definition {
+            DefinitionSource::ByReference(pd_uri) => pd_uri,
+            DefinitionSource::ByValue(_) => String::new(),
+        };
+        let client_id_scheme = request
+            .client_id_scheme
+            .unwrap_or_else(|| client_id_prefix(&request.client_id));
+        Ok(Plan {
+            response_type: request.response_type,
+            response_mode: request.response_mode,
+            pd_uri,
+            client_id_scheme,
+            nonce: request.nonce,
+            response_uri: request.response_uri,
+            ..base(request.client_id)
+        })
+    }
+}
+
+/// The Client Identifier Prefix of OpenID4VP 1.0 (`decentralized_identifier`, `redirect_uri`…).
+fn client_id_prefix(client_id: &str) -> String {
+    client_id
+        .split_once(':')
+        .map(|(prefix, _)| prefix.to_string())
+        .unwrap_or_default()
 }
 
 impl IntoOverwriteActive<ActiveModel> for Plan {

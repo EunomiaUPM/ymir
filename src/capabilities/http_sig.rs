@@ -149,9 +149,9 @@ impl HttpSig {
         check_clock_skew(created)?;
 
         let keyid_in_sig = Self::extract_sig_param(&signature_input, "keyid")?;
-        let cert_thumbprint = key_source.thumbprint()?;
+        let thumbprint = key_source.thumbprint()?;
 
-        if keyid_in_sig != cert_thumbprint {
+        if keyid_in_sig != thumbprint {
             return Err(Errors::security(
                 "keyid in Signature-Input does not match thumbprint of declared certificate",
                 None,

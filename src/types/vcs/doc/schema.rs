@@ -18,13 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct VDSSchemaType {
-    pub r#type: String,
-    pub path: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct VCSchema {
+pub struct VcSchema {
     pub id: String,
     pub r#type: String,
 }

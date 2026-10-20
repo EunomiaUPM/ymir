@@ -18,7 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct VCRefreshService {
+pub struct VcRefreshService {
     r#type: String,
     url: String,
     #[serde(rename = "refreshToken")]

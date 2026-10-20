@@ -16,8 +16,8 @@
  */
 
 use super::super::{VcIssuer, VcType, W3cDataModelVersion};
-use super::{VCEvidence, VCRefreshService, VCSchema, VCStatus, VcDocument};
-use crate::utils::{Missing, Present};
+use super::{VcEvidence, VcRefreshService, VcSchema, VcStatus, VcDocument};
+use crate::utils::{Missing, OneOrMany, Present};
 use chrono::{DateTime, Utc};
 use serde_json::Value;
 use std::marker::PhantomData;
@@ -33,11 +33,11 @@ pub struct VcDocumentBuilder<ID, ISS, CS> {
     pub credential_subject: Option<Value>,
     pub valid_from: Option<DateTime<Utc>>,
     pub valid_until: Option<DateTime<Utc>>,
-    pub credential_status: Option<VCStatus>,
-    pub credential_schema: Option<Vec<VCSchema>>,
-    pub refresh_service: Option<VCRefreshService>,
+    pub credential_status: Option<VcStatus>,
+    pub credential_schema: Option<Vec<VcSchema>>,
+    pub refresh_service: Option<VcRefreshService>,
     pub terms_of_use: Option<Value>,
-    pub evidence: Option<Vec<VCEvidence>>,
+    pub evidence: Option<Vec<VcEvidence>>,
     _marker: PhantomData<(ID, ISS, CS)>,
 }
 
@@ -146,17 +146,17 @@ impl<ID, ISS, CS> VcDocumentBuilder<ID, ISS, CS> {
         self
     }
 
-    pub fn credential_status(mut self, credential_status: VCStatus) -> Self {
+    pub fn credential_status(mut self, credential_status: VcStatus) -> Self {
         self.credential_status = Some(credential_status);
         self
     }
 
-    pub fn credential_schema(mut self, credential_schema: Vec<VCSchema>) -> Self {
+    pub fn credential_schema(mut self, credential_schema: Vec<VcSchema>) -> Self {
         self.credential_schema = Some(credential_schema);
         self
     }
 
-    pub fn refresh_service(mut self, refresh_service: VCRefreshService) -> Self {
+    pub fn refresh_service(mut self, refresh_service: VcRefreshService) -> Self {
         self.refresh_service = Some(refresh_service);
         self
     }
@@ -166,7 +166,7 @@ impl<ID, ISS, CS> VcDocumentBuilder<ID, ISS, CS> {
         self
     }
 
-    pub fn evidence(mut self, evidence: Vec<VCEvidence>) -> Self {
+    pub fn evidence(mut self, evidence: Vec<VcEvidence>) -> Self {
         self.evidence = Some(evidence);
         self
     }
@@ -177,7 +177,8 @@ impl VcDocumentBuilder<Present, Present, Present> {
         VcDocument {
             context: self.context,
             id: self.id.unwrap(),
-            r#type: self.r#type,
+            // r#type: self.r#type,
+            r#type: OneOrMany::Many(self.r#type),
             name: self.name,
             description: self.description,
             issuer: self.issuer.unwrap(),

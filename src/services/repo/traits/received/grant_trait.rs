@@ -49,6 +49,15 @@ pub trait RecvGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
     ) -> Outcome<bool>;
 
     async fn finalize_expired(&self, now: DateTime<Utc>) -> Outcome<u64>;
+
+    /// Finalizes the access grants still open (`Pending`) that were created before
+    /// `created_before`: requests whose presentation never came (the peer's wallet failed and
+    /// nobody told, or the peer went away). Returns how many.
+    async fn finalize_stale_pending(
+        &self,
+        created_before: DateTime<Utc>,
+        now: DateTime<Utc>,
+    ) -> Outcome<u64>;
 }
 
 #[cfg(feature = "mock")]
@@ -71,5 +80,6 @@ mockall::mock! {
         async fn get_by_managing_id(&self, managing_id: &str) -> Outcome<Model>;
         async fn rotate_final(&self, id: &str, expected_managing_hash: &str, rotation: FinalRotation) -> Outcome<bool>;
         async fn finalize_expired(&self, now: DateTime<Utc>) -> Outcome<u64>;
+        async fn finalize_stale_pending(&self, created_before: DateTime<Utc>, now: DateTime<Utc>) -> Outcome<u64>;
     }
 }

@@ -31,6 +31,8 @@ pub mod verifier {
     /// Where the holder's wallet posts its presentation, by state; its [`base`](super::base) is
     /// the verifier's client id.
     pub const VERIFY: &str = "/verify/{state}";
+    /// Signed Request Object of a verification, by state (OpenID4VP 1.0 `request_uri`).
+    pub const REQUEST: &str = "/request/{state}";
 }
 
 /// Wallet router ([`WalletRouter`](super::WalletRouter)).

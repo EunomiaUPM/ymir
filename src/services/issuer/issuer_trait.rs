@@ -23,7 +23,10 @@ use crate::types::issuance::{
     AuthServerMetadata, CredentialRequest, IssuerMetadata, IssuingToken, VcCredOffer,
     VcTransmissionOffer,
 };
-use crate::types::jwt::VCJwtClaims;
+// use crate::types::vcs::VCJwtClaims;
+use crate::types::dids::Did;
+use crate::types::jwt::{Jwt, JwtClaims};
+use crate::types::vcs::VcPayload;
 use crate::types::oauth::RolePath;
 use crate::types::vcs::{VcType, VcTypeConfig};
 use async_trait::async_trait;
@@ -70,14 +73,15 @@ pub trait IssuerTrait: Send + Sync + 'static {
     /// Formulates a valid access [`IssuingToken`] package containing session lifetimes.
     fn get_token(&self, model: &issuance::Model) -> IssuingToken;
 
-    /// Validates the client's payload request token against the session state and asserts the Proof of Possession (PoP).
+    /// Checks the request's token and proof of possession: the holder's DID (who proved holding
+    /// its key) and the configuration to issue.
     async fn validate_cred_req(
         &self,
         issuance: &issuance::Model,
         cred_req: CredentialRequest,
         token: &str,
-    ) -> Outcome<(String, VcTypeConfig)>;
+    ) -> Outcome<(Did, VcTypeConfig)>;
 
-    /// Digitally signs the structured credential claims using asymmetric keys pulled securely from the Vault.
-    async fn sign_claims(&self, claims: &VCJwtClaims) -> Outcome<String>;
+    /// Signs the credential's claims with the issuer's key.
+    async fn sign_claims(&self, claims: &JwtClaims<VcPayload>) -> Outcome<Jwt<VcPayload>>;
 }

@@ -16,34 +16,24 @@
  */
 
 use crate::types::crypto::{HasProofPurpose, ProofPurpose};
+use crate::types::jwt::{HasJwtType, JwtType};
 use serde::{Deserialize, Serialize};
 
 // ════════════════════════════════════════════════════════════════════════════════
 //   DidPossession
 // ════════════════════════════════════════════════════════════════════════════════
 
-/// Payload claims of a JWT proof of possession (OIDC4VCI 1.0 §8.2.1.1).
-///
-/// The JWT header MUST carry `alg`, `typ = "openid4vci-proof+jwt"`, and one of
-/// `kid` / `jwk` / `x5c` identifying the holder's key. Those are handled by the
-/// JWT library used to sign/verify, not in this struct.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DidPossession {
-    /// Wallet's client identifier. OPTIONAL — omitted in anonymous flows.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub iss: Option<String>,
-
-    /// Credential Issuer URL. REQUIRED — anti-replay across issuers.
-    pub aud: String,
-
-    /// Issued-at time as Unix timestamp (seconds). REQUIRED.
-    pub iat: i64,
-
-    /// Echo of the `c_nonce` issued by the AS. REQUIRED when `c_nonce` was
-    /// provided in the token response.
-    pub nonce: String,
-}
+/// OpenID4VCI 1.0 proof of possession (F.1): every claim it uses (`aud`, `iat`, `nonce`, `iss`)
+/// is a registered one, in [`JwtClaims`](crate::types::jwt::JwtClaims); the type is what says it
+/// is a proof (its `typ` and the key's purpose).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DidPossession {}
 
 impl HasProofPurpose for DidPossession {
     const PURPOSE: ProofPurpose = ProofPurpose::Authentication;
+}
+
+/// Required as is by OpenID4VCI 1.0 (F.1).
+impl HasJwtType for DidPossession {
+    const TYP: JwtType = JwtType::Oid4vciProof;
 }

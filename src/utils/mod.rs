@@ -21,6 +21,7 @@ mod one_or_many;
 mod parse;
 mod present;
 mod token;
+mod verified;
 
 pub use client::{http_client, stream_client};
 pub use http::*;
@@ -28,3 +29,4 @@ pub use one_or_many::OneOrMany;
 pub use parse::*;
 pub use present::*;
 pub use token::*;
+pub use verified::{Verifiable, Verified};

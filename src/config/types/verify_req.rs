@@ -20,6 +20,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::traits::VerifyReqConfigTrait;
 use crate::types::vcs::VcType;
+use crate::types::verification::RequestPassing;
 
 /// Verification compliance matrix specifying required credential parameters and trust anchors.
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -31,6 +32,8 @@ pub struct VerifyReqConfig {
     /// Collection of required target credential formats mapped via string parsing.
     #[serde(deserialize_with = "deserialize_vc_type_vec")]
     pub vcs_requested: Vec<VcType>,
+    #[serde(default)]
+    pub request_passing: RequestPassing
 }
 
 impl VerifyReqConfigTrait for VerifyReqConfig {

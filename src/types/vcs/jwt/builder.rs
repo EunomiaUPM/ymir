@@ -8,28 +8,27 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::{VCJwtClaims, VcJwtClaimsV1, VcJwtClaimsV2};
+use std::marker::PhantomData;
+
+use chrono::{DateTime, Utc};
+
+use super::{VcPayload, VcPayloadV1};
+use crate::types::jwt::JwtClaims;
 use crate::types::vcs::W3cDataModelVersion;
 use crate::types::vcs::doc::VcDocument;
 use crate::utils::{Missing, Present};
-use chrono::{DateTime, Utc};
-use std::marker::PhantomData;
 
+/// Builds a VC's JWT claims; it does not compile without the document (`VC`).
 pub struct VcJwtClaimsBuilder<VC> {
     w3c_data_model_version: W3cDataModelVersion,
-    iss: Option<String>,
-    sub: Option<String>,
-    jti: Option<String>,
-    nbf: Option<i64>,
-    exp: Option<i64>,
-    iat: Option<i64>,
+    claims: JwtClaims<()>,
     vc: Option<VcDocument>,
     _marker: PhantomData<VC>,
 }
@@ -38,12 +37,7 @@ impl VcJwtClaimsBuilder<Missing> {
     pub fn new(w3c_data_model_version: W3cDataModelVersion) -> Self {
         VcJwtClaimsBuilder {
             w3c_data_model_version,
-            iss: None,
-            sub: None,
-            jti: None,
-            nbf: None,
-            exp: None,
-            iat: None,
+            claims: JwtClaims::default(),
             vc: None,
             _marker: PhantomData,
         }
@@ -54,69 +48,50 @@ impl<VC> VcJwtClaimsBuilder<VC> {
     pub fn vc(self, vc_document: VcDocument) -> VcJwtClaimsBuilder<Present> {
         VcJwtClaimsBuilder {
             w3c_data_model_version: self.w3c_data_model_version,
-            iss: self.iss,
-            sub: self.sub,
-            jti: self.jti,
-            nbf: self.nbf,
-            exp: self.exp,
-            iat: self.iat,
+            claims: self.claims,
             vc: Some(vc_document),
             _marker: PhantomData,
         }
     }
+
     pub fn iss(mut self, iss: impl Into<String>) -> Self {
-        self.iss = Some(iss.into());
+        self.claims = self.claims.with_iss(iss);
         self
     }
 
     pub fn sub(mut self, sub: impl Into<String>) -> Self {
-        self.sub = Some(sub.into());
+        self.claims = self.claims.with_sub(sub);
         self
     }
 
     pub fn jti(mut self, jti: impl Into<String>) -> Self {
-        self.jti = Some(jti.into());
+        self.claims = self.claims.with_jti(jti);
         self
     }
 
     pub fn nbf(mut self, nbf: DateTime<Utc>) -> Self {
-        self.nbf = Some(nbf.timestamp());
+        self.claims = self.claims.with_nbf(nbf);
         self
     }
 
     pub fn exp(mut self, exp: DateTime<Utc>) -> Self {
-        self.exp = Some(exp.timestamp());
+        self.claims = self.claims.with_exp(exp);
         self
     }
 
     pub fn iat(mut self, iat: DateTime<Utc>) -> Self {
-        self.iat = Some(iat.timestamp());
+        self.claims = self.claims.with_iat(iat);
         self
     }
 }
 
 impl VcJwtClaimsBuilder<Present> {
-    pub fn build(self) -> VCJwtClaims {
-        match self.w3c_data_model_version {
-            W3cDataModelVersion::V1 => VCJwtClaims::V1(VcJwtClaimsV1 {
-                iss: self.iss,
-                sub: self.sub,
-                jti: self.jti,
-                nbf: self.nbf,
-                exp: self.exp,
-                iat: self.iat,
-                vc: self.vc.unwrap(),
-            }),
-
-            W3cDataModelVersion::V2 => VCJwtClaims::V2(VcJwtClaimsV2 {
-                iss: self.iss,
-                sub: self.sub,
-                jti: self.jti,
-                nbf: self.nbf,
-                exp: self.exp,
-                iat: self.iat,
-                vc: self.vc.unwrap(),
-            }),
-        }
+    pub fn build(self) -> JwtClaims<VcPayload> {
+        let vc = self.vc.unwrap();
+        let body = match self.w3c_data_model_version {
+            W3cDataModelVersion::V1 => VcPayload::V1(VcPayloadV1 { vc }),
+            W3cDataModelVersion::V2 => VcPayload::V2(vc),
+        };
+        self.claims.with_body(body)
     }
 }

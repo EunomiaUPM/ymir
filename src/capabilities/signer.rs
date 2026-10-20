@@ -18,10 +18,11 @@
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::crypto::{Canon, HasProofPurpose, Proof, ProofOptions, ProofPurpose, Proofed};
 use crate::types::dids::kid::Kid;
-use crate::types::jwt::{Jwt, JwtHeader};
+use crate::types::jwt::{HasJwtType, Jwt, JwtClaims, JwtHeader, JwtKey};
 use crate::types::keys::{Alg, Crv, SigningCtx};
 use crate::utils::OneOrMany;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 
 /// Centralized Signing Engine managing payload cryptographic proof enrichment.
@@ -109,16 +110,19 @@ impl Signer {
     // ===== ENVELOPED JSON WEB TOKENS =============================================================
 
     /// Encapsulates dynamic structured JSON data inside an authoritative compact cryptographic [`Jwt`] envelope.
-    pub fn sign_enveloped<T>(sig_ctx: &SigningCtx, typ: &str, cty: &str, value: &T) -> Outcome<Jwt>
+    /// The `typ` and `cty` come from `T` ([`HasJwtType`]).
+    // pub fn sign_enveloped<T>(sig_ctx: &SigningCtx, typ: &str, cty: &str, value: &T) -> Outcome<Jwt>
+    // pub fn sign_enveloped<T>(sig_ctx: &SigningCtx, value: &T) -> Outcome<Jwt<T>>
+    pub fn sign_enveloped<T>(sig_ctx: &SigningCtx, value: &JwtClaims<T>) -> Outcome<Jwt<T>>
     where
-        T: Serialize + ?Sized,
+        T: Serialize + DeserializeOwned + HasJwtType,
     {
         let kid = Kid::new(sig_ctx.did().clone(), sig_ctx.keys_frag());
         let header = JwtHeader {
             alg: sig_ctx.key().alg(),
-            typ: Some(typ.to_string()),
-            cty: Some(cty.to_string()),
-            kid,
+            typ: Some(value.jwt_type()),
+            cty: value.content_type().map(str::to_string),
+            key: JwtKey::Kid(kid),
             extra: serde_json::Map::new(),
         };
 
@@ -135,6 +139,6 @@ impl Signer {
         let sig_b64 = URL_SAFE_NO_PAD.encode(&sig_bytes);
 
         let jwt = format!("{signing_input}.{sig_b64}");
-        Jwt::parse(&jwt)
+        Jwt::<T>::parse(&jwt)
     }
 }

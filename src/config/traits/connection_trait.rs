@@ -38,7 +38,7 @@ pub trait ConnectionConfigTrait {
     }
 
     /// Evaluates if network egress/ingress points sit behind a specialized upstream TLS terminate proxy.
-    fn has_tls_proxy(&self) -> bool {
-        self.connection().has_tls_proxy
+    fn has_proxy(&self) -> bool {
+        self.connection().has_proxy
     }
 }

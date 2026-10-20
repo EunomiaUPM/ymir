@@ -18,7 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct VCEvidence {
+pub struct VcEvidence {
     id: String,
     r#type: String,
 }

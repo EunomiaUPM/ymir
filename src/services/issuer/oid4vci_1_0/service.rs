@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
+* Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program. If not, see <https://www.gnu.org/licenses/>.
+*/
 
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -37,13 +37,13 @@ use crate::types::issuance::{
     AuthServerMetadata, CredReqProof, CredentialRequest, DidPossession, IssuerMetadata,
     IssuingToken, VcCredOffer, VcTransmissionOffer,
 };
-use crate::types::jwt::{Jwt, VCJwtClaims};
+use crate::types::jwt::{Jwt, JwtClaims, JwtHeaderTrait};
 use crate::types::keys::{PrivateKey, SigningCtx};
 use crate::types::secrets::PemHelper;
 use crate::types::oauth::RolePath;
-use crate::types::vcs::{BuildCtx, VcType, VcTypeConfig};
+use crate::types::vcs::{BuildCtx, VcPayload, VcType, VcTypeConfig};
 use crate::types::wallet::Identity;
-use crate::utils::is_active;
+use crate::utils::{is_active, Verified};
 
 /// Core Implementation of the OpenID4VCI (v1.0) Credential Issuer Service.
 ///
@@ -198,65 +198,33 @@ impl IssuerTrait for IssuerService {
         issuance: &issuance::Model,
         cred_req: CredentialRequest,
         token: &str,
-    ) -> Outcome<(String, VcTypeConfig)> {
+    ) -> Outcome<(Did, VcTypeConfig)> {
         info!("Validating credential request");
 
         if issuance.token != token {
             return Err(Errors::forbidden("token does not match", None));
         }
+        let vc_config = requested_config(issuance, &cred_req)?;
 
-        let vc_config = cred_req.credential_configuration_id.ok_or_else(|| {
-            Errors::format(
-                BadFormat::Received,
-                "credential configuration id is missing",
-                None,
-            )
-        })?;
-        if !issuance.vc_type_config.contains(&vc_config) {
-            return Err(Errors::format(
-                BadFormat::Received,
-                "Credential config does not match",
-                None,
-            ));
-        }
+        let proof = proof_jwt(cred_req)?;
+        let proof = Verifier::verify_enveloped(proof, Some(issuance.aud.clone())).await?;
+        validate_did_possession(&proof, issuance)?;
 
-        let proof = cred_req
-            .proof
-            .ok_or_else(|| Errors::format(BadFormat::Received, "Proof missing in request", None))?;
-        let jwt = match proof {
-            CredReqProof::Jwt { jwt } => Jwt::parse(&jwt)?,
-            _ => {
-                return Err(Errors::format(
-                    BadFormat::Received,
-                    "Proof method does not match with requested one",
-                    None,
-                ));
-            }
-        };
-
-        let (did, claims) =
-            Verifier::verify_enveloped::<DidPossession>(&jwt, Some(&issuance.aud)).await?;
-
-        validate_did_possession(&claims, &did, &issuance.nonce)?;
-        is_active(claims.iat)?;
-        Ok((did.id().to_string(), vc_config))
+        Ok((proof.kid()?.did().clone(), vc_config))
     }
 
-    async fn sign_claims(&self, claims: &VCJwtClaims) -> Outcome<String> {
+    async fn sign_claims(&self, claims: &JwtClaims<VcPayload>) -> Outcome<Jwt<VcPayload>> {
         info!("Issuing credential");
 
-        let lock = self.identity.read().await;
-        let did = lock.did();
-        let key_ref = lock.key_ref();
-
+        let (did, key_ref) = {
+            let identity = self.identity.read().await;
+            (identity.did().clone(), identity.key_ref().clone())
+        };
         let pem_helper: PemHelper = self.vault.read(None, key_ref.internal()).await?;
         let key = PrivateKey::try_from(pem_helper)?;
+        let sig_ctx = SigningCtx::new(did, key, key_ref.fragment().to_string());
 
-        let sig_ctx = SigningCtx::new(did.clone(), key, key_ref.fragment().to_string());
-        let claims = serde_json::to_value(claims)?;
-
-        let vc_jwt = Signer::sign_enveloped(&sig_ctx, "vc+ld+json+jwt", "vc+ld+json", &claims)?;
-        Ok(vc_jwt.as_str().to_string())
+        Signer::sign_enveloped(&sig_ctx, claims)
     }
 }
 
@@ -272,17 +240,54 @@ impl IssuerService {
 
 // ===== Free helpers ==========================================================
 
-fn validate_did_possession(claims: &DidPossession, did: &Did, nonce: &str) -> Outcome<()> {
-    info!("Validating did possession");
-    if let Some(iss) = &claims.iss {
-        if iss != did.id() {
-            return Err(Errors::forbidden("Invalid proof of did possession", None));
+/// The configuration asked for, which must be one of those offered.
+fn requested_config(issuance: &issuance::Model, cred_req: &CredentialRequest) -> Outcome<VcTypeConfig> {
+    let vc_config = cred_req.credential_configuration_id.clone().ok_or_else(|| {
+        Errors::format(BadFormat::Received, "credential configuration id is missing", None)
+    })?;
+    if !issuance.vc_type_config.contains(&vc_config) {
+        return Err(Errors::format(BadFormat::Received, "Credential config does not match", None));
+    }
+    Ok(vc_config)
+}
+
+/// The proof of possession, only as a JWT.
+fn proof_jwt(cred_req: CredentialRequest) -> Outcome<Jwt<DidPossession>> {
+    match cred_req.proof {
+        Some(CredReqProof::Jwt { jwt }) => Jwt::<DidPossession>::parse(&jwt),
+        Some(_) => Err(Errors::format(
+            BadFormat::Received,
+            "Proof method does not match with requested one",
+            None,
+        )),
+        None => Err(Errors::format(BadFormat::Received, "Proof missing in request", None)),
+    }
+}
+
+/// OpenID4VCI 1.0 F.1: the `c_nonce` echoed, `iat` present and not in the future, and `iss`, if
+/// any, the wallet that signed.
+fn validate_did_possession(
+    proof: &Verified<Jwt<DidPossession>>,
+    issuance: &issuance::Model,
+) -> Outcome<()> {
+    info!("Validating proof of possession");
+
+    match proof.claims().nonce() {
+        Some(nonce) if nonce == issuance.nonce => {}
+        Some(_) => return Err(Errors::security("Proof nonce does not match the c_nonce", None)),
+        None => return Err(Errors::security("Proof lacks the c_nonce", None)),
+    }
+
+    let iat = proof
+        .claims()
+        .iat()
+        .ok_or_else(|| Errors::format(BadFormat::Received, "Proof lacks iat", None))?;
+    is_active(iat)?;
+
+    if let Some(iss) = proof.claims().iss() {
+        if iss != proof.kid()?.did().id() {
+            return Err(Errors::security("Proof iss is not the key's DID", None));
         }
     }
-
-    if &claims.nonce != nonce {
-        return Err(Errors::security("nonce mismatch", None));
-    }
-
     Ok(())
 }

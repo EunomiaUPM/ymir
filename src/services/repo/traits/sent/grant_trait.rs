@@ -62,6 +62,15 @@ pub trait SentGrantRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static
     ) -> Outcome<bool>;
 
     async fn finalize_expired(&self, now: DateTime<Utc>) -> Outcome<u64>;
+
+    /// Finalizes the access grants still open (`Processing` / `Pending`) that were created before
+    /// `created_before`: requests whose presentation never came (the peer's wallet failed and
+    /// nobody told, or the peer went away). Returns how many.
+    async fn finalize_stale_pending(
+        &self,
+        created_before: DateTime<Utc>,
+        now: DateTime<Utc>,
+    ) -> Outcome<u64>;
 }
 
 #[cfg(feature = "mock")]
@@ -84,5 +93,6 @@ mockall::mock! {
         async fn get_active_access(&self, user_id: &str, participant_id: &str) -> Outcome<Option<Model>>;
         async fn has_open_access(&self, user_id: &str, participant_id: &str, processing_since: DateTime<Utc>) -> Outcome<bool>;
         async fn finalize_expired(&self, now: DateTime<Utc>) -> Outcome<u64>;
+        async fn finalize_stale_pending(&self, created_before: DateTime<Utc>, now: DateTime<Utc>) -> Outcome<u64>;
     }
 }

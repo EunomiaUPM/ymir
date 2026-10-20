@@ -14,11 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-use super::{VCEvidence, VCRefreshService, VCSchema, VCStatus};
+use super::{VcEvidence, VcRefreshService, VcSchema, VcStatus};
 use crate::types::vcs::{VcIssuer, VcType};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+use crate::utils::OneOrMany;
 use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -26,7 +28,9 @@ pub struct VcDocument {
     #[serde(rename = "@context")]
     pub context: Vec<String>,
     pub id: String,
-    pub r#type: Vec<String>,
+    // pub r#type: Vec<String>,
+    /// One or more types (VC DM §4.5): a string or an array.
+    pub r#type: OneOrMany<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -39,15 +43,15 @@ pub struct VcDocument {
     #[serde(rename = "validUntil", skip_serializing_if = "Option::is_none")]
     pub valid_until: Option<DateTime<Utc>>,
     #[serde(rename = "credentialStatus", skip_serializing_if = "Option::is_none")]
-    pub credential_status: Option<VCStatus>,
+    pub credential_status: Option<VcStatus>,
     #[serde(rename = "credentialSchema", skip_serializing_if = "Option::is_none")]
-    pub credential_schema: Option<Vec<VCSchema>>,
+    pub credential_schema: Option<Vec<VcSchema>>,
     #[serde(rename = "refreshService", skip_serializing_if = "Option::is_none")]
-    pub refresh_service: Option<VCRefreshService>,
+    pub refresh_service: Option<VcRefreshService>,
     #[serde(rename = "termsOfUse", skip_serializing_if = "Option::is_none")]
     pub terms_of_use: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub evidence: Option<Vec<VCEvidence>>,
+    pub evidence: Option<Vec<VcEvidence>>,
 }
 
 impl VcDocument {

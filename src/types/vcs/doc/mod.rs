@@ -22,9 +22,9 @@ mod status;
 mod vc_builder;
 mod vc_doc;
 
-pub use evidence::VCEvidence;
-pub use refresh_service::VCRefreshService;
+pub use evidence::VcEvidence;
+pub use refresh_service::VcRefreshService;
 pub use schema::*;
-pub use status::VCStatus;
+pub use status::VcStatus;
 pub use vc_builder::VcDocumentBuilder;
 pub use vc_doc::VcDocument;

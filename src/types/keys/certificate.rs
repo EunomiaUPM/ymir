@@ -30,15 +30,17 @@ pub struct Certificate {
 }
 
 impl Certificate {
+    pub fn try_from_der(der: &[u8]) -> Outcome<Self> {
+        X509Certificate::from_der(der)
+            .map_err(|e| Errors::parse("Invalid certificate structure", Some(Box::new(e))))?;
+        Ok(Self { der: der.to_vec() })
+    }
+
     pub fn try_from_pem(cert_pem: &str) -> Outcome<Self> {
         let normalized = normalize_pem(cert_pem);
         let (_, pem) = parse_x509_pem(normalized.as_bytes())
             .map_err(|e| Errors::parse("Failed to parse certificate PEM", Some(Box::new(e))))?;
-
-        X509Certificate::from_der(&pem.contents)
-            .map_err(|e| Errors::parse("Invalid certificate structure", Some(Box::new(e))))?;
-
-        Ok(Self { der: pem.contents })
+        Self::try_from_der(&pem.contents)
     }
 
     pub fn der(&self) -> &[u8] {

@@ -15,8 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+pub mod oid4vp_1_0;
 pub mod oid4vp_draft20;
 mod verifier_trait;
+mod validators;
 
 #[cfg(feature = "mock")]
 pub use verifier_trait::MockVerifierTrait;

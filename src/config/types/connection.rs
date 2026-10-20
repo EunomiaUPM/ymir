@@ -18,7 +18,7 @@
 use crate::config::traits::ConnectionConfigTrait;
 use serde::{Deserialize, Serialize};
 
-/// Deployment deployment boundaries and infrastructure environment configuration tracks.
+/// Deployment boundaries and infrastructure environment configuration tracks.
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ConnectionConfig {
     /// Flag indicating if enforcement settings should lock parameters under production conditions.
@@ -26,7 +26,7 @@ pub struct ConnectionConfig {
     /// Flag indicating whether secure key storage interacts with standard real Vault hardware infrastructure.
     pub is_vault_real: bool,
     /// Flag checking if communication nodes are routed via reverse proxy TLS terminators.
-    pub has_tls_proxy: bool,
+    pub has_proxy: bool,
 }
 
 impl ConnectionConfigTrait for ConnectionConfig {

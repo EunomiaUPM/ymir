@@ -20,7 +20,7 @@ use std::{env, fs};
 
 use axum::http::HeaderValue;
 use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use reqwest::Url;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -64,6 +64,12 @@ pub fn decode_url_safe_no_pad(data: &str) -> Outcome<Vec<u8>> {
 /// Encodes an arbitrary byte matrix array slice into an unpadded, URL-safe Base64 string literal.
 pub fn encode_url_safe_no_pad(data: impl AsRef<[u8]>) -> String {
     URL_SAFE_NO_PAD.encode(data)
+}
+
+pub fn decode_std_b64(data: &str) -> Outcome<Vec<u8>> {
+    STANDARD
+        .decode(data)
+        .map_err(|e| Errors::parse("Invalid base64", Some(Box::new(e))))
 }
 
 // ===== FILESYSTEM RAW STORAGE PIPELINES ==========================================================
