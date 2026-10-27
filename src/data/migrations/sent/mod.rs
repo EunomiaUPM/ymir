@@ -20,6 +20,7 @@ use sea_orm_migration::MigrationTrait;
 pub mod m20260622_120020_grant;
 pub mod m20260622_120021_interaction;
 pub mod m20260622_120022_verification;
+pub mod m20261027_120023_grant_rounds;
 
 /// All sent-side migrations, executed together.
 pub fn get_sent_migrations() -> Vec<Box<dyn MigrationTrait>> {
@@ -27,5 +28,6 @@ pub fn get_sent_migrations() -> Vec<Box<dyn MigrationTrait>> {
         Box::new(m20260622_120020_grant::Migration),
         Box::new(m20260622_120021_interaction::Migration),
         Box::new(m20260622_120022_verification::Migration),
+        Box::new(m20261027_120023_grant_rounds::Migration),
     ]
 }

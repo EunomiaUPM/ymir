@@ -24,7 +24,7 @@ use crate::types::jwt::Jwt;
 use crate::types::verification::{DcqlQuery, RequestObjectPayload};
 use crate::utils::Verified;
 
-use super::{PresentationRequest, Requested};
+use super::{PresentationRequest, Requested, VerifierProof};
 use crate::utils::get_query_param;
 
 /// What the wallet keeps of an OpenID4VP 1.0 Authorization Request.
@@ -103,6 +103,7 @@ impl From<AuthorizationRequest> for PresentationRequest {
             nonce: request.nonce,
             state: request.state,
             requested: Requested::Dcql(request.dcql_query),
+            verifier: VerifierProof::Unsigned,
         }
     }
 }

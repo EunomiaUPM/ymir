@@ -24,6 +24,7 @@ use super::super::WalletTrait;
 use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::Outcome;
 use crate::types::dids::{Did, DidDocument};
+use crate::types::verification::PresentationRequest;
 use crate::types::wallet::{DidSearch, Identity, WalletInfo};
 
 pub struct WaltIdService {}
@@ -133,6 +134,18 @@ impl WalletTrait for WaltIdService {
     }
 
     async fn process_oid4vp(&self, _uri: &str) -> Outcome<()> {
+        todo!()
+    }
+
+    async fn resolve_oid4vp(&self, _uri: &str) -> Outcome<PresentationRequest> {
+        todo!()
+    }
+
+    async fn present_oid4vp(&self, _uri: &str) -> Outcome<()> {
+        todo!()
+    }
+
+    async fn refuse_oid4vp(&self, _uri: &str) -> Outcome<()> {
         todo!()
     }
 }

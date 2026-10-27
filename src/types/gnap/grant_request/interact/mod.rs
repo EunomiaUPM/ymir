@@ -18,13 +18,11 @@
 mod finish_callback;
 mod finish_method;
 mod hash_method;
-mod interact_action;
 mod interact_request;
 mod interact_start;
 
 pub use finish_callback::FinishCallback;
 pub use finish_method::FinishMethod;
 pub use hash_method::HashMethod;
-pub use interact_action::InteractAction;
 pub use interact_request::InteractRequest;
 pub use interact_start::InteractStart;

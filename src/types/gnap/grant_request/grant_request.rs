@@ -15,10 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::access::{AccessTokenRequest, AccessType, ResourceAccess};
+use super::access::{AccessTokenRequest, ResourceAccess};
 use super::client::Client;
 use super::grant_request_kind::GrantRequestKind;
-use super::interact::{InteractAction, InteractRequest};
+use super::interact::InteractRequest;
 use super::subject::SubjectRequest;
 use crate::data::entities::sent::interaction;
 use crate::types::gnap::grant_request::credential_request::AccessCredentialRequest;
@@ -56,18 +56,11 @@ impl GrantRequest {
 
     pub fn new_token(
         client: Client,
-        actions: Vec<InteractAction>,
+        access: Vec<ResourceAccess>,
         model: &interaction::Model,
     ) -> Self {
         let access_token = AccessTokenRequest {
-            access: ResourceAccess {
-                r#type: AccessType::ApiAccess,
-                actions: Some(actions),
-                locations: None,
-                datatypes: None,
-                identifier: None,
-                privileges: None,
-            },
+            access,
             label: None,
             flags: None,
         };

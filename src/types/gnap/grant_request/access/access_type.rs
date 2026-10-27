@@ -15,23 +15,34 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::{impl_seaorm_via_str, impl_serde_via_str};
+use crate::impl_serde_via_str;
 use std::convert::Infallible;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum AccessType {
-    ApiAccess,
-    VcExchange,
+    Catalog,
+    Dataset,
+    Callback,
+    Offer,
     Other(String),
+}
+
+impl AccessType {
+    const CATALOG: &'static str = "https://w3id.org/gnap4ds/catalog";
+    const DATASET: &'static str = "https://w3id.org/gnap4ds/dataset";
+    const CALLBACK: &'static str = "https://w3id.org/gnap4ds/callback";
+    const OFFER: &'static str = "https://w3id.org/gnap4ds/offer";
 }
 
 impl Display for AccessType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            AccessType::ApiAccess => "api-access",
-            AccessType::VcExchange => "vc-exchange",
+            AccessType::Catalog => Self::CATALOG,
+            AccessType::Dataset => Self::DATASET,
+            AccessType::Callback => Self::CALLBACK,
+            AccessType::Offer => Self::OFFER,
             AccessType::Other(other) => other.as_str(),
         };
         write!(f, "{}", s)
@@ -42,13 +53,14 @@ impl FromStr for AccessType {
     type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_ascii_lowercase().as_str() {
-            "api-access" => Ok(AccessType::ApiAccess),
-            "vc-exchange" => Ok(AccessType::VcExchange),
-            _ => Ok(AccessType::Other(s.to_string())),
-        }
+        Ok(match s {
+            Self::CATALOG => AccessType::Catalog,
+            Self::DATASET => AccessType::Dataset,
+            Self::CALLBACK => AccessType::Callback,
+            Self::OFFER => AccessType::Offer,
+            _ => AccessType::Other(s.to_string()),
+        })
     }
 }
 
 impl_serde_via_str!(AccessType);
-impl_seaorm_via_str!(AccessType, 32);

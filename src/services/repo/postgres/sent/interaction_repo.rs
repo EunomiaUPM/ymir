@@ -16,9 +16,10 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::DatabaseConnection;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 
 use crate::data::entities::sent::interaction;
+use crate::errors::Outcome;
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::sent::SentInteractionRepoTrait;
 
@@ -43,4 +44,11 @@ impl BasicPostgresRepo for SentInteractionPostgresRepo {
 }
 
 #[async_trait]
-impl SentInteractionRepoTrait for SentInteractionPostgresRepo {}
+impl SentInteractionRepoTrait for SentInteractionPostgresRepo {
+    async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<interaction::Model> {
+        let query = interaction::Entity::find()
+            .filter(interaction::Column::GrantId.eq(grant_id))
+            .order_by_desc(interaction::Column::CreatedAt);
+        self.basic_filter(query, "grant_id", grant_id).await
+    }
+}

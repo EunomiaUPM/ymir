@@ -33,7 +33,7 @@ pub use dcql::{CredentialQuery, CredentialQueryMeta, CredentialSetQuery, DcqlQue
 pub use direct_post_response::DirectPostResponse;
 pub use draft20_request::{DefinitionSource, Draft20Request};
 pub use request_object::{RequestObjectPayload, RequestUriPost};
-pub use presentation_request::{PresentationRequest, Requested};
+pub use presentation_request::{PresentationRequest, Requested, UNTRUSTED_REQUEST, VerifierProof};
 pub use status::VerificationStatus;
 pub use verify_payload::VerifyPayload;
 pub use vp_doc::VpDocument;

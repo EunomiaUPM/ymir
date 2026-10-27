@@ -54,7 +54,7 @@ impl VerifierService {
 
 #[async_trait]
 impl VerifierTrait for VerifierService {
-    fn build_vp_plan(&self, id: &str) -> Outcome<Plan> {
+    fn build_vp_plan(&self, grant_id: &str) -> Outcome<Plan> {
         info!("Managing OIDC4VP");
 
         let requested_vcs = self.config.get_requested_vcs();
@@ -66,7 +66,7 @@ impl VerifierTrait for VerifierService {
         }
 
         Ok(Plan {
-            id: id.to_string(),
+            grant_id: grant_id.to_string(),
             audience: format!("{}{}", self.verifier_url(), base(verifier::VERIFY)),
             vc_type: requested_vcs.to_vec(),
         })

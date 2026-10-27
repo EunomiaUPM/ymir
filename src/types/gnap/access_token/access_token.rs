@@ -28,7 +28,7 @@ pub struct AccessToken {
     pub label: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub manage: Option<TokenManagement>,
-    pub access: ResourceAccess,
+    pub access: Vec<ResourceAccess>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -43,14 +43,7 @@ impl AccessToken {
             value: token.into(),
             label: model.label,
             manage: None,
-            access: ResourceAccess {
-                r#type: model.r#type,
-                actions: Some(model.actions),
-                locations: model.locations,
-                datatypes: model.datatypes,
-                identifier: model.identifier,
-                privileges: model.privileges,
-            },
+            access: model.granted.unwrap_or(model.access),
             expires_in: None,
             key: None,
             flags: model.flags,

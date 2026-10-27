@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use crate::types::vcs::VPDef;
 use crate::types::verification::DcqlQuery;
 
 /// What a verifier asks for: a Presentation Definition (draft 20) or a DCQL query (1.0).
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Requested {
     Definition(VPDef),
@@ -28,7 +28,19 @@ pub enum Requested {
 }
 
 /// An OpenID4VP Authorization Request, whatever its version.
-#[derive(Debug, Serialize)]
+/// Code of the error a wallet answers when the Request Object is not authentic.
+pub const UNTRUSTED_REQUEST: u32 = 4401;
+
+/// Who signed the request, as far as the wallet could check.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum VerifierProof {
+    SignedBy { did: String },
+    #[default]
+    Unsigned,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PresentationRequest {
     /// Full Client Identifier: the `aud` of every presentation.
     pub client_id: String,
@@ -38,4 +50,6 @@ pub struct PresentationRequest {
     /// Echoed back with the answer when present.
     pub state: Option<String>,
     pub requested: Requested,
+    #[serde(default)]
+    pub verifier: VerifierProof,
 }

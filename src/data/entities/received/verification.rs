@@ -29,7 +29,8 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "recv_verification")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: String, // REQUEST
+    pub id: String, // RANDOM
+    pub grant_id: String, // REQUEST
     pub state: String, // RANDOM
     pub nonce: String, // RANDOM
     #[sea_orm(column_type = "JsonBinary")]
@@ -46,7 +47,7 @@ pub struct Model {
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub id: String,           // REQUEST
+    pub grant_id: String,     // REQUEST
     pub audience: String,     // SEMI-RANDOM
     pub vc_type: Vec<VcType>, // REQUEST
 }
@@ -65,7 +66,8 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             .collect();
         let audience = format!("{}/{}", self.audience, &state);
         ActiveModel {
-            id: ActiveValue::Set(self.id),
+            id: ActiveValue::Set(uuid::Uuid::new_v4().to_string()),
+            grant_id: ActiveValue::Set(self.grant_id),
             state: ActiveValue::Set(state),
             nonce: ActiveValue::Set(nonce),
             vc_type: ActiveValue::Set(self.vc_type),
@@ -84,6 +86,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
             id: ActiveValue::Set(self.id),
+            grant_id: ActiveValue::Set(self.grant_id),
             state: ActiveValue::Set(self.state),
             nonce: ActiveValue::Set(self.nonce),
             vc_type: ActiveValue::Set(self.vc_type),

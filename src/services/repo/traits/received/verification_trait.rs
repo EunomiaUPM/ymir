@@ -19,6 +19,7 @@ use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::Outcome;
 use crate::services::repo::traits::CrudRepoTrait;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 /// Data Repository Contract for Received OpenID4VP Presentation Requests.
 ///
@@ -31,6 +32,19 @@ pub trait RecvVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 
     /// Essential for securely mapping incoming token/presentation callback handshakes
     /// back to the initial authorization transactional context.
     async fn get_by_state(&self, state: &str) -> Outcome<Model>;
+
+    /// The latest verification of the grant.
+    async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<Model>;
+
+    /// Every verification of the grant, oldest first.
+    async fn get_all_by_grant(&self, grant_id: &str) -> Outcome<Vec<Model>>;
+
+    /// Marks as expired the verifications still pending that were created before `created_before`.
+    async fn expire_stale_pending(
+        &self,
+        created_before: DateTime<Utc>,
+        now: DateTime<Utc>,
+    ) -> Outcome<u64>;
 }
 
 #[cfg(feature = "mock")]
@@ -49,5 +63,12 @@ mockall::mock! {
     #[async_trait]
     impl RecvVerificationRepoTrait for RecvVerificationRepoTrait {
         async fn get_by_state(&self, state: &str) -> Outcome<Model>;
+        async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<Model>;
+        async fn get_all_by_grant(&self, grant_id: &str) -> Outcome<Vec<Model>>;
+        async fn expire_stale_pending(
+            &self,
+            created_before: DateTime<Utc>,
+            now: DateTime<Utc>,
+        ) -> Outcome<u64>;
     }
 }

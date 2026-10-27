@@ -86,7 +86,7 @@ impl VerifierService {
 impl VerifierTrait for VerifierService {
     /// The plan's audience is the response URI without the state, which [`Plan`]'s conversion
     /// appends: once stored, `audience` is the verification's response URI.
-    fn build_vp_plan(&self, id: &str) -> Outcome<Plan> {
+    fn build_vp_plan(&self, grant_id: &str) -> Outcome<Plan> {
         info!("Managing OpenID4VP 1.0");
 
         let requested_vcs = self.config.get_requested_vcs();
@@ -98,7 +98,7 @@ impl VerifierTrait for VerifierService {
         }
 
         Ok(Plan {
-            id: id.to_string(),
+            grant_id: grant_id.to_string(),
             audience: format!("{}{}", self.verifier_url(), base(verifier::VERIFY)),
             vc_type: requested_vcs.to_vec(),
         })

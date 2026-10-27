@@ -16,10 +16,10 @@
  */
 
 use crate::data::entities::sent::verification::{Model, Plan};
-#[cfg(feature = "mock")]
 use crate::errors::Outcome;
 use crate::services::repo::traits::CrudRepoTrait;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 /// Data Repository Contract for Outbound OpenID4VP Verification Challenges.
 ///
@@ -27,7 +27,20 @@ use async_trait::async_trait;
 /// of presentation requests initialized by the verifier component, serving as the state machine
 /// to evaluate incoming Verifiable Presentations against the Presentation Exchange rules.
 #[async_trait]
-pub trait SentVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {}
+pub trait SentVerificationRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
+    /// The latest verification of the grant.
+    async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<Model>;
+
+    /// Every verification of the grant, oldest first.
+    async fn get_all_by_grant(&self, grant_id: &str) -> Outcome<Vec<Model>>;
+
+    /// Marks as expired the verifications still pending that were created before `created_before`.
+    async fn expire_stale_pending(
+        &self,
+        created_before: DateTime<Utc>,
+        now: DateTime<Utc>,
+    ) -> Outcome<u64>;
+}
 
 #[cfg(feature = "mock")]
 mockall::mock! {
@@ -43,5 +56,13 @@ mockall::mock! {
     }
 
     #[async_trait]
-    impl SentVerificationRepoTrait for SentVerificationRepoTrait {}
+    impl SentVerificationRepoTrait for SentVerificationRepoTrait {
+        async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<Model>;
+        async fn get_all_by_grant(&self, grant_id: &str) -> Outcome<Vec<Model>>;
+        async fn expire_stale_pending(
+            &self,
+            created_before: DateTime<Utc>,
+            now: DateTime<Utc>,
+        ) -> Outcome<u64>;
+    }
 }

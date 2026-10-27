@@ -32,6 +32,9 @@ pub trait RecvInteractionRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync {
     /// Executed when a client returns to the continuation endpoint to claim tokens
     /// after the out-of-band user interaction has finalized successfully.
     async fn get_by_continuation_id(&self, continuation_id: &str) -> Outcome<Model>;
+
+    /// The latest interaction of the grant.
+    async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<Model>;
 }
 
 #[cfg(feature = "mock")]
@@ -50,5 +53,6 @@ mockall::mock! {
     #[async_trait]
     impl RecvInteractionRepoTrait for RecvInteractionRepoTrait {
         async fn get_by_continuation_id(&self, continuation_id: &str) -> Outcome<Model>;
+        async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<Model>;
     }
 }

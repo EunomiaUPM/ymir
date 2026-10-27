@@ -35,7 +35,7 @@ pub trait VerifierTrait: Send + Sync + 'static {
     ///
     /// The resulting [`Plan`] establishes the expected cryptographic audience
     /// (the Verifier's endpoint) and the array of allowed VC types.
-    fn build_vp_plan(&self, id: &str) -> Outcome<Plan>;
+    fn build_vp_plan(&self, grant_id: &str) -> Outcome<Plan>;
 
     /// Generates the wallet-facing verification URI used to
     /// initiate the presentation flow.
