@@ -20,6 +20,7 @@ pub mod m20260622_120001_resource_req;
 pub mod m20260622_120002_issuance;
 pub mod m20261001_120000_participant_relation;
 pub mod m20261027_120003_resource_req_access;
+pub mod m20261028_120000_registered_dataset;
 
 // Short aliases — consumers pick the ones they need.
 pub use m20260622_120000_participant as participant;
@@ -27,3 +28,4 @@ pub use m20260622_120001_resource_req as resource_req;
 pub use m20260622_120002_issuance as issuance;
 pub use m20261001_120000_participant_relation as participant_relation;
 pub use m20261027_120003_resource_req_access as resource_req_access;
+pub use m20261028_120000_registered_dataset as registered_dataset;

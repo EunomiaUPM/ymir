@@ -17,7 +17,7 @@
 
 use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::{Errors, Outcome};
-use crate::types::vcs::VPDef;
+use crate::types::vcs::{VPDef, VcType};
 use async_trait::async_trait;
 use crate::types::jwt::Jwt;
 use crate::types::vps::VpPayload;
@@ -34,8 +34,8 @@ pub trait VerifierTrait: Send + Sync + 'static {
     /// Creates a new verification plan associated with a grant.
     ///
     /// The resulting [`Plan`] establishes the expected cryptographic audience
-    /// (the Verifier's endpoint) and the array of allowed VC types.
-    fn build_vp_plan(&self, grant_id: &str) -> Outcome<Plan>;
+    /// (the Verifier's endpoint) and the VC types to ask for, `vcs`, which the caller decides.
+    fn build_vp_plan(&self, grant_id: &str, vcs: &[VcType]) -> Outcome<Plan>;
 
     /// Generates the wallet-facing verification URI used to
     /// initiate the presentation flow.

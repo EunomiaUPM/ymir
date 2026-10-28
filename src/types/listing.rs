@@ -117,10 +117,12 @@ pub struct VcRequestListFilter {
 
 /// Filter over grants this connector received.
 ///
-/// Visibility: grants assigned to the caller's role or to a role below it, and any `Public` one.
+/// Visibility: grants assigned to the caller's role or to a role below it, any `Public` one, and
+/// any that grants a registered dataset the caller sees.
 #[derive(Debug, Clone)]
 pub struct RecvGrantListFilter {
-    /// Caller's role.
+    /// Caller's id and role.
+    pub user_id: String,
     pub role: RolePath,
     pub kind: GrantKind,
     pub nick_contains: Option<String>,

@@ -33,7 +33,7 @@ use crate::types::dids::Did;
 use crate::types::jwt::{Jwt, JwtHeaderTrait};
 use crate::types::vcs::{VcPayload};
 use crate::types::vps::{VpPayload};
-use crate::types::vcs::{VPDef, W3cDataModelVersion};
+use crate::types::vcs::{VPDef, VcType, W3cDataModelVersion};
 use crate::types::verification::VerificationStatus;
 use crate::utils::{Verified};
 
@@ -54,11 +54,10 @@ impl VerifierService {
 
 #[async_trait]
 impl VerifierTrait for VerifierService {
-    fn build_vp_plan(&self, grant_id: &str) -> Outcome<Plan> {
+    fn build_vp_plan(&self, grant_id: &str, vcs: &[VcType]) -> Outcome<Plan> {
         info!("Managing OIDC4VP");
 
-        let requested_vcs = self.config.get_requested_vcs();
-        if requested_vcs.is_empty() {
+        if vcs.is_empty() {
             return Err(Errors::unauthorized(
                 "Unable to verify following oidc4vp",
                 None,
@@ -68,7 +67,7 @@ impl VerifierTrait for VerifierService {
         Ok(Plan {
             grant_id: grant_id.to_string(),
             audience: format!("{}{}", self.verifier_url(), base(verifier::VERIFY)),
-            vc_type: requested_vcs.to_vec(),
+            vc_type: vcs.to_vec(),
         })
     }
 

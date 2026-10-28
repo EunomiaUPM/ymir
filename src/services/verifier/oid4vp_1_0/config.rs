@@ -17,29 +17,23 @@
 
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::CommonHostsConfig;
-use crate::types::vcs::VcType;
 use crate::types::verification::RequestPassing;
 
 pub struct VerifierConfig {
     hosts: CommonHostsConfig,
     api_path: String,
-    requested_vcs: Vec<VcType>,
     request_passing: RequestPassing,
 }
 
 impl VerifierConfig {
-    pub fn new(hosts: CommonHostsConfig, api_path: String, requested_vcs: Vec<VcType>, request_passing: RequestPassing) -> Self {
+    pub fn new(hosts: CommonHostsConfig, api_path: String, request_passing: RequestPassing) -> Self {
         Self {
             hosts,
             api_path,
-            requested_vcs,
             request_passing,
         }
     }
 
-    pub fn get_requested_vcs(&self) -> &[VcType] {
-        &self.requested_vcs
-    }
     pub fn get_api_path(&self) -> &str {
         &self.api_path
     }

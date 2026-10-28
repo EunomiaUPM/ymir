@@ -42,7 +42,7 @@ use crate::types::dids::Did;
 use crate::types::jwt::{Jwt, JwtClaims, JwtHeaderTrait};
 use crate::types::keys::{Alg, PrivateKey, SigningCtx};
 use crate::types::secrets::PemHelper;
-use crate::types::vcs::{VPDef, VcFormat, VcPayload};
+use crate::types::vcs::{VPDef, VcFormat, VcPayload, VcType};
 use crate::types::verification::request_object::SELF_ISSUED_AUDIENCE;
 use crate::types::verification::{CredentialQuery, DECENTRALIZED_IDENTIFIER_PREFIX, DIRECT_POST, DcqlQuery, REDIRECT_URI_PREFIX, RequestObjectPayload, RequestPassing, VerificationStatus};
 use crate::types::vps::VpPayload;
@@ -86,11 +86,10 @@ impl VerifierService {
 impl VerifierTrait for VerifierService {
     /// The plan's audience is the response URI without the state, which [`Plan`]'s conversion
     /// appends: once stored, `audience` is the verification's response URI.
-    fn build_vp_plan(&self, grant_id: &str) -> Outcome<Plan> {
+    fn build_vp_plan(&self, grant_id: &str, vcs: &[VcType]) -> Outcome<Plan> {
         info!("Managing OpenID4VP 1.0");
 
-        let requested_vcs = self.config.get_requested_vcs();
-        if requested_vcs.is_empty() {
+        if vcs.is_empty() {
             return Err(Errors::unauthorized(
                 "Unable to verify following OpenID4VP 1.0: no credentials requested",
                 None,
@@ -100,7 +99,7 @@ impl VerifierTrait for VerifierService {
         Ok(Plan {
             grant_id: grant_id.to_string(),
             audience: format!("{}{}", self.verifier_url(), base(verifier::VERIFY)),
-            vc_type: requested_vcs.to_vec(),
+            vc_type: vcs.to_vec(),
         })
     }
 

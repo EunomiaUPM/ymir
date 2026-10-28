@@ -18,6 +18,7 @@
 mod issuance_trait;
 mod participant_relation_trait;
 mod participant_trait;
+mod registered_dataset_trait;
 mod resource_req_trait;
 
 pub use issuance_trait::IssuanceRepoTrait;
@@ -29,6 +30,9 @@ pub use participant_relation_trait::ParticipantRelationRepoTrait;
 #[cfg(feature = "mock")]
 pub use participant_trait::MockParticipantRepoTrait;
 pub use participant_trait::ParticipantRepoTrait;
+#[cfg(feature = "mock")]
+pub use registered_dataset_trait::MockRegisteredDatasetRepoTrait;
+pub use registered_dataset_trait::RegisteredDatasetRepoTrait;
 #[cfg(feature = "mock")]
 pub use resource_req_trait::MockResourceReqRepoTrait;
 pub use resource_req_trait::ResourceReqRepoTrait;
