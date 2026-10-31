@@ -16,6 +16,8 @@
  */
 
 mod api_trait;
+mod common_trait;
+mod config_loader;
 mod connection_trait;
 mod db_trait;
 mod did_trait;
@@ -25,6 +27,8 @@ mod verify_req_trait;
 mod wallet_trait;
 
 pub use api_trait::ApiConfigTrait;
+pub use common_trait::CommonConfigTrait;
+pub use config_loader::ConfigLoader;
 pub use connection_trait::ConnectionConfigTrait;
 pub use db_trait::DatabaseConfigTrait;
 pub use did_trait::DidConfigTrait;

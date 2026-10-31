@@ -16,6 +16,7 @@
  */
 
 mod api;
+mod common;
 mod connection;
 mod db;
 mod dids;
@@ -25,6 +26,7 @@ mod verify_req;
 mod wallet;
 
 pub use api::*;
+pub use common::CommonConfig;
 pub use connection::*;
 pub use db::*;
 pub use dids::*;

@@ -31,11 +31,34 @@ reqwest = { workspace = true }
 uuid = { workspace = true }
 x509-parser = { workspace = true }
 mockall = { workspace = true, optional = true }
+url = { workspace = true }
+json_to_table = { workspace = true }
+serde_norway = { workspace = true }
+arc-swap = { workspace = true }
+jsonschema = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+bytes = { workspace = true }
+http = { workspace = true }
+tracing-subscriber = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+tokio-util = { workspace = true }
+clap = { workspace = true }
+axum-server = { workspace = true }
+rustls = { workspace = true }
+tonic = { workspace = true, optional = true }
+tonic-reflection = { workspace = true, optional = true }
+prost-types = { workspace = true, optional = true }
+redis = { workspace = true, optional = true }
 
 [features]
 # mockall doubles of the service and repository traits, for the tests of dependent crates.
 mock = ["dep:mockall"]
+# gRPC plane of the boot: tonic server, reflection and the gRPC adapter helpers.
+grpc = ["dep:tonic", "dep:tonic-reflection", "dep:prost-types"]
+# Redis-backed caches and the boot-time cache flush.
+redis = ["dep:redis"]
 
 [dev-dependencies]
-tracing-subscriber = { workspace = true }
-opentelemetry_sdk = { workspace = true }
+opentelemetry_sdk = { workspace = true, features = ["testing"] }

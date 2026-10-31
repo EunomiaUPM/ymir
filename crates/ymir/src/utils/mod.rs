@@ -17,16 +17,20 @@
 
 mod client;
 mod http;
+mod ids;
 mod one_or_many;
 mod parse;
 mod present;
 mod token;
+mod values;
 mod verified;
 
 pub use client::{http_client, stream_client};
 pub use http::*;
+pub use ids::*;
 pub use one_or_many::OneOrMany;
 pub use parse::*;
 pub use present::*;
 pub use token::*;
+pub use values::*;
 pub use verified::{Verifiable, Verified};

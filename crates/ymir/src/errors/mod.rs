@@ -18,11 +18,13 @@
 mod constructors;
 mod core;
 mod helpers;
+mod not_found;
 mod response;
 mod sub_errors;
 
 // Re-expose primary structural error representation entity.
 pub use core::Errors;
+pub use not_found::{NotFoundExt, ResourceError};
 pub use sub_errors::*;
 
 use axum::response::Response;
