@@ -1,0 +1,41 @@
+[package]
+name = "ymir"
+version = "0.8.0"
+edition.workspace = true
+
+[dependencies]
+sea-orm = { workspace = true }
+async-trait = { workspace = true }
+vaultrs = { workspace = true }
+axum = { workspace = true }
+tokio = { workspace = true }
+urlencoding = { workspace = true }
+sea-orm-migration = { workspace = true }
+urn = { workspace = true }
+serde_urlencoded = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+opentelemetry = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+ed25519-dalek = { workspace = true }
+rsa = { workspace = true }
+sha2 = { workspace = true }
+rand = { workspace = true }
+pkcs8 = { workspace = true }
+bs58 = { workspace = true }
+base64 = { workspace = true }
+json-canon = { workspace = true }
+reqwest = { workspace = true }
+uuid = { workspace = true }
+x509-parser = { workspace = true }
+mockall = { workspace = true, optional = true }
+
+[features]
+# mockall doubles of the service and repository traits, for the tests of dependent crates.
+mock = ["dep:mockall"]
+
+[dev-dependencies]
+tracing-subscriber = { workspace = true }
+opentelemetry_sdk = { workspace = true }
