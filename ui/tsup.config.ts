@@ -5,6 +5,7 @@ export default defineConfig({
     index: "src/index.ts",
     "json/index": "src/json/index.ts",
     "wallet/index": "src/wallet/index.ts",
+    "events/index": "src/events/index.ts",
   },
   format: ["esm"],
   dts: true,

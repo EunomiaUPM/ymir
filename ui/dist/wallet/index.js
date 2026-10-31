@@ -7,7 +7,8 @@ import {
   WalletLayout,
   WalletOidc4vciView,
   WalletOidc4vpView
-} from "../chunk-QPVAQWPD.js";
+} from "../chunk-AHPZJI4Y.js";
+import "../chunk-K5VN2DSF.js";
 import "../chunk-4GNLXNMN.js";
 export {
   WALLET_KEYS_QUERY_KEY,
