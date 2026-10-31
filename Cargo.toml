@@ -1,6 +1,8 @@
 [workspace]
 resolver = "3"
 members = ["crates/ymir", "crates/ymir-events"]
+# The built-in OAuth server, pending its port to ymir::oauth (see its README).
+exclude = ["crates/ymir-oauth"]
 
 [workspace.package]
 edition = "2024"
