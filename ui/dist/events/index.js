@@ -7,10 +7,10 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle
-} from "../chunk-Q6HMGZQ5.js";
+} from "../chunk-A6ZPWGMH.js";
 import {
   JsonTable
-} from "../chunk-OSJWFAUF.js";
+} from "../chunk-VTWMQZBI.js";
 import {
   Badge,
   Button,
@@ -32,11 +32,11 @@ import {
   Skeleton,
   customInstance,
   useTableQueryParams
-} from "../chunk-K5VN2DSF.js";
+} from "../chunk-CZL7FYB6.js";
 import {
   Identifier,
   cn
-} from "../chunk-4GNLXNMN.js";
+} from "../chunk-LDYPVTBN.js";
 
 // src/events/api.ts
 var ROOT = "/events";

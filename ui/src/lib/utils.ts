@@ -186,21 +186,21 @@ export const encodePathId = (id: string): string => {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 };
 
+/** The id behind a segment made by `encodePathId`; throws on anything else, a raw DID included. */
 export const decodePathId = (encoded: string): string => {
+  if (!/^[A-Za-z0-9_-]+$/.test(encoded)) throw new Error(`"${encoded}" is not a base64url path id`);
   const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+  const id = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  // Only the canonical form, as the backend's `PathId` takes it.
+  if (encodePathId(id) !== encoded) throw new Error(`"${encoded}" is not a canonical base64url path id`);
+  return id;
 };
 
 // Route params for ids such as did:web:host%3Aport, which the router would decode twice.
+// A segment that is not base64url fails the route, so a raw DID in the URL is not taken.
 export const pathIdParams = <P extends string>(key: P) => ({
-  parse: (raw: Record<P, string>): Record<P, string> => {
-    try {
-      return { ...raw, [key]: decodePathId(raw[key]) };
-    } catch {
-      return raw;
-    }
-  },
+  parse: (raw: Record<P, string>): Record<P, string> => ({ ...raw, [key]: decodePathId(raw[key]) }),
   stringify: (params: Record<P, string>): Record<P, string> => ({ ...params, [key]: encodePathId(params[key]) }),
 });
 

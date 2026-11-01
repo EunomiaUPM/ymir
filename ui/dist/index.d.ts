@@ -161,6 +161,7 @@ declare const getFriendlyVCType: (type: string) => string;
  * without padding, which survives any number of URL decodings on the way.
  */
 declare const encodePathId: (id: string) => string;
+/** The id behind a segment made by `encodePathId`; throws on anything else, a raw DID included. */
 declare const decodePathId: (encoded: string) => string;
 declare const pathIdParams: <P extends string>(key: P) => {
     parse: (raw: Record<P, string>) => Record<P, string>;

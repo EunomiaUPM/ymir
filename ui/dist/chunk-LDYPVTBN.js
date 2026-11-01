@@ -91,18 +91,15 @@ var encodePathId = (id) => {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 };
 var decodePathId = (encoded) => {
+  if (!/^[A-Za-z0-9_-]+$/.test(encoded)) throw new Error(`"${encoded}" is not a base64url path id`);
   const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+  const id = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  if (encodePathId(id) !== encoded) throw new Error(`"${encoded}" is not a canonical base64url path id`);
+  return id;
 };
 var pathIdParams = (key) => ({
-  parse: (raw) => {
-    try {
-      return { ...raw, [key]: decodePathId(raw[key]) };
-    } catch {
-      return raw;
-    }
-  },
+  parse: (raw) => ({ ...raw, [key]: decodePathId(raw[key]) }),
   stringify: (params) => ({ ...params, [key]: encodePathId(params[key]) })
 });
 var grantBadgeState = (status) => status === "Finalized" ? "expired" : status;
@@ -168,4 +165,4 @@ export {
   grantBadgeState,
   Identifier
 };
-//# sourceMappingURL=chunk-4GNLXNMN.js.map
+//# sourceMappingURL=chunk-LDYPVTBN.js.map

@@ -25,11 +25,11 @@ import {
   Skeleton,
   customInstance,
   useLink
-} from "./chunk-K5VN2DSF.js";
+} from "./chunk-CZL7FYB6.js";
 import {
   Identifier,
   cn
-} from "./chunk-4GNLXNMN.js";
+} from "./chunk-LDYPVTBN.js";
 
 // src/wallet/WalletLayout.tsx
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1615,4 +1615,4 @@ export {
   WalletOidc4vpView,
   WalletOidc4vciView
 };
-//# sourceMappingURL=chunk-AHPZJI4Y.js.map
+//# sourceMappingURL=chunk-X4X3RSGO.js.map
