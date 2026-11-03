@@ -17,6 +17,7 @@
 
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::gnap::grant_request::interact::{FinishMethod, HashMethod, InteractStart};
+use chrono::{DateTime, Utc};
 use rand::Rng;
 use rand::distributions::Alphanumeric;
 use sea_orm::ActiveValue;
@@ -27,7 +28,8 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sent_interactions")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: String, // REQUEST
+    pub id: String, // RANDOM
+    pub grant_id: String, // REQUEST
     #[sea_orm(column_type = "JsonBinary")]
     pub start: Vec<InteractStart>, // REQUEST
     pub method: FinishMethod,              // REQUEST
@@ -42,11 +44,12 @@ pub struct Model {
     pub oidc_vp_uri: Option<String>,       // RESPONSE
     pub interact_ref: Option<String>,      // POST-RESPONSE
     pub hash: Option<String>,              // POST-RESPONSE
+    pub created_at: DateTime<Utc>,         // DEFAULT
 }
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub id: String,                      // REQUEST
+    pub grant_id: String,                // REQUEST
     pub start: Vec<InteractStart>,       // REQUEST
     pub method: FinishMethod,            // REQUEST
     pub callback_uri: String,            // REQUEST
@@ -63,7 +66,8 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             .collect();
         let hash_method = self.hash_method.unwrap_or(HashMethod::Sha256);
         ActiveModel {
-            id: ActiveValue::Set(self.id),
+            id: ActiveValue::Set(uuid::Uuid::new_v4().to_string()),
+            grant_id: ActiveValue::Set(self.grant_id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
             callback_uri: ActiveValue::Set(self.callback_uri),
@@ -77,6 +81,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             oidc_vp_uri: ActiveValue::Set(None),
             interact_ref: ActiveValue::Set(None),
             hash: ActiveValue::Set(None),
+            created_at: ActiveValue::Set(Utc::now()),
         }
     }
 }
@@ -85,6 +90,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
             id: ActiveValue::Set(self.id),
+            grant_id: ActiveValue::Set(self.grant_id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
             callback_uri: ActiveValue::Set(self.callback_uri),
@@ -98,6 +104,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             oidc_vp_uri: ActiveValue::Set(self.oidc_vp_uri),
             interact_ref: ActiveValue::Set(self.interact_ref),
             hash: ActiveValue::Set(self.hash),
+            created_at: ActiveValue::Set(self.created_at),
         }
     }
 }
