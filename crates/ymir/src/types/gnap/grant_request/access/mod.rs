@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod access_action;
 mod access_need;
 mod access_request;
 mod access_token_flag;
 mod access_type;
 mod resource_access;
 
+pub use access_action::AccessAction;
 pub use access_need::{dsp_base, location_matches, AccessNeed};
 pub use access_request::AccessTokenRequest;
 pub use access_token_flag::AccessTokenFlag;

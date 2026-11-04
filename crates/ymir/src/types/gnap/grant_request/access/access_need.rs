@@ -19,7 +19,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::{AccessType, ResourceAccess};
+use super::{AccessAction, AccessType, ResourceAccess};
 
 const DATASETS: &str = "/catalog/datasets";
 const OFFERS: &str = "/negotiations/offers";
@@ -29,7 +29,12 @@ const OFFERS: &str = "/negotiations/offers";
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum AccessNeed {
     Catalog { base: String },
-    Dataset { base: String, id: String },
+    Dataset {
+        base: String,
+        id: String,
+        #[serde(default)]
+        action: AccessAction,
+    },
     /// A message on a process already open: any token of the grant, then the counterparty rule.
     Process { base: String },
     Callback { base: String },
@@ -47,17 +52,30 @@ impl AccessNeed {
             return Self::Callback { base };
         }
         match dataset {
-            Some(id) => Self::Dataset { base, id: id.to_string() },
+            Some(id) if url.contains("/negotiations") => Self::dataset(base, id, AccessAction::Use),
+            Some(id) => Self::dataset(base, id, AccessAction::View),
             None if url.contains("/catalog/") => Self::Catalog { base },
             None => Self::Process { base },
         }
+    }
+
+    /// The need of `action` on dataset `id`.
+    pub fn dataset(base: String, id: &str, action: AccessAction) -> Self {
+        Self::Dataset { base, id: id.to_string(), action }
     }
 
     /// The `access` to ask for when no grant covers this need.
     pub fn to_request(&self) -> Vec<ResourceAccess> {
         match self {
             Self::Catalog { base } => vec![ResourceAccess::datasets_of(format!("{base}{DATASETS}"))],
-            Self::Dataset { id, .. } => vec![ResourceAccess::dataset(id.clone())],
+            // Reading the dataset goes with using it: no action includes another.
+            Self::Dataset { id, action: AccessAction::Use, .. } => {
+                let actions = vec![AccessAction::View, AccessAction::Use];
+                vec![ResourceAccess::dataset_for(id.clone(), actions)]
+            }
+            Self::Dataset { id, action, .. } => {
+                vec![ResourceAccess::dataset_for(id.clone(), vec![action.clone()])]
+            }
             Self::Process { base } | Self::Callback { base } => {
                 vec![ResourceAccess::callback(base.clone())]
             }
@@ -86,9 +104,10 @@ impl AccessNeed {
                     || located(AccessType::Dataset, &format!("{base}{DATASETS}"))
             }
             // Granted datasets come by id, fixed when granted: a generic location covers none.
-            Self::Dataset { id, .. } => granted.iter().any(|access| {
+            Self::Dataset { id, action, .. } => granted.iter().any(|access| {
                 access.r#type == AccessType::Dataset
                     && access.identifier.as_deref() == Some(id.as_str())
+                    && access.allows(action)
             }),
             Self::Process { .. } => !granted.is_empty(),
             Self::Callback { base } => located(AccessType::Callback, base),

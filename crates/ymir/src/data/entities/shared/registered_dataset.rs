@@ -15,17 +15,24 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! A dataset the catalog publishes, registered with the AS (GNAP RS): what a grant can give, what
-//! it asks for, and who owns it inside the connector.
+//! A dataset the catalog publishes, registered with the AS (GNAP RS): what a grant can give, the
+//! offers that say what it asks for, and who owns it inside the connector.
 
 use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::oauth::RolePath;
 use crate::types::participants::Visibility;
-use crate::types::vcs::VcType;
 use chrono::{DateTime, Utc};
-use sea_orm::ActiveValue;
+use sea_orm::{ActiveValue, FromJsonQueryResult};
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+/// An offer of a dataset: its ODRL as the catalog holds it, for the AS to read.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, FromJsonQueryResult)]
+pub struct RegisteredOffer {
+    pub id: String,
+    pub odrl: Value,
+}
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "registered_datasets")]
@@ -36,9 +43,9 @@ pub struct Model {
     pub catalog_id: String,
     /// The `<base>/catalog/datasets` it is published under.
     pub location: String,
-    /// Credentials it asks of a peer beyond the base.
+    /// Its offers, or those of its catalog if it has none.
     #[sea_orm(column_type = "JsonBinary")]
-    pub requirements: Vec<VcType>,
+    pub offers: Vec<RegisteredOffer>,
     pub owner_user_id: String,
     pub owner_role: RolePath,
     pub owner_visibility: Visibility,
@@ -51,7 +58,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             id: ActiveValue::Set(self.id),
             catalog_id: ActiveValue::Set(self.catalog_id),
             location: ActiveValue::Set(self.location),
-            requirements: ActiveValue::Set(self.requirements),
+            offers: ActiveValue::Set(self.offers),
             owner_user_id: ActiveValue::Set(self.owner_user_id),
             owner_role: ActiveValue::Set(self.owner_role),
             owner_visibility: ActiveValue::Set(self.owner_visibility),

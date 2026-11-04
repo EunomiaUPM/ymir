@@ -18,13 +18,13 @@
 use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
 
-use super::AccessType;
+use super::{AccessAction, AccessType};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, FromJsonQueryResult)]
 pub struct ResourceAccess {
     pub r#type: AccessType,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub actions: Option<Vec<String>>,
+    pub actions: Option<Vec<AccessAction>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub locations: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -55,6 +55,14 @@ impl ResourceAccess {
         Self::new(AccessType::Dataset, None, Some(identifier.into()))
     }
 
+    /// `dataset` by id for `actions`.
+    pub fn dataset_for(identifier: impl Into<String>, actions: Vec<AccessAction>) -> Self {
+        Self {
+            actions: Some(actions),
+            ..Self::dataset(identifier)
+        }
+    }
+
     pub fn datasets_of(location: impl Into<String>) -> Self {
         Self::new(AccessType::Dataset, Some(vec![location.into()]), None)
     }
@@ -65,5 +73,13 @@ impl ResourceAccess {
 
     pub fn offer(location: impl Into<String>) -> Self {
         Self::new(AccessType::Offer, Some(vec![location.into()]), None)
+    }
+
+    /// Whether this element allows `action`; without `actions` it allows only `view`.
+    pub fn allows(&self, action: &AccessAction) -> bool {
+        match &self.actions {
+            Some(actions) if !actions.is_empty() => actions.contains(action),
+            _ => *action == AccessAction::View,
+        }
     }
 }
