@@ -27,7 +27,7 @@ use urlencoding::encode;
 
 use super::super::VerifierTrait;
 use super::VerifierConfig;
-use crate::capabilities::{Signer, Verifier};
+use crate::capabilities::{Signer, VcStatusCheck, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::received::verification::{Model, Plan};
@@ -336,6 +336,7 @@ impl VerifierService {
         // TODO: trusted-issuer list once available (DCQL trusted_authorities)
         validate_valid_from(&vc)?;
         validate_valid_until(&vc)?;
+        VcStatusCheck::check(&vc).await?;
 
         info!("VC verification successful");
         Ok(vc.claims().vc_doc().r#type.as_slice().to_vec())

@@ -18,8 +18,10 @@
 mod digest_sri;
 mod http_sig;
 mod signer;
+mod vc_status_check;
 mod verifier;
 pub use digest_sri::*;
 pub use http_sig::*;
 pub use signer::*;
+pub use vc_status_check::*;
 pub use verifier::*;

@@ -47,6 +47,7 @@ pub enum DidServiceType {
     AuthorizationServer,
     CredentialIssuer,
     FederatedCatalog,
+    BitstringStatusList,
     Other(String),
 }
 
@@ -56,6 +57,7 @@ impl Display for DidServiceType {
             DidServiceType::AuthorizationServer => "AuthorizationServer",
             DidServiceType::CredentialIssuer => "CredentialIssuer",
             DidServiceType::FederatedCatalog => "FederatedCatalog",
+            DidServiceType::BitstringStatusList => "BitstringStatusList",
             DidServiceType::Other(service) => service.as_str(),
         };
 
@@ -71,6 +73,7 @@ impl FromStr for DidServiceType {
             "AuthorizationServer" => Ok(DidServiceType::AuthorizationServer),
             "CredentialIssuer" => Ok(DidServiceType::CredentialIssuer),
             "FederatedCatalog" => Ok(DidServiceType::FederatedCatalog),
+            "BitstringStatusList" => Ok(DidServiceType::BitstringStatusList),
             other => Ok(DidServiceType::Other(other.to_owned())),
         }
     }
