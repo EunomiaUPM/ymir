@@ -5,6 +5,7 @@ use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::dids::Did;
 use crate::types::jwt::{Jwt, JwtHeaderTrait};
 use crate::types::vcs::VcPayload;
+use crate::types::verification::Rejection;
 use crate::types::vps::VpPayload;
 use crate::utils::{is_active, Verified, has_expired};
 
@@ -101,14 +102,14 @@ pub(in crate::services::verifier) fn validate_valid_from(jwt: &Verified<Jwt<VcPa
     info!("Validating issuance date");
     let claims = jwt.claims();
     if let Some(nbf) = claims.nbf() {
-        is_active(nbf)?;
+        is_active(nbf).map_err(|_| Rejection::NotYetValid.error("nbf"))?;
     }
     if let Some(iat) = claims.iat() {
-        is_active(iat)?;
+        is_active(iat).map_err(|_| Rejection::NotYetValid.error("iat"))?;
     }
     if let Some(valid_from) = claims.vc_doc().valid_from {
         if valid_from > Utc::now() {
-            return Err(Errors::security("VC is not valid yet", None));
+            return Err(Rejection::NotYetValid.error("validFrom"));
         }
         info!("VC has started its validity period");
     }
@@ -119,11 +120,11 @@ pub(in crate::services::verifier) fn validate_valid_until(jwt: &Verified<Jwt<VcP
     info!("Validating expiration date");
     let claims = jwt.claims();
     if let Some(exp) = claims.exp() {
-        has_expired(exp)?;
+        has_expired(exp).map_err(|_| Rejection::Expired.error("exp"))?;
     }
     if let Some(valid_until) = claims.vc_doc().valid_until {
         if Utc::now() > valid_until {
-            return Err(Errors::security("VC has expired", None));
+            return Err(Rejection::Expired.error("validUntil"));
         }
         info!("VC has not expired yet");
     }

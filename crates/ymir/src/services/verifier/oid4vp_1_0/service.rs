@@ -47,6 +47,7 @@ use crate::types::verification::request_object::SELF_ISSUED_AUDIENCE;
 use crate::types::verification::{CredentialQuery, DECENTRALIZED_IDENTIFIER_PREFIX, DIRECT_POST, DcqlQuery, REDIRECT_URI_PREFIX, RequestObjectPayload, RequestPassing, VerificationStatus};
 use crate::types::vps::VpPayload;
 use crate::types::wallet::Identity;
+use crate::types::verification::Rejection;
 use crate::utils::Verified;
 
 /// How long a served Request Object stays valid.
@@ -372,13 +373,7 @@ fn parse_vp_token(vp_token: &str) -> Outcome<HashMap<String, Vec<String>>> {
 }
 
 fn no_matching_credential(credential: &CredentialQuery) -> Errors {
-    Errors::security(
-        format!(
-            "presentation for '{}' holds no credential of the requested type",
-            credential.id
-        ),
-        None,
-    )
+    Rejection::CredentialMissing.error(format!("credential query '{}'", credential.id))
 }
 
 /// Rejects a `vp_token` that answers a query nobody asked for.
@@ -405,10 +400,7 @@ fn answers_to<'a>(
         .get(&credential.id)
         .filter(|vps| !vps.is_empty())
         .ok_or_else(|| {
-            Errors::security(
-                format!("vp_token lacks credential query '{}'", credential.id),
-                None,
-            )
+            Rejection::CredentialMissing.error(format!("credential query '{}'", credential.id))
         })?;
     if !credential.multiple && vps.len() > 1 {
         return Err(Errors::security(

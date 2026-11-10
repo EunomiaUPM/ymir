@@ -44,6 +44,8 @@ pub struct Model {
     pub status: VerificationStatus,      // DEFAULT
     pub created_at: DateTime<Utc>,       // DEFAULT
     pub ended_at: Option<DateTime<Utc>>, // RESPONSE
+    /// Why the presentation failed, as the wallet reported it.
+    pub reason: Option<String>, // RESPONSE
 }
 
 #[derive(Clone, Debug)]
@@ -140,6 +142,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             status: ActiveValue::Set(VerificationStatus::Pending),
             created_at: ActiveValue::Set(Utc::now()),
             ended_at: ActiveValue::Set(None),
+            reason: ActiveValue::Set(None),
         }
     }
 }
@@ -161,6 +164,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             status: ActiveValue::Set(self.status),
             created_at: ActiveValue::Set(self.created_at),
             ended_at: ActiveValue::Set(self.ended_at),
+            reason: ActiveValue::Set(self.reason),
         }
     }
 }

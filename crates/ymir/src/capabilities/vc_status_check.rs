@@ -31,6 +31,7 @@ use crate::types::vcs::doc::{
     BitstringStatusListEntry, StatusPurpose, VcDocument,
 };
 use crate::types::vcs::{Bitstring, VcPayload};
+use crate::types::verification::Rejection;
 use crate::utils::{ResponseExt, Verified, has_expired, http_client};
 
 pub const DEFAULT_STATUS_LIST_TTL_MS: u64 = 300_000;
@@ -61,9 +62,9 @@ impl VcStatusCheck {
                 warn!("Unsupported credentialStatus, not checked");
                 continue;
             };
-            let state = match entry.status_purpose {
-                StatusPurpose::Revocation => "revoked",
-                StatusPurpose::Suspension => "suspended",
+            let rejection = match entry.status_purpose {
+                StatusPurpose::Revocation => Rejection::Revoked,
+                StatusPurpose::Suspension => Rejection::Suspended,
                 purpose => {
                     info!("Status purpose {purpose} is not enforced");
                     continue;
@@ -71,7 +72,7 @@ impl VcStatusCheck {
             };
             info!("Checking {} status of the VC", entry.status_purpose);
             if Self::is_set(entry, &issuer).await? {
-                return Err(Errors::security(format!("VC is {state}"), None));
+                return Err(rejection.error("credentialStatus"));
             }
         }
         Ok(())

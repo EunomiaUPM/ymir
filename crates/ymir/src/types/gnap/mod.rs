@@ -32,5 +32,6 @@ pub use vc_decision_approval::VcDecisionApproval;
 
 pub enum InteractionFinishResponse {
     Success(Option<String>),
-    Failure(Option<String>),
+    /// Where to send the user, if anywhere, and what the holder may be told.
+    Failure(Option<String>, Option<String>),
 }

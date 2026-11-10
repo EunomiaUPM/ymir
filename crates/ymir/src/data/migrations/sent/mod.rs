@@ -22,6 +22,7 @@ pub mod m20260622_120021_interaction;
 pub mod m20260622_120022_verification;
 pub mod m20261027_120023_grant_rounds;
 pub mod m20261027_120024_grant_rejected;
+pub mod m20261110_120025_verification_reason;
 
 /// All sent-side migrations, executed together.
 pub fn get_sent_migrations() -> Vec<Box<dyn MigrationTrait>> {
@@ -31,5 +32,6 @@ pub fn get_sent_migrations() -> Vec<Box<dyn MigrationTrait>> {
         Box::new(m20260622_120022_verification::Migration),
         Box::new(m20261027_120023_grant_rounds::Migration),
         Box::new(m20261027_120024_grant_rejected::Migration),
+        Box::new(m20261110_120025_verification_reason::Migration),
     ]
 }
