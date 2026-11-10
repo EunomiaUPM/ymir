@@ -22,7 +22,7 @@ use urlencoding::encode;
 
 use super::super::VerifierTrait;
 use super::VerifierConfig;
-use crate::capabilities::Verifier;
+use crate::capabilities::{VcStatusCheck, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::received::verification::{Model, Plan};
@@ -174,6 +174,7 @@ impl VerifierService {
         // TODO: trusted-issuer list once available
         validate_valid_from(&vc)?;
         validate_valid_until(&vc)?;
+        VcStatusCheck::check(&vc).await?;
 
         info!("VC verification successful");
         Ok(())
