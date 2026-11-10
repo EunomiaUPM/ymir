@@ -68,13 +68,17 @@ impl Rejection {
         }])
     }
 
-    /// What the holder may be told about `error`, if anything.
-    pub fn public_reason(error: &Errors) -> Option<&'static str> {
+    /// The rejection `error` carries, if any.
+    pub fn of(error: &Errors) -> Option<Rejection> {
         error.info().reasons.iter().find_map(|reason| {
             Self::ALL
                 .into_iter()
                 .find(|rejection| rejection.code() == reason.code)
-                .map(Self::message)
         })
+    }
+
+    /// What the holder may be told about `error`, if anything.
+    pub fn public_reason(error: &Errors) -> Option<&'static str> {
+        Self::of(error).map(Self::message)
     }
 }

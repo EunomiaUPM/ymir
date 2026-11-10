@@ -78,6 +78,18 @@ impl VcStatusCheck {
         Ok(())
     }
 
+    /// Whether the issuer has revoked or suspended `vc`. A list that cannot be read counts as
+    /// neither: whoever verifies the credential decides.
+    pub async fn is_withdrawn(vc: &Verified<Jwt<VcPayload>>) -> bool {
+        match Self::check(vc).await {
+            Ok(()) => false,
+            Err(error) => matches!(
+                Rejection::of(&error),
+                Some(Rejection::Revoked | Rejection::Suspended)
+            ),
+        }
+    }
+
     async fn is_set(entry: &BitstringStatusListEntry, issuer: &str) -> Outcome<bool> {
         if let Some(bit) = Self::cached(entry, issuer)? {
             return Ok(bit);
