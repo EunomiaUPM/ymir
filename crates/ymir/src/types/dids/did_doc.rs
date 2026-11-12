@@ -104,6 +104,8 @@ impl DidDocument {
     }
 
     /// Publishes `cert` as the `x5c` of the JWK of verification method `vm_frag`.
+    // TODO: check that `cert` holds this key. Today the cert only comes with the wallet's own key at
+    // onboarding, so they always match.
     pub fn add_cert(&mut self, vm_frag: &str, cert: &Certificate) {
         let vm_id = format!("{}#{}", self.id, vm_frag);
         let Some(vm) = self.verification_method.iter_mut().find(|vm| vm.id == vm_id) else {

@@ -36,7 +36,7 @@ use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers};
 use async_trait::async_trait;
 use reqwest::Response;
 use serde::de::DeserializeOwned;
-use tracing::info;
+use tracing::{info, warn};
 
 /// Wallet implementation backed by an external Fafnir wallet instance.
 ///
@@ -84,7 +84,13 @@ impl FafnirService {
         let priv_vault_path = expect_from_env("VAULT_APP_PRIV_KEY");
         let key_data: PemHelper = vault.read(None, &priv_vault_path).await?;
         let cert = match std::env::var("VAULT_APP_CERT") {
-            Ok(path) => vault.read::<StringHelper>(None, &path).await.ok().map(|c| c.data().to_string()),
+            Ok(path) => match vault.read::<StringHelper>(None, &path).await {
+                Ok(cert) => Some(cert.data().to_string()),
+                Err(e) => {
+                    warn!("Certificate at {path} not read, the DID goes without x5c: {e}");
+                    None
+                }
+            },
             Err(_) => None,
         };
 

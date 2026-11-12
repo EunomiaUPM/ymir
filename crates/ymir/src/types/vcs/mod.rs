@@ -32,6 +32,6 @@ pub use bitstring::*;
 pub use jwt::{VcJwtClaimsBuilder, VcPayload, VcPayloadV1};
 pub use vc_format::VcFormat;
 pub use vc_issuer::*;
-pub use vc_type::VcType;
+pub use vc_type::{GAIA_X_CONTEXT, VcType};
 pub use vc_type_config::VcTypeConfig;
 pub use w3c_data_model::*;

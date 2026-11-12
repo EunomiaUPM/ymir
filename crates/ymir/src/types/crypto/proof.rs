@@ -16,7 +16,6 @@
  */
 
 use super::ProofPurpose;
-use crate::capabilities::Digest;
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::crypto::{Canon, HashAlg};
 use crate::types::dids::kid::Kid;
@@ -51,8 +50,8 @@ impl ProofOptions {
     /// `vc-di-eddsa` §3.3 — the proof configuration hashed first, then the document.
     pub fn hash_data(&self, canon_doc: &Canon) -> Outcome<Vec<u8>> {
         let canon_options = Canon::new(self)?;
-        let opt_digest = Digest::digest(&canon_options, HashAlg::Sha256);
-        let doc_digest = Digest::digest(canon_doc, HashAlg::Sha256);
+        let opt_digest = canon_options.digest(HashAlg::Sha256);
+        let doc_digest = canon_doc.digest(HashAlg::Sha256);
         Ok([opt_digest, doc_digest].concat())
     }
 }

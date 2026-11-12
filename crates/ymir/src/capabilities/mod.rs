@@ -15,12 +15,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod digest;
 mod http_sig;
 mod signer;
 mod vc_status_check;
 mod verifier;
-pub use digest::*;
 pub use http_sig::*;
 pub use signer::*;
 pub use vc_status_check::*;

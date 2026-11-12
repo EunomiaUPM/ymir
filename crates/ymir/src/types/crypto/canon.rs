@@ -16,8 +16,10 @@
  */
 
 use crate::errors::{Errors, Outcome};
+use crate::types::crypto::HashAlg;
 use crate::utils::OneOrMany;
 use serde::Serialize;
+use sha2::{Digest, Sha256, Sha384, Sha512};
 
 pub struct Canon {
     value: String,
@@ -60,5 +62,13 @@ impl Canon {
     }
     pub fn context(&self) -> Option<&OneOrMany<String>> {
         self.context.as_ref()
+    }
+    /// The raw hash of the canonical form; callers format it (SRI, hex, ...).
+    pub fn digest(&self, alg: HashAlg) -> Vec<u8> {
+        match alg {
+            HashAlg::Sha256 => Sha256::digest(self.as_bytes()).to_vec(),
+            HashAlg::Sha384 => Sha384::digest(self.as_bytes()).to_vec(),
+            HashAlg::Sha512 => Sha512::digest(self.as_bytes()).to_vec(),
+        }
     }
 }

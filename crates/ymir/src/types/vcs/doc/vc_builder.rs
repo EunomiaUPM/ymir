@@ -15,7 +15,7 @@
  * along with this program.  ISSf not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::super::{VcIssuer, VcType, W3cDataModelVersion};
+use super::super::{GAIA_X_CONTEXT, VcIssuer, VcType, W3cDataModelVersion};
 use super::{VcEvidence, VcRefreshService, VcSchema, VcStatus, VcDocument};
 use crate::utils::{Missing, OneOrMany, Present};
 use chrono::{DateTime, Utc};
@@ -43,8 +43,12 @@ pub struct VcDocumentBuilder<ID, ISS, CS> {
 
 impl VcDocumentBuilder<Missing, Missing, Missing> {
     pub fn new(vc_type: &VcType, model: W3cDataModelVersion) -> Self {
+        let mut context = vec![model.context().to_string()];
+        if vc_type.is_gaia_x() {
+            context.push(GAIA_X_CONTEXT.to_string());
+        }
         VcDocumentBuilder {
-            context: vec![model.context().to_string()],
+            context,
             id: None,
             r#type: vec!["VerifiableCredential".to_string(), vc_type.to_string()],
             name: None,

@@ -33,8 +33,11 @@ pub enum VcType {
     DataspaceParticipant,
     DataspacePremium,
     LegalPerson,
-    TermsAndConditions,
+    /// `gx:Issuer`: accepts the Gaia-X terms and conditions.
+    GxIssuer,
     GxLabel,
+    /// `gx:ParticipantComplianceCredential`: the label without a level, read like [`VcType::GxLabel`].
+    ParticipantCompliance,
     Other(String),
 }
 
@@ -52,8 +55,9 @@ impl FromStr for VcType {
             "dataspaceparticipant" => Ok(VcType::DataspaceParticipant),
             "dataspacepremium" => Ok(VcType::DataspacePremium),
             "gx:legalperson" => Ok(VcType::LegalPerson),
-            "gx:termsandconditions" => Ok(VcType::TermsAndConditions),
+            "gx:issuer" => Ok(VcType::GxIssuer),
             "gx:labelcredential" => Ok(VcType::GxLabel),
+            "gx:participantcompliancecredential" => Ok(VcType::ParticipantCompliance),
             other => Ok(VcType::Other(other.to_string())),
         }
     }
@@ -71,8 +75,9 @@ impl Display for VcType {
             VcType::DataspaceParticipant => "DataSpaceParticipant",
             VcType::DataspacePremium => "DataSpacePremium",
             VcType::LegalPerson => "gx:LegalPerson",
-            VcType::TermsAndConditions => "gx:TermsAndConditions",
+            VcType::GxIssuer => "gx:Issuer",
             VcType::GxLabel => "gx:LabelCredential",
+            VcType::ParticipantCompliance => "gx:ParticipantComplianceCredential",
             VcType::Other(other) => other,
         };
 
@@ -92,8 +97,9 @@ impl VcType {
             VcType::DataspaceParticipant,
             VcType::DataspacePremium,
             VcType::LegalPerson,
-            VcType::TermsAndConditions,
+            VcType::GxIssuer,
             VcType::GxLabel,
+            VcType::ParticipantCompliance,
         ]
     }
     pub fn is_legal_registration_number(&self) -> bool {
@@ -107,5 +113,12 @@ impl VcType {
                 | VcType::Euid
         )
     }
+    /// Whether it is a Gaia-X type, which needs [`GAIA_X_CONTEXT`].
+    pub fn is_gaia_x(&self) -> bool {
+        self.to_string().starts_with("gx:")
+    }
 }
 impl_serde_via_str!(VcType);
+
+/// The `@context` of the Gaia-X ontology the `gx:` terms come from (2.5.0).
+pub const GAIA_X_CONTEXT: &str = "https://w3id.org/gaia-x/2.5.0#";

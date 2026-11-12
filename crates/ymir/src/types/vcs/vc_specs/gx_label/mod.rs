@@ -17,11 +17,12 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Subject of a `gx:LabelCredential`, or of a `gx:ParticipantComplianceCredential` without a level.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GxLabelCredSubject {
     pub id: String,
-    #[serde(rename = "gx:labelLevel")]
-    pub label_level: String,
+    #[serde(rename = "gx:labelLevel", default, skip_serializing_if = "Option::is_none")]
+    pub label_level: Option<String>,
     #[serde(rename = "gx:engineVersion")]
     pub engine_version: String,
     #[serde(rename = "gx:rulesVersion")]

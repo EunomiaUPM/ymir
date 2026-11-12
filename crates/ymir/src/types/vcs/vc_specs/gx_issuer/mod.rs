@@ -17,11 +17,13 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Hash of the Gaia-X terms and conditions a `gx:Issuer` accepts (one of the two the 2.5.0 shape allows).
+pub const GAIA_X_TERMS_HASH: &str = "067dcac5efd18c1927deb1ffed3feab6d0ad044c0a9a263e6d5d8bdc43224515";
+
+/// Subject of a `gx:Issuer`: who accepts the Gaia-X terms and conditions, and their hash.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TermsAndConditionsCredSub {
+pub struct GxIssuerCredSub {
     pub id: String,
-    #[serde(rename = "gx:url")]
-    pub uri: String,
-    #[serde(rename = "gx:hash")]
-    pub hash: String,
+    #[serde(rename = "gx:gaiaxTermsAndConditions")]
+    pub gaiax_terms_and_conditions: String,
 }
