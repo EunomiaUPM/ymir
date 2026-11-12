@@ -18,7 +18,7 @@
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::crypto::{Canon, HasProofPurpose, Proof, ProofOptions, ProofPurpose, Proofed};
 use crate::types::dids::kid::Kid;
-use crate::types::jwt::{HasJwtType, Jwt, JwtClaims, JwtHeader, JwtKey};
+use crate::types::jwt::{HasJwtType, Jwt, JwtClaims, JwtHeader, JwtKey, JwtType};
 use crate::types::keys::{Alg, Crv, SigningCtx};
 use crate::utils::OneOrMany;
 use serde::Serialize;
@@ -118,10 +118,14 @@ impl Signer {
         T: Serialize + DeserializeOwned + HasJwtType,
     {
         let kid = Kid::new(sig_ctx.did().clone(), sig_ctx.keys_frag());
+        let typ = value.jwt_type();
+        let iss = matches!(typ, JwtType::Vc | JwtType::VcLd | JwtType::Vp | JwtType::VpLd)
+            .then(|| sig_ctx.did().id().to_string());
         let header = JwtHeader {
             alg: sig_ctx.key().alg(),
-            typ: Some(value.jwt_type()),
+            typ: Some(typ),
             cty: value.content_type().map(str::to_string),
+            iss,
             key: JwtKey::Kid(kid),
             extra: serde_json::Map::new(),
         };

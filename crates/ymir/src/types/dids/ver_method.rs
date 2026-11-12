@@ -52,12 +52,15 @@ pub enum VerificationMaterial {
 
 impl VerificationMethod {
     pub fn new(did: &Did, key: &PrivateKey, vm_frag: &str) -> Self {
+        // Published, not enforced on verification (Gaia-X AD 3.1 §6.5).
+        let mut public_key_jwk = key.public_jwk();
+        if let Some(jwk) = public_key_jwk.as_object_mut() {
+            jwk.insert("alg".to_string(), Value::String(key.alg().to_string()));
+        }
         Self {
             id: format!("{}#{}", did.id(), vm_frag),
             controller: did.id().to_string(),
-            material: VerificationMaterial::JsonWebKey {
-                public_key_jwk: key.public_jwk(),
-            },
+            material: VerificationMaterial::JsonWebKey { public_key_jwk },
             expires: None,
             revoked: None,
         }

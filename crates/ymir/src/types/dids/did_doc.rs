@@ -16,7 +16,8 @@
  */
 
 use super::Did;
-use super::{DidService, VerificationMethod};
+use super::{DidService, VerificationMaterial, VerificationMethod};
+use crate::types::keys::Certificate;
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::crypto::ProofPurpose;
 use crate::types::dids::kid::Kid;
@@ -100,6 +101,20 @@ impl DidDocument {
 
     pub fn add_services(&mut self, services: Vec<DidService>) {
         self.service = Some(services);
+    }
+
+    /// Publishes `cert` as the `x5c` of the JWK of verification method `vm_frag`.
+    pub fn add_cert(&mut self, vm_frag: &str, cert: &Certificate) {
+        let vm_id = format!("{}#{}", self.id, vm_frag);
+        let Some(vm) = self.verification_method.iter_mut().find(|vm| vm.id == vm_id) else {
+            return;
+        };
+        if let VerificationMaterial::JsonWebKey { public_key_jwk }
+        | VerificationMaterial::JsonWebKey2020 { public_key_jwk } = &mut vm.material
+            && let Some(jwk) = public_key_jwk.as_object_mut()
+        {
+            jwk.insert("x5c".to_string(), serde_json::json!([cert.x5c()]));
+        }
     }
 
     /// Adds a key to the document as a general-purpose signing key: it is referenced

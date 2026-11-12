@@ -16,16 +16,16 @@
  */
 
 use crate::types::crypto::{Canon, HashAlg};
-use sha2::{Digest, Sha256, Sha384, Sha512};
+use sha2::{Digest as _, Sha256, Sha384, Sha512};
 
 /// Integrity hashing utility for canonical data buffers.
 ///
 /// Computes a raw digest over a canonicalized structural envelope ([`Canon`]);
 /// callers format it (SRI's `sha256-<base64>`, a content identifier's
 /// `sha256:<hex>`, ...) for their own purpose.
-pub struct DigestSRI;
+pub struct Digest;
 
-impl DigestSRI {
+impl Digest {
     pub fn digest(canonical: &Canon, hash_alg: HashAlg) -> Vec<u8> {
         match hash_alg {
             HashAlg::Sha256 => Sha256::digest(canonical.as_ref()).to_vec(),

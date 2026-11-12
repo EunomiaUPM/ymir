@@ -125,7 +125,7 @@ impl Did {
         let vm = VerificationMethod {
             id: vm_id.clone(),
             controller: did.id().to_string(),
-            material: VerificationMaterial::JsonWebKey2020 {
+            material: VerificationMaterial::JsonWebKey {
                 public_key_jwk: jwk.clone(),
             },
             expires: None,

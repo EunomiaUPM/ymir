@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::capabilities::DigestSRI;
+use crate::capabilities::Digest;
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::crypto::{Canon, HashAlg};
 use crate::types::dids::{VerificationMaterial, VerificationMethod};
@@ -184,7 +184,7 @@ impl PublicKey {
         let jwk_json = self.public_jwk();
         let canon = Canon::new(&jwk_json)?;
 
-        let hash = DigestSRI::digest(&canon, HashAlg::Sha256);
+        let hash = Digest::digest(&canon, HashAlg::Sha256);
         Ok(encode_url_safe_no_pad(hash))
     }
 

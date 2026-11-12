@@ -75,6 +75,7 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
             builder,
             keys: keys_id,
             service,
+            cert: None,
         };
         self.wallet().register_did(plan).await
     }

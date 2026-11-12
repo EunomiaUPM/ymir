@@ -16,7 +16,7 @@
  */
 
 use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use sha2::{Digest, Sha256};
 use std::time::{SystemTime, UNIX_EPOCH};
 use x509_parser::pem::parse_x509_pem;
@@ -45,6 +45,11 @@ impl Certificate {
 
     pub fn der(&self) -> &[u8] {
         &self.der
+    }
+
+    /// The certificate as an `x5c` entry: standard base64 of the DER (RFC 7517 §4.7).
+    pub fn x5c(&self) -> String {
+        STANDARD.encode(&self.der)
     }
 
     pub fn thumbprint_sha256(&self) -> String {

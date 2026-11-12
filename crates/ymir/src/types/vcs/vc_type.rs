@@ -62,12 +62,12 @@ impl FromStr for VcType {
 impl Display for VcType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let s = match self {
-            VcType::Eori => "gx:Eori",
-            VcType::Euid => "gx:Euid",
+            VcType::Eori => "gx:EORI",
+            VcType::Euid => "gx:EUID",
             VcType::LeiCode => "gx:LeiCode",
             VcType::LocalRegistrationNumber => "gx:LocalRegistrationNumber",
-            VcType::TaxId => "gx:TaxId",
-            VcType::VatId => "gx:VatId",
+            VcType::TaxId => "gx:TaxID",
+            VcType::VatId => "gx:VatID",
             VcType::DataspaceParticipant => "DataSpaceParticipant",
             VcType::DataspacePremium => "DataSpacePremium",
             VcType::LegalPerson => "gx:LegalPerson",

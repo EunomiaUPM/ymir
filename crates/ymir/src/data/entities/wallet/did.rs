@@ -45,6 +45,9 @@ pub struct Plan {
     pub builder: DidBuilder,
     pub keys: Vec<String>,
     pub service: Option<Vec<DidService>>,
+    /// PEM certificate of the first key, published as its `x5c`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cert: Option<String>,
 }
 
 impl IntoOverwriteActive<ActiveModel> for Model {

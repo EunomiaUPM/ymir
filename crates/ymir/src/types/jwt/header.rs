@@ -31,6 +31,9 @@ pub struct JwtHeader {
     pub typ: Option<JwtType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cty: Option<String>,
+    /// The signer's DID, replicated from the payload (Gaia-X ICAM 25.11 §5.3.2.1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub iss: Option<String>,
     // pub kid: Kid,
     /// Exactly one of `kid`, `jwk` or `x5c`.
     #[serde(flatten)]

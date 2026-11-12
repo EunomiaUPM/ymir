@@ -28,7 +28,7 @@ use crate::services::vault::{VaultService, VaultTrait};
 use crate::services::wallet::WalletTrait;
 use crate::types::dids::{Did, DidBuilder, DidDocument, DidService};
 use crate::types::http::HttpBody;
-use crate::types::secrets::PemHelper;
+use crate::types::secrets::{PemHelper, StringHelper};
 use crate::types::verification::{PresentationRequest, UNTRUSTED_REQUEST};
 use crate::types::wallet::{DidSearch, Identity, KeyRef, OidcUri, WalletInfo};
 use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers};
@@ -83,6 +83,10 @@ impl FafnirService {
         // ===== REGISTER KEY ======================================================================
         let priv_vault_path = expect_from_env("VAULT_APP_PRIV_KEY");
         let key_data: PemHelper = vault.read(None, &priv_vault_path).await?;
+        let cert = match std::env::var("VAULT_APP_CERT") {
+            Ok(path) => vault.read::<StringHelper>(None, &path).await.ok().map(|c| c.data().to_string()),
+            Err(_) => None,
+        };
 
         let key_req = key::Plan {
             id: priv_vault_path,
@@ -125,6 +129,7 @@ impl FafnirService {
             builder: did_builder,
             keys: vec![key_model.id],
             service: services,
+            cert,
         };
         let res = http_client()
             .post(&did_url, Some(json_headers()), HttpBody::json(&did_req)?)
