@@ -3,19 +3,79 @@ import { UseQueryOptions, QueryClient } from '@tanstack/react-query';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import { ReactNode } from 'react';
 
-/** An event of the bus, as the events API returns it (ymir-events `EventEnvelope`). */
-interface EventEnvelope {
+type Visibility = "Private" | "Anonymous" | "Public";
+type EventCategory = "AuditLifecycle" | "UsageControl" | "Attestation" | "DataAccess" | "ResourceChange" | "Security" | "Diagnostic";
+type EventSeverity = "Debug" | "Info" | "Warn" | "Error" | "Critical";
+type EventOutcome = "Success" | "Denied" | "Failed" | "Pending";
+type DeliveryClass = "AuditDurable" | "TelemetryStream";
+type ActorType = "HumanUser" | "PeerParticipant" | "AgentService" | "SystemWorker" | "Anonymous";
+type WebhookDeliveryFormat = "envelope" | "payload_only";
+interface EventSource {
+    dataspace_id?: string | null;
+    participant_id?: string | null;
+    service: string;
+    instance_id: string;
+    crate_name: string;
+}
+interface EventActor {
+    actor_type: ActorType;
     id: string;
+    participant_id?: string | null;
+    role?: string | null;
+}
+interface EntityRef {
+    kind: string;
+    id: string;
+    parent_id?: string | null;
+}
+interface FlowRefs {
+    agreement_id?: string | null;
+    transfer_id?: string | null;
+    negotiation_id?: string | null;
+    grant_id?: string | null;
+    dataset_id?: string | null;
+    peer_id?: string | null;
+}
+interface EventCorrelation {
+    correlation_id?: string | null;
+    causation_id?: string | null;
+    trace_context?: string | null;
+    flow_refs: FlowRefs;
+}
+interface EventAttestation {
+    format: string;
+    signer_did: string;
+    signature: string;
+}
+interface EventIntegrity {
+    payload_digest: string;
+    canonicalization: string;
+    attestation?: EventAttestation | null;
+}
+interface EventVisibilityOwner {
     user_id: string;
     role: string;
-    visibility: "Private" | "Anonymous" | "Public";
-    topic: string;
-    source_crate: string;
-    schema_version: number;
+    visibility: Visibility;
+}
+/** An event of the bus, as the events API returns it (ymir-events `EventView` over `EventEnvelope` v2). */
+interface EventEnvelope {
+    id: string;
+    spec_version: string;
     timestamp: string;
-    correlation_id?: string;
-    /** W3C `traceparent` of the publishing span. */
-    trace_context?: string;
+    sequence?: number;
+    topic: string;
+    event_type: EventCategory;
+    severity: EventSeverity;
+    outcome?: EventOutcome;
+    delivery_class: DeliveryClass;
+    schema_version: number;
+    payload_type: string;
+    source: EventSource;
+    actor: EventActor;
+    subject?: EntityRef | null;
+    correlation: EventCorrelation;
+    integrity: EventIntegrity;
+    visibility_owner: EventVisibilityOwner;
     payload: unknown;
     /** Null while unread. */
     read_at?: string | null;
@@ -25,7 +85,24 @@ interface EventCount {
 }
 interface EventFeedParams {
     topic?: string;
+    dataspace_id?: string;
+    participant_id?: string;
+    service?: string;
     source_crate?: string;
+    event_type?: EventCategory;
+    severity?: EventSeverity;
+    outcome?: EventOutcome;
+    payload_type?: string;
+    actor_id?: string;
+    subject_kind?: string;
+    subject_id?: string;
+    correlation_id?: string;
+    agreement_id?: string;
+    transfer_id?: string;
+    negotiation_id?: string;
+    grant_id?: string;
+    dataset_id?: string;
+    peer_id?: string;
     read?: boolean;
     created_after?: string;
     created_before?: string;
@@ -36,19 +113,28 @@ interface EventFeedParams {
 }
 interface EventSubscription {
     id: string;
+    user_id: string;
+    role: string;
+    visibility: Visibility;
     topic_pattern: string;
     callback_address: string;
     active: boolean;
     /** Write-only: shows as `*****` when set. */
     secret?: string | null;
     retry_limit?: number | null;
+    delivery_format: WebhookDeliveryFormat;
     created_at: string;
+    updated_at?: string | null;
+    expiration_time?: string | null;
 }
 interface CreateSubscriptionCommand {
+    visibility?: Visibility;
     topic_pattern: string;
     callback_address: string;
-    secret?: string;
-    retry_limit?: number;
+    secret?: string | null;
+    retry_limit?: number | null;
+    delivery_format?: WebhookDeliveryFormat;
+    expiration_time?: string | null;
 }
 interface SubscriptionParams {
     active?: boolean;
@@ -225,4 +311,4 @@ interface EventsLayoutProps {
 /** Events page with its Feed, Webhook subscriptions and Dead letters tabs. */
 declare const EventsLayout: ({ basePath, description, children }: EventsLayoutProps) => react_jsx_runtime.JSX.Element;
 
-export { type ApiResponse, type CreateSubscriptionCommand, type DeadLetterParams, type DeadLetterRecord, type DeadLetterStatus, DeadLetters, type EventCount, type EventEnvelope, EventFeed, type EventFeedParams, type EventFeedProps, type EventLink, type EventSubscription, EventSubscriptions, type EventSubscriptionsProps, type EventTopicCatalog, EventsApi, EventsLayout, type EventsLayoutProps, EventsQueries, EventsQueryKeys, type LiveContextType, type LiveInvalidations, LiveProvider, type LiveProviderProps, type LiveTransport, NotificationBell, type NotificationBellProps, type Paged, type ReplayAllResponse, type SubscriptionParams, useLive };
+export { type ActorType, type ApiResponse, type CreateSubscriptionCommand, type DeadLetterParams, type DeadLetterRecord, type DeadLetterStatus, DeadLetters, type DeliveryClass, type EntityRef, type EventActor, type EventAttestation, type EventCategory, type EventCorrelation, type EventCount, type EventEnvelope, EventFeed, type EventFeedParams, type EventFeedProps, type EventIntegrity, type EventLink, type EventOutcome, type EventSeverity, type EventSource, type EventSubscription, EventSubscriptions, type EventSubscriptionsProps, type EventTopicCatalog, type EventVisibilityOwner, EventsApi, EventsLayout, type EventsLayoutProps, EventsQueries, EventsQueryKeys, type FlowRefs, type LiveContextType, type LiveInvalidations, LiveProvider, type LiveProviderProps, type LiveTransport, NotificationBell, type NotificationBellProps, type Paged, type ReplayAllResponse, type SubscriptionParams, type Visibility, type WebhookDeliveryFormat, useLive };

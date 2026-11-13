@@ -120,6 +120,11 @@ impl EventBus {
         <Self as EventBusTrait>::publish(self, envelope).await
     }
 
+    /// Stores and broadcasts multiple envelopes as one batch.
+    pub async fn publish_batch(&self, envelopes: Vec<EventEnvelope>) -> Outcome<Vec<EventEnvelope>> {
+        <Self as EventBusTrait>::publish_batch(self, envelopes).await
+    }
+
     /// New receiver of every envelope published from now on.
     pub fn subscribe(&self) -> broadcast::Receiver<EventEnvelope> {
         <Self as EventBusTrait>::subscribe(self)
@@ -459,6 +464,90 @@ impl EventBusTrait for EventBus {
         }
 
         Ok(envelope)
+    }
+
+    #[tracing::instrument(level = "info", skip_all, err)]
+    async fn publish_batch(&self, mut envelopes: Vec<EventEnvelope>) -> Outcome<Vec<EventEnvelope>> {
+        if envelopes.is_empty() {
+            return Ok(envelopes);
+        }
+        if envelopes.len() == 1 {
+            let one = self.publish(envelopes.into_iter().next().unwrap()).await?;
+            return Ok(vec![one]);
+        }
+        if let Some(identity) = &self.node_identity {
+            let snapshot = identity.snapshot();
+            for envelope in &mut envelopes {
+                envelope.apply_node_identity(&snapshot);
+            }
+        }
+        self.event_repo.insert_events_batch(&envelopes).await?;
+
+        let mut pending_deliveries = Vec::new();
+        let mut sub_cache: Vec<((&Owner, &crate::entities::topic::Topic), Arc<Vec<_>>)> = Vec::new();
+        for envelope in &envelopes {
+            let _ = self.broadcast_tx.send(envelope.clone());
+            let matching_subs = match sub_cache
+                .iter()
+                .find(|((owner, topic), _)| *owner == &envelope.visibility_owner && *topic == &envelope.topic)
+            {
+                Some((_, cached)) => cached.clone(),
+                None => {
+                    let fetched = Arc::new(
+                        self.subscription_repo
+                            .get_matching_subscriptions(&envelope.visibility_owner, &envelope.topic)
+                            .await?,
+                    );
+                    sub_cache.push(((&envelope.visibility_owner, &envelope.topic), fetched.clone()));
+                    fetched
+                }
+            };
+            for sub in matching_subs.iter() {
+                let delivery = EventDeliveryRecord {
+                    id: format!("urn:uuid:{}", Uuid::new_v4()),
+                    owner: sub.owner.clone(),
+                    event_id: envelope.id.to_string(),
+                    subscription_id: sub.id.clone(),
+                    status: DeliveryStatus::Pending,
+                    attempts: 0,
+                    last_attempt_at: None,
+                    next_retry_at: None,
+                    error_message: None,
+                    response_status_code: None,
+                    delivered_at: None,
+                    created_at: Utc::now(),
+                };
+                pending_deliveries.push((delivery, envelope.clone(), sub.clone()));
+            }
+        }
+
+        if !pending_deliveries.is_empty() {
+            let records: Vec<EventDeliveryRecord> =
+                pending_deliveries.iter().map(|(r, _, _)| r.clone()).collect();
+            match self.delivery_repo.create_deliveries_batch(&records).await {
+                Ok(()) => {
+                    for (delivery, envelope, sub) in pending_deliveries {
+                        let retry_limit = sub.retry_limit.unwrap_or(self.policy.max_attempts);
+                        self.spawn_immediate_dispatch(
+                            delivery.id,
+                            envelope,
+                            sub.id,
+                            sub.owner,
+                            sub.callback_address,
+                            sub.delivery_format,
+                            sub.secret,
+                            sub.headers,
+                            retry_limit,
+                        );
+                    }
+                }
+                Err(e) => {
+                    error!(error = ?e, count = records.len(), "Failed to batch create delivery records");
+                }
+            }
+        }
+
+        Ok(envelopes)
     }
 
     fn subscribe(&self) -> broadcast::Receiver<EventEnvelope> {

@@ -530,6 +530,23 @@ pub struct EventAttestation {
     pub signature: String,
 }
 
+impl EventAttestation {
+    /// Derives non-reversible SHA-256 attestation metadata from verified or issued credential bytes.
+    pub fn from_material_digest(
+        format: impl Into<String>,
+        signer_did: impl Into<String>,
+        signed_material: &str,
+    ) -> Self {
+        let hash = Sha256::digest(signed_material.as_bytes());
+        let hex: String = hash.iter().map(|b| format!("{b:02x}")).collect();
+        Self {
+            format: format.into(),
+            signer_did: signer_did.into(),
+            signature: format!("sha256:{hex}"),
+        }
+    }
+}
+
 /// Integrity digest over the canonicalized payload JSON.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EventIntegrity {
@@ -694,5 +711,11 @@ impl EventEnvelope {
     /// Enriches unset origin node fields from the active process identity snapshot.
     pub fn apply_node_identity(&mut self, snap: &NodeIdentitySnapshot) {
         self.source.apply_snapshot(snap);
+    }
+
+    /// Attaches cryptographic attestation metadata to the envelope integrity block.
+    pub fn with_attestation(mut self, attestation: EventAttestation) -> Self {
+        self.integrity.attestation = Some(attestation);
+        self
     }
 }

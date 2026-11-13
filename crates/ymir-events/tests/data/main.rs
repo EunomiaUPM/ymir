@@ -20,4 +20,5 @@
 #[path = "../support/mod.rs"]
 mod support;
 
+mod postgres_store;
 mod sqlite_store;

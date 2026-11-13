@@ -63,6 +63,14 @@ impl RepoIntoErrors for EventRepoError {}
 pub trait EventStoreRepo: Send + Sync + 'static {
     async fn insert_event(&self, event: &EventEnvelope) -> Outcome<()>;
 
+    /// Stores a batch of envelopes; default falls back to sequential inserts.
+    async fn insert_events_batch(&self, events: &[EventEnvelope]) -> Outcome<()> {
+        for event in events {
+            self.insert_event(event).await?;
+        }
+        Ok(())
+    }
+
     async fn get_event_by_id(
         &self,
         scope: &OwnerScope,

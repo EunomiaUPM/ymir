@@ -26,6 +26,7 @@
 //! |---|---|
 //! | `RUST_LOG` | log filter, `info` by default |
 //! | `LOG_FORMAT=json` | JSON logs with the current span |
+//! | `LOG_SPAN_EVENTS=close` | emit span close timing events on stdout (`FmtSpan::CLOSE`) |
 //! | `OTEL_EXPORTER_OTLP_ENDPOINT` | turns on OTLP export over gRPC |
 //! | `OTEL_TRACES_EXPORTER=none`, `OTEL_METRICS_EXPORTER=none` | switch one signal off |
 //! | `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES` | override the resource |
@@ -85,8 +86,13 @@ impl Telemetry {
             .add_directive("opentelemetry=warn".parse().expect("static directive"));
 
         let json = std::env::var("LOG_FORMAT").as_deref() == Ok("json");
+        let span_events = if std::env::var("LOG_SPAN_EVENTS").as_deref() == Ok("close") {
+            FmtSpan::CLOSE
+        } else {
+            FmtSpan::NONE
+        };
         let fmt = tracing_subscriber::fmt::layer()
-            .with_span_events(FmtSpan::CLOSE)
+            .with_span_events(span_events)
             .with_line_number(true);
         let fmt: Box<dyn Layer<_> + Send + Sync> = if json {
             Box::new(fmt.json().with_current_span(true).flatten_event(true))

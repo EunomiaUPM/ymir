@@ -41,6 +41,16 @@ use crate::entities::event::{EventContext, EventPayload};
 pub trait EventBusTrait: Send + Sync + 'static {
     /// Stores the envelope, broadcasts it and starts a delivery per matching subscription.
     async fn publish(&self, envelope: EventEnvelope) -> Outcome<EventEnvelope>;
+
+    /// Stores and broadcasts multiple envelopes as a single batch.
+    async fn publish_batch(&self, envelopes: Vec<EventEnvelope>) -> Outcome<Vec<EventEnvelope>> {
+        let mut out = Vec::with_capacity(envelopes.len());
+        for envelope in envelopes {
+            out.push(self.publish(envelope).await?);
+        }
+        Ok(out)
+    }
+
     /// New receiver of every envelope published from now on.
     fn subscribe(&self) -> broadcast::Receiver<EventEnvelope>;
 }

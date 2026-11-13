@@ -18,6 +18,7 @@ import {
   PopoverAnchor,
   PopoverContent,
   PopoverTrigger,
+  SegmentedControl,
   Sheet,
   SheetClose,
   SheetContent,
@@ -28,7 +29,7 @@ import {
   SheetPortal,
   SheetTitle,
   SheetTrigger
-} from "./chunk-A6ZPWGMH.js";
+} from "./chunk-UKGHEUUY.js";
 import {
   JsonTable,
   JsonViewer,
@@ -1603,46 +1604,11 @@ var NoFurtherActions = () => {
 };
 var noFurtherActions_default = NoFurtherActions;
 
-// src/ui/segmented.tsx
-import { jsx as jsx19 } from "react/jsx-runtime";
-function SegmentedControl({
-  value,
-  onChange,
-  options,
-  className,
-  ariaLabel
-}) {
-  return /* @__PURE__ */ jsx19(
-    "div",
-    {
-      role: "radiogroup",
-      "aria-label": ariaLabel,
-      className: cn("inline-flex rounded-lg border border-ink/10 bg-ink/[0.03] p-0.5", className),
-      children: options.map((o) => /* @__PURE__ */ jsx19(
-        "button",
-        {
-          type: "button",
-          role: "radio",
-          "aria-checked": value === o.value,
-          title: o.hint,
-          onClick: () => onChange(o.value),
-          className: cn(
-            "rounded-md px-3 py-1 text-sm transition-colors",
-            value === o.value ? "bg-background font-medium text-ink shadow-sm ring-1 ring-ink/10" : "text-ink/55 hover:text-ink"
-          ),
-          children: o.label
-        },
-        o.value
-      ))
-    }
-  );
-}
-
 // src/ui/separator.tsx
 import * as React14 from "react";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
-import { jsx as jsx20 } from "react/jsx-runtime";
-var Separator2 = React14.forwardRef(({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ jsx20(
+import { jsx as jsx19 } from "react/jsx-runtime";
+var Separator2 = React14.forwardRef(({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ jsx19(
   SeparatorPrimitive.Root,
   {
     ref,
@@ -1667,11 +1633,11 @@ import { cva as cva4 } from "class-variance-authority";
 // src/ui/tooltip.tsx
 import * as React15 from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-import { jsx as jsx21 } from "react/jsx-runtime";
+import { jsx as jsx20 } from "react/jsx-runtime";
 var TooltipProvider = TooltipPrimitive.Provider;
 var Tooltip2 = TooltipPrimitive.Root;
 var TooltipTrigger = TooltipPrimitive.Trigger;
-var TooltipContent = React15.forwardRef(({ className, sideOffset = 4, ...props }, ref) => /* @__PURE__ */ jsx21(TooltipPrimitive.Portal, { children: /* @__PURE__ */ jsx21(
+var TooltipContent = React15.forwardRef(({ className, sideOffset = 4, ...props }, ref) => /* @__PURE__ */ jsx20(TooltipPrimitive.Portal, { children: /* @__PURE__ */ jsx20(
   TooltipPrimitive.Content,
   {
     ref,
@@ -1687,7 +1653,7 @@ TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
 // src/ui/sidebar.tsx
 import { PanelLeft } from "lucide-react";
-import { jsx as jsx22, jsxs as jsxs11 } from "react/jsx-runtime";
+import { jsx as jsx21, jsxs as jsxs11 } from "react/jsx-runtime";
 var SIDEBAR_COOKIE_NAME = "sidebar_state";
 var SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 var SIDEBAR_WIDTH = "13rem";
@@ -1754,7 +1720,7 @@ var SidebarProvider = React16.forwardRef(
       }),
       [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
     );
-    return /* @__PURE__ */ jsx22(SidebarContext.Provider, { value: contextValue, children: /* @__PURE__ */ jsx22(TooltipProvider, { delayDuration: 0, children: /* @__PURE__ */ jsx22(
+    return /* @__PURE__ */ jsx21(SidebarContext.Provider, { value: contextValue, children: /* @__PURE__ */ jsx21(TooltipProvider, { delayDuration: 0, children: /* @__PURE__ */ jsx21(
       "div",
       {
         style: {
@@ -1785,7 +1751,7 @@ var Sidebar = React16.forwardRef(
   }, ref) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
     if (collapsible === "none") {
-      return /* @__PURE__ */ jsx22(
+      return /* @__PURE__ */ jsx21(
         "div",
         {
           className: cn(
@@ -1799,7 +1765,7 @@ var Sidebar = React16.forwardRef(
       );
     }
     if (isMobile) {
-      return /* @__PURE__ */ jsx22(Sheet, { open: openMobile, onOpenChange: setOpenMobile, ...props, children: /* @__PURE__ */ jsxs11(
+      return /* @__PURE__ */ jsx21(Sheet, { open: openMobile, onOpenChange: setOpenMobile, ...props, children: /* @__PURE__ */ jsxs11(
         SheetContent,
         {
           "data-sidebar": "sidebar",
@@ -1811,10 +1777,10 @@ var Sidebar = React16.forwardRef(
           side,
           children: [
             /* @__PURE__ */ jsxs11(SheetHeader, { className: "sr-only", children: [
-              /* @__PURE__ */ jsx22(SheetTitle, { children: "Sidebar" }),
-              /* @__PURE__ */ jsx22(SheetDescription, { children: "Displays the mobile sidebar." })
+              /* @__PURE__ */ jsx21(SheetTitle, { children: "Sidebar" }),
+              /* @__PURE__ */ jsx21(SheetDescription, { children: "Displays the mobile sidebar." })
             ] }),
-            /* @__PURE__ */ jsx22("div", { className: "flex h-full w-full flex-col", children })
+            /* @__PURE__ */ jsx21("div", { className: "flex h-full w-full flex-col", children })
           ]
         }
       ) });
@@ -1829,7 +1795,7 @@ var Sidebar = React16.forwardRef(
         "data-variant": variant,
         "data-side": side,
         children: [
-          /* @__PURE__ */ jsx22(
+          /* @__PURE__ */ jsx21(
             "div",
             {
               className: cn(
@@ -1840,7 +1806,7 @@ var Sidebar = React16.forwardRef(
               )
             }
           ),
-          /* @__PURE__ */ jsx22(
+          /* @__PURE__ */ jsx21(
             "div",
             {
               className: cn(
@@ -1850,7 +1816,7 @@ var Sidebar = React16.forwardRef(
                 className
               ),
               ...props,
-              children: /* @__PURE__ */ jsx22(
+              children: /* @__PURE__ */ jsx21(
                 "div",
                 {
                   "data-sidebar": "sidebar",
@@ -1882,8 +1848,8 @@ var SidebarTrigger = React16.forwardRef(({ className, onClick, ...props }, ref) 
       },
       ...props,
       children: [
-        /* @__PURE__ */ jsx22(PanelLeft, {}),
-        /* @__PURE__ */ jsx22("span", { className: "sr-only", children: "Toggle Sidebar" })
+        /* @__PURE__ */ jsx21(PanelLeft, {}),
+        /* @__PURE__ */ jsx21("span", { className: "sr-only", children: "Toggle Sidebar" })
       ]
     }
   );
@@ -1892,7 +1858,7 @@ SidebarTrigger.displayName = "SidebarTrigger";
 var SidebarRail = React16.forwardRef(
   ({ className, ...props }, ref) => {
     const { toggleSidebar } = useSidebar();
-    return /* @__PURE__ */ jsx22(
+    return /* @__PURE__ */ jsx21(
       "button",
       {
         ref,
@@ -1918,7 +1884,7 @@ var SidebarRail = React16.forwardRef(
 SidebarRail.displayName = "SidebarRail";
 var SidebarInset = React16.forwardRef(
   ({ className, ...props }, ref) => {
-    return /* @__PURE__ */ jsx22(
+    return /* @__PURE__ */ jsx21(
       "main",
       {
         ref,
@@ -1934,7 +1900,7 @@ var SidebarInset = React16.forwardRef(
 );
 SidebarInset.displayName = "SidebarInset";
 var SidebarInput = React16.forwardRef(({ className, ...props }, ref) => {
-  return /* @__PURE__ */ jsx22(
+  return /* @__PURE__ */ jsx21(
     Input,
     {
       ref,
@@ -1950,7 +1916,7 @@ var SidebarInput = React16.forwardRef(({ className, ...props }, ref) => {
 SidebarInput.displayName = "SidebarInput";
 var SidebarHeader = React16.forwardRef(
   ({ className, ...props }, ref) => {
-    return /* @__PURE__ */ jsx22(
+    return /* @__PURE__ */ jsx21(
       "div",
       {
         ref,
@@ -1964,7 +1930,7 @@ var SidebarHeader = React16.forwardRef(
 SidebarHeader.displayName = "SidebarHeader";
 var SidebarFooter = React16.forwardRef(
   ({ className, ...props }, ref) => {
-    return /* @__PURE__ */ jsx22(
+    return /* @__PURE__ */ jsx21(
       "div",
       {
         ref,
@@ -1977,7 +1943,7 @@ var SidebarFooter = React16.forwardRef(
 );
 SidebarFooter.displayName = "SidebarFooter";
 var SidebarSeparator = React16.forwardRef(({ className, ...props }, ref) => {
-  return /* @__PURE__ */ jsx22(
+  return /* @__PURE__ */ jsx21(
     Separator2,
     {
       ref,
@@ -1990,7 +1956,7 @@ var SidebarSeparator = React16.forwardRef(({ className, ...props }, ref) => {
 SidebarSeparator.displayName = "SidebarSeparator";
 var SidebarContent = React16.forwardRef(
   ({ className, ...props }, ref) => {
-    return /* @__PURE__ */ jsx22(
+    return /* @__PURE__ */ jsx21(
       "div",
       {
         ref,
@@ -2007,7 +1973,7 @@ var SidebarContent = React16.forwardRef(
 SidebarContent.displayName = "SidebarContent";
 var SidebarGroup = React16.forwardRef(
   ({ className, ...props }, ref) => {
-    return /* @__PURE__ */ jsx22(
+    return /* @__PURE__ */ jsx21(
       "div",
       {
         ref,
@@ -2021,7 +1987,7 @@ var SidebarGroup = React16.forwardRef(
 SidebarGroup.displayName = "SidebarGroup";
 var SidebarGroupLabel = React16.forwardRef(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot3 : "div";
-  return /* @__PURE__ */ jsx22(
+  return /* @__PURE__ */ jsx21(
     Comp,
     {
       ref,
@@ -2038,7 +2004,7 @@ var SidebarGroupLabel = React16.forwardRef(({ className, asChild = false, ...pro
 SidebarGroupLabel.displayName = "SidebarGroupLabel";
 var SidebarGroupAction = React16.forwardRef(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot3 : "button";
-  return /* @__PURE__ */ jsx22(
+  return /* @__PURE__ */ jsx21(
     Comp,
     {
       ref,
@@ -2055,7 +2021,7 @@ var SidebarGroupAction = React16.forwardRef(({ className, asChild = false, ...pr
 });
 SidebarGroupAction.displayName = "SidebarGroupAction";
 var SidebarGroupContent = React16.forwardRef(
-  ({ className, ...props }, ref) => /* @__PURE__ */ jsx22(
+  ({ className, ...props }, ref) => /* @__PURE__ */ jsx21(
     "div",
     {
       ref,
@@ -2067,7 +2033,7 @@ var SidebarGroupContent = React16.forwardRef(
 );
 SidebarGroupContent.displayName = "SidebarGroupContent";
 var SidebarMenu = React16.forwardRef(
-  ({ className, ...props }, ref) => /* @__PURE__ */ jsx22(
+  ({ className, ...props }, ref) => /* @__PURE__ */ jsx21(
     "ul",
     {
       ref,
@@ -2080,7 +2046,7 @@ var SidebarMenu = React16.forwardRef(
 SidebarMenu.displayName = "SidebarMenu";
 var SidebarMenuItem = React16.forwardRef(
   ({ className, ...props }, ref) => {
-    return /* @__PURE__ */ jsx22(
+    return /* @__PURE__ */ jsx21(
       "li",
       {
         ref,
@@ -2124,7 +2090,7 @@ var SidebarMenuButton = React16.forwardRef(
   }, ref) => {
     const Comp = asChild ? Slot3 : "button";
     const { isMobile, state } = useSidebar();
-    const button = /* @__PURE__ */ jsx22(
+    const button = /* @__PURE__ */ jsx21(
       Comp,
       {
         ref,
@@ -2144,8 +2110,8 @@ var SidebarMenuButton = React16.forwardRef(
       };
     }
     return /* @__PURE__ */ jsxs11(Tooltip2, { children: [
-      /* @__PURE__ */ jsx22(TooltipTrigger, { asChild: true, children: button }),
-      /* @__PURE__ */ jsx22(
+      /* @__PURE__ */ jsx21(TooltipTrigger, { asChild: true, children: button }),
+      /* @__PURE__ */ jsx21(
         TooltipContent,
         {
           side: "right",
@@ -2160,7 +2126,7 @@ var SidebarMenuButton = React16.forwardRef(
 SidebarMenuButton.displayName = "SidebarMenuButton";
 var SidebarMenuAction = React16.forwardRef(({ className, asChild = false, showOnHover = false, ...props }, ref) => {
   const Comp = asChild ? Slot3 : "button";
-  return /* @__PURE__ */ jsx22(
+  return /* @__PURE__ */ jsx21(
     Comp,
     {
       ref,
@@ -2181,7 +2147,7 @@ var SidebarMenuAction = React16.forwardRef(({ className, asChild = false, showOn
 });
 SidebarMenuAction.displayName = "SidebarMenuAction";
 var SidebarMenuBadge = React16.forwardRef(
-  ({ className, ...props }, ref) => /* @__PURE__ */ jsx22(
+  ({ className, ...props }, ref) => /* @__PURE__ */ jsx21(
     "div",
     {
       ref,
@@ -2212,8 +2178,8 @@ var SidebarMenuSkeleton = React16.forwardRef(({ className, showIcon = false, ...
       className: cn("flex h-8 items-center gap-2 rounded-md px-2", className),
       ...props,
       children: [
-        showIcon && /* @__PURE__ */ jsx22(Skeleton, { className: "size-4 rounded-md", "data-sidebar": "menu-skeleton-icon" }),
-        /* @__PURE__ */ jsx22(
+        showIcon && /* @__PURE__ */ jsx21(Skeleton, { className: "size-4 rounded-md", "data-sidebar": "menu-skeleton-icon" }),
+        /* @__PURE__ */ jsx21(
           Skeleton,
           {
             className: "h-4 max-w-[--skeleton-width] flex-1",
@@ -2229,7 +2195,7 @@ var SidebarMenuSkeleton = React16.forwardRef(({ className, showIcon = false, ...
 });
 SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton";
 var SidebarMenuSub = React16.forwardRef(
-  ({ className, ...props }, ref) => /* @__PURE__ */ jsx22(
+  ({ className, ...props }, ref) => /* @__PURE__ */ jsx21(
     "ul",
     {
       ref,
@@ -2245,12 +2211,12 @@ var SidebarMenuSub = React16.forwardRef(
 );
 SidebarMenuSub.displayName = "SidebarMenuSub";
 var SidebarMenuSubItem = React16.forwardRef(
-  ({ ...props }, ref) => /* @__PURE__ */ jsx22("li", { ref, ...props })
+  ({ ...props }, ref) => /* @__PURE__ */ jsx21("li", { ref, ...props })
 );
 SidebarMenuSubItem.displayName = "SidebarMenuSubItem";
 var SidebarMenuSubButton = React16.forwardRef(({ asChild = false, size = "md", isActive, className, ...props }, ref) => {
   const Comp = asChild ? Slot3 : "a";
-  return /* @__PURE__ */ jsx22(
+  return /* @__PURE__ */ jsx21(
     Comp,
     {
       ref,
@@ -2273,10 +2239,10 @@ SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
 
 // src/ui/sonner.tsx
 import { Toaster as Sonner } from "sonner";
-import { jsx as jsx23 } from "react/jsx-runtime";
+import { jsx as jsx22 } from "react/jsx-runtime";
 var Toaster = ({ ...props }) => {
   const { resolvedTheme } = useTheme();
-  return /* @__PURE__ */ jsx23(
+  return /* @__PURE__ */ jsx22(
     Sonner,
     {
       theme: resolvedTheme,
@@ -2296,9 +2262,9 @@ var Toaster = ({ ...props }) => {
 
 // src/ui/tabs.tsx
 import * as TabsPrimitive from "@radix-ui/react-tabs";
-import { jsx as jsx24 } from "react/jsx-runtime";
+import { jsx as jsx23 } from "react/jsx-runtime";
 function Tabs({ className, ...props }) {
-  return /* @__PURE__ */ jsx24(
+  return /* @__PURE__ */ jsx23(
     TabsPrimitive.Root,
     {
       "data-slot": "tabs",
@@ -2308,10 +2274,10 @@ function Tabs({ className, ...props }) {
   );
 }
 function TabsList({ className, ...props }) {
-  return /* @__PURE__ */ jsx24(TabsPrimitive.List, { "data-slot": "tabs-list", className: cn(tabListClass, className), ...props });
+  return /* @__PURE__ */ jsx23(TabsPrimitive.List, { "data-slot": "tabs-list", className: cn(tabListClass, className), ...props });
 }
 function TabsTrigger({ className, ...props }) {
-  return /* @__PURE__ */ jsx24(
+  return /* @__PURE__ */ jsx23(
     TabsPrimitive.Trigger,
     {
       "data-slot": "tabs-trigger",
@@ -2326,7 +2292,7 @@ function TabsTrigger({ className, ...props }) {
   );
 }
 function TabsContent({ className, ...props }) {
-  return /* @__PURE__ */ jsx24(
+  return /* @__PURE__ */ jsx23(
     TabsPrimitive.Content,
     {
       "data-slot": "tabs-content",
@@ -2339,7 +2305,7 @@ function TabsContent({ className, ...props }) {
 // src/ui/tag-input.tsx
 import { useMemo as useMemo3, useState as useState3 } from "react";
 import { X } from "lucide-react";
-import { jsx as jsx25, jsxs as jsxs12 } from "react/jsx-runtime";
+import { jsx as jsx24, jsxs as jsxs12 } from "react/jsx-runtime";
 function TagInput({ value, onChange, options = [], placeholder, className }) {
   const [draft, setDraft] = useState3("");
   const [focused, setFocused] = useState3(false);
@@ -2370,22 +2336,22 @@ function TagInput({ value, onChange, options = [], placeholder, className }) {
           title: v,
           className: "inline-flex max-w-full items-center gap-1 rounded bg-ink/[0.08] px-1.5 py-0.5 text-xs text-ink/85",
           children: [
-            /* @__PURE__ */ jsx25("span", { className: "truncate", children: labelOf(v) }),
-            /* @__PURE__ */ jsx25(
+            /* @__PURE__ */ jsx24("span", { className: "truncate", children: labelOf(v) }),
+            /* @__PURE__ */ jsx24(
               "button",
               {
                 type: "button",
                 onClick: () => onChange(value.filter((x) => x !== v)),
                 className: "text-ink/50 hover:text-ink",
                 "aria-label": `Remove ${labelOf(v)}`,
-                children: /* @__PURE__ */ jsx25(X, { className: "h-3 w-3" })
+                children: /* @__PURE__ */ jsx24(X, { className: "h-3 w-3" })
               }
             )
           ]
         },
         v
       )),
-      /* @__PURE__ */ jsx25(
+      /* @__PURE__ */ jsx24(
         "input",
         {
           value: draft,
@@ -2398,7 +2364,7 @@ function TagInput({ value, onChange, options = [], placeholder, className }) {
         }
       )
     ] }),
-    focused && suggestions.length > 0 && /* @__PURE__ */ jsx25("ul", { className: "absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-ink/15 bg-background py-1 shadow-lg", children: suggestions.map((o) => /* @__PURE__ */ jsx25("li", { children: /* @__PURE__ */ jsxs12(
+    focused && suggestions.length > 0 && /* @__PURE__ */ jsx24("ul", { className: "absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-ink/15 bg-background py-1 shadow-lg", children: suggestions.map((o) => /* @__PURE__ */ jsx24("li", { children: /* @__PURE__ */ jsxs12(
       "button",
       {
         type: "button",
@@ -2406,8 +2372,8 @@ function TagInput({ value, onChange, options = [], placeholder, className }) {
         onClick: () => add(o.value),
         className: "flex w-full flex-col items-start px-3 py-1.5 text-left hover:bg-ink/[0.06]",
         children: [
-          /* @__PURE__ */ jsx25("span", { className: "text-sm text-ink/90", children: o.label }),
-          /* @__PURE__ */ jsx25("span", { className: "font-mono text-[11px] text-ink/45", children: o.value })
+          /* @__PURE__ */ jsx24("span", { className: "text-sm text-ink/90", children: o.label }),
+          /* @__PURE__ */ jsx24("span", { className: "font-mono text-[11px] text-ink/45", children: o.value })
         ]
       }
     ) }, o.value)) })
@@ -2416,7 +2382,7 @@ function TagInput({ value, onChange, options = [], placeholder, className }) {
 
 // src/ui/theme-toggle.tsx
 import { Monitor, Moon, Sun } from "lucide-react";
-import { jsx as jsx26 } from "react/jsx-runtime";
+import { jsx as jsx25 } from "react/jsx-runtime";
 var OPTIONS = [
   { value: "light", label: "Light theme", icon: Sun },
   { value: "system", label: "Follow system theme", icon: Monitor },
@@ -2424,7 +2390,7 @@ var OPTIONS = [
 ];
 var ThemeToggle = ({ className }) => {
   const { theme, setTheme } = useTheme();
-  return /* @__PURE__ */ jsx26(
+  return /* @__PURE__ */ jsx25(
     "div",
     {
       role: "radiogroup",
@@ -2435,7 +2401,7 @@ var ThemeToggle = ({ className }) => {
       ),
       children: OPTIONS.map(({ value, label, icon: Icon }) => {
         const active = theme === value;
-        return /* @__PURE__ */ jsx26(
+        return /* @__PURE__ */ jsx25(
           "button",
           {
             type: "button",
@@ -2448,7 +2414,7 @@ var ThemeToggle = ({ className }) => {
               "flex h-6 w-6 items-center justify-center rounded-full transition-colors",
               active ? "bg-ink/15 text-foreground-50 shadow-sm" : "text-muted-foreground hover:text-foreground-50 hover:bg-ink/10"
             ),
-            children: /* @__PURE__ */ jsx26(Icon, { className: "h-3.5 w-3.5" })
+            children: /* @__PURE__ */ jsx25(Icon, { className: "h-3.5 w-3.5" })
           },
           value
         );
@@ -2459,7 +2425,7 @@ var ThemeToggle = ({ className }) => {
 var ThemeToggleCompact = ({ className }) => {
   const { resolvedTheme, toggleTheme } = useTheme();
   const goingDark = resolvedTheme === "light";
-  return /* @__PURE__ */ jsx26(
+  return /* @__PURE__ */ jsx25(
     "button",
     {
       type: "button",
@@ -2471,21 +2437,21 @@ var ThemeToggleCompact = ({ className }) => {
         "bg-ink/5 text-muted-foreground transition-colors hover:bg-ink/10 hover:text-foreground-50",
         className
       ),
-      children: goingDark ? /* @__PURE__ */ jsx26(Moon, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx26(Sun, { className: "h-4 w-4" })
+      children: goingDark ? /* @__PURE__ */ jsx25(Moon, { className: "h-4 w-4" }) : /* @__PURE__ */ jsx25(Sun, { className: "h-4 w-4" })
     }
   );
 };
 
 // src/layout/InfoGrid.tsx
-import { jsx as jsx27 } from "react/jsx-runtime";
+import { jsx as jsx26 } from "react/jsx-runtime";
 function InfoGrid({ className, children, ...props }) {
-  return /* @__PURE__ */ jsx27("div", { className: cn("grid grid-cols-1 md:grid-cols-2 gap-3 mb-4", className), ...props, children });
+  return /* @__PURE__ */ jsx26("div", { className: cn("grid grid-cols-1 md:grid-cols-2 gap-3 mb-4", className), ...props, children });
 }
 
 // src/layout/InnerSidebarLayout.tsx
-import { jsx as jsx28, jsxs as jsxs13 } from "react/jsx-runtime";
+import { jsx as jsx27, jsxs as jsxs13 } from "react/jsx-runtime";
 function InnerSidebarLayout({ className, children, ...props }) {
-  return /* @__PURE__ */ jsx28(
+  return /* @__PURE__ */ jsx27(
     "div",
     {
       className: cn(
@@ -2503,7 +2469,7 @@ function InnerSidebar({
   children,
   ...props
 }) {
-  return /* @__PURE__ */ jsx28(
+  return /* @__PURE__ */ jsx27(
     "aside",
     {
       className: cn(
@@ -2517,7 +2483,7 @@ function InnerSidebar({
   );
 }
 function InnerBody({ className, children, ...props }) {
-  return /* @__PURE__ */ jsx28("div", { className: cn("flex-1 min-w-0 w-full flex flex-col gap-6", className), ...props, children });
+  return /* @__PURE__ */ jsx27("div", { className: cn("flex-1 min-w-0 w-full flex flex-col gap-6", className), ...props, children });
 }
 function InnerSidebarSection({
   title,
@@ -2536,8 +2502,8 @@ function InnerSidebarSection({
       ...props,
       children: [
         (title || action) && /* @__PURE__ */ jsxs13("div", { className: "flex items-center justify-between gap-2 pb-2 border-b border-ink/5", children: [
-          title && /* @__PURE__ */ jsx28("h4", { className: "text-xs font-semibold uppercase tracking-wider text-muted-foreground", children: title }),
-          action && /* @__PURE__ */ jsx28("div", { children: action })
+          title && /* @__PURE__ */ jsx27("h4", { className: "text-xs font-semibold uppercase tracking-wider text-muted-foreground", children: title }),
+          action && /* @__PURE__ */ jsx27("div", { children: action })
         ] }),
         children
       ]
@@ -2545,7 +2511,7 @@ function InnerSidebarSection({
   );
 }
 function InnerSidebarNav({ className, children, ...props }) {
-  return /* @__PURE__ */ jsx28("nav", { className: cn("flex flex-col gap-1", className), ...props, children });
+  return /* @__PURE__ */ jsx27("nav", { className: cn("flex flex-col gap-1", className), ...props, children });
 }
 function InnerSidebarNavItem({
   active,
@@ -2567,7 +2533,7 @@ function InnerSidebarNavItem({
       ...props,
       children: [
         /* @__PURE__ */ jsxs13("div", { className: "flex items-center gap-2.5 truncate", children: [
-          Icon && /* @__PURE__ */ jsx28(
+          Icon && /* @__PURE__ */ jsx27(
             Icon,
             {
               className: cn(
@@ -2576,9 +2542,9 @@ function InnerSidebarNavItem({
               )
             }
           ),
-          /* @__PURE__ */ jsx28("span", { className: "truncate", children: label })
+          /* @__PURE__ */ jsx27("span", { className: "truncate", children: label })
         ] }),
-        count !== void 0 && /* @__PURE__ */ jsx28(
+        count !== void 0 && /* @__PURE__ */ jsx27(
           "span",
           {
             className: cn(
@@ -2595,7 +2561,7 @@ function InnerSidebarNavItem({
 
 // src/dashboard/FeatureCard.tsx
 import { ArrowRight } from "lucide-react";
-import { Fragment as Fragment2, jsx as jsx29, jsxs as jsxs14 } from "react/jsx-runtime";
+import { Fragment as Fragment2, jsx as jsx28, jsxs as jsxs14 } from "react/jsx-runtime";
 function FeatureCard({
   icon: Icon,
   title,
@@ -2607,40 +2573,40 @@ function FeatureCard({
   const Link = useLink();
   const className = "group flex h-full flex-col rounded-xl border border-ink/10 bg-ink/[0.02] p-5 transition-colors hover:border-brand-sky/40 hover:bg-ink/[0.04]";
   const content = /* @__PURE__ */ jsxs14(Fragment2, { children: [
-    /* @__PURE__ */ jsx29("span", { className: "mb-4 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand-sky/10 text-brand-sky", children: /* @__PURE__ */ jsx29(Icon, { className: "h-[18px] w-[18px]" }) }),
-    /* @__PURE__ */ jsx29("h3", { className: "text-base font-semibold tracking-tight", children: title }),
-    /* @__PURE__ */ jsx29("p", { className: "mt-1.5 flex-1 text-sm leading-relaxed text-ink/60", children: description }),
-    tags && /* @__PURE__ */ jsx29("div", { className: "mt-4 flex flex-wrap gap-1.5", children: tags.map((t) => /* @__PURE__ */ jsx29("span", { className: "rounded-md bg-ink/[0.06] px-2 py-0.5 text-xs text-ink/70", children: t }, t)) }),
+    /* @__PURE__ */ jsx28("span", { className: "mb-4 inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand-sky/10 text-brand-sky", children: /* @__PURE__ */ jsx28(Icon, { className: "h-[18px] w-[18px]" }) }),
+    /* @__PURE__ */ jsx28("h3", { className: "text-base font-semibold tracking-tight", children: title }),
+    /* @__PURE__ */ jsx28("p", { className: "mt-1.5 flex-1 text-sm leading-relaxed text-ink/60", children: description }),
+    tags && /* @__PURE__ */ jsx28("div", { className: "mt-4 flex flex-wrap gap-1.5", children: tags.map((t) => /* @__PURE__ */ jsx28("span", { className: "rounded-md bg-ink/[0.06] px-2 py-0.5 text-xs text-ink/70", children: t }, t)) }),
     action && /* @__PURE__ */ jsxs14("span", { className: "mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-sky", children: [
       action,
-      /* @__PURE__ */ jsx29(ArrowRight, { className: "h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" })
+      /* @__PURE__ */ jsx28(ArrowRight, { className: "h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" })
     ] })
   ] });
-  return to ? /* @__PURE__ */ jsx29(Link, { to, className, children: content }) : /* @__PURE__ */ jsx29("div", { className, children: content });
+  return to ? /* @__PURE__ */ jsx28(Link, { to, className, children: content }) : /* @__PURE__ */ jsx28("div", { className, children: content });
 }
 
 // src/dashboard/StatTile.tsx
-import { Fragment as Fragment3, jsx as jsx30, jsxs as jsxs15 } from "react/jsx-runtime";
+import { Fragment as Fragment3, jsx as jsx29, jsxs as jsxs15 } from "react/jsx-runtime";
 function StatTile({ label, value, hint, icon: Icon, to }) {
   const Link = useLink();
   const body = /* @__PURE__ */ jsxs15(Fragment3, { children: [
     /* @__PURE__ */ jsxs15("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsx30("span", { className: "text-sm text-ink/60", children: label }),
-      /* @__PURE__ */ jsx30(Icon, { className: "h-4 w-4 text-ink/40" })
+      /* @__PURE__ */ jsx29("span", { className: "text-sm text-ink/60", children: label }),
+      /* @__PURE__ */ jsx29(Icon, { className: "h-4 w-4 text-ink/40" })
     ] }),
-    /* @__PURE__ */ jsx30("div", { className: "mt-2 text-3xl font-semibold tabular-nums tracking-tight", children: value === void 0 ? /* @__PURE__ */ jsx30("span", { className: "text-ink/25", children: "\u2014" }) : value.toLocaleString() }),
-    hint && /* @__PURE__ */ jsx30("div", { className: "mt-1 text-xs text-ink/50", children: hint })
+    /* @__PURE__ */ jsx29("div", { className: "mt-2 text-3xl font-semibold tabular-nums tracking-tight", children: value === void 0 ? /* @__PURE__ */ jsx29("span", { className: "text-ink/25", children: "\u2014" }) : value.toLocaleString() }),
+    hint && /* @__PURE__ */ jsx29("div", { className: "mt-1 text-xs text-ink/50", children: hint })
   ] });
   const className = cn(
     "block rounded-xl border border-ink/10 bg-ink/[0.02] p-4 transition-colors",
     to && "hover:border-ink/20 hover:bg-ink/[0.04]"
   );
-  return to ? /* @__PURE__ */ jsx30(Link, { to, className, children: body }) : /* @__PURE__ */ jsx30("div", { className, children: body });
+  return to ? /* @__PURE__ */ jsx29(Link, { to, className, children: body }) : /* @__PURE__ */ jsx29("div", { className, children: body });
 }
 
 // src/table/SortableHeader.tsx
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { jsx as jsx31, jsxs as jsxs16 } from "react/jsx-runtime";
+import { jsx as jsx30, jsxs as jsxs16 } from "react/jsx-runtime";
 function SortableHeader({
   label,
   sortKey,
@@ -2661,7 +2627,7 @@ function SortableHeader({
       ),
       children: [
         label,
-        /* @__PURE__ */ jsx31(
+        /* @__PURE__ */ jsx30(
           Icon,
           {
             className: cn(
@@ -2677,7 +2643,7 @@ function SortableHeader({
 
 // src/identity/ParticipantLabel.tsx
 import { createContext as createContext4, useContext as useContext4 } from "react";
-import { jsx as jsx32, jsxs as jsxs17 } from "react/jsx-runtime";
+import { jsx as jsx31, jsxs as jsxs17 } from "react/jsx-runtime";
 var ParticipantDirectoryContext = createContext4(() => void 0);
 var ParticipantDirectoryProvider = ParticipantDirectoryContext.Provider;
 var useParticipantResolver = () => useContext4(ParticipantDirectoryContext);
@@ -2689,27 +2655,27 @@ function ParticipantLabel({
   compact = false
 }) {
   const resolveParticipant = useParticipantResolver();
-  if (!id) return /* @__PURE__ */ jsx32("span", { className: "text-ink/35", children: "\u2014" });
+  if (!id) return /* @__PURE__ */ jsx31("span", { className: "text-ink/35", children: "\u2014" });
   const resolved = resolveParticipant(id);
   const nick = explicitNick ?? resolved?.nick;
   const self = explicitIsSelf ?? resolved?.isSelf ?? false;
   return /* @__PURE__ */ jsxs17("span", { className: cn("inline-flex min-w-0 flex-col", className), children: [
     /* @__PURE__ */ jsxs17("span", { className: "inline-flex items-center gap-1.5", children: [
-      /* @__PURE__ */ jsx32("span", { className: cn("truncate font-medium", !nick && "text-ink/60"), children: nick ?? "Unknown participant" }),
-      self && /* @__PURE__ */ jsx32("span", { className: "rounded bg-brand-sky/15 px-1.5 py-px text-[0.6875rem] font-semibold text-brand-sky", children: "You" })
+      /* @__PURE__ */ jsx31("span", { className: cn("truncate font-medium", !nick && "text-ink/60"), children: nick ?? "Unknown participant" }),
+      self && /* @__PURE__ */ jsx31("span", { className: "rounded bg-brand-sky/15 px-1.5 py-px text-[0.6875rem] font-semibold text-brand-sky", children: "You" })
     ] }),
-    !compact && /* @__PURE__ */ jsx32(Identifier, { value: id })
+    !compact && /* @__PURE__ */ jsx31(Identifier, { value: id })
   ] });
 }
 
 // src/process/StateStepper.tsx
 import { Check as Check2, Pause, X as X2 } from "lucide-react";
-import { jsx as jsx33, jsxs as jsxs18 } from "react/jsx-runtime";
+import { jsx as jsx32, jsxs as jsxs18 } from "react/jsx-runtime";
 function StateStepper({ steps, current, visited, detours = {} }) {
   const detour = detours[current];
   const anchor = detour ? detour.at ?? [...steps].reverse().find((s) => visited?.has(s)) ?? steps[0] : current;
   const anchorIndex = steps.indexOf(anchor);
-  return /* @__PURE__ */ jsx33("ol", { className: "flex w-full items-start overflow-x-auto rounded-lg border border-ink/10 bg-ink/[0.015] px-4 py-3", children: steps.map((step, i) => {
+  return /* @__PURE__ */ jsx32("ol", { className: "flex w-full items-start overflow-x-auto rounded-lg border border-ink/10 bg-ink/[0.015] px-4 py-3", children: steps.map((step, i) => {
     const isAnchor = i === anchorIndex;
     const done = i < anchorIndex || isAnchor && !detour && step === steps[steps.length - 1];
     const skipped = !!visited && i < anchorIndex && !visited.has(step);
@@ -2717,7 +2683,7 @@ function StateStepper({ steps, current, visited, detours = {} }) {
     const tone = isAnchor && detour ? detour.tone : void 0;
     return /* @__PURE__ */ jsxs18("li", { className: "flex min-w-[96px] flex-1 items-start", children: [
       /* @__PURE__ */ jsxs18("div", { className: "flex flex-col items-center gap-1.5 text-center", children: [
-        /* @__PURE__ */ jsx33(
+        /* @__PURE__ */ jsx32(
           "span",
           {
             className: cn(
@@ -2729,10 +2695,10 @@ function StateStepper({ steps, current, visited, detours = {} }) {
               tone === "warn" && "border-warn-500 bg-warn-500 text-white",
               !done && !active && !tone && "border-ink/20 text-ink/35"
             ),
-            children: tone === "danger" ? /* @__PURE__ */ jsx33(X2, { className: "h-3.5 w-3.5" }) : tone === "warn" ? /* @__PURE__ */ jsx33(Pause, { className: "h-3 w-3" }) : done && !skipped ? /* @__PURE__ */ jsx33(Check2, { className: "h-3.5 w-3.5" }) : i + 1
+            children: tone === "danger" ? /* @__PURE__ */ jsx32(X2, { className: "h-3.5 w-3.5" }) : tone === "warn" ? /* @__PURE__ */ jsx32(Pause, { className: "h-3 w-3" }) : done && !skipped ? /* @__PURE__ */ jsx32(Check2, { className: "h-3.5 w-3.5" }) : i + 1
           }
         ),
-        /* @__PURE__ */ jsx33(
+        /* @__PURE__ */ jsx32(
           "span",
           {
             className: cn(
@@ -2742,7 +2708,7 @@ function StateStepper({ steps, current, visited, detours = {} }) {
             children: step
           }
         ),
-        tone && /* @__PURE__ */ jsx33(
+        tone && /* @__PURE__ */ jsx32(
           "span",
           {
             className: cn(
@@ -2753,7 +2719,7 @@ function StateStepper({ steps, current, visited, detours = {} }) {
           }
         )
       ] }),
-      i < steps.length - 1 && /* @__PURE__ */ jsx33(
+      i < steps.length - 1 && /* @__PURE__ */ jsx32(
         "span",
         {
           className: cn(
@@ -2769,7 +2735,7 @@ function StateStepper({ steps, current, visited, detours = {} }) {
 // src/process/WizardDialog.tsx
 import { useEffect as useEffect4, useRef as useRef2, useState as useState4 } from "react";
 import { createPortal } from "react-dom";
-import { jsx as jsx34, jsxs as jsxs19 } from "react/jsx-runtime";
+import { jsx as jsx33, jsxs as jsxs19 } from "react/jsx-runtime";
 function WizardDialog({
   open,
   step,
@@ -2826,7 +2792,7 @@ function WizardDialog({
   }, [open, anchorRef, width]);
   if (!open) return null;
   const portalRoot = typeof window !== "undefined" ? document.body : null;
-  const portalContent = /* @__PURE__ */ jsx34(
+  const portalContent = /* @__PURE__ */ jsx33(
     "div",
     {
       ref,
@@ -2837,19 +2803,19 @@ function WizardDialog({
         {
           className: `relative mx-4 bg-background-300 border border-secondary-800 text-ink p-3 pt-1.5 rounded-md shadow-lg pointer-events-auto transition-opacity transition-transform duration-200 ${measured ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`,
           children: [
-            /* @__PURE__ */ jsx34("div", { className: "flex items-start gap-3", children: /* @__PURE__ */ jsxs19("div", { className: "flex-1 text-sm leading-snug", children: [
+            /* @__PURE__ */ jsx33("div", { className: "flex items-start gap-3", children: /* @__PURE__ */ jsxs19("div", { className: "flex-1 text-sm leading-snug", children: [
               /* @__PURE__ */ jsxs19("div", { className: "flex justify-between mb-0 items-center", children: [
                 /* @__PURE__ */ jsxs19("p", { className: "text-xs uppercase font-bold tracking-wider text-secondary-700 dark:text-secondary-400 mb-1", children: [
                   "Step ",
                   step
                 ] }),
-                /* @__PURE__ */ jsx34(Badge, { variant: "wizard", className: "mb-2", children: sectionTitle })
+                /* @__PURE__ */ jsx33(Badge, { variant: "wizard", className: "mb-2", children: sectionTitle })
               ] }),
-              /* @__PURE__ */ jsx34(heading_default, { level: "h5", className: "!mb-2", children: title }),
-              /* @__PURE__ */ jsx34("p", { className: "text-sm", children: content }),
+              /* @__PURE__ */ jsx33(heading_default, { level: "h5", className: "!mb-2", children: title }),
+              /* @__PURE__ */ jsx33("p", { className: "text-sm", children: content }),
               children
             ] }) }),
-            /* @__PURE__ */ jsx34("div", { style: { position: "absolute", left: pos.tailLeft - 2, bottom: -14 }, children: /* @__PURE__ */ jsx34(
+            /* @__PURE__ */ jsx33("div", { style: { position: "absolute", left: pos.tailLeft - 2, bottom: -14 }, children: /* @__PURE__ */ jsx33(
               "div",
               {
                 style: {
@@ -2861,7 +2827,7 @@ function WizardDialog({
                 }
               }
             ) }),
-            /* @__PURE__ */ jsx34("div", { style: { position: "absolute", left: pos.tailLeft, bottom: -12 }, children: /* @__PURE__ */ jsx34(
+            /* @__PURE__ */ jsx33("div", { style: { position: "absolute", left: pos.tailLeft, bottom: -12 }, children: /* @__PURE__ */ jsx33(
               "div",
               {
                 style: {
@@ -2885,7 +2851,7 @@ function WizardDialog({
 // src/process/WizardEndDialog.tsx
 import { createPortal as createPortal2 } from "react-dom";
 import { ArrowRight as ArrowRight2 } from "lucide-react";
-import { jsx as jsx35, jsxs as jsxs20 } from "react/jsx-runtime";
+import { jsx as jsx34, jsxs as jsxs20 } from "react/jsx-runtime";
 function WizardEndDialog({
   open,
   title = "Congratulations",
@@ -2897,13 +2863,13 @@ function WizardEndDialog({
   const Link = useLink();
   if (!open) return null;
   const portalRoot = typeof window !== "undefined" ? document.body : null;
-  const portalContent = /* @__PURE__ */ jsx35("div", { className: "fixed left-1/2 top-16 z-[9999] w-full max-w-lg -translate-x-1/2 transform", children: /* @__PURE__ */ jsxs20("div", { className: "relative bg-background-300 border border-secondary-800 text-ink p-3 rounded-md shadow-lg pointer-events-auto", children: [
-    /* @__PURE__ */ jsx35(Badge, { variant: "wizardSuccess", className: "mb-2", children: sectionTitle }),
-    /* @__PURE__ */ jsx35(heading_default, { level: "h5", className: "mb-2 text-xl font-semibold", children: title }),
-    /* @__PURE__ */ jsx35("p", { className: "mb-4 text-sm text-muted-foreground", children: content }),
-    /* @__PURE__ */ jsx35("div", { className: "flex justify-end gap-2", children: /* @__PURE__ */ jsx35(Link, { to: actionHref, children: /* @__PURE__ */ jsxs20(Button, { className: "animate-pulse bg-secondary-500 hover:bg-secondary-600 text-white", children: [
+  const portalContent = /* @__PURE__ */ jsx34("div", { className: "fixed left-1/2 top-16 z-[9999] w-full max-w-lg -translate-x-1/2 transform", children: /* @__PURE__ */ jsxs20("div", { className: "relative bg-background-300 border border-secondary-800 text-ink p-3 rounded-md shadow-lg pointer-events-auto", children: [
+    /* @__PURE__ */ jsx34(Badge, { variant: "wizardSuccess", className: "mb-2", children: sectionTitle }),
+    /* @__PURE__ */ jsx34(heading_default, { level: "h5", className: "mb-2 text-xl font-semibold", children: title }),
+    /* @__PURE__ */ jsx34("p", { className: "mb-4 text-sm text-muted-foreground", children: content }),
+    /* @__PURE__ */ jsx34("div", { className: "flex justify-end gap-2", children: /* @__PURE__ */ jsx34(Link, { to: actionHref, children: /* @__PURE__ */ jsxs20(Button, { className: "animate-pulse bg-secondary-500 hover:bg-secondary-600 text-white", children: [
       actionLabel,
-      /* @__PURE__ */ jsx35(ArrowRight2, {})
+      /* @__PURE__ */ jsx34(ArrowRight2, {})
     ] }) }) })
   ] }) });
   if (portalRoot) return createPortal2(portalContent, portalRoot);
@@ -2912,7 +2878,7 @@ function WizardEndDialog({
 
 // src/process/BaseProcessDialog.tsx
 import { useForm } from "react-hook-form";
-import { jsx as jsx36, jsxs as jsxs21 } from "react/jsx-runtime";
+import { jsx as jsx35, jsxs as jsxs21 } from "react/jsx-runtime";
 function BaseProcessDialog({
   title,
   description,
@@ -2940,7 +2906,7 @@ function BaseProcessDialog({
   };
   const renderDescription = () => {
     if (typeof description === "string") {
-      return /* @__PURE__ */ jsx36("span", { className: "max-w-full flex flex-wrap", children: description });
+      return /* @__PURE__ */ jsx35("span", { className: "max-w-full flex flex-wrap", children: description });
     }
     return description;
   };
@@ -2948,25 +2914,25 @@ function BaseProcessDialog({
     (item) => item !== void 0 && item.value !== void 0
   );
   if (scrollable) {
-    return /* @__PURE__ */ jsx36(DialogContent, { className: `p-0 ${contentClassName}`, children: /* @__PURE__ */ jsx36(Form, { ...form, children: /* @__PURE__ */ jsxs21(
+    return /* @__PURE__ */ jsx35(DialogContent, { className: `p-0 ${contentClassName}`, children: /* @__PURE__ */ jsx35(Form, { ...form, children: /* @__PURE__ */ jsxs21(
       "form",
       {
         onSubmit: form.handleSubmit(handleSubmit),
         className: "space-y-6 flex flex-col h-fit max-h-[90dvh]",
         children: [
           /* @__PURE__ */ jsxs21(DialogHeader, { className: "px-6 pt-6", children: [
-            /* @__PURE__ */ jsx36(DialogTitle, { children: title }),
-            /* @__PURE__ */ jsx36(DialogDescription, { className: "max-w-full flex flex-wrap", children: renderDescription() })
+            /* @__PURE__ */ jsx35(DialogTitle, { children: title }),
+            /* @__PURE__ */ jsx35(DialogDescription, { className: "max-w-full flex flex-wrap", children: renderDescription() })
           ] }),
           /* @__PURE__ */ jsxs21("div", { className: "overflow-y-scroll px-6", children: [
             beforeInfoContent,
-            !hideInfoList && filteredInfoItems.length > 0 && /* @__PURE__ */ jsx36(InfoList, { items: filteredInfoItems }),
+            !hideInfoList && filteredInfoItems.length > 0 && /* @__PURE__ */ jsx35(InfoList, { items: filteredInfoItems }),
             formFields,
             afterInfoContent
           ] }),
           /* @__PURE__ */ jsxs21(DialogFooter, { className: "[&>*]:w-full p-6 pt-0", children: [
-            /* @__PURE__ */ jsx36(DialogClose, { asChild: true, children: /* @__PURE__ */ jsx36(Button, { variant: "ghost", type: "reset", children: cancelLabel }) }),
-            /* @__PURE__ */ jsx36(
+            /* @__PURE__ */ jsx35(DialogClose, { asChild: true, children: /* @__PURE__ */ jsx35(Button, { variant: "ghost", type: "reset", children: cancelLabel }) }),
+            /* @__PURE__ */ jsx35(
               Button,
               {
                 type: "submit",
@@ -2983,17 +2949,17 @@ function BaseProcessDialog({
   }
   return /* @__PURE__ */ jsxs21(DialogContent, { className: contentClassName, children: [
     /* @__PURE__ */ jsxs21(DialogHeader, { children: [
-      /* @__PURE__ */ jsx36(DialogTitle, { children: title }),
-      /* @__PURE__ */ jsx36(DialogDescription, { className: "max-w-full flex flex-wrap", children: renderDescription() })
+      /* @__PURE__ */ jsx35(DialogTitle, { children: title }),
+      /* @__PURE__ */ jsx35(DialogDescription, { className: "max-w-full flex flex-wrap", children: renderDescription() })
     ] }),
     beforeInfoContent,
-    !hideInfoList && filteredInfoItems.length > 0 && /* @__PURE__ */ jsx36(InfoList, { items: filteredInfoItems }),
-    /* @__PURE__ */ jsx36(Form, { ...form, children: /* @__PURE__ */ jsxs21("form", { onSubmit: form.handleSubmit(handleSubmit), className: "space-y-6", children: [
+    !hideInfoList && filteredInfoItems.length > 0 && /* @__PURE__ */ jsx35(InfoList, { items: filteredInfoItems }),
+    /* @__PURE__ */ jsx35(Form, { ...form, children: /* @__PURE__ */ jsxs21("form", { onSubmit: form.handleSubmit(handleSubmit), className: "space-y-6", children: [
       formFields,
       afterInfoContent,
       /* @__PURE__ */ jsxs21(DialogFooter, { className: "[&>*]:w-full", children: [
-        /* @__PURE__ */ jsx36(DialogClose, { asChild: true, children: /* @__PURE__ */ jsx36(Button, { variant: "ghost", type: "reset", children: cancelLabel }) }),
-        /* @__PURE__ */ jsx36(
+        /* @__PURE__ */ jsx35(DialogClose, { asChild: true, children: /* @__PURE__ */ jsx35(Button, { variant: "ghost", type: "reset", children: cancelLabel }) }),
+        /* @__PURE__ */ jsx35(
           Button,
           {
             type: "submit",
@@ -3009,7 +2975,7 @@ function BaseProcessDialog({
 }
 
 // src/shell/AppShellSidebar.tsx
-import { jsx as jsx37, jsxs as jsxs22 } from "react/jsx-runtime";
+import { jsx as jsx36, jsxs as jsxs22 } from "react/jsx-runtime";
 function AppShellSidebar({
   productName,
   homeTo = "/",
@@ -3032,13 +2998,13 @@ function AppShellSidebar({
     (a, b) => (b.section ?? b.url).replace(/\/$/, "").length - (a.section ?? a.url).replace(/\/$/, "").length
   )[0];
   return /* @__PURE__ */ jsxs22(Sidebar, { className: "bg-base-sidebar z-40", children: [
-    /* @__PURE__ */ jsx37(SidebarHeader, { className: "px-3 pt-3 pb-2.5 border-b border-sidebar-border/40", children: /* @__PURE__ */ jsxs22(
+    /* @__PURE__ */ jsx36(SidebarHeader, { className: "px-3 pt-3 pb-2.5 border-b border-sidebar-border/40", children: /* @__PURE__ */ jsxs22(
       Link,
       {
         to: homeTo,
         className: "block group p-1 rounded-xl hover:bg-ink/[0.03] transition-colors",
         children: [
-          /* @__PURE__ */ jsx37(
+          /* @__PURE__ */ jsx36(
             "img",
             {
               src: isDark ? logoOnDark : logoOnLight,
@@ -3047,34 +3013,34 @@ function AppShellSidebar({
             }
           ),
           /* @__PURE__ */ jsxs22("div", { className: "flex items-center gap-2 mt-2 px-1 group-data-[collapsible=icon]:hidden", children: [
-            /* @__PURE__ */ jsx37("span", { className: "text-xs font-black tracking-widest uppercase font-mono text-slate-900 dark:text-white", children: productName }),
-            /* @__PURE__ */ jsx37("span", { className: "h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" })
+            /* @__PURE__ */ jsx36("span", { className: "text-xs font-black tracking-widest uppercase font-mono text-slate-900 dark:text-white", children: productName }),
+            /* @__PURE__ */ jsx36("span", { className: "h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" })
           ] })
         ]
       }
     ) }),
-    /* @__PURE__ */ jsx37(SidebarContent, { className: "overflow-y-auto", children: navGroups.map((group) => /* @__PURE__ */ jsx37(SidebarGroup, { children: /* @__PURE__ */ jsxs22(SidebarGroupContent, { children: [
-      /* @__PURE__ */ jsx37(SidebarGroupLabel, { children: group.title }),
-      /* @__PURE__ */ jsx37(SidebarMenu, { children: group.items.map((item) => /* @__PURE__ */ jsx37(SidebarMenuItem, { children: /* @__PURE__ */ jsx37(SidebarMenuButton, { asChild: true, children: /* @__PURE__ */ jsxs22(
+    /* @__PURE__ */ jsx36(SidebarContent, { className: "overflow-y-auto", children: navGroups.map((group) => /* @__PURE__ */ jsx36(SidebarGroup, { children: /* @__PURE__ */ jsxs22(SidebarGroupContent, { children: [
+      /* @__PURE__ */ jsx36(SidebarGroupLabel, { children: group.title }),
+      /* @__PURE__ */ jsx36(SidebarMenu, { children: group.items.map((item) => /* @__PURE__ */ jsx36(SidebarMenuItem, { children: /* @__PURE__ */ jsx36(SidebarMenuButton, { asChild: true, children: /* @__PURE__ */ jsxs22(
         Link,
         {
           to: item.url,
           className: item === activeItem ? "bg-ink/10 text-ink" : "",
           children: [
-            /* @__PURE__ */ jsx37(item.icon, {}),
-            /* @__PURE__ */ jsx37("span", { children: item.title })
+            /* @__PURE__ */ jsx36(item.icon, {}),
+            /* @__PURE__ */ jsx36("span", { children: item.title })
           ]
         }
       ) }) }, item.title)) })
     ] }) }, group.title)) }),
-    footerSlot && /* @__PURE__ */ jsx37(SidebarFooter, { className: footerClassName, children: footerSlot })
+    footerSlot && /* @__PURE__ */ jsx36(SidebarFooter, { className: footerClassName, children: footerSlot })
   ] });
 }
 
 // src/shell/AppShellHeader.tsx
 import React20, { useMemo as useMemo4, useState as useState5 } from "react";
 import { Check as Check3, Copy, LogOut } from "lucide-react";
-import { Fragment as Fragment4, jsx as jsx38, jsxs as jsxs23 } from "react/jsx-runtime";
+import { Fragment as Fragment4, jsx as jsx37, jsxs as jsxs23 } from "react/jsx-runtime";
 var DEFAULT_ROUTE_LABELS = {
   "datahub-catalog": "DataHub Catalog",
   "provider-catalog": "Provider Catalog",
@@ -3210,7 +3176,7 @@ function AppShellHeader({
       return breadcrumbs.map((item, index) => {
         const isLast = index === breadcrumbs.length - 1;
         return /* @__PURE__ */ jsxs23(React20.Fragment, { children: [
-          /* @__PURE__ */ jsx38(BreadcrumbItem, { className: "truncate max-w-[200px]", children: isLast ? /* @__PURE__ */ jsx38(BreadcrumbPage, { className: "truncate font-medium", children: item.label }) : /* @__PURE__ */ jsx38(BreadcrumbLink, { asChild: true, children: /* @__PURE__ */ jsx38(
+          /* @__PURE__ */ jsx37(BreadcrumbItem, { className: "truncate max-w-[200px]", children: isLast ? /* @__PURE__ */ jsx37(BreadcrumbPage, { className: "truncate font-medium", children: item.label }) : /* @__PURE__ */ jsx37(BreadcrumbLink, { asChild: true, children: /* @__PURE__ */ jsx37(
             Link,
             {
               to: item.href,
@@ -3218,7 +3184,7 @@ function AppShellHeader({
               children: item.label
             }
           ) }) }),
-          !isLast && /* @__PURE__ */ jsx38(BreadcrumbSeparator, {})
+          !isLast && /* @__PURE__ */ jsx37(BreadcrumbSeparator, {})
         ] }, item.key);
       });
     }
@@ -3226,7 +3192,7 @@ function AppShellHeader({
     const middleItems = breadcrumbs.slice(1, -1);
     const lastItem = breadcrumbs[breadcrumbs.length - 1];
     return /* @__PURE__ */ jsxs23(Fragment4, { children: [
-      /* @__PURE__ */ jsx38(BreadcrumbItem, { className: "truncate max-w-[150px]", children: /* @__PURE__ */ jsx38(BreadcrumbLink, { asChild: true, children: /* @__PURE__ */ jsx38(
+      /* @__PURE__ */ jsx37(BreadcrumbItem, { className: "truncate max-w-[150px]", children: /* @__PURE__ */ jsx37(BreadcrumbLink, { asChild: true, children: /* @__PURE__ */ jsx37(
         Link,
         {
           to: firstItem.href,
@@ -3234,14 +3200,14 @@ function AppShellHeader({
           children: firstItem.label
         }
       ) }) }),
-      /* @__PURE__ */ jsx38(BreadcrumbSeparator, {}),
-      /* @__PURE__ */ jsx38(BreadcrumbItem, { className: "md:hidden", children: /* @__PURE__ */ jsxs23(Tooltip2, { children: [
-        /* @__PURE__ */ jsx38(TooltipTrigger, { className: "flex items-center text-muted-foreground hover:text-foreground transition-colors", children: /* @__PURE__ */ jsx38(BreadcrumbEllipsis, { className: "h-4 w-4" }) }),
-        /* @__PURE__ */ jsx38(TooltipContent, { side: "bottom", className: "flex flex-col gap-1", children: middleItems.map((item) => /* @__PURE__ */ jsx38(Link, { to: item.href, className: "text-sm hover:underline", children: item.label }, item.key)) })
+      /* @__PURE__ */ jsx37(BreadcrumbSeparator, {}),
+      /* @__PURE__ */ jsx37(BreadcrumbItem, { className: "md:hidden", children: /* @__PURE__ */ jsxs23(Tooltip2, { children: [
+        /* @__PURE__ */ jsx37(TooltipTrigger, { className: "flex items-center text-muted-foreground hover:text-foreground transition-colors", children: /* @__PURE__ */ jsx37(BreadcrumbEllipsis, { className: "h-4 w-4" }) }),
+        /* @__PURE__ */ jsx37(TooltipContent, { side: "bottom", className: "flex flex-col gap-1", children: middleItems.map((item) => /* @__PURE__ */ jsx37(Link, { to: item.href, className: "text-sm hover:underline", children: item.label }, item.key)) })
       ] }) }),
-      /* @__PURE__ */ jsx38(BreadcrumbSeparator, { className: "md:hidden" }),
+      /* @__PURE__ */ jsx37(BreadcrumbSeparator, { className: "md:hidden" }),
       middleItems.map((item) => /* @__PURE__ */ jsxs23(React20.Fragment, { children: [
-        /* @__PURE__ */ jsx38(BreadcrumbItem, { className: "hidden md:inline-flex truncate max-w-[150px]", children: /* @__PURE__ */ jsx38(BreadcrumbLink, { asChild: true, children: /* @__PURE__ */ jsx38(
+        /* @__PURE__ */ jsx37(BreadcrumbItem, { className: "hidden md:inline-flex truncate max-w-[150px]", children: /* @__PURE__ */ jsx37(BreadcrumbLink, { asChild: true, children: /* @__PURE__ */ jsx37(
           Link,
           {
             to: item.href,
@@ -3249,22 +3215,22 @@ function AppShellHeader({
             children: item.label
           }
         ) }) }),
-        /* @__PURE__ */ jsx38(BreadcrumbSeparator, { className: "hidden md:flex" })
+        /* @__PURE__ */ jsx37(BreadcrumbSeparator, { className: "hidden md:flex" })
       ] }, item.key)),
-      /* @__PURE__ */ jsx38(BreadcrumbItem, { className: "truncate max-w-[200px]", children: /* @__PURE__ */ jsx38(BreadcrumbPage, { className: "truncate font-medium", children: lastItem.label }) })
+      /* @__PURE__ */ jsx37(BreadcrumbItem, { className: "truncate max-w-[200px]", children: /* @__PURE__ */ jsx37(BreadcrumbPage, { className: "truncate font-medium", children: lastItem.label }) })
     ] });
   };
   return /* @__PURE__ */ jsxs23("div", { className: "bg-background/80 backdrop-blur-md w-full border-b border-ink/10 z-40 h-12 px-4 flex justify-between items-center gap-4 sticky top-0 transition-colors", children: [
     /* @__PURE__ */ jsxs23("div", { className: "flex items-center gap-2.5 overflow-hidden min-w-0", children: [
-      /* @__PURE__ */ jsx38(SidebarTrigger, { className: "h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" }),
-      /* @__PURE__ */ jsx38(Separator2, { orientation: "vertical", className: "h-4 shrink-0 bg-ink/10" }),
-      /* @__PURE__ */ jsx38(Breadcrumb, { className: "overflow-hidden", children: /* @__PURE__ */ jsx38(BreadcrumbList, { className: "flex-nowrap text-xs", children: renderBreadcrumbs() }) })
+      /* @__PURE__ */ jsx37(SidebarTrigger, { className: "h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground" }),
+      /* @__PURE__ */ jsx37(Separator2, { orientation: "vertical", className: "h-4 shrink-0 bg-ink/10" }),
+      /* @__PURE__ */ jsx37(Breadcrumb, { className: "overflow-hidden", children: /* @__PURE__ */ jsx37(BreadcrumbList, { className: "flex-nowrap text-xs", children: renderBreadcrumbs() }) })
     ] }),
     /* @__PURE__ */ jsxs23("div", { className: "flex flex-row gap-3 shrink-0 items-center", children: [
       rightActionsSlot,
-      /* @__PURE__ */ jsx38(ThemeToggle, {}),
+      /* @__PURE__ */ jsx37(ThemeToggle, {}),
       /* @__PURE__ */ jsxs23(Popover, { children: [
-        /* @__PURE__ */ jsx38(PopoverTrigger, { asChild: true, children: /* @__PURE__ */ jsxs23(
+        /* @__PURE__ */ jsx37(PopoverTrigger, { asChild: true, children: /* @__PURE__ */ jsxs23(
           "button",
           {
             type: "button",
@@ -3272,11 +3238,11 @@ function AppShellHeader({
             children: [
               /* @__PURE__ */ jsxs23("div", { className: "relative flex items-center justify-center h-6 w-6 rounded-full bg-primary-700 text-white font-bold text-xs shadow-sm", children: [
                 displayName.slice(0, 2).toUpperCase(),
-                /* @__PURE__ */ jsx38("span", { className: "absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-400 border border-background" })
+                /* @__PURE__ */ jsx37("span", { className: "absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-400 border border-background" })
               ] }),
               /* @__PURE__ */ jsxs23("div", { className: "hidden sm:flex flex-col text-left", children: [
-                /* @__PURE__ */ jsx38("span", { className: "text-xs font-medium text-foreground leading-none", children: displayName }),
-                /* @__PURE__ */ jsx38("span", { className: "text-xs text-muted-foreground leading-tight", children: roleLabel })
+                /* @__PURE__ */ jsx37("span", { className: "text-xs font-medium text-foreground leading-none", children: displayName }),
+                /* @__PURE__ */ jsx37("span", { className: "text-xs text-muted-foreground leading-tight", children: roleLabel })
               ] })
             ]
           }
@@ -3291,48 +3257,48 @@ function AppShellHeader({
               /* @__PURE__ */ jsxs23("div", { className: "p-3.5 bg-gradient-to-r from-primary-950/60 to-background-800 border-b border-ink/10 flex items-start gap-3", children: [
                 /* @__PURE__ */ jsxs23("div", { className: "relative flex items-center justify-center h-10 w-10 rounded-xl bg-primary-700 text-white font-bold text-sm shadow-md shrink-0", children: [
                   displayName.slice(0, 2).toUpperCase(),
-                  /* @__PURE__ */ jsx38("span", { className: "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-background-800" })
+                  /* @__PURE__ */ jsx37("span", { className: "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-background-800" })
                 ] }),
                 /* @__PURE__ */ jsxs23("div", { className: "flex flex-col min-w-0 flex-1", children: [
                   /* @__PURE__ */ jsxs23("div", { className: "flex items-center justify-between gap-1", children: [
-                    /* @__PURE__ */ jsx38("span", { className: "font-semibold text-sm text-foreground truncate", children: displayName }),
-                    /* @__PURE__ */ jsx38(Badge, { variant: "role", dsrole: "Business", size: "xs", children: roleLabel })
+                    /* @__PURE__ */ jsx37("span", { className: "font-semibold text-sm text-foreground truncate", children: displayName }),
+                    /* @__PURE__ */ jsx37(Badge, { variant: "role", dsrole: "Business", size: "xs", children: roleLabel })
                   ] }),
-                  user?.email && /* @__PURE__ */ jsx38("span", { className: "text-xs text-muted-foreground truncate", children: user.email }),
-                  /* @__PURE__ */ jsx38("div", { className: "mt-1 flex items-center gap-1.5", children: /* @__PURE__ */ jsx38(Badge, { variant: "success", size: "xs", dot: true, className: "text-xs", children: "Session active" }) })
+                  user?.email && /* @__PURE__ */ jsx37("span", { className: "text-xs text-muted-foreground truncate", children: user.email }),
+                  /* @__PURE__ */ jsx37("div", { className: "mt-1 flex items-center gap-1.5", children: /* @__PURE__ */ jsx37(Badge, { variant: "success", size: "xs", dot: true, className: "text-xs", children: "Session active" }) })
                 ] })
               ] }),
               user && /* @__PURE__ */ jsxs23("div", { className: "p-3.5 flex flex-col gap-2.5 text-xs border-b border-ink/10", children: [
                 /* @__PURE__ */ jsxs23("div", { className: "flex flex-col gap-1", children: [
-                  /* @__PURE__ */ jsx38("span", { className: "text-xs font-semibold text-muted-foreground uppercase tracking-wider", children: "User id" }),
+                  /* @__PURE__ */ jsx37("span", { className: "text-xs font-semibold text-muted-foreground uppercase tracking-wider", children: "User id" }),
                   /* @__PURE__ */ jsxs23("div", { className: "flex items-center justify-between gap-2 p-1.5 rounded bg-sunken/40 border border-ink/5 font-mono text-xs text-brand-sky", children: [
-                    /* @__PURE__ */ jsx38("span", { className: "truncate", children: user.userId }),
-                    /* @__PURE__ */ jsx38(
+                    /* @__PURE__ */ jsx37("span", { className: "truncate", children: user.userId }),
+                    /* @__PURE__ */ jsx37(
                       "button",
                       {
                         type: "button",
                         onClick: handleCopySub,
                         className: "text-muted-foreground hover:text-ink transition-colors shrink-0 p-0.5",
                         title: "Copy user id",
-                        children: copied ? /* @__PURE__ */ jsx38(Check3, { className: "h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" }) : /* @__PURE__ */ jsx38(Copy, { className: "h-3.5 w-3.5" })
+                        children: copied ? /* @__PURE__ */ jsx37(Check3, { className: "h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" }) : /* @__PURE__ */ jsx37(Copy, { className: "h-3.5 w-3.5" })
                       }
                     )
                   ] })
                 ] }),
                 /* @__PURE__ */ jsxs23("div", { className: "flex flex-col gap-1 pt-1", children: [
-                  /* @__PURE__ */ jsx38("span", { className: "text-xs font-semibold text-muted-foreground uppercase tracking-wider", children: "Role" }),
-                  /* @__PURE__ */ jsx38("span", { className: "px-1.5 py-0.5 rounded bg-ink/5 border border-ink/10 text-xs font-mono text-muted-foreground w-fit", children: user.role })
+                  /* @__PURE__ */ jsx37("span", { className: "text-xs font-semibold text-muted-foreground uppercase tracking-wider", children: "Role" }),
+                  /* @__PURE__ */ jsx37("span", { className: "px-1.5 py-0.5 rounded bg-ink/5 border border-ink/10 text-xs font-mono text-muted-foreground w-fit", children: user.role })
                 ] })
               ] }),
-              quickLinksSlot && /* @__PURE__ */ jsx38("div", { className: "p-2 bg-ink/[0.02] border-b border-ink/10 flex flex-col gap-0.5", children: quickLinksSlot }),
-              onSignOut && /* @__PURE__ */ jsx38("div", { className: "p-2 bg-sunken/20", children: /* @__PURE__ */ jsxs23(
+              quickLinksSlot && /* @__PURE__ */ jsx37("div", { className: "p-2 bg-ink/[0.02] border-b border-ink/10 flex flex-col gap-0.5", children: quickLinksSlot }),
+              onSignOut && /* @__PURE__ */ jsx37("div", { className: "p-2 bg-sunken/20", children: /* @__PURE__ */ jsxs23(
                 "button",
                 {
                   type: "button",
                   onClick: () => onSignOut(),
                   className: "flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-danger-700 dark:text-danger-300 hover:text-danger-800 dark:hover:text-danger-200 bg-danger-50 dark:bg-danger-950/30 hover:bg-danger-100 dark:hover:bg-danger-950/60 border border-danger-700/40 transition-all active:scale-[0.98]",
                   children: [
-                    /* @__PURE__ */ jsx38(LogOut, { className: "h-3.5 w-3.5" }),
+                    /* @__PURE__ */ jsx37(LogOut, { className: "h-3.5 w-3.5" }),
                     "Sign out"
                   ]
                 }
@@ -3346,7 +3312,7 @@ function AppShellHeader({
 }
 
 // src/shell/SignInScreen.tsx
-import { jsx as jsx39, jsxs as jsxs24 } from "react/jsx-runtime";
+import { jsx as jsx38, jsxs as jsxs24 } from "react/jsx-runtime";
 function SignInScreen({
   title = "Eunomia Console",
   description = "Your session has ended or has not started. Sign in to access the console.",
@@ -3358,7 +3324,7 @@ function SignInScreen({
   onSignIn = signIn
 }) {
   return /* @__PURE__ */ jsxs24("div", { className: "min-h-screen flex", children: [
-    /* @__PURE__ */ jsx39("div", { className: "dark hidden lg:flex w-1/2 relative border-r border-ink/10 overflow-hidden bg-background", children: /* @__PURE__ */ jsx39(
+    /* @__PURE__ */ jsx38("div", { className: "dark hidden lg:flex w-1/2 relative border-r border-ink/10 overflow-hidden bg-background", children: /* @__PURE__ */ jsx38(
       BubbleBackground,
       {
         className: cn(
@@ -3368,40 +3334,40 @@ function SignInScreen({
         colors: bubbleColors,
         interactive: true,
         children: /* @__PURE__ */ jsxs24("div", { className: "relative z-10 flex flex-col items-center gap-6 p-8 rounded-2xl bg-sunken/40 backdrop-blur-xl border border-ink/15 shadow-2xl max-w-md", children: [
-          /* @__PURE__ */ jsx39("img", { src: logoSrc, alt: "Eunomia", className: "w-64 drop-shadow-md" }),
+          /* @__PURE__ */ jsx38("img", { src: logoSrc, alt: "Eunomia", className: "w-64 drop-shadow-md" }),
           /* @__PURE__ */ jsxs24("div", { className: "space-y-2", children: [
-            /* @__PURE__ */ jsx39("p", { className: "text-sm font-medium text-foreground/90 leading-relaxed", children: tagline }),
-            /* @__PURE__ */ jsx39("p", { className: "text-xs text-brand-sky/80 font-mono", children: pillars })
+            /* @__PURE__ */ jsx38("p", { className: "text-sm font-medium text-foreground/90 leading-relaxed", children: tagline }),
+            /* @__PURE__ */ jsx38("p", { className: "text-xs text-brand-sky/80 font-mono", children: pillars })
           ] })
         ] })
       }
     ) }),
-    /* @__PURE__ */ jsx39("div", { className: "flex flex-1 flex-col items-center justify-center bg-background px-8", children: /* @__PURE__ */ jsxs24("div", { className: "w-full max-w-sm flex flex-col gap-6", children: [
+    /* @__PURE__ */ jsx38("div", { className: "flex flex-1 flex-col items-center justify-center bg-background px-8", children: /* @__PURE__ */ jsxs24("div", { className: "w-full max-w-sm flex flex-col gap-6", children: [
       /* @__PURE__ */ jsxs24("div", { className: "flex flex-col gap-1.5", children: [
-        /* @__PURE__ */ jsx39("h1", { className: "text-2xl font-semibold tracking-tight", children: title }),
-        /* @__PURE__ */ jsx39("p", { className: "text-sm text-muted-foreground", children: description })
+        /* @__PURE__ */ jsx38("h1", { className: "text-2xl font-semibold tracking-tight", children: title }),
+        /* @__PURE__ */ jsx38("p", { className: "text-sm text-muted-foreground", children: description })
       ] }),
-      /* @__PURE__ */ jsx39(Button, { className: "w-full", onClick: () => onSignIn(), children: "Sign in" })
+      /* @__PURE__ */ jsx38(Button, { className: "w-full", onClick: () => onSignIn(), children: "Sign in" })
     ] }) })
   ] });
 }
 
 // src/shell/GeneralErrorComponent.tsx
 import { AlertCircle, RotateCcw } from "lucide-react";
-import { jsx as jsx40, jsxs as jsxs25 } from "react/jsx-runtime";
+import { jsx as jsx39, jsxs as jsxs25 } from "react/jsx-runtime";
 function GeneralErrorComponent({ error, reset, onRetry }) {
   const message = error instanceof Error ? error.message : typeof error === "string" ? error : "Unknown error";
-  return /* @__PURE__ */ jsx40("div", { className: "flex h-[50vh] w-full items-center justify-center p-4", children: /* @__PURE__ */ jsxs25(Card, { className: "w-full max-w-md border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/20", children: [
+  return /* @__PURE__ */ jsx39("div", { className: "flex h-[50vh] w-full items-center justify-center p-4", children: /* @__PURE__ */ jsxs25(Card, { className: "w-full max-w-md border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/20", children: [
     /* @__PURE__ */ jsxs25(CardHeader, { children: [
       /* @__PURE__ */ jsxs25("div", { className: "flex items-center gap-2 text-red-600 dark:text-red-400", children: [
-        /* @__PURE__ */ jsx40(AlertCircle, { className: "h-5 w-5" }),
-        /* @__PURE__ */ jsx40(CardTitle, { children: "Something went wrong!" })
+        /* @__PURE__ */ jsx39(AlertCircle, { className: "h-5 w-5" }),
+        /* @__PURE__ */ jsx39(CardTitle, { children: "Something went wrong!" })
       ] }),
-      /* @__PURE__ */ jsx40(CardDescription, { className: "text-red-600/90 dark:text-red-400/90", children: "An error occurred while loading this page." })
+      /* @__PURE__ */ jsx39(CardDescription, { className: "text-red-600/90 dark:text-red-400/90", children: "An error occurred while loading this page." })
     ] }),
-    /* @__PURE__ */ jsx40(CardContent, { children: /* @__PURE__ */ jsx40("div", { className: "rounded-md bg-white/50 p-3 text-sm font-medium text-red-800 dark:bg-sunken/20 dark:text-red-200", children: message }) }),
+    /* @__PURE__ */ jsx39(CardContent, { children: /* @__PURE__ */ jsx39("div", { className: "rounded-md bg-white/50 p-3 text-sm font-medium text-red-800 dark:bg-sunken/20 dark:text-red-200", children: message }) }),
     /* @__PURE__ */ jsxs25(CardFooter, { className: "flex justify-end gap-2", children: [
-      /* @__PURE__ */ jsx40(
+      /* @__PURE__ */ jsx39(
         Button,
         {
           variant: "outline",
@@ -3420,7 +3386,7 @@ function GeneralErrorComponent({ error, reset, onRetry }) {
             reset?.();
           },
           children: [
-            /* @__PURE__ */ jsx40(RotateCcw, { className: "mr-2 h-4 w-4" }),
+            /* @__PURE__ */ jsx39(RotateCcw, { className: "mr-2 h-4 w-4" }),
             "Try Again"
           ]
         }
@@ -3433,7 +3399,7 @@ function GeneralErrorComponent({ error, reset, onRetry }) {
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useEffect as useEffect5, useState as useState6 } from "react";
-import { jsx as jsx41, jsxs as jsxs26 } from "react/jsx-runtime";
+import { jsx as jsx40, jsxs as jsxs26 } from "react/jsx-runtime";
 function GlobalLoadingIndicator() {
   const isFetching = useIsFetching();
   const isMutating = useIsMutating();
@@ -3449,8 +3415,8 @@ function GlobalLoadingIndicator() {
   }, [inFlight]);
   if (!visible) return null;
   return /* @__PURE__ */ jsxs26("div", { className: "fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-border bg-background/80 px-4 py-2 text-sm shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60", children: [
-    /* @__PURE__ */ jsx41(Loader2, { className: "h-4 w-4 animate-spin text-muted-foreground" }),
-    /* @__PURE__ */ jsx41("span", { className: "text-muted-foreground", children: "Loading..." })
+    /* @__PURE__ */ jsx40(Loader2, { className: "h-4 w-4 animate-spin text-muted-foreground" }),
+    /* @__PURE__ */ jsx40("span", { className: "text-muted-foreground", children: "Loading..." })
   ] });
 }
 export {

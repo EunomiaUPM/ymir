@@ -43,6 +43,14 @@ impl RepoIntoErrors for DeliveryRepoError {}
 pub trait EventDeliveryRepo: Send + Sync + 'static {
     async fn create_delivery(&self, delivery: &EventDeliveryRecord)
         -> Outcome<EventDeliveryRecord>;
+
+    /// Persists multiple pending deliveries in one batch; default falls back to sequential creates.
+    async fn create_deliveries_batch(&self, deliveries: &[EventDeliveryRecord]) -> Outcome<()> {
+        for delivery in deliveries {
+            self.create_delivery(delivery).await?;
+        }
+        Ok(())
+    }
     async fn get_delivery(&self, scope: &OwnerScope, id: &str)
         -> Outcome<Option<EventDeliveryRecord>>;
     /// Pending deliveries whose next retry is due by `now`, at most `limit`.

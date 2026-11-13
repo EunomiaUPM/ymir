@@ -24,17 +24,52 @@ var PopoverContent = React.forwardRef(({ className, align = "center", sideOffset
 ) }));
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
+// src/ui/segmented.tsx
+import { jsx as jsx2 } from "react/jsx-runtime";
+function SegmentedControl({
+  value,
+  onChange,
+  options,
+  className,
+  ariaLabel
+}) {
+  return /* @__PURE__ */ jsx2(
+    "div",
+    {
+      role: "radiogroup",
+      "aria-label": ariaLabel,
+      className: cn("inline-flex rounded-lg border border-ink/10 bg-ink/[0.03] p-0.5", className),
+      children: options.map((o) => /* @__PURE__ */ jsx2(
+        "button",
+        {
+          type: "button",
+          role: "radio",
+          "aria-checked": value === o.value,
+          title: o.hint,
+          onClick: () => onChange(o.value),
+          className: cn(
+            "rounded-md px-3 py-1 text-sm transition-colors",
+            value === o.value ? "bg-background font-medium text-ink shadow-sm ring-1 ring-ink/10" : "text-ink/55 hover:text-ink"
+          ),
+          children: o.label
+        },
+        o.value
+      ))
+    }
+  );
+}
+
 // src/ui/sheet.tsx
 import * as React2 from "react";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cva } from "class-variance-authority";
 import { Cross2Icon } from "@radix-ui/react-icons";
-import { jsx as jsx2, jsxs } from "react/jsx-runtime";
+import { jsx as jsx3, jsxs } from "react/jsx-runtime";
 var Sheet = SheetPrimitive.Root;
 var SheetTrigger = SheetPrimitive.Trigger;
 var SheetClose = SheetPrimitive.Close;
 var SheetPortal = SheetPrimitive.Portal;
-var SheetOverlay = React2.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx2(
+var SheetOverlay = React2.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx3(
   SheetPrimitive.Overlay,
   {
     className: cn(
@@ -63,19 +98,19 @@ var sheetVariants = cva(
   }
 );
 var SheetContent = React2.forwardRef(({ side = "right", className, children, ...props }, ref) => /* @__PURE__ */ jsxs(SheetPortal, { children: [
-  /* @__PURE__ */ jsx2(SheetOverlay, {}),
+  /* @__PURE__ */ jsx3(SheetOverlay, {}),
   /* @__PURE__ */ jsxs(SheetPrimitive.Content, { ref, className: cn(sheetVariants({ side }), className), ...props, children: [
     /* @__PURE__ */ jsxs(SheetPrimitive.Close, { className: "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary", children: [
-      /* @__PURE__ */ jsx2(Cross2Icon, { className: "h-4 w-4" }),
-      /* @__PURE__ */ jsx2("span", { className: "sr-only", children: "Close" })
+      /* @__PURE__ */ jsx3(Cross2Icon, { className: "h-4 w-4" }),
+      /* @__PURE__ */ jsx3("span", { className: "sr-only", children: "Close" })
     ] }),
     children
   ] })
 ] }));
 SheetContent.displayName = SheetPrimitive.Content.displayName;
-var SheetHeader = ({ className, ...props }) => /* @__PURE__ */ jsx2("div", { className: cn("flex flex-col space-y-2 text-center sm:text-left", className), ...props });
+var SheetHeader = ({ className, ...props }) => /* @__PURE__ */ jsx3("div", { className: cn("flex flex-col space-y-2 text-center sm:text-left", className), ...props });
 SheetHeader.displayName = "SheetHeader";
-var SheetFooter = ({ className, ...props }) => /* @__PURE__ */ jsx2(
+var SheetFooter = ({ className, ...props }) => /* @__PURE__ */ jsx3(
   "div",
   {
     className: cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className),
@@ -83,7 +118,7 @@ var SheetFooter = ({ className, ...props }) => /* @__PURE__ */ jsx2(
   }
 );
 SheetFooter.displayName = "SheetFooter";
-var SheetTitle = React2.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx2(
+var SheetTitle = React2.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx3(
   SheetPrimitive.Title,
   {
     ref,
@@ -92,7 +127,7 @@ var SheetTitle = React2.forwardRef(({ className, ...props }, ref) => /* @__PURE_
   }
 ));
 SheetTitle.displayName = SheetPrimitive.Title.displayName;
-var SheetDescription = React2.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx2(
+var SheetDescription = React2.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx3(
   SheetPrimitive.Description,
   {
     ref,
@@ -107,6 +142,7 @@ export {
   PopoverTrigger,
   PopoverAnchor,
   PopoverContent,
+  SegmentedControl,
   Sheet,
   SheetTrigger,
   SheetClose,
@@ -118,4 +154,4 @@ export {
   SheetTitle,
   SheetDescription
 };
-//# sourceMappingURL=chunk-A6ZPWGMH.js.map
+//# sourceMappingURL=chunk-UKGHEUUY.js.map

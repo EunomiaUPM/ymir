@@ -2,12 +2,13 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  SegmentedControl,
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle
-} from "../chunk-A6ZPWGMH.js";
+} from "../chunk-UKGHEUUY.js";
 import {
   JsonTable
 } from "../chunk-VTWMQZBI.js";
@@ -465,18 +466,37 @@ var EventFeed = ({ topics }) => {
           className: "mb-5",
           fields: [
             { label: "Published", value: /* @__PURE__ */ jsx3(RelativeTime, { date: selected.timestamp }) },
-            { label: "Source", value: selected.source_crate },
+            {
+              label: "Source",
+              value: `${selected.source.service} (${selected.source.crate_name})`
+            },
             {
               label: "Record",
               value: /* @__PURE__ */ jsx3(EventFeed.RecordLink, { event: selected, topics })
             },
-            { label: "Visibility", value: selected.visibility },
+            { label: "Visibility", value: selected.visibility_owner.visibility },
+            {
+              label: "Category",
+              value: selected.outcome ? `${selected.event_type} \xB7 ${selected.outcome}` : selected.event_type
+            },
+            { label: "Severity", value: selected.severity },
+            {
+              label: "Actor",
+              value: `${selected.actor.actor_type}: ${selected.actor.id}`,
+              span: 2
+            },
             { label: "Event", value: /* @__PURE__ */ jsx3(Identifier, { value: selected.id }), span: 2 },
             {
               label: "Correlation",
-              value: /* @__PURE__ */ jsx3(Identifier, { value: selected.correlation_id }),
+              value: /* @__PURE__ */ jsx3(Identifier, { value: selected.correlation.correlation_id ?? "" }),
               span: 2,
-              hidden: !selected.correlation_id
+              hidden: !selected.correlation.correlation_id
+            },
+            {
+              label: "Attestation",
+              value: selected.integrity.attestation ? `${selected.integrity.attestation.format} \xB7 ${selected.integrity.attestation.signer_did}` : "",
+              span: 2,
+              hidden: !selected.integrity.attestation
             }
           ]
         }
@@ -520,6 +540,7 @@ var CreateSubscriptionDialog = ({
   const [callbackAddress, setCallbackAddress] = useState4("https://");
   const [secret, setSecret] = useState4("");
   const [retryLimit, setRetryLimit] = useState4("5");
+  const [deliveryFormat, setDeliveryFormat] = useState4("envelope");
   const topicPresets = [
     ...topics.areas.map((a) => ({ label: a.pattern, pattern: a.pattern })),
     { label: "* (all)", pattern: "*" }
@@ -546,7 +567,8 @@ var CreateSubscriptionDialog = ({
       topic_pattern: topicPattern.trim(),
       callback_address: callbackAddress.trim(),
       secret: secret.trim() || void 0,
-      retry_limit: isNaN(retries) ? void 0 : retries
+      retry_limit: isNaN(retries) ? void 0 : retries,
+      delivery_format: deliveryFormat
     });
   };
   return /* @__PURE__ */ jsx4(Dialog, { open, onOpenChange: onClose, children: /* @__PURE__ */ jsxs3(DialogContent, { className: "max-w-md", children: [
@@ -625,6 +647,21 @@ var CreateSubscriptionDialog = ({
             onChange: (e) => setRetryLimit(e.target.value),
             min: "1",
             max: "20"
+          }
+        )
+      ] }),
+      /* @__PURE__ */ jsxs3("div", { className: "flex flex-col gap-1.5", children: [
+        /* @__PURE__ */ jsx4("label", { className: "text-xs font-semibold uppercase tracking-wider text-muted-foreground", children: "Delivery Format" }),
+        /* @__PURE__ */ jsx4(
+          SegmentedControl,
+          {
+            ariaLabel: "Delivery Format",
+            value: deliveryFormat,
+            onChange: setDeliveryFormat,
+            options: [
+              { value: "envelope", label: "Envelope (v2)" },
+              { value: "payload_only", label: "Payload only" }
+            ]
           }
         )
       ] })
@@ -724,6 +761,12 @@ var EventSubscriptions = ({ topics, defaultPattern }) => {
                   /* @__PURE__ */ jsx4(ShieldCheck, { className: "h-3 w-3" }),
                   " HMAC"
                 ] }) : /* @__PURE__ */ jsx4("span", { className: "text-xs text-muted-foreground", children: "None" })
+              },
+              {
+                header: "Format",
+                accessorKey: "delivery_format",
+                sortable: false,
+                cell: (sub) => /* @__PURE__ */ jsx4(Badge, { variant: "code", children: sub.delivery_format ?? "envelope" })
               },
               {
                 header: "Retries",

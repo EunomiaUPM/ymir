@@ -22,6 +22,7 @@ use sea_orm_migration::prelude::*;
 pub mod m20241123_0000001_subscriptions;
 pub mod m20260601_0000003_event_bus;
 pub mod m20261113_0000004_event_envelope_v2;
+pub mod m20261113_0000005_widen_event_string_columns;
 
 /// Event bus tables, in creation order.
 pub fn get_events_migrations() -> Vec<Box<dyn MigrationTrait>> {
@@ -29,6 +30,7 @@ pub fn get_events_migrations() -> Vec<Box<dyn MigrationTrait>> {
         Box::new(m20241123_0000001_subscriptions::Migration),
         Box::new(m20260601_0000003_event_bus::Migration),
         Box::new(m20261113_0000004_event_envelope_v2::Migration),
+        Box::new(m20261113_0000005_widen_event_string_columns::Migration),
     ]
 }
 

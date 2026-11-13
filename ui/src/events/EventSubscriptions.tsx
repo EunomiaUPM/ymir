@@ -10,6 +10,7 @@ import { Skeleton } from "../ui/skeleton";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
+import { SegmentedControl } from "../ui/segmented";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,7 @@ import {
 } from "../ui/dialog";
 import { EventsApi } from "./api";
 import { EventsQueries } from "./queries";
-import type { EventSubscription, EventTopicCatalog } from "./types";
+import type { EventSubscription, EventTopicCatalog, WebhookDeliveryFormat } from "./types";
 
 interface CreateSubscriptionDialogProps {
   open: boolean;
@@ -39,6 +40,7 @@ const CreateSubscriptionDialog = ({
   const [callbackAddress, setCallbackAddress] = useState("https://");
   const [secret, setSecret] = useState("");
   const [retryLimit, setRetryLimit] = useState("5");
+  const [deliveryFormat, setDeliveryFormat] = useState<WebhookDeliveryFormat>("envelope");
 
   const topicPresets = [
     ...topics.areas.map((a) => ({ label: a.pattern, pattern: a.pattern })),
@@ -71,6 +73,7 @@ const CreateSubscriptionDialog = ({
       callback_address: callbackAddress.trim(),
       secret: secret.trim() || undefined,
       retry_limit: isNaN(retries) ? undefined : retries,
+      delivery_format: deliveryFormat,
     });
   };
 
@@ -143,6 +146,20 @@ const CreateSubscriptionDialog = ({
               onChange={(e) => setRetryLimit(e.target.value)}
               min="1"
               max="20"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Delivery Format
+            </label>
+            <SegmentedControl<WebhookDeliveryFormat>
+              ariaLabel="Delivery Format"
+              value={deliveryFormat}
+              onChange={setDeliveryFormat}
+              options={[
+                { value: "envelope", label: "Envelope (v2)" },
+                { value: "payload_only", label: "Payload only" },
+              ]}
             />
           </div>
         </div>
@@ -279,6 +296,14 @@ export const EventSubscriptions = ({ topics, defaultPattern }: EventSubscription
                   ) : (
                     <span className="text-xs text-muted-foreground">None</span>
                   ),
+              },
+              {
+                header: "Format",
+                accessorKey: "delivery_format",
+                sortable: false,
+                cell: (sub: EventSubscription) => (
+                  <Badge variant="code">{sub.delivery_format ?? "envelope"}</Badge>
+                ),
               },
               {
                 header: "Retries",

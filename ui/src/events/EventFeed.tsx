@@ -157,18 +157,41 @@ export const EventFeed = ({ topics }: EventFeedProps) => {
                 className="mb-5"
                 fields={[
                   { label: "Published", value: <RelativeTime date={selected.timestamp} /> },
-                  { label: "Source", value: selected.source_crate },
+                  {
+                    label: "Source",
+                    value: `${selected.source.service} (${selected.source.crate_name})`,
+                  },
                   {
                     label: "Record",
                     value: <EventFeed.RecordLink event={selected} topics={topics} />,
                   },
-                  { label: "Visibility", value: selected.visibility },
+                  { label: "Visibility", value: selected.visibility_owner.visibility },
+                  {
+                    label: "Category",
+                    value: selected.outcome
+                      ? `${selected.event_type} · ${selected.outcome}`
+                      : selected.event_type,
+                  },
+                  { label: "Severity", value: selected.severity },
+                  {
+                    label: "Actor",
+                    value: `${selected.actor.actor_type}: ${selected.actor.id}`,
+                    span: 2,
+                  },
                   { label: "Event", value: <Identifier value={selected.id} />, span: 2 },
                   {
                     label: "Correlation",
-                    value: <Identifier value={selected.correlation_id} />,
+                    value: <Identifier value={selected.correlation.correlation_id ?? ""} />,
                     span: 2,
-                    hidden: !selected.correlation_id,
+                    hidden: !selected.correlation.correlation_id,
+                  },
+                  {
+                    label: "Attestation",
+                    value: selected.integrity.attestation
+                      ? `${selected.integrity.attestation.format} · ${selected.integrity.attestation.signer_did}`
+                      : "",
+                    span: 2,
+                    hidden: !selected.integrity.attestation,
                   },
                 ]}
               />

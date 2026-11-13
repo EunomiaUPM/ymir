@@ -1,16 +1,103 @@
-/** An event of the bus, as the events API returns it (ymir-events `EventEnvelope`). */
-export interface EventEnvelope {
+export type Visibility = "Private" | "Anonymous" | "Public";
+
+export type EventCategory =
+  | "AuditLifecycle"
+  | "UsageControl"
+  | "Attestation"
+  | "DataAccess"
+  | "ResourceChange"
+  | "Security"
+  | "Diagnostic";
+
+export type EventSeverity = "Debug" | "Info" | "Warn" | "Error" | "Critical";
+
+export type EventOutcome = "Success" | "Denied" | "Failed" | "Pending";
+
+export type DeliveryClass = "AuditDurable" | "TelemetryStream";
+
+export type ActorType =
+  | "HumanUser"
+  | "PeerParticipant"
+  | "AgentService"
+  | "SystemWorker"
+  | "Anonymous";
+
+export type WebhookDeliveryFormat = "envelope" | "payload_only";
+
+export interface EventSource {
+  dataspace_id?: string | null;
+  participant_id?: string | null;
+  service: string;
+  instance_id: string;
+  crate_name: string;
+}
+
+export interface EventActor {
+  actor_type: ActorType;
   id: string;
+  participant_id?: string | null;
+  role?: string | null;
+}
+
+export interface EntityRef {
+  kind: string;
+  id: string;
+  parent_id?: string | null;
+}
+
+export interface FlowRefs {
+  agreement_id?: string | null;
+  transfer_id?: string | null;
+  negotiation_id?: string | null;
+  grant_id?: string | null;
+  dataset_id?: string | null;
+  peer_id?: string | null;
+}
+
+export interface EventCorrelation {
+  correlation_id?: string | null;
+  causation_id?: string | null;
+  trace_context?: string | null;
+  flow_refs: FlowRefs;
+}
+
+export interface EventAttestation {
+  format: string;
+  signer_did: string;
+  signature: string;
+}
+
+export interface EventIntegrity {
+  payload_digest: string;
+  canonicalization: string;
+  attestation?: EventAttestation | null;
+}
+
+export interface EventVisibilityOwner {
   user_id: string;
   role: string;
-  visibility: "Private" | "Anonymous" | "Public";
-  topic: string;
-  source_crate: string;
-  schema_version: number;
+  visibility: Visibility;
+}
+
+/** An event of the bus, as the events API returns it (ymir-events `EventView` over `EventEnvelope` v2). */
+export interface EventEnvelope {
+  id: string;
+  spec_version: string;
   timestamp: string;
-  correlation_id?: string;
-  /** W3C `traceparent` of the publishing span. */
-  trace_context?: string;
+  sequence?: number;
+  topic: string;
+  event_type: EventCategory;
+  severity: EventSeverity;
+  outcome?: EventOutcome;
+  delivery_class: DeliveryClass;
+  schema_version: number;
+  payload_type: string;
+  source: EventSource;
+  actor: EventActor;
+  subject?: EntityRef | null;
+  correlation: EventCorrelation;
+  integrity: EventIntegrity;
+  visibility_owner: EventVisibilityOwner;
   payload: unknown;
   /** Null while unread. */
   read_at?: string | null;
@@ -22,7 +109,24 @@ export interface EventCount {
 
 export interface EventFeedParams {
   topic?: string;
+  dataspace_id?: string;
+  participant_id?: string;
+  service?: string;
   source_crate?: string;
+  event_type?: EventCategory;
+  severity?: EventSeverity;
+  outcome?: EventOutcome;
+  payload_type?: string;
+  actor_id?: string;
+  subject_kind?: string;
+  subject_id?: string;
+  correlation_id?: string;
+  agreement_id?: string;
+  transfer_id?: string;
+  negotiation_id?: string;
+  grant_id?: string;
+  dataset_id?: string;
+  peer_id?: string;
   read?: boolean;
   created_after?: string;
   created_before?: string;
@@ -34,20 +138,29 @@ export interface EventFeedParams {
 
 export interface EventSubscription {
   id: string;
+  user_id: string;
+  role: string;
+  visibility: Visibility;
   topic_pattern: string;
   callback_address: string;
   active: boolean;
   /** Write-only: shows as `*****` when set. */
   secret?: string | null;
   retry_limit?: number | null;
+  delivery_format: WebhookDeliveryFormat;
   created_at: string;
+  updated_at?: string | null;
+  expiration_time?: string | null;
 }
 
 export interface CreateSubscriptionCommand {
+  visibility?: Visibility;
   topic_pattern: string;
   callback_address: string;
-  secret?: string;
-  retry_limit?: number;
+  secret?: string | null;
+  retry_limit?: number | null;
+  delivery_format?: WebhookDeliveryFormat;
+  expiration_time?: string | null;
 }
 
 export interface SubscriptionParams {

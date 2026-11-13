@@ -123,22 +123,22 @@ impl Migration {
                 .default("AuditDurable")
                 .take(),
             ColumnDef::new(EventsV2::PayloadType)
-                .string_len(128)
+                .string()
                 .not_null()
                 .default("legacy.event.v1")
                 .take(),
-            ColumnDef::new(EventsV2::DataspaceId).string_len(255).null().take(),
+            ColumnDef::new(EventsV2::DataspaceId).string().null().take(),
             ColumnDef::new(EventsV2::ParticipantId)
-                .string_len(255)
+                .string()
                 .null()
                 .take(),
             ColumnDef::new(EventsV2::Service)
-                .string_len(128)
+                .string()
                 .not_null()
                 .default("unknown")
                 .take(),
             ColumnDef::new(EventsV2::InstanceId)
-                .string_len(255)
+                .string()
                 .not_null()
                 .default("unknown")
                 .take(),
@@ -148,31 +148,31 @@ impl Migration {
                 .default("SystemWorker")
                 .take(),
             ColumnDef::new(EventsV2::ActorId)
-                .string_len(255)
+                .string()
                 .not_null()
                 .default("system")
                 .take(),
             ColumnDef::new(EventsV2::ActorParticipantId)
-                .string_len(255)
+                .string()
                 .null()
                 .take(),
-            ColumnDef::new(EventsV2::ActorRole).string_len(255).null().take(),
-            ColumnDef::new(EventsV2::SubjectKind).string_len(64).null().take(),
-            ColumnDef::new(EventsV2::SubjectId).string_len(255).null().take(),
+            ColumnDef::new(EventsV2::ActorRole).string().null().take(),
+            ColumnDef::new(EventsV2::SubjectKind).string().null().take(),
+            ColumnDef::new(EventsV2::SubjectId).string().null().take(),
             ColumnDef::new(EventsV2::SubjectParentId)
-                .string_len(255)
+                .string()
                 .null()
                 .take(),
-            ColumnDef::new(EventsV2::CausationId).string_len(255).null().take(),
-            ColumnDef::new(EventsV2::AgreementId).string_len(255).null().take(),
-            ColumnDef::new(EventsV2::TransferId).string_len(255).null().take(),
+            ColumnDef::new(EventsV2::CausationId).string().null().take(),
+            ColumnDef::new(EventsV2::AgreementId).string().null().take(),
+            ColumnDef::new(EventsV2::TransferId).string().null().take(),
             ColumnDef::new(EventsV2::NegotiationId)
-                .string_len(255)
+                .string()
                 .null()
                 .take(),
-            ColumnDef::new(EventsV2::GrantId).string_len(255).null().take(),
-            ColumnDef::new(EventsV2::DatasetId).string_len(255).null().take(),
-            ColumnDef::new(EventsV2::PeerId).string_len(255).null().take(),
+            ColumnDef::new(EventsV2::GrantId).string().null().take(),
+            ColumnDef::new(EventsV2::DatasetId).string().null().take(),
+            ColumnDef::new(EventsV2::PeerId).string().null().take(),
             ColumnDef::new(EventsV2::PayloadDigest)
                 .string_len(128)
                 .not_null()
@@ -326,12 +326,12 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(EventOutbox::EventId).string().not_null())
                     .col(
                         ColumnDef::new(EventOutbox::Destination)
-                            .string_len(255)
+                            .string()
                             .not_null(),
                     )
                     .col(
                         ColumnDef::new(EventOutbox::PartitionKey)
-                            .string_len(255)
+                            .string()
                             .not_null(),
                     )
                     .col(

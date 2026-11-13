@@ -398,4 +398,24 @@ impl EventStoreRepo for SeaOrmEventRepo {
             Err(e) => Err(Errors::db("failed to mark events read", Some(Box::new(e)))),
         }
     }
+
+    #[tracing::instrument(level = "debug", skip_all, err)]
+    async fn insert_events_batch(&self, events: &[EventEnvelope]) -> Outcome<()> {
+        if events.is_empty() {
+            return Ok(());
+        }
+        for chunk in events.chunks(500) {
+            let models: Vec<event::ActiveModel> =
+                chunk.iter().map(event::ActiveModel::from_domain).collect();
+            match event::Entity::insert_many(models)
+                .on_conflict(OnConflict::column(event::Column::Id).do_nothing().to_owned())
+                .exec(&self.db)
+                .await
+            {
+                Ok(_) | Err(DbErr::RecordNotInserted) => {}
+                Err(e) => return Err(Errors::db("failed to batch insert events", Some(Box::new(e)))),
+            }
+        }
+        Ok(())
+    }
 }

@@ -55,6 +55,24 @@ impl EventDeliveryRepo for SeaOrmDeliveryRepo {
     }
 
     #[tracing::instrument(level = "debug", skip_all, err)]
+    async fn create_deliveries_batch(&self, deliveries: &[EventDeliveryRecord]) -> Outcome<()> {
+        if deliveries.is_empty() {
+            return Ok(());
+        }
+        for chunk in deliveries.chunks(500) {
+            let models: Vec<delivery::ActiveModel> =
+                chunk.iter().map(delivery::ActiveModel::from_domain).collect();
+            delivery::Entity::insert_many(models)
+                .exec_without_returning(&self.db)
+                .await
+                .map_err(|e| {
+                    Errors::db("failed to batch create delivery records", Some(Box::new(e)))
+                })?;
+        }
+        Ok(())
+    }
+
+    #[tracing::instrument(level = "debug", skip_all, err)]
     async fn get_delivery(
         &self,
         scope: &OwnerScope,

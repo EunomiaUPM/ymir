@@ -91,6 +91,26 @@ impl CompositeEventSink {
     }
 }
 
+impl CompositeEventSink {
+    fn handle_sink_error(
+        entry_name: &'static str,
+        critical: bool,
+        count: u64,
+        detail: &str,
+        err: Errors,
+        first_critical_err: &mut Option<Errors>,
+    ) {
+        SINK_FAILURES.add(count, &[KeyValue::new("sink", entry_name)]);
+        if critical {
+            if first_critical_err.is_none() {
+                *first_critical_err = Some(err);
+            }
+        } else {
+            warn!(sink = entry_name, detail, error = ?err, "Non-critical event sink failed");
+        }
+    }
+}
+
 #[async_trait]
 impl EventSinkTrait for CompositeEventSink {
     async fn emit_envelope(&self, mut envelope: EventEnvelope) -> Outcome<()> {
@@ -100,19 +120,44 @@ impl EventSinkTrait for CompositeEventSink {
         let mut first_critical_err: Option<Errors> = None;
         for entry in &self.sinks {
             if let Err(err) = entry.sink.emit_envelope(envelope.clone()).await {
-                SINK_FAILURES.add(1, &[KeyValue::new("sink", entry.name)]);
-                if entry.critical {
-                    if first_critical_err.is_none() {
-                        first_critical_err = Some(err);
-                    }
-                } else {
-                    warn!(
-                        sink = entry.name,
-                        event_id = %envelope.id,
-                        error = ?err,
-                        "Non-critical event sink failed"
-                    );
-                }
+                Self::handle_sink_error(
+                    entry.name,
+                    entry.critical,
+                    1,
+                    &envelope.id.to_string(),
+                    err,
+                    &mut first_critical_err,
+                );
+            }
+        }
+
+        match first_critical_err {
+            Some(err) => Err(err),
+            None => Ok(()),
+        }
+    }
+
+    async fn emit_envelopes(&self, mut envelopes: Vec<EventEnvelope>) -> Outcome<()> {
+        if envelopes.is_empty() {
+            return Ok(());
+        }
+        let snapshot = self.node_identity.snapshot();
+        for envelope in &mut envelopes {
+            envelope.apply_node_identity(&snapshot);
+        }
+
+        let mut first_critical_err: Option<Errors> = None;
+        let detail = format!("batch={}", envelopes.len());
+        for entry in &self.sinks {
+            if let Err(err) = entry.sink.emit_envelopes(envelopes.clone()).await {
+                Self::handle_sink_error(
+                    entry.name,
+                    entry.critical,
+                    envelopes.len() as u64,
+                    &detail,
+                    err,
+                    &mut first_critical_err,
+                );
             }
         }
 

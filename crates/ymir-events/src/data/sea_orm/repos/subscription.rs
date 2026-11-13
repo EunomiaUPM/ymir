@@ -17,6 +17,9 @@
 
 //! Subscription repository.
 
+use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
+
 use async_trait::async_trait;
 use ymir::oauth::{Owner, OwnerScope};
 use chrono::Utc;
@@ -41,11 +44,47 @@ use crate::entities::topic_pattern::TopicPattern;
 #[derive(Clone)]
 pub struct SeaOrmSubscriptionRepo {
     db: DatabaseConnection,
+    // Short-lived cache avoids polling active subscriptions on every emitted event.
+    active_cache: Arc<RwLock<Option<(Instant, Vec<SubscriptionRecord>)>>>,
 }
 
 impl SeaOrmSubscriptionRepo {
+    const CACHE_TTL: Duration = Duration::from_secs(2);
+
     pub fn new(db: DatabaseConnection) -> Self {
-        Self { db }
+        Self {
+            db,
+            active_cache: Arc::new(RwLock::new(None)),
+        }
+    }
+
+    fn invalidate_cache(&self) {
+        if let Ok(mut guard) = self.active_cache.write() {
+            *guard = None;
+        }
+    }
+
+    async fn load_active(&self) -> Outcome<Vec<SubscriptionRecord>> {
+        if let Ok(guard) = self.active_cache.read() {
+            if let Some((cached_at, records)) = &*guard {
+                if cached_at.elapsed() < Self::CACHE_TTL {
+                    return Ok(records.clone());
+                }
+            }
+        }
+        let models = subscription::Entity::find()
+            .filter(subscription::Column::Active.eq(true))
+            .all(&self.db)
+            .await
+            .map_err(|e| Errors::db("failed to list subscriptions", Some(Box::new(e))))?;
+        let mut records = Vec::with_capacity(models.len());
+        for model in models {
+            records.push(model.into_domain()?);
+        }
+        if let Ok(mut guard) = self.active_cache.write() {
+            *guard = Some((Instant::now(), records.clone()));
+        }
+        Ok(records)
     }
 }
 
@@ -89,6 +128,7 @@ impl EventSubscriptionRepo for SeaOrmSubscriptionRepo {
             .exec_without_returning(&self.db)
             .await
             .map_err(|e| Errors::db("failed to create subscription", Some(Box::new(e))))?;
+        self.invalidate_cache();
 
         Ok(SubscriptionRecord {
             id,
@@ -211,6 +251,7 @@ impl EventSubscriptionRepo for SeaOrmSubscriptionRepo {
             .update(&self.db)
             .await
             .map_err(|e| Errors::db("failed to update subscription", Some(Box::new(e))))?;
+        self.invalidate_cache();
 
         updated.into_domain()
     }
@@ -223,6 +264,7 @@ impl EventSubscriptionRepo for SeaOrmSubscriptionRepo {
             .exec(&self.db)
             .await
             .map_err(|e| Errors::db("failed to delete subscription", Some(Box::new(e))))?;
+        self.invalidate_cache();
         Ok(())
     }
 
@@ -232,20 +274,11 @@ impl EventSubscriptionRepo for SeaOrmSubscriptionRepo {
         owner: &Owner,
         topic: &Topic,
     ) -> Outcome<Vec<SubscriptionRecord>> {
-        // Patterns and subscribers live in the rows, so both are matched against each active
-        // one here.
-        let models = subscription::Entity::find()
-            .filter(subscription::Column::Active.eq(true))
-            .all(&self.db)
-            .await
-            .map_err(|e| Errors::db("failed to list subscriptions", Some(Box::new(e))))?;
-        let mut matching = Vec::new();
-        for model in models {
-            let record = model.into_domain()?;
-            if record.matches(topic) && OwnerScope::seeing(&record.owner).admits_owner(owner) {
-                matching.push(record);
-            }
-        }
+        let records = self.load_active().await?;
+        let matching = records
+            .into_iter()
+            .filter(|record| record.matches(topic) && OwnerScope::seeing(&record.owner).admits_owner(owner))
+            .collect();
         Ok(matching)
     }
 }

@@ -50,12 +50,21 @@ impl EventSinkTrait for NoopEventSink {
     async fn emit_envelope(&self, _: EventEnvelope) -> Outcome<()> {
         Ok(())
     }
+
+    async fn emit_envelopes(&self, _: Vec<EventEnvelope>) -> Outcome<()> {
+        Ok(())
+    }
 }
 
 #[async_trait]
 impl EventSinkTrait for EventBus {
     async fn emit_envelope(&self, envelope: EventEnvelope) -> Outcome<()> {
         self.publish(envelope).await?;
+        Ok(())
+    }
+
+    async fn emit_envelopes(&self, envelopes: Vec<EventEnvelope>) -> Outcome<()> {
+        self.publish_batch(envelopes).await?;
         Ok(())
     }
 }
@@ -68,6 +77,13 @@ impl<T: EventSinkTrait> EventSinkTrait for Option<T> {
             None => Ok(()),
         }
     }
+
+    async fn emit_envelopes(&self, envelopes: Vec<EventEnvelope>) -> Outcome<()> {
+        match self {
+            Some(sink) => sink.emit_envelopes(envelopes).await,
+            None => Ok(()),
+        }
+    }
 }
 
 #[async_trait]
@@ -75,11 +91,19 @@ impl<T: EventSinkTrait + ?Sized> EventSinkTrait for &T {
     async fn emit_envelope(&self, envelope: EventEnvelope) -> Outcome<()> {
         (**self).emit_envelope(envelope).await
     }
+
+    async fn emit_envelopes(&self, envelopes: Vec<EventEnvelope>) -> Outcome<()> {
+        (**self).emit_envelopes(envelopes).await
+    }
 }
 
 #[async_trait]
 impl<T: EventSinkTrait + ?Sized> EventSinkTrait for Arc<T> {
     async fn emit_envelope(&self, envelope: EventEnvelope) -> Outcome<()> {
         (**self).emit_envelope(envelope).await
+    }
+
+    async fn emit_envelopes(&self, envelopes: Vec<EventEnvelope>) -> Outcome<()> {
+        (**self).emit_envelopes(envelopes).await
     }
 }

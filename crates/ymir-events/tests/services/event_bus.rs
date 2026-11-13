@@ -428,3 +428,53 @@ async fn replaying_an_unknown_dead_letter_is_not_found() {
         .await
         .is_err());
 }
+
+/// Batch publish inserts events and pending deliveries in bulk and fans out to webhooks.
+#[tokio::test]
+async fn publish_batch_inserts_events_and_deliveries_in_bulk() {
+    use ymir_events::EventBusTrait;
+
+    let hook = Webhook::start(StatusCode::OK).await;
+    let mut repos = Repos::default();
+    repos
+        .events
+        .expect_insert_events_batch()
+        .withf(|events| events.len() == 2)
+        .times(1)
+        .returning(|_| Ok(()));
+    let sub = subscription("sub-1", &hook.url, None, None);
+    repos
+        .subscriptions
+        .expect_get_matching_subscriptions()
+        .times(1)
+        .returning(move |_, _| Ok(vec![sub.clone()]));
+    repos
+        .deliveries
+        .expect_create_deliveries_batch()
+        .withf(|deliveries| deliveries.len() == 2)
+        .times(1)
+        .returning(|_| Ok(()));
+    let mut signals = Signals::new();
+    let tx = signals.tx.clone();
+    repos
+        .deliveries
+        .expect_mark_delivered()
+        .times(2)
+        .returning(move |_, _, _| {
+            tx.send("delivered").unwrap();
+            Ok(())
+        });
+
+    let bus = repos.bus();
+    let published = bus
+        .publish_batch(vec![
+            envelope("transfers:started"),
+            envelope("transfers:started"),
+        ])
+        .await
+        .unwrap();
+
+    assert_eq!(published.len(), 2);
+    assert_eq!(signals.next(2).await, vec!["delivered", "delivered"]);
+    assert_eq!(hook.received().len(), 2);
+}

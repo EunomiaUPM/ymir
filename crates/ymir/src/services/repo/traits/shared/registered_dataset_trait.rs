@@ -19,12 +19,16 @@ use crate::data::entities::shared::registered_dataset::Model;
 use crate::errors::Outcome;
 use async_trait::async_trait;
 
-/// The datasets the catalog has registered with the AS; it always sends them all at once.
+/// The datasets the catalog has registered with the AS.
 #[cfg_attr(feature = "mock", mockall::automock)]
 #[async_trait]
 pub trait RegisteredDatasetRepoTrait: Send + Sync + 'static {
     /// Leaves exactly `datasets` registered.
     async fn replace_all(&self, datasets: Vec<Model>) -> Outcome<()>;
+    /// Inserts or updates `datasets` by id without touching other rows.
+    async fn upsert_datasets(&self, datasets: Vec<Model>) -> Outcome<()>;
+    /// Removes any registered datasets whose id is in `ids`.
+    async fn delete_datasets(&self, ids: &[String]) -> Outcome<()>;
     /// The registered datasets among `ids`.
     async fn get_by_ids(&self, ids: &[String]) -> Outcome<Vec<Model>>;
     /// Every registered dataset; locations are matched by path, which the caller does.

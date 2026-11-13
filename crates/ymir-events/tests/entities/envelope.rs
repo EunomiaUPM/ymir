@@ -31,8 +31,8 @@ use ymir_events::schemas::identity::{
     ParticipantRegistryPayload, VerificationAction, VerificationDirection, VerificationPayload,
 };
 use ymir_events::{
-    DeliveryClass, EventCategory, EventContext, EventEnvelope, EventOutcome, EventPayload,
-    EventSeverity, EventSource, WebhookDeliveryFormat,
+    DeliveryClass, EventAttestation, EventCategory, EventContext, EventEnvelope, EventOutcome,
+    EventPayload, EventSeverity, EventSource, WebhookDeliveryFormat,
 };
 
 fn test_owner() -> Owner {
@@ -291,4 +291,36 @@ fn webhook_delivery_format_parses_aliases() {
         "Envelope".parse::<WebhookDeliveryFormat>().unwrap(),
         WebhookDeliveryFormat::Envelope
     );
+}
+
+#[test]
+fn context_attestation_populates_integrity_without_exposing_raw_material() {
+    let raw_jwt = "eyJhbGciOiJFZERTQSJ9.super-secret-vp-claims.sig-bytes";
+    let attestation = EventAttestation::from_material_digest(
+        "jwt_vp_json",
+        "did:web:holder.example",
+        raw_jwt,
+    );
+    assert_eq!(attestation.format, "jwt_vp_json");
+    assert_eq!(attestation.signer_did, "did:web:holder.example");
+    assert!(attestation.signature.starts_with("sha256:"));
+    assert!(!attestation.signature.contains("super-secret-vp-claims"));
+
+    let ctx = EventContext::for_owner(test_owner()).with_attestation(attestation.clone());
+    let ver = VerificationPayload {
+        action: VerificationAction::Verified,
+        grant_id: "grant-att-1".to_string(),
+        verification_id: "ver-att-1".to_string(),
+        direction: VerificationDirection::Incoming,
+        holder_did: Some("did:web:holder.example".to_string()),
+        verifier_did: Some("did:web:verifier.example".to_string()),
+        vc_types: vec!["LegalPerson".to_string()],
+        presented_vc_ids: vec!["sha256:abcd".to_string()],
+        status: "Verified".to_string(),
+        failure_reason: None,
+    };
+    let env = ver
+        .into_envelope(&ctx, EventSource::for_crate("heimdall"))
+        .unwrap();
+    assert_eq!(env.integrity.attestation, Some(attestation));
 }

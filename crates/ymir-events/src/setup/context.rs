@@ -26,7 +26,7 @@ use crate::data::sea_orm::SeaOrmDataFactory;
 use crate::services::event_bus::policy::RetryPolicy;
 use crate::services::event_bus::worker::RetryWorker;
 use crate::services::event_bus::EventBus;
-use crate::services::event_sink::{EventPipelineBuilder, EventSinkTrait};
+use crate::services::event_sink::{AsyncTelemetrySink, EventPipelineBuilder, EventSinkTrait};
 
 /// The local event bus, unified multi-sink pipeline, and background delivery workers.
 #[derive(Clone)]
@@ -62,12 +62,15 @@ impl AppContext {
         );
 
         let local_bus_sink: Arc<dyn EventSinkTrait> = event_bus.clone();
-        let pipeline = EventPipelineBuilder::build(
+        let mut pipeline = EventPipelineBuilder::build(
             &root.events_config,
             root.node_identity.clone(),
             Some(local_bus_sink),
             Some(outbox_repo),
         )?;
+        let (async_sink, telemetry_worker) =
+            AsyncTelemetrySink::open(pipeline.sink, AsyncTelemetrySink::DEFAULT_QUEUE_CAPACITY);
+        pipeline.workers.push(Box::new(telemetry_worker));
 
         let retry_worker = RetryWorker::new(
             event_repo,
@@ -80,7 +83,7 @@ impl AppContext {
 
         Ok(Self {
             event_bus,
-            event_sink: pipeline.sink,
+            event_sink: Arc::new(async_sink),
             retry_worker,
             extra_workers: Arc::new(Mutex::new(pipeline.workers)),
         })

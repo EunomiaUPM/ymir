@@ -50,6 +50,7 @@ pub use services::event_bus::{
 };
 #[cfg(feature = "kafka")]
 pub use services::event_sink::{KafkaEventSink, KafkaOutboxWorker, RdkafkaProducerAdapter};
+pub use services::event_sink::async_telemetry::{AsyncTelemetrySink, TelemetryFlushWorker};
 pub use services::event_sink::{
     BuiltEventPipeline, CompositeEventSink, EventPipelineBuilder, EventSinkTrait, KafkaMessage,
     KafkaProducerPort, KafkaRouting, MockEventSinkTrait, MockKafkaProducerPort, NoopEventSink,

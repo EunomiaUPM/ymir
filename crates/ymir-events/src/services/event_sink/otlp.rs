@@ -109,6 +109,17 @@ impl OtlpEventSink {
             "event.integrity.payload_digest",
             envelope.integrity.payload_digest.clone(),
         );
+        if let Some(att) = &envelope.integrity.attestation {
+            record.add_attribute("event.integrity.attestation.format", att.format.clone());
+            record.add_attribute(
+                "event.integrity.attestation.signer_did",
+                att.signer_did.clone(),
+            );
+            record.add_attribute(
+                "event.integrity.attestation.signature",
+                att.signature.clone(),
+            );
+        }
         record.add_attribute("event.source.service", envelope.source.service.clone());
         record.add_attribute(
             "event.source.instance_id",

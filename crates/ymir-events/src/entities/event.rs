@@ -25,8 +25,8 @@ use ymir::types::oauth::UserTrait;
 use ymir::types::participants::Visibility;
 
 use crate::entities::envelope::{
-    DeliveryClass, EntityRef, EventActor, EventCategory, EventEnvelope, EventEnvelopeDraft,
-    EventOutcome, EventSeverity, EventSource, FlowRefs,
+    DeliveryClass, EntityRef, EventActor, EventAttestation, EventCategory, EventEnvelope,
+    EventEnvelopeDraft, EventOutcome, EventSeverity, EventSource, FlowRefs,
 };
 use crate::entities::topic::Topic;
 
@@ -90,7 +90,7 @@ pub trait EventPayload: Serialize + Send + Sync + 'static {
             .or_else(|| self.correlation_id())
             .or_else(|| flow_refs.primary_correlation().map(ToOwned::to_owned));
 
-        Ok(EventEnvelope::build(EventEnvelopeDraft {
+        let mut envelope = EventEnvelope::build(EventEnvelopeDraft {
             visibility_owner: ctx.visibility_owner.clone(),
             topic: self.topic(),
             event_type: Self::CATEGORY,
@@ -107,7 +107,11 @@ pub trait EventPayload: Serialize + Send + Sync + 'static {
             trace_context: ctx.trace_context.clone(),
             flow_refs,
             payload,
-        }))
+        });
+        if let Some(attestation) = &ctx.attestation {
+            envelope = envelope.with_attestation(attestation.clone());
+        }
+        Ok(envelope)
     }
 }
 
@@ -120,6 +124,7 @@ pub struct EventContext {
     pub causation_id: Option<String>,
     pub trace_context: Option<String>,
     pub flow_refs: FlowRefs,
+    pub attestation: Option<EventAttestation>,
 }
 
 impl EventContext {
@@ -132,6 +137,7 @@ impl EventContext {
             causation_id: None,
             trace_context: TraceParent::current(),
             flow_refs: FlowRefs::default(),
+            attestation: None,
         }
     }
 
@@ -144,6 +150,7 @@ impl EventContext {
             causation_id: None,
             trace_context: TraceParent::current(),
             flow_refs: FlowRefs::default(),
+            attestation: None,
         }
     }
 
@@ -156,6 +163,7 @@ impl EventContext {
             causation_id: None,
             trace_context: TraceParent::current(),
             flow_refs: FlowRefs::default(),
+            attestation: None,
         }
     }
 
@@ -175,6 +183,7 @@ impl EventContext {
             causation_id: None,
             trace_context: TraceParent::current(),
             flow_refs,
+            attestation: None,
         }
     }
 
@@ -216,6 +225,12 @@ impl EventContext {
     /// Replaces or sets cross-flow references.
     pub fn with_flow_refs(mut self, flow_refs: FlowRefs) -> Self {
         self.flow_refs = flow_refs;
+        self
+    }
+
+    /// Attaches cryptographic attestation metadata to the resulting envelope.
+    pub fn with_attestation(mut self, attestation: EventAttestation) -> Self {
+        self.attestation = Some(attestation);
         self
     }
 

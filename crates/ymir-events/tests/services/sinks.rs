@@ -143,9 +143,15 @@ async fn otlp_sink_exports_canonical_attributes_severity_and_trace_context() {
     // Warn event with explicit traceparent is exported and linked.
     let trace_id_hex = "4bf92f3577b34da6a3ce929d0e0e4736";
     let span_id_hex = "00f067aa0ba902b7";
+    let attestation = ymir_events::EventAttestation::from_material_digest(
+        "jwt_vp_json",
+        "did:web:holder.example",
+        "signed-vp-jwt",
+    );
     let warn_ctx = EventContext::for_owner(test_owner())
         .with_transfer_id("tr-9")
-        .with_trace_context(Some(format!("00-{trace_id_hex}-{span_id_hex}-01")));
+        .with_trace_context(Some(format!("00-{trace_id_hex}-{span_id_hex}-01")))
+        .with_attestation(attestation.clone());
     let source = EventSource::from_snapshot(&node_identity().snapshot(), "heimdall");
     let denied = sample_denied_grant("grant-7", "expired")
         .into_envelope(&warn_ctx, source)
@@ -179,6 +185,18 @@ async fn otlp_sink_exports_canonical_attributes_severity_and_trace_context() {
     assert_eq!(
         attr_string(record, "flow.grant_id").as_deref(),
         Some("grant-7")
+    );
+    assert_eq!(
+        attr_string(record, "event.integrity.attestation.format").as_deref(),
+        Some("jwt_vp_json")
+    );
+    assert_eq!(
+        attr_string(record, "event.integrity.attestation.signer_did").as_deref(),
+        Some("did:web:holder.example")
+    );
+    assert_eq!(
+        attr_string(record, "event.integrity.attestation.signature").as_deref(),
+        Some(attestation.signature.as_str())
     );
     assert!(attr_string(record, "event.payload").is_some());
 
@@ -493,4 +511,62 @@ fn event_severity_orders_cleanly() {
     assert!(EventSeverity::Info < EventSeverity::Warn);
     assert!(EventSeverity::Warn < EventSeverity::Error);
     assert!(EventSeverity::Error < EventSeverity::Critical);
+}
+
+#[tokio::test]
+async fn async_telemetry_sink_queues_telemetry_for_worker_and_keeps_audit_sync() {
+    use tokio::sync::Notify;
+    use tokio_util::sync::CancellationToken;
+    use ymir::boot::workers::BackgroundWorker;
+    use ymir_events::AsyncTelemetrySink;
+
+    let flushed = Arc::new(Notify::new());
+    let flushed_signal = flushed.clone();
+    let mut inner = MockEventSinkTrait::new();
+    inner
+        .expect_emit_envelope()
+        .withf(|env| env.delivery_class == DeliveryClass::AuditDurable)
+        .times(1)
+        .returning(|_| Ok(()));
+    inner
+        .expect_emit_envelopes()
+        .withf(|envs| {
+            envs.len() == 2
+                && envs
+                    .iter()
+                    .all(|e| e.delivery_class == DeliveryClass::TelemetryStream)
+        })
+        .times(1)
+        .returning(move |_| {
+            flushed_signal.notify_one();
+            Ok(())
+        });
+
+    let (sink, worker) = AsyncTelemetrySink::open(Arc::new(inner), 16);
+    let ctx = EventContext::for_owner(test_owner());
+    let src = EventSource::for_crate("dataplane");
+    let audit_env = sample_denied_grant("g-1", "expired")
+        .into_envelope(&ctx, src.clone())
+        .unwrap();
+    let telem_1 = sample_data_access("tr-1", None, Some(64))
+        .into_envelope(&ctx, src.clone())
+        .unwrap();
+    let telem_2 = sample_data_access("tr-2", None, Some(128))
+        .into_envelope(&ctx, src)
+        .unwrap();
+
+    sink.emit_envelope(audit_env).await.unwrap();
+    sink.emit_envelope(telem_1).await.unwrap();
+    sink.emit_envelope(telem_2).await.unwrap();
+
+    let cancel = CancellationToken::new();
+    let handle = tokio::spawn({
+        let cancel = cancel.clone();
+        async move { Box::new(worker).run(cancel).await }
+    });
+    tokio::time::timeout(Duration::from_secs(2), flushed.notified())
+        .await
+        .expect("telemetry flush worker timed out");
+    cancel.cancel();
+    handle.await.unwrap().unwrap();
 }
