@@ -21,6 +21,6 @@ use serde::{Deserialize, Serialize};
 pub struct TaxId {
     pub id: String,
     // Company tax ID used to identify it through the OpenCorporate service.
-    #[serde(rename = "schema:taxID")]
+    #[serde(rename = "taxID")]
     pub tax_id: String,
 }

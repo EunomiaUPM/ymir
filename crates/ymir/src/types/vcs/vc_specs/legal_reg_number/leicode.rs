@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 pub struct LeiCode {
     pub id: String,
     // Unique LEI number per https://www.gleif.org (ISO 17442, 20 chars).
-    #[serde(rename = "schema:leiCode")]
+    #[serde(rename = "leiCode")]
     pub lei_code: String,
     // The country subdivision (state/region) where the LEI number is registered.
     #[serde(

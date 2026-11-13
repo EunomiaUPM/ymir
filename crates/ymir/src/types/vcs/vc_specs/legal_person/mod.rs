@@ -26,9 +26,9 @@ pub struct LegalPersonCredentialSubject {
     pub gx_legal_address: Address,
     #[serde(rename = "gx:headquartersAddress")]
     pub gx_headquarters_address: Address,
-    #[serde(rename = "schema:name")]
+    #[serde(rename = "name")]
     pub schema_name: String,
-    #[serde(rename = "schema:description", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "description", skip_serializing_if = "Option::is_none")]
     pub schema_description: Option<String>,
 }
 
