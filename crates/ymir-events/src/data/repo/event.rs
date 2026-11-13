@@ -15,17 +15,35 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! Event store repository.
+//! Event store repository port and UI read-state projection wrapper.
 
 use async_trait::async_trait;
-use ymir::oauth::OwnerScope;
+use chrono::{DateTime, Utc};
 use thiserror::Error;
 use urn::Urn;
 use ymir::errors::{Outcome, RepoIntoErrors};
+use ymir::oauth::OwnerScope;
+use ymir::paginated_spec::{Page, Sort};
 
 use crate::entities::envelope::EventEnvelope;
 use crate::entities::queries::EventFilter;
-use ymir::paginated_spec::{Page, Sort};
+
+/// Stored immutable event combined with the caller's personal `read_at` projection.
+#[derive(Debug, Clone)]
+pub struct StoredEvent {
+    pub envelope: EventEnvelope,
+    pub read_at: Option<DateTime<Utc>>,
+}
+
+impl StoredEvent {
+    /// Wraps an unread envelope.
+    pub fn unread(envelope: EventEnvelope) -> Self {
+        Self {
+            envelope,
+            read_at: None,
+        }
+    }
+}
 
 /// Failures of the event store, mapped onto `Errors`.
 #[derive(Debug, Error)]
@@ -39,25 +57,36 @@ pub enum EventRepoError {
 
 impl RepoIntoErrors for EventRepoError {}
 
-/// Append-only store of published events.
+/// Append-only store of canonical v2 events with separated reader state.
 #[mockall::automock]
 #[async_trait]
 pub trait EventStoreRepo: Send + Sync + 'static {
     async fn insert_event(&self, event: &EventEnvelope) -> Outcome<()>;
+
     async fn get_event_by_id(
         &self,
         scope: &OwnerScope,
         id: &Urn,
-    ) -> Outcome<Option<EventEnvelope>>;
+        reader_id: Option<String>,
+    ) -> Outcome<Option<StoredEvent>>;
+
     /// A page of events plus the total count of the filtered set.
     async fn list_events(
         &self,
         scope: &OwnerScope,
         filter: &EventFilter,
+        reader_id: Option<String>,
         page: &Page,
         sort: &Sort,
-    ) -> Outcome<(Vec<EventEnvelope>, u64)>;
-    async fn count_unread(&self, scope: &OwnerScope) -> Outcome<u64>;
+    ) -> Outcome<(Vec<StoredEvent>, u64)>;
+
+    async fn count_unread(&self, scope: &OwnerScope, reader_id: Option<String>) -> Outcome<u64>;
+
     /// Marks one event read, or every unread one in scope when `id` is `None`; returns how many.
-    async fn mark_read(&self, scope: &OwnerScope, id: Option<Urn>) -> Outcome<u64>;
+    async fn mark_read(
+        &self,
+        scope: &OwnerScope,
+        reader_id: Option<String>,
+        id: Option<Urn>,
+    ) -> Outcome<u64>;
 }

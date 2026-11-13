@@ -18,5 +18,6 @@
 //! Event bus domain logic that lives in structs: topics, subscription patterns and commands.
 
 mod commands;
+mod envelope;
 mod topic;
 mod topic_pattern;

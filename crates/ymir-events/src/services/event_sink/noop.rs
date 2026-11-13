@@ -15,66 +15,56 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! The sinks: the bus itself, an optional bus, and one that drops everything.
+//! No-op sink, adapters over `EventBus`, and smart pointer delegating impls.
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use ymir::oauth::Owner;
-use serde_json::Value;
 use ymir::errors::Outcome;
 
+use crate::entities::envelope::EventEnvelope;
 use crate::services::event_bus::EventBus;
 use crate::services::event_sink::EventSinkTrait;
 
-/// Drops every event: for agents without a bus and for tests.
+/// Drops every event: used when no sink is wired or in lightweight unit tests.
 #[derive(Debug, Clone, Default)]
 pub struct NoopEventSink;
 
 impl NoopEventSink {
-    /// The bus when there is one, this sink otherwise.
+    /// Returns the local bus when provided, or a `NoopEventSink` otherwise.
     pub fn or_bus(bus: Option<EventBus>) -> Arc<dyn EventSinkTrait> {
         match bus {
             Some(bus) => Arc::new(bus),
             None => Arc::new(Self),
         }
     }
+
+    /// Returns an existing sink when present, or a `NoopEventSink` otherwise.
+    pub fn or_sink(sink: Option<Arc<dyn EventSinkTrait>>) -> Arc<dyn EventSinkTrait> {
+        sink.unwrap_or_else(|| Arc::new(Self))
+    }
 }
 
 #[async_trait]
 impl EventSinkTrait for NoopEventSink {
-    async fn emit_action(&self, _: &Owner, _: &str, _: &str, _: Value) -> Outcome<()> {
+    async fn emit_envelope(&self, _: EventEnvelope) -> Outcome<()> {
         Ok(())
     }
 }
 
 #[async_trait]
 impl EventSinkTrait for EventBus {
-    async fn emit_action(
-        &self,
-        owner: &Owner,
-        topic: &str,
-        source: &str,
-        payload: Value,
-    ) -> Outcome<()> {
-        self.emit_payload_for(owner, topic, source, &payload)
-            .await?;
+    async fn emit_envelope(&self, envelope: EventEnvelope) -> Outcome<()> {
+        self.publish(envelope).await?;
         Ok(())
     }
 }
 
-/// Services not yet moved to a sink keep their optional bus.
 #[async_trait]
 impl<T: EventSinkTrait> EventSinkTrait for Option<T> {
-    async fn emit_action(
-        &self,
-        owner: &Owner,
-        topic: &str,
-        source: &str,
-        payload: Value,
-    ) -> Outcome<()> {
+    async fn emit_envelope(&self, envelope: EventEnvelope) -> Outcome<()> {
         match self {
-            Some(sink) => sink.emit_action(owner, topic, source, payload).await,
+            Some(sink) => sink.emit_envelope(envelope).await,
             None => Ok(()),
         }
     }
@@ -82,13 +72,14 @@ impl<T: EventSinkTrait> EventSinkTrait for Option<T> {
 
 #[async_trait]
 impl<T: EventSinkTrait + ?Sized> EventSinkTrait for &T {
-    async fn emit_action(
-        &self,
-        owner: &Owner,
-        topic: &str,
-        source: &str,
-        payload: Value,
-    ) -> Outcome<()> {
-        (**self).emit_action(owner, topic, source, payload).await
+    async fn emit_envelope(&self, envelope: EventEnvelope) -> Outcome<()> {
+        (**self).emit_envelope(envelope).await
+    }
+}
+
+#[async_trait]
+impl<T: EventSinkTrait + ?Sized> EventSinkTrait for Arc<T> {
+    async fn emit_envelope(&self, envelope: EventEnvelope) -> Outcome<()> {
+        (**self).emit_envelope(envelope).await
     }
 }

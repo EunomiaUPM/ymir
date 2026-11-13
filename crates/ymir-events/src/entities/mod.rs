@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! Topics, envelopes, subscriptions, deliveries and the `event!` macro.
+//! Canonical event envelopes, typed payload traits, subscriptions, outbox and filters.
 
 pub mod commands;
 pub mod dead_letter;
@@ -23,7 +23,7 @@ pub mod delivery;
 pub mod dto;
 pub mod envelope;
 pub mod event;
-pub mod mac;
+pub mod outbox;
 pub mod queries;
 pub mod subscription;
 pub mod topic;
@@ -35,6 +35,7 @@ pub use delivery::*;
 pub use dto::*;
 pub use envelope::*;
 pub use event::*;
+pub use outbox::*;
 pub use queries::*;
 pub use subscription::*;
 pub use topic::*;

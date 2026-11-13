@@ -42,7 +42,8 @@ json_to_table = "0.12.0"
 serde_norway = "0.9.42"
 arc-swap = "1.9"
 jsonschema = { version = "0.58", default-features = false }
-opentelemetry-otlp = { version = "0.33", default-features = false, features = ["grpc-tonic", "trace", "metrics"] }
+opentelemetry-otlp = { version = "0.33", default-features = false, features = ["grpc-tonic", "trace", "metrics", "logs"] }
+rdkafka = { version = "0.37", features = ["cmake-build", "tokio", "ssl"] }
 tower = "0.5"
 tower-http = { version = "0.6.2", features = ["trace", "cors", "fs"] }
 bytes = "1.10.1"

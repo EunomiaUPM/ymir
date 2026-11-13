@@ -21,7 +21,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use axum::http::StatusCode;
-use ymir_events::EventDispatcher;
+use ymir_events::{EventDispatcher, EventEnvelope, WebhookDeliveryFormat};
 
 use crate::support::fixtures::envelope;
 use crate::support::webhook::Webhook;
@@ -39,16 +39,22 @@ fn signature_is_hmac_sha256_hex() {
     );
 }
 
-/// The webhook gets the payload, the event headers, custom headers and a signature over the
-/// exact body sent.
+/// The webhook gets the canonical envelope, event headers, custom headers and a signature over
+/// the exact body sent.
 #[tokio::test]
-async fn sends_payload_headers_and_a_signature_over_the_body() {
+async fn sends_envelope_headers_and_a_signature_over_the_body() {
     let hook = Webhook::start(StatusCode::OK).await;
     let event = envelope("transfers:started");
     let custom = HashMap::from([("X-Tenant".to_string(), "tenant-1".to_string())]);
 
     let status = dispatcher()
-        .dispatch(&hook.url, &event, Some("s3cret"), Some(&custom))
+        .dispatch(
+            &hook.url,
+            &event,
+            WebhookDeliveryFormat::Envelope,
+            Some("s3cret"),
+            Some(&custom),
+        )
         .await
         .unwrap();
 
@@ -56,12 +62,46 @@ async fn sends_payload_headers_and_a_signature_over_the_body() {
     let received = hook.received();
     assert_eq!(received.len(), 1);
     let req = &received[0];
-    let body: serde_json::Value = serde_json::from_slice(&req.body).unwrap();
-    assert_eq!(body, event.payload);
+    let delivered: EventEnvelope = serde_json::from_slice(&req.body).unwrap();
+    assert_eq!(delivered.id, event.id);
+    assert_eq!(delivered.spec_version, "2.0");
+    assert_eq!(delivered.payload, event.payload);
+    assert!(delivered.integrity.verify_payload(&event.payload));
     assert_eq!(req.headers["x-event-id"], event.id.to_string().as_str());
+    assert_eq!(req.headers["x-event-spec-version"], "2.0");
     assert_eq!(req.headers["x-event-topic"], "transfers:started");
+    assert_eq!(req.headers["x-event-category"], "AuditLifecycle");
+    assert_eq!(req.headers["x-event-severity"], "Info");
+    assert_eq!(req.headers["x-event-digest"], event.integrity.payload_digest.as_str());
     assert_eq!(req.headers["content-type"], "application/json");
     assert_eq!(req.headers["x-tenant"], "tenant-1");
+    assert_eq!(
+        req.headers["x-hub-signature-256"],
+        EventDispatcher::compute_signature("s3cret", &req.body).as_str()
+    );
+}
+
+/// Subscriptions opting into `PayloadOnly` receive just the inner payload with matching HMAC.
+#[tokio::test]
+async fn payload_only_format_sends_legacy_raw_payload_and_matching_signature() {
+    let hook = Webhook::start(StatusCode::OK).await;
+    let event = envelope("transfers:started");
+
+    let status = dispatcher()
+        .dispatch(
+            &hook.url,
+            &event,
+            WebhookDeliveryFormat::PayloadOnly,
+            Some("s3cret"),
+            None,
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(status, StatusCode::OK);
+    let req = &hook.received()[0];
+    let body: serde_json::Value = serde_json::from_slice(&req.body).unwrap();
+    assert_eq!(body, event.payload);
     assert_eq!(
         req.headers["x-hub-signature-256"],
         EventDispatcher::compute_signature("s3cret", &req.body).as_str()
@@ -73,7 +113,13 @@ async fn sends_payload_headers_and_a_signature_over_the_body() {
 async fn no_secret_means_no_signature() {
     let hook = Webhook::start(StatusCode::OK).await;
     dispatcher()
-        .dispatch(&hook.url, &envelope("transfers:started"), None, None)
+        .dispatch(
+            &hook.url,
+            &envelope("transfers:started"),
+            WebhookDeliveryFormat::Envelope,
+            None,
+            None,
+        )
         .await
         .unwrap();
     assert!(!hook.received()[0]
@@ -86,7 +132,13 @@ async fn no_secret_means_no_signature() {
 async fn returns_the_webhook_status_without_retrying() {
     let hook = Webhook::start(StatusCode::SERVICE_UNAVAILABLE).await;
     let status = dispatcher()
-        .dispatch(&hook.url, &envelope("transfers:started"), None, None)
+        .dispatch(
+            &hook.url,
+            &envelope("transfers:started"),
+            WebhookDeliveryFormat::Envelope,
+            None,
+            None,
+        )
         .await
         .unwrap();
     assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
@@ -100,6 +152,7 @@ async fn unreachable_webhook_is_an_error() {
         .dispatch(
             "http://127.0.0.1:1/hook",
             &envelope("transfers:started"),
+            WebhookDeliveryFormat::Envelope,
             None,
             None,
         )

@@ -47,8 +47,8 @@ impl EventDeliveryRepo for SeaOrmDeliveryRepo {
     #[tracing::instrument(level = "debug", skip_all, err)]
     async fn create_delivery(&self, d: &EventDeliveryRecord) -> Outcome<EventDeliveryRecord> {
         let active = delivery::ActiveModel::from_domain(d);
-        active
-            .insert(&self.db)
+        delivery::Entity::insert(active)
+            .exec_without_returning(&self.db)
             .await
             .map_err(|e| Errors::db("failed to create delivery record", Some(Box::new(e))))?;
         Ok(d.clone())

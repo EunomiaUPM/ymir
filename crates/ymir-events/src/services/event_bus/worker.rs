@@ -160,10 +160,10 @@ impl RetryWorker {
         };
 
         let event = match event_repo
-            .get_event_by_id(&OwnerScope::All, &event_urn)
+            .get_event_by_id(&OwnerScope::All, &event_urn, None)
             .await
         {
-            Ok(Some(ev)) => ev,
+            Ok(Some(stored)) => stored.envelope,
             Ok(None) => {
                 error!(event_id = %delivery.event_id, "Referenced event not found during retry");
                 return;
@@ -197,6 +197,7 @@ impl RetryWorker {
             .dispatch(
                 &sub.callback_address,
                 &event,
+                sub.delivery_format,
                 sub.secret.as_ref().map(|s| s.expose().as_str()),
                 sub.headers.as_ref(),
             )

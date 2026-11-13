@@ -21,26 +21,37 @@ pub mod dlq;
 pub mod events;
 pub mod subscriptions;
 
-use axum::Router;
 use std::sync::Arc;
 
+use axum::Router;
 pub use dlq::DeadLetterRouter;
 pub use events::EventsRouter;
 pub use subscriptions::SubscriptionsRouter;
-
-use crate::services::event_bus::EventBus;
 use ymir::http::OauthHttpMiddleware;
 use ymir::services::token_validator::OauthTokenValidatorTrait;
+
 use crate::routes as routes;
+use crate::services::event_bus::EventBus;
+use crate::services::event_sink::EventSinkTrait;
 
 /// Events API: the feed and its live stream at the root, plus subscriptions and the DLQ.
 pub struct EventsHttpRouter;
 
 impl EventsHttpRouter {
-    /// All event routes behind the OAuth middleware.
+    /// All event routes publishing directly to the local bus behind the OAuth middleware.
     pub fn build(bus: Arc<EventBus>, validator: Arc<dyn OauthTokenValidatorTrait>) -> Router {
+        let sink: Arc<dyn EventSinkTrait> = bus.clone();
+        Self::build_with_sink(bus, sink, validator)
+    }
+
+    /// All event routes publishing through the full configured sink pipeline.
+    pub fn build_with_sink(
+        bus: Arc<EventBus>,
+        sink: Arc<dyn EventSinkTrait>,
+        validator: Arc<dyn OauthTokenValidatorTrait>,
+    ) -> Router {
         Router::new()
-            .merge(EventsRouter::new(bus.clone()).router())
+            .merge(EventsRouter::with_sink(bus.clone(), sink).router())
             .nest(
                 routes::subscriptions::PREFIX,
                 SubscriptionsRouter::new(bus.subscription_repo()).router(),

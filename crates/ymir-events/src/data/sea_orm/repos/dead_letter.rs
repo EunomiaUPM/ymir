@@ -50,8 +50,8 @@ impl EventDeadLetterRepo for SeaOrmDeadLetterRepo {
     #[tracing::instrument(level = "debug", skip_all, err)]
     async fn create_dead_letter(&self, record: &DeadLetterRecord) -> Outcome<DeadLetterRecord> {
         let active = dead_letter::ActiveModel::from_domain(record);
-        active
-            .insert(&self.db)
+        dead_letter::Entity::insert(active)
+            .exec_without_returning(&self.db)
             .await
             .map_err(|e| Errors::db("failed to create dead letter", Some(Box::new(e))))?;
         Ok(record.clone())

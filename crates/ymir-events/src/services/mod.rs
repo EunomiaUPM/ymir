@@ -15,10 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! The event bus, its webhook dispatcher and retry worker, and the sink services emit to.
+//! The event bus, its webhook dispatcher and retry worker, and composable event sinks.
 
 pub mod event_bus;
 pub mod event_sink;
 
 pub use event_bus::*;
-pub use event_sink::{EventSinkTrait, MockEventSinkTrait, NoopEventSink};
+#[cfg(feature = "kafka")]
+pub use event_sink::{KafkaEventSink, KafkaOutboxWorker, RdkafkaProducerAdapter};
+pub use event_sink::{
+    BuiltEventPipeline, CompositeEventSink, EventPipelineBuilder, EventSinkTrait, KafkaMessage,
+    KafkaProducerPort, KafkaRouting, MockEventSinkTrait, MockKafkaProducerPort, NoopEventSink,
+    OtlpEventSink, RemoteBusSink, TracingJsonSink, TypedEventSink,
+};

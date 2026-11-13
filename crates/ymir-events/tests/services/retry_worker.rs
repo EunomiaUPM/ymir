@@ -22,7 +22,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::http::StatusCode;
-use ymir_events::data::repo::DeadLetterStatus;
+use ymir_events::data::repo::{DeadLetterStatus, StoredEvent};
 use ymir_events::entities::envelope::EventEnvelope;
 use ymir_events::{EventDispatcher, RetryWorker};
 
@@ -52,7 +52,7 @@ fn due(event: &EventEnvelope, callback: &str, attempts: u32, retry_limit: Option
     repos
         .events
         .expect_get_event_by_id()
-        .returning(move |_, _| Ok(Some(stored.clone())));
+        .returning(move |_, _, _| Ok(Some(StoredEvent::unread(stored.clone()))));
     let sub = subscription("sub-1", callback, None, retry_limit);
     repos
         .subscriptions
@@ -148,7 +148,7 @@ async fn missing_subscription_stops_the_retries() {
     repos
         .events
         .expect_get_event_by_id()
-        .returning(move |_, _| Ok(Some(stored.clone())));
+        .returning(move |_, _, _| Ok(Some(StoredEvent::unread(stored.clone()))));
     repos
         .subscriptions
         .expect_get_subscription()

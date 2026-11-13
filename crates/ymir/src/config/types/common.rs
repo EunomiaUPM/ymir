@@ -16,14 +16,15 @@
  */
 
 use crate::config::traits::{
-    ApiConfigTrait, ConnectionConfigTrait, DatabaseConfigTrait, HostsConfigTrait, OauthConfigTrait,
+    ApiConfigTrait, ConnectionConfigTrait, DatabaseConfigTrait, EventsConfigTrait, HostsConfigTrait,
+    OauthConfigTrait,
 };
 use crate::config::types::{
-    ApiConfig, CommonHostsConfig, ConnectionConfig, DatabaseConfig, OauthConfig,
+    ApiConfig, CommonHostsConfig, ConnectionConfig, DatabaseConfig, EventsConfig, OauthConfig,
 };
 use serde::{Deserialize, Serialize};
 
-/// Hosts, database, API, connection flags and auth settings every agent section embeds.
+/// Hosts, database, API, connection flags, event pipeline and auth settings every agent embeds.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CommonConfig {
     hosts: CommonHostsConfig,
@@ -32,6 +33,8 @@ pub struct CommonConfig {
     connection: ConnectionConfig,
     #[serde(default)]
     oauth: OauthConfig,
+    #[serde(default)]
+    events: EventsConfig,
 }
 
 impl HostsConfigTrait for CommonConfig {
@@ -61,5 +64,11 @@ impl OauthConfigTrait for CommonConfig {
 impl ApiConfigTrait for CommonConfig {
     fn api(&self) -> &ApiConfig {
         &self.api
+    }
+}
+
+impl EventsConfigTrait for CommonConfig {
+    fn events(&self) -> &EventsConfig {
+        &self.events
     }
 }

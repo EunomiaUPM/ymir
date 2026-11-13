@@ -20,17 +20,18 @@
 pub mod dead_letter;
 pub mod delivery;
 pub mod event;
+pub mod outbox;
 pub mod subscription;
 
 pub use dead_letter::*;
 pub use delivery::*;
 pub use event::*;
+pub use outbox::*;
 pub use subscription::*;
 
-// Re-exports of domain records for backward compatibility with existing tests and modules
+// Re-exports of domain records for existing tests and modules.
 pub use crate::entities::commands::{CreateSubscriptionDto, UpdateSubscriptionDto};
-pub use crate::entities::dead_letter::DeadLetterRecord;
-pub use crate::entities::dead_letter::DeadLetterStatus;
-pub use crate::entities::delivery::DeliveryStatus;
-pub use crate::entities::delivery::EventDeliveryRecord;
-pub use crate::entities::subscription::SubscriptionRecord;
+pub use crate::entities::dead_letter::{DeadLetterRecord, DeadLetterStatus};
+pub use crate::entities::delivery::{DeliveryStatus, EventDeliveryRecord};
+pub use crate::entities::outbox::{OutboxRecord, OutboxStatus};
+pub use crate::entities::subscription::{SubscriptionRecord, WebhookDeliveryFormat};

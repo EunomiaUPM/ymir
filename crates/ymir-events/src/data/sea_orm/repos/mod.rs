@@ -21,9 +21,11 @@ pub mod dead_letter;
 pub mod delivery;
 pub mod event;
 mod listing;
+pub mod outbox;
 pub mod subscription;
 
 pub use dead_letter::SeaOrmDeadLetterRepo;
 pub use delivery::SeaOrmDeliveryRepo;
 pub use event::SeaOrmEventRepo;
+pub use outbox::SeaOrmOutboxRepo;
 pub use subscription::SeaOrmSubscriptionRepo;

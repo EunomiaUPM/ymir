@@ -23,10 +23,12 @@ use sea_orm::DatabaseConnection;
 
 use crate::data::factory::DataFactory;
 use crate::data::repo::{
-    EventDeadLetterRepo, EventDeliveryRepo, EventStoreRepo, EventSubscriptionRepo,
+    EventDeadLetterRepo, EventDeliveryRepo, EventOutboxRepo, EventStoreRepo,
+    EventSubscriptionRepo,
 };
 use crate::data::sea_orm::repos::{
-    SeaOrmDeadLetterRepo, SeaOrmDeliveryRepo, SeaOrmEventRepo, SeaOrmSubscriptionRepo,
+    SeaOrmDeadLetterRepo, SeaOrmDeliveryRepo, SeaOrmEventRepo, SeaOrmOutboxRepo,
+    SeaOrmSubscriptionRepo,
 };
 
 /// Data factory over SeaORM repositories sharing one connection.
@@ -56,5 +58,9 @@ impl DataFactory for SeaOrmDataFactory {
 
     fn dlq_repository(&self) -> Arc<dyn EventDeadLetterRepo> {
         Arc::new(SeaOrmDeadLetterRepo::new(self.db.clone()))
+    }
+
+    fn outbox_repository(&self) -> Arc<dyn EventOutboxRepo> {
+        Arc::new(SeaOrmOutboxRepo::new(self.db.clone()))
     }
 }

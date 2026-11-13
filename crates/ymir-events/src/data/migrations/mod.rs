@@ -21,17 +21,20 @@ use sea_orm_migration::prelude::*;
 
 pub mod m20241123_0000001_subscriptions;
 pub mod m20260601_0000003_event_bus;
+pub mod m20261113_0000004_event_envelope_v2;
 
 /// Event bus tables, in creation order.
 pub fn get_events_migrations() -> Vec<Box<dyn MigrationTrait>> {
     vec![
         Box::new(m20241123_0000001_subscriptions::Migration),
         Box::new(m20260601_0000003_event_bus::Migration),
+        Box::new(m20261113_0000004_event_envelope_v2::Migration),
     ]
 }
 
 /// Migrator over the event bus tables alone.
 pub struct Migrator;
+
 #[async_trait::async_trait]
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {

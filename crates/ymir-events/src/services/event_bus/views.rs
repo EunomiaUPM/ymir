@@ -24,33 +24,35 @@ use ymir::oauth::Owner;
 use ymir::secret::Secret;
 use serde::{Deserialize, Serialize};
 
+use crate::data::repo::StoredEvent;
 use crate::entities::dead_letter::DeadLetterRecord;
 use crate::entities::delivery::EventDeliveryRecord;
 use crate::entities::envelope::EventEnvelope;
-use crate::entities::subscription::SubscriptionRecord;
+use crate::entities::subscription::{SubscriptionRecord, WebhookDeliveryFormat};
 
-/// Event as returned by the API.
+/// Event envelope flattened with per-reader UI read projection (`read_at`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventView {
-    pub id: String,
-    pub topic: String,
-    pub source_crate: String,
-    pub schema_version: u32,
-    pub timestamp: DateTime<Utc>,
-    pub correlation_id: Option<String>,
-    pub payload: serde_json::Value,
+    #[serde(flatten)]
+    pub envelope: EventEnvelope,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub read_at: Option<DateTime<Utc>>,
 }
 
 impl EventView {
-    pub fn assemble(envelope: EventEnvelope) -> Self {
+    /// Builds an API view from a stored event and reader projection.
+    pub fn assemble(stored: StoredEvent) -> Self {
         Self {
-            id: envelope.id.to_string(),
-            topic: envelope.topic.to_string(),
-            source_crate: envelope.source_crate,
-            schema_version: envelope.schema_version,
-            timestamp: envelope.timestamp,
-            correlation_id: envelope.correlation_id.map(|u| u.to_string()),
-            payload: envelope.payload,
+            envelope: stored.envelope,
+            read_at: stored.read_at,
+        }
+    }
+
+    /// Wraps a newly published envelope with unread state (`read_at: None`).
+    pub fn from_envelope(envelope: EventEnvelope) -> Self {
+        Self {
+            envelope,
+            read_at: None,
         }
     }
 }
@@ -66,6 +68,7 @@ pub struct SubscriptionView {
     pub secret: Option<Secret<String>>,
     pub headers: Option<HashMap<String, String>>,
     pub retry_limit: Option<u32>,
+    pub delivery_format: WebhookDeliveryFormat,
     pub active: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
@@ -82,6 +85,7 @@ impl SubscriptionView {
             secret: record.secret,
             headers: record.headers,
             retry_limit: record.retry_limit,
+            delivery_format: record.delivery_format,
             active: record.active,
             created_at: record.created_at,
             updated_at: record.updated_at,

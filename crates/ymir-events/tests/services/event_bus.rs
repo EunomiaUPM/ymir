@@ -21,9 +21,10 @@
 use axum::http::StatusCode;
 use chrono::Utc;
 use ymir::oauth::OwnerScope;
-use ymir_events::data::repo::{DeadLetterRecord, DeadLetterStatus, DeliveryStatus};
+use ymir_events::data::repo::{DeadLetterRecord, DeadLetterStatus, DeliveryStatus, StoredEvent};
 use ymir_events::entities::envelope::EventEnvelope;
-use serde_json::json;
+use ymir_events::schemas::dataspace::DataAccessPayload;
+use ymir_events::EventContext;
 use ymir::errors::Errors;
 
 use crate::support::fixtures::{envelope, owner, subscription, Repos};
@@ -296,14 +297,45 @@ async fn unreachable_webhook_schedules_a_retry() {
     assert_eq!(signals.next(1).await, vec!["retry scheduled"]);
 }
 
-/// A topic that is not a valid topic is rejected before anything is stored.
+/// Publishing a typed payload stamps canonical envelope fields and broadcasts it.
 #[tokio::test]
-async fn emitting_under_an_invalid_topic_is_rejected() {
-    let bus = Repos::default().bus();
-    let result = bus
-        .emit_payload_for(&owner(), "transfers:*", "tests", &json!({}))
-        .await;
-    assert!(result.is_err());
+async fn publishing_a_typed_payload_stores_and_broadcasts_envelope() {
+    let mut repos = Repos::default();
+    repos
+        .events
+        .expect_insert_event()
+        .withf(|env| {
+            env.payload_type == "dataplane.data_access.v1"
+                && env.topic.as_str() == "dataplane:data:accessed"
+                && env.correlation.flow_refs.transfer_id.as_deref() == Some("tr-1")
+        })
+        .times(1)
+        .returning(|_| Ok(()));
+    repos
+        .subscriptions
+        .expect_get_matching_subscriptions()
+        .returning(|_, _| Ok(vec![]));
+
+    let bus = repos.bus();
+    let payload = DataAccessPayload {
+        allowed: true,
+        transfer_id: "tr-1".to_string(),
+        agreement_id: Some("ag-1".to_string()),
+        dataset_id: Some("ds-1".to_string()),
+        channel: "http_proxy".to_string(),
+        method: None,
+        path: None,
+        status_code: Some(200),
+        bytes_transferred: Some(512),
+        duration_ms: None,
+        peer_id: None,
+        denial_reason: None,
+    };
+    let ctx = EventContext::for_owner(owner()).with_transfer_id("tr-1");
+    let published = bus.publish_typed(&ctx, &payload).await.unwrap();
+
+    assert_eq!(published.payload_type, "dataplane.data_access.v1");
+    assert_eq!(published.correlation.correlation_id.as_deref(), Some("tr-1"));
 }
 
 fn dead_letter(event: &EventEnvelope, callback: &str) -> DeadLetterRecord {
@@ -336,7 +368,7 @@ fn replaying(event: &EventEnvelope, callback: &str) -> Repos {
     repos
         .events
         .expect_get_event_by_id()
-        .returning(move |_, _| Ok(Some(stored.clone())));
+        .returning(move |_, _, _| Ok(Some(StoredEvent::unread(stored.clone()))));
     let sub = subscription("sub-1", callback, None, None);
     repos
         .subscriptions

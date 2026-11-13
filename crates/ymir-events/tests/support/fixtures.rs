@@ -27,7 +27,7 @@ use ymir_events::data::repo::{
     MockEventDeadLetterRepo, MockEventDeliveryRepo, MockEventStoreRepo, MockEventSubscriptionRepo,
 };
 use ymir_events::entities::delivery::{DeliveryStatus, EventDeliveryRecord};
-use ymir_events::entities::subscription::SubscriptionRecord;
+use ymir_events::entities::subscription::{SubscriptionRecord, WebhookDeliveryFormat};
 use ymir_events::{EventBus, EventEnvelope, RetryPolicy, Topic, TopicPattern};
 use serde_json::json;
 
@@ -49,12 +49,29 @@ pub fn envelope(topic: &str) -> EventEnvelope {
     )
 }
 
-/// Active subscription of [`USER`] to every topic.
+/// Active subscription of [`USER`] to every topic using the canonical envelope format.
 pub fn subscription(
     id: &str,
     callback_address: &str,
     secret: Option<&str>,
     retry_limit: Option<u32>,
+) -> SubscriptionRecord {
+    subscription_with_format(
+        id,
+        callback_address,
+        secret,
+        retry_limit,
+        WebhookDeliveryFormat::Envelope,
+    )
+}
+
+/// Active subscription with explicit webhook payload format.
+pub fn subscription_with_format(
+    id: &str,
+    callback_address: &str,
+    secret: Option<&str>,
+    retry_limit: Option<u32>,
+    delivery_format: WebhookDeliveryFormat,
 ) -> SubscriptionRecord {
     SubscriptionRecord {
         id: id.to_string(),
@@ -64,6 +81,7 @@ pub fn subscription(
         secret: secret.map(|s| Secret::new(s.to_string())),
         headers: None,
         retry_limit,
+        delivery_format,
         active: true,
         created_at: Utc::now(),
         updated_at: None,

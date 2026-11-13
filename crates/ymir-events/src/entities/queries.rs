@@ -18,20 +18,51 @@
 //! Listing filters of the event feed, webhook subscriptions and dead letters.
 
 use chrono::{DateTime, Utc};
-use ymir::paginated_spec::deserialize_opt_bool_from_str_or_bool;
-use ymir::query::QueryFilter;
 use serde::Deserialize;
 use ymir::errors::{BadFormat, Errors, Outcome};
+use ymir::paginated_spec::deserialize_opt_bool_from_str_or_bool;
+use ymir::query::QueryFilter;
 
+use crate::entities::envelope::{EventCategory, EventOutcome, EventSeverity};
 use crate::entities::topic_pattern::TopicPattern;
 
-/// `topic` is a topic pattern: `*` matches one segment, `**` any number of them.
+/// Canonical filter for event feeds, streams and dataspace observability queries.
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct EventFilter {
+    /// Topic pattern (`*` matches one segment, `**` any number of segments).
     pub topic: Option<String>,
     /// Crate that published the event, such as `transfer_agent`.
     pub source_crate: Option<String>,
-    /// `false` keeps unread events only, `true` read ones.
+    /// Dataspace identifier.
+    pub dataspace_id: Option<String>,
+    /// Emitting participant DID/identifier.
+    pub participant_id: Option<String>,
+    /// Emitting logical service name (e.g. `monolith`, `heimdall`, `dataplane`).
+    pub service: Option<String>,
+    /// High-level event category.
+    pub event_type: Option<EventCategory>,
+    /// Severity level filter.
+    pub severity: Option<EventSeverity>,
+    /// Execution outcome filter.
+    pub outcome: Option<EventOutcome>,
+    /// Schema type identifier (e.g. `identity.grant.v1`).
+    pub payload_type: Option<String>,
+    /// Actor identifier filter.
+    pub actor_id: Option<String>,
+    /// Subject kind filter (`grant`, `transfer_process`, `agreement`, etc.).
+    pub subject_kind: Option<String>,
+    /// Subject identifier filter.
+    pub subject_id: Option<String>,
+    /// Cross-flow correlation identifier filter.
+    pub correlation_id: Option<String>,
+    /// Flow reference filters across dataspace domains.
+    pub agreement_id: Option<String>,
+    pub transfer_id: Option<String>,
+    pub negotiation_id: Option<String>,
+    pub grant_id: Option<String>,
+    pub dataset_id: Option<String>,
+    pub peer_id: Option<String>,
+    /// `false` keeps unread events only, `true` read ones (per caller).
     #[serde(default, deserialize_with = "deserialize_opt_bool_from_str_or_bool")]
     pub read: Option<bool>,
     pub created_after: Option<DateTime<Utc>>,
@@ -52,6 +83,23 @@ impl QueryFilter for EventFilter {
     fn is_empty(&self) -> bool {
         self.topic.is_none()
             && self.source_crate.is_none()
+            && self.dataspace_id.is_none()
+            && self.participant_id.is_none()
+            && self.service.is_none()
+            && self.event_type.is_none()
+            && self.severity.is_none()
+            && self.outcome.is_none()
+            && self.payload_type.is_none()
+            && self.actor_id.is_none()
+            && self.subject_kind.is_none()
+            && self.subject_id.is_none()
+            && self.correlation_id.is_none()
+            && self.agreement_id.is_none()
+            && self.transfer_id.is_none()
+            && self.negotiation_id.is_none()
+            && self.grant_id.is_none()
+            && self.dataset_id.is_none()
+            && self.peer_id.is_none()
             && self.read.is_none()
             && self.created_after.is_none()
             && self.created_before.is_none()

@@ -24,8 +24,8 @@ pub mod views;
 pub mod worker;
 
 use async_trait::async_trait;
-use ymir::oauth::Owner;
 use tokio::sync::broadcast;
+use ymir::errors::Outcome;
 
 pub use dispatcher::EventDispatcher;
 pub use policy::RetryPolicy;
@@ -34,8 +34,7 @@ pub use views::{DeadLetterView, DeliveryView, EventView, SubscriptionView};
 pub use worker::RetryWorker;
 
 use crate::entities::envelope::EventEnvelope;
-use crate::entities::event::Event;
-use ymir::errors::Outcome;
+use crate::entities::event::{EventContext, EventPayload};
 
 /// Publishing envelopes and listening to them in-process.
 #[async_trait]
@@ -46,18 +45,16 @@ pub trait EventBusTrait: Send + Sync + 'static {
     fn subscribe(&self) -> broadcast::Receiver<EventEnvelope>;
 }
 
-/// Publishing typed events and raw payloads.
+/// Publishing canonical typed payloads and raw envelopes through the local event bus.
 #[async_trait]
 pub trait EventPublisherTrait: Send + Sync {
-    /// Wraps the event in an envelope and publishes it.
-    async fn publish_event<E: Event>(&self, event: E) -> Outcome<EventEnvelope>;
-
-    /// Publishes `payload` under `topic` about a record of `owner`.
-    async fn emit_payload(
+    /// Materializes `payload` and `ctx` into an immutable envelope and publishes it.
+    async fn publish_typed<P: EventPayload>(
         &self,
-        owner: &Owner,
-        topic: &str,
-        source: &str,
-        payload: &serde_json::Value,
+        ctx: &EventContext,
+        payload: &P,
     ) -> Outcome<EventEnvelope>;
+
+    /// Publishes an already constructed canonical [`EventEnvelope`].
+    async fn emit_raw(&self, envelope: EventEnvelope) -> Outcome<EventEnvelope>;
 }

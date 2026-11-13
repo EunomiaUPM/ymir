@@ -22,29 +22,28 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use chrono::Utc;
-use ymir::oauth::{Owner, OwnerScope};
-use ymir::secret::Secret;
 use tokio::sync::broadcast;
-use tracing::Instrument;
-use tracing::{error, info, warn};
+use tracing::{Instrument, error, info, warn};
 use urn::Urn;
 use uuid::Uuid;
+use ymir::config::types::EventNodeIdentity;
+use ymir::errors::{Errors, Outcome, PetitionFailure};
+use ymir::oauth::{Owner, OwnerScope};
+use ymir::paginated_spec::{Cursor, Page, Sort};
+use ymir::secret::Secret;
 
 use crate::data::repo::{
     EventDeadLetterRepo, EventDeliveryRepo, EventStoreRepo, EventSubscriptionRepo,
 };
-use crate::entities::dead_letter::DeadLetterRecord;
-use crate::entities::dead_letter::DeadLetterStatus;
-use crate::entities::delivery::DeliveryStatus;
-use crate::entities::delivery::EventDeliveryRecord;
-use crate::entities::envelope::EventEnvelope;
-use crate::entities::event::Event;
+use crate::entities::dead_letter::{DeadLetterRecord, DeadLetterStatus};
+use crate::entities::delivery::{DeliveryStatus, EventDeliveryRecord};
+use crate::entities::envelope::{EventEnvelope, EventSource};
+use crate::entities::event::{EventContext, EventPayload};
 use crate::entities::queries::DeadLetterFilter;
+use crate::entities::subscription::WebhookDeliveryFormat;
 use crate::services::event_bus::dispatcher::EventDispatcher;
 use crate::services::event_bus::policy::RetryPolicy;
 use crate::services::event_bus::{EventBusTrait, EventPublisherTrait};
-use ymir::paginated_spec::{Cursor, Page, Sort};
-use ymir::errors::{Errors, Outcome, PetitionFailure};
 
 /// The bus: stores every event, broadcasts it in-process and delivers it to matching webhooks.
 #[derive(Clone)]
@@ -56,6 +55,7 @@ pub struct EventBus {
     dispatcher: Arc<EventDispatcher>,
     policy: RetryPolicy,
     broadcast_tx: broadcast::Sender<EventEnvelope>,
+    node_identity: Option<Arc<EventNodeIdentity>>,
 }
 
 impl EventBus {
@@ -78,7 +78,19 @@ impl EventBus {
             dispatcher,
             policy,
             broadcast_tx,
+            node_identity: None,
         }
+    }
+
+    /// Attaches a runtime node identity stamped onto every envelope passing through this bus.
+    pub fn with_node_identity(mut self, identity: Arc<EventNodeIdentity>) -> Self {
+        self.node_identity = Some(identity);
+        self
+    }
+
+    /// Returns the attached runtime node identity when configured.
+    pub fn node_identity(&self) -> Option<&Arc<EventNodeIdentity>> {
+        self.node_identity.as_ref()
     }
 
     // Build a delivery failure carrying the callback endpoint that rejected the event.
@@ -93,35 +105,19 @@ impl EventBus {
         )
     }
 
-    /// Same as `publish_event`.
-    pub async fn emit<E: Event>(&self, event: E) -> Outcome<EventEnvelope> {
-        <Self as EventBusTrait>::publish(self, event.into_envelope()).await
+    /// Builds a canonical envelope from `payload` and `ctx`, stamps identity, and publishes it.
+    pub async fn publish_typed<P: EventPayload>(
+        &self,
+        ctx: &EventContext,
+        payload: &P,
+    ) -> Outcome<EventEnvelope> {
+        let envelope = payload.into_envelope(ctx, EventSource::for_crate(P::CRATE_NAME))?;
+        self.publish(envelope).await
     }
 
     /// Stores the envelope, broadcasts it and starts a delivery per matching subscription.
     pub async fn publish(&self, envelope: EventEnvelope) -> Outcome<EventEnvelope> {
         <Self as EventBusTrait>::publish(self, envelope).await
-    }
-
-    /// Wraps the event in an envelope and publishes it.
-    pub async fn publish_event<E: Event>(&self, event: E) -> Outcome<EventEnvelope> {
-        <Self as EventPublisherTrait>::publish_event(self, event).await
-    }
-
-    /// Publishes `payload` under `topic` about a record of `owner`; used by `emit_action!`.
-    pub async fn emit_payload_for<T: serde::Serialize + ?Sized>(
-        &self,
-        owner: &Owner,
-        topic: &str,
-        source: &str,
-        payload: &T,
-    ) -> Outcome<EventEnvelope> {
-        let topic_obj =
-            crate::entities::topic::Topic::new(topic).map_err(|e| Errors::validation(e, None))?;
-        let payload_val =
-            serde_json::to_value(payload).map_err(|e| Errors::parse(e.to_string(), None))?;
-        let envelope = EventEnvelope::new(owner.clone(), topic_obj, source, 1, None, payload_val);
-        self.publish(envelope).await
     }
 
     /// New receiver of every envelope published from now on.
@@ -170,9 +166,9 @@ impl EventBus {
             .or_else(|_| Urn::from_str(&format!("urn:uuid:{}", record.event_id)))
             .map_err(|e| Errors::validation(format!("invalid event URN: {e}"), None))?;
 
-        let event = self
+        let stored = self
             .event_repo
-            .get_event_by_id(&OwnerScope::All, &event_urn)
+            .get_event_by_id(&OwnerScope::All, &event_urn, None)
             .await?
             .ok_or_else(|| Errors::missing_resource(&record.event_id, "event not found", None))?;
 
@@ -188,7 +184,8 @@ impl EventBus {
             .dispatcher
             .dispatch(
                 &sub.callback_address,
-                &event,
+                &stored.envelope,
+                sub.delivery_format,
                 sub.secret.as_ref().map(|s| s.expose().as_str()),
                 sub.headers.as_ref(),
             )
@@ -280,6 +277,7 @@ impl EventBus {
         sub_id: String,
         sub_owner: Owner,
         callback_address: String,
+        delivery_format: WebhookDeliveryFormat,
         secret: Option<Secret<String>>,
         headers: Option<std::collections::HashMap<String, String>>,
         retry_limit: u32,
@@ -296,6 +294,7 @@ impl EventBus {
                 .dispatch(
                     &callback_address,
                     &event,
+                    delivery_format,
                     secret.as_ref().map(|s| s.expose().as_str()),
                     headers.as_ref(),
                 )
@@ -409,14 +408,18 @@ impl EventBus {
 #[async_trait]
 impl EventBusTrait for EventBus {
     #[tracing::instrument(level = "info", skip_all, err)]
-    async fn publish(&self, envelope: EventEnvelope) -> Outcome<EventEnvelope> {
+    async fn publish(&self, mut envelope: EventEnvelope) -> Outcome<EventEnvelope> {
+        if let Some(identity) = &self.node_identity {
+            envelope.apply_node_identity(&identity.snapshot());
+        }
+
         self.event_repo.insert_event(&envelope).await?;
 
         let _ = self.broadcast_tx.send(envelope.clone());
 
         let matching_subs = self
             .subscription_repo
-            .get_matching_subscriptions(&envelope.owner, &envelope.topic)
+            .get_matching_subscriptions(&envelope.visibility_owner, &envelope.topic)
             .await?;
 
         for sub in matching_subs {
@@ -448,6 +451,7 @@ impl EventBusTrait for EventBus {
                 sub.id,
                 sub.owner,
                 sub.callback_address,
+                sub.delivery_format,
                 sub.secret,
                 sub.headers,
                 retry_limit,
@@ -465,19 +469,16 @@ impl EventBusTrait for EventBus {
 #[async_trait]
 impl EventPublisherTrait for EventBus {
     #[tracing::instrument(level = "info", skip_all, err)]
-    async fn publish_event<E: Event>(&self, event: E) -> Outcome<EventEnvelope> {
-        self.publish(event.into_envelope()).await
+    async fn publish_typed<P: EventPayload>(
+        &self,
+        ctx: &EventContext,
+        payload: &P,
+    ) -> Outcome<EventEnvelope> {
+        EventBus::publish_typed(self, ctx, payload).await
     }
 
     #[tracing::instrument(level = "info", skip_all, err)]
-    async fn emit_payload(
-        &self,
-        owner: &Owner,
-        topic: &str,
-        source: &str,
-        payload: &serde_json::Value,
-    ) -> Outcome<EventEnvelope> {
-        self.emit_payload_for(owner, topic, source, payload)
-            .await
+    async fn emit_raw(&self, envelope: EventEnvelope) -> Outcome<EventEnvelope> {
+        self.publish(envelope).await
     }
 }

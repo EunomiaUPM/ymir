@@ -20,4 +20,6 @@
 pub mod dead_letter;
 pub mod delivery;
 pub mod event;
+pub mod outbox;
+pub mod read_state;
 pub mod subscription;

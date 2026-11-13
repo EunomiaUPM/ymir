@@ -18,17 +18,18 @@
 //! `subscriptions` table.
 
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
-use ymir::oauth::Owner;
-use ymir::types::oauth::RolePath;
-use ymir::types::participants::Visibility;
-use ymir::secret::Secret;
 use sea_orm::ActiveValue;
 use ymir::errors::{Errors, Outcome};
+use ymir::oauth::Owner;
+use ymir::secret::Secret;
+use ymir::types::oauth::RolePath;
+use ymir::types::participants::Visibility;
 
-use crate::entities::subscription::SubscriptionRecord;
+use crate::entities::subscription::{SubscriptionRecord, WebhookDeliveryFormat};
 use crate::entities::topic_pattern::TopicPattern;
 
 /// `subscriptions` row.
@@ -45,6 +46,7 @@ pub struct Model {
     pub secret: Option<String>,
     pub headers: Option<serde_json::Value>,
     pub retry_limit: Option<i32>,
+    pub delivery_format: String,
     pub active: bool,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: Option<chrono::NaiveDateTime>,
@@ -66,6 +68,7 @@ impl Related<super::delivery::Entity> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
+    /// Decodes a subscription row into its domain record.
     pub fn into_domain(self) -> Outcome<SubscriptionRecord> {
         let topic_pattern = TopicPattern::new(&self.topic_pattern)
             .map_err(|e| Errors::db(format!("invalid topic pattern: {e}"), None))?;
@@ -73,6 +76,9 @@ impl Model {
         let headers = self
             .headers
             .and_then(|v| serde_json::from_value::<HashMap<String, String>>(v).ok());
+
+        let delivery_format = WebhookDeliveryFormat::from_str(&self.delivery_format)
+            .unwrap_or(WebhookDeliveryFormat::Envelope);
 
         Ok(SubscriptionRecord {
             id: self.id,
@@ -82,6 +88,7 @@ impl Model {
             secret: self.secret.map(Secret::new),
             headers,
             retry_limit: self.retry_limit.map(|n| n as u32),
+            delivery_format,
             active: self.active,
             created_at: DateTime::from_naive_utc_and_offset(self.created_at, Utc),
             updated_at: self
@@ -95,6 +102,7 @@ impl Model {
 }
 
 impl ActiveModel {
+    /// Converts a subscription domain record into an insertable SeaORM model.
     pub fn from_domain(entity: &SubscriptionRecord) -> Self {
         Self {
             id: ActiveValue::Set(entity.id.clone()),
@@ -111,6 +119,7 @@ impl ActiveModel {
                     .and_then(|h| serde_json::to_value(h).ok()),
             ),
             retry_limit: ActiveValue::Set(entity.retry_limit.map(|n| n as i32)),
+            delivery_format: ActiveValue::Set(entity.delivery_format.as_str().to_string()),
             active: ActiveValue::Set(entity.active),
             created_at: ActiveValue::Set(entity.created_at.naive_utc()),
             updated_at: ActiveValue::Set(entity.updated_at.map(|t| t.naive_utc())),

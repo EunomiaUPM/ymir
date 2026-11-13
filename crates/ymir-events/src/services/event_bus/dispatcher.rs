@@ -31,6 +31,7 @@ use ymir::services::client::{ClientService, ClientTrait};
 use ymir::types::http::{Method, StreamBody};
 
 use crate::entities::envelope::EventEnvelope;
+use crate::entities::subscription::WebhookDeliveryFormat;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -58,27 +59,46 @@ impl EventDispatcher {
         format!("sha256={hex}")
     }
 
-    /// POSTs the envelope to `callback_url` with the subscription's headers and signature.
+    /// POSTs the envelope or payload according to `delivery_format`, signed over the body bytes.
     pub async fn dispatch(
         &self,
         callback_url: &str,
         envelope: &EventEnvelope,
+        delivery_format: WebhookDeliveryFormat,
         secret: Option<&str>,
         custom_headers: Option<&HashMap<String, String>>,
     ) -> Result<StatusCode, String> {
-        let payload_bytes = serde_json::to_vec(&envelope.payload)
-            .map_err(|e| format!("failed to serialize payload: {e}"))?;
+        let payload_bytes = match delivery_format {
+            WebhookDeliveryFormat::Envelope => serde_json::to_vec(envelope),
+            WebhookDeliveryFormat::PayloadOnly => serde_json::to_vec(&envelope.payload),
+        }
+        .map_err(|e| format!("failed to serialize webhook body: {e}"))?;
 
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         Self::insert(&mut headers, "X-Event-Id", envelope.id.as_str());
+        Self::insert(&mut headers, "X-Event-Spec-Version", &envelope.spec_version);
         Self::insert(&mut headers, "X-Event-Topic", envelope.topic.as_str());
         Self::insert(
             &mut headers,
             "X-Event-Timestamp",
             &envelope.timestamp.to_rfc3339(),
         );
-        if let Some(corr_id) = &envelope.correlation_id {
+        Self::insert(&mut headers, "X-Event-Category", envelope.event_type.as_str());
+        Self::insert(&mut headers, "X-Event-Severity", envelope.severity.as_str());
+        Self::insert(&mut headers, "X-Event-Payload-Type", &envelope.payload_type);
+        Self::insert(
+            &mut headers,
+            "X-Event-Digest",
+            &envelope.integrity.payload_digest,
+        );
+        if let Some(outcome) = envelope.outcome {
+            Self::insert(&mut headers, "X-Event-Outcome", outcome.as_str());
+        }
+        if let Some(pid) = &envelope.source.participant_id {
+            Self::insert(&mut headers, "X-Participant-Id", pid.as_str());
+        }
+        if let Some(corr_id) = &envelope.correlation.correlation_id {
             Self::insert(&mut headers, "X-Correlation-Id", corr_id.as_str());
         }
         if let Some(sec) = secret {
@@ -117,7 +137,7 @@ impl EventDispatcher {
             messaging.message.id = %envelope.id,
             messaging.destination.name = %envelope.topic.as_str(),
         );
-        TraceParent::link(&span, envelope.trace_context.as_deref());
+        TraceParent::link(&span, envelope.correlation.trace_context.as_deref());
         span
     }
 

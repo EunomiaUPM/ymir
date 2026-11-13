@@ -20,4 +20,4 @@
 mod composition;
 pub mod context;
 
-pub use composition::EventsModule;
+pub use composition::{EventsModule, StandaloneEventsModule};

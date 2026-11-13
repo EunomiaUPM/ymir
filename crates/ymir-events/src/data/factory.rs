@@ -20,13 +20,15 @@
 use std::sync::Arc;
 
 use crate::data::repo::{
-    EventDeadLetterRepo, EventDeliveryRepo, EventStoreRepo, EventSubscriptionRepo,
+    EventDeadLetterRepo, EventDeliveryRepo, EventOutboxRepo, EventStoreRepo,
+    EventSubscriptionRepo,
 };
 
-/// Hands out the repositories the bus works with.
+/// Hands out the repositories the event subsystem works with.
 pub trait DataFactory: Send + Sync {
     fn event_repository(&self) -> Arc<dyn EventStoreRepo>;
     fn subscription_repository(&self) -> Arc<dyn EventSubscriptionRepo>;
     fn delivery_repository(&self) -> Arc<dyn EventDeliveryRepo>;
     fn dlq_repository(&self) -> Arc<dyn EventDeadLetterRepo>;
+    fn outbox_repository(&self) -> Arc<dyn EventOutboxRepo>;
 }

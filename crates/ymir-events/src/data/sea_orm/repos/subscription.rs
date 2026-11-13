@@ -66,6 +66,8 @@ impl EventSubscriptionRepo for SeaOrmSubscriptionRepo {
             .as_ref()
             .map(|h| serde_json::to_value(h).unwrap_or_default());
 
+        let delivery_format = dto.delivery_format.unwrap_or_default();
+
         let active = subscription::ActiveModel {
             id: ActiveValue::Set(id.clone()),
             user_id: ActiveValue::Set(owner.user_id.clone()),
@@ -76,14 +78,15 @@ impl EventSubscriptionRepo for SeaOrmSubscriptionRepo {
             secret: ActiveValue::Set(dto.secret.clone().map(Secret::into_exposed)),
             headers: ActiveValue::Set(headers_val),
             retry_limit: ActiveValue::Set(dto.retry_limit.map(|r| r as i32)),
+            delivery_format: ActiveValue::Set(delivery_format.as_str().to_string()),
             active: ActiveValue::Set(true),
             created_at: ActiveValue::Set(Utc::now().naive_utc()),
             updated_at: ActiveValue::Set(None),
             expiration_time: ActiveValue::Set(dto.expiration_time.map(|e| e.naive_utc())),
         };
 
-        active
-            .insert(&self.db)
+        subscription::Entity::insert(active)
+            .exec_without_returning(&self.db)
             .await
             .map_err(|e| Errors::db("failed to create subscription", Some(Box::new(e))))?;
 
@@ -95,6 +98,7 @@ impl EventSubscriptionRepo for SeaOrmSubscriptionRepo {
             secret: dto.secret,
             headers: dto.headers,
             retry_limit: dto.retry_limit,
+            delivery_format,
             active: true,
             created_at: Utc::now(),
             updated_at: None,
@@ -191,6 +195,9 @@ impl EventSubscriptionRepo for SeaOrmSubscriptionRepo {
         }
         if dto.retry_limit.is_some() {
             active.retry_limit = ActiveValue::Set(dto.retry_limit.map(|r| r as i32));
+        }
+        if let Some(format) = dto.delivery_format {
+            active.delivery_format = ActiveValue::Set(format.as_str().to_string());
         }
         if let Some(act) = dto.active {
             active.active = ActiveValue::Set(act);

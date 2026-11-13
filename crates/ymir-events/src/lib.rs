@@ -15,20 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! Event bus shared by every agent: in-process broadcast, persisted events and webhook delivery
-//! to external subscribers.
+//! Unified dataspace event envelope, typed domain schemas, and composable delivery sinks.
 //!
-//! Modules publish through [`EventPublisherTrait`] and listen on the same [`EventBus`]. Webhooks
-//! are signed with HMAC-SHA256, retried with backoff by the [`RetryWorker`] and moved to a dead
-//! letter queue when they keep failing. The HTTP API lives under `/api/v1/events`.
-//!
-//! Modules: [`entities`] (topics, envelopes, subscriptions, deliveries), [`services`], [`data`],
-//! [`http`], [`setup`].
+//! Producers emit typed `EventPayload` values through `EventSinkTrait` / `TypedEventSink` (with
+//! caller `EventContext`), which fan out across local Postgres/webhooks (`EventBus`),
+//! OpenTelemetry Logs (`OtlpEventSink`), Apache Kafka (`KafkaEventSink`), structured stdout, or a
+//! remote bus API.
 
 pub mod data;
 pub mod entities;
 pub mod http;
 pub mod routes;
+pub mod schemas;
 pub mod services;
 pub mod setup;
 
@@ -36,15 +34,25 @@ pub mod setup;
 pub const SERVICE_NAME: &str = "events";
 
 pub use entities::dto::EntityDeletedDto;
-pub use entities::envelope::EventEnvelope;
-pub use entities::event::{Event, IntoEvent};
+pub use entities::envelope::{
+    ActorType, DeliveryClass, EntityRef, EventActor, EventAttestation, EventCategory,
+    EventCorrelation, EventEnvelope, EventEnvelopeDraft, EventIntegrity, EventOutcome,
+    EventSeverity, EventSource, FlowRefs,
+};
+pub use entities::event::{EventContext, EventPayload};
+pub use entities::outbox::{OutboxRecord, OutboxStatus};
+pub use entities::subscription::WebhookDeliveryFormat;
 pub use entities::topic::Topic;
 pub use entities::topic_pattern::TopicPattern;
 pub use services::event_bus::{
     DeadLetterView, DeliveryView, EventBus, EventBusTrait, EventDispatcher, EventPublisherTrait,
     EventView, RetryPolicy, RetryWorker, SubscriptionView,
 };
-pub use services::event_sink::{EventSinkTrait, MockEventSinkTrait, NoopEventSink};
-
-#[doc(hidden)]
-pub use serde_json as __serde_json;
+#[cfg(feature = "kafka")]
+pub use services::event_sink::{KafkaEventSink, KafkaOutboxWorker, RdkafkaProducerAdapter};
+pub use services::event_sink::{
+    BuiltEventPipeline, CompositeEventSink, EventPipelineBuilder, EventSinkTrait, KafkaMessage,
+    KafkaProducerPort, KafkaRouting, MockEventSinkTrait, MockKafkaProducerPort, NoopEventSink,
+    OtlpEventSink, RemoteBusSink, TracingJsonSink, TypedEventSink,
+};
+pub use setup::{EventsModule, StandaloneEventsModule};

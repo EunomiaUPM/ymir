@@ -42,11 +42,13 @@
 //! ```
 
 use std::collections::HashMap;
+use std::sync::{OnceLock, RwLock};
 
-use opentelemetry::propagation::TextMapCompositePropagator;
-use opentelemetry::trace::{TraceContextExt, TracerProvider as _};
+use opentelemetry::propagation::{TextMapCompositePropagator, TextMapPropagator as _};
+use opentelemetry::trace::{SpanContext, TraceContextExt, TracerProvider as _};
 use opentelemetry::{global, KeyValue};
-use opentelemetry_otlp::{MetricExporter, SpanExporter};
+use opentelemetry_otlp::{LogExporter, MetricExporter, SpanExporter};
+use opentelemetry_sdk::logs::SdkLoggerProvider;
 use opentelemetry_sdk::metrics::SdkMeterProvider;
 use opentelemetry_sdk::propagation::{BaggagePropagator, TraceContextPropagator};
 use opentelemetry_sdk::resource::{EnvResourceDetector, TelemetryResourceDetector};
@@ -60,15 +62,20 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 
 const OTLP_ENDPOINT_ENV: &str = "OTEL_EXPORTER_OTLP_ENDPOINT";
 
-/// Guard of the OTel providers; `shutdown` flushes pending spans and metrics.
+static LOGGER_PROVIDER: OnceLock<RwLock<Option<SdkLoggerProvider>>> = OnceLock::new();
+static SERVICE_NAME: OnceLock<RwLock<Option<String>>> = OnceLock::new();
+
+/// Guard of the OTel providers; `shutdown` flushes pending spans, metrics and logs.
 pub struct Telemetry {
     tracer: Option<SdkTracerProvider>,
     meter: Option<SdkMeterProvider>,
+    logger: Option<SdkLoggerProvider>,
 }
 
 impl Telemetry {
     /// Installs the global subscriber. Must run inside the Tokio runtime (OTLP uses tonic).
     pub fn init(service_name: &str) -> Self {
+        Self::set_service_name(Some(service_name.to_string()));
         let filter = EnvFilter::builder()
             .with_default_directive(LevelFilter::INFO.into())
             .from_env_lossy()
@@ -92,6 +99,7 @@ impl Telemetry {
             Err(_) => Self {
                 tracer: None,
                 meter: None,
+                logger: None,
             },
         };
         let otel = telemetry.tracer.as_ref().map(|provider| {
@@ -106,10 +114,39 @@ impl Telemetry {
 
         tracing::info!(
             service = service_name,
-            otlp = telemetry.tracer.is_some(),
+            otlp_traces = telemetry.tracer.is_some(),
+            otlp_metrics = telemetry.meter.is_some(),
+            otlp_logs = telemetry.logger.is_some(),
             "telemetry initialised"
         );
         telemetry
+    }
+
+    /// Returns the process-wide OTLP logger provider when OTLP logs are active.
+    pub fn logger_provider() -> Option<SdkLoggerProvider> {
+        let lock = LOGGER_PROVIDER.get_or_init(|| RwLock::new(None));
+        lock.read().ok().and_then(|guard| guard.clone())
+    }
+
+    /// Installs or clears the process-wide OTLP logger provider.
+    pub fn set_logger_provider(provider: Option<SdkLoggerProvider>) {
+        let lock = LOGGER_PROVIDER.get_or_init(|| RwLock::new(None));
+        if let Ok(mut guard) = lock.write() {
+            *guard = provider;
+        }
+    }
+
+    /// Returns the logical service name registered by `Telemetry::init`.
+    pub fn service_name() -> Option<String> {
+        let lock = SERVICE_NAME.get_or_init(|| RwLock::new(None));
+        lock.read().ok().and_then(|guard| guard.clone())
+    }
+
+    fn set_service_name(service_name: Option<String>) {
+        let lock = SERVICE_NAME.get_or_init(|| RwLock::new(None));
+        if let Ok(mut guard) = lock.write() {
+            *guard = service_name;
+        }
     }
 
     /// Flushes and stops the exporters; call once, after the process stops serving.
@@ -124,9 +161,15 @@ impl Telemetry {
                 eprintln!("meter provider shutdown failed: {e}");
             }
         }
+        Self::set_logger_provider(None);
+        if let Some(logger) = &self.logger {
+            if let Err(e) = logger.shutdown() {
+                eprintln!("logger provider shutdown failed: {e}");
+            }
+        }
     }
 
-    /// Builds both providers; an exporter that cannot be built only disables its signal.
+    /// Builds trace, metric and log providers; an exporter failure only disables that signal.
     fn otlp(service_name: &str) -> Self {
         global::set_text_map_propagator(TextMapCompositePropagator::new(vec![
             Box::new(TraceContextPropagator::new()),
@@ -158,7 +201,7 @@ impl Telemetry {
             Some(Ok(exporter)) => {
                 let provider = SdkMeterProvider::builder()
                     .with_periodic_exporter(exporter)
-                    .with_resource(resource)
+                    .with_resource(resource.clone())
                     .build();
                 global::set_meter_provider(provider.clone());
                 Some(provider)
@@ -168,7 +211,28 @@ impl Telemetry {
                 None
             }
         };
-        Self { tracer, meter }
+        let logger = match Self::signal_enabled("OTEL_LOGS_EXPORTER")
+            .then(|| LogExporter::builder().with_tonic().build())
+        {
+            None => None,
+            Some(Ok(exporter)) => {
+                let provider = SdkLoggerProvider::builder()
+                    .with_batch_exporter(exporter)
+                    .with_resource(resource)
+                    .build();
+                Self::set_logger_provider(Some(provider.clone()));
+                Some(provider)
+            }
+            Some(Err(e)) => {
+                eprintln!("OTLP log exporter disabled: {e}");
+                None
+            }
+        };
+        Self {
+            tracer,
+            meter,
+            logger,
+        }
     }
 
     /// `OTEL_TRACES_EXPORTER=none` / `OTEL_METRICS_EXPORTER=none` switch a signal off.
@@ -205,6 +269,14 @@ impl TraceParent {
         let mut carrier = HashMap::new();
         global::get_text_map_propagator(|p| p.inject_context(&cx, &mut carrier));
         carrier.remove(Self::HEADER)
+    }
+
+    /// Parses a W3C `traceparent` value into an OpenTelemetry span context, if valid.
+    pub fn parse_context(traceparent: &str) -> Option<SpanContext> {
+        let carrier = HashMap::from([(Self::HEADER.to_string(), traceparent.to_string())]);
+        let cx = TraceContextPropagator::new().extract(&carrier);
+        let span_ctx = cx.span().span_context().clone();
+        span_ctx.is_valid().then_some(span_ctx)
     }
 
     /// Links `span` to the trace that produced `traceparent`, keeping its own parent.
