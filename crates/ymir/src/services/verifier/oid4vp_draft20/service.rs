@@ -28,7 +28,7 @@ use crate::config::types::HostType;
 use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::{Errors, Outcome};
 use crate::http::routes::{base, fill, verifier};
-use crate::services::verifier::validators::{validate_nonce, validate_valid_from, validate_valid_until, validate_vc_id, validate_vc_issuer, validate_vc_sub, validate_vp_holder, validate_vp_id};
+use crate::services::verifier::validators::{PresentedVc, check_bindings, validate_nonce, validate_valid_from, validate_valid_until, validate_vc_binding, validate_vc_id, validate_vc_issuer, validate_vp_holder, validate_vp_id};
 use crate::types::dids::Did;
 use crate::types::jwt::{Jwt, JwtHeaderTrait};
 use crate::types::vcs::{VcPayload};
@@ -114,10 +114,12 @@ impl VerifierTrait for VerifierService {
             let holder = vp.kid()?.did();
             let vcs = vp.claims().vp_doc().credential_jwts()?;
 
+            let mut presented: Vec<PresentedVc> = Vec::new();
             for vc in vcs {
-                self.verify_vc(&vc, holder).await?;
+                presented.push(self.verify_vc(&vc, holder).await?);
                 model.vcs.push(vc);
             }
+            check_bindings(&presented)?;
 
             Ok(vp)
         }
@@ -162,7 +164,7 @@ impl VerifierService {
         Ok(vp)
     }
 
-    async fn verify_vc(&self, vc_token: &str, holder_did: &Did) -> Outcome<()> {
+    async fn verify_vc(&self, vc_token: &str, holder_did: &Did) -> Outcome<PresentedVc> {
         info!("Verifying vc");
 
         let vc = Jwt::<VcPayload>::parse(vc_token)?;
@@ -170,14 +172,14 @@ impl VerifierService {
 
         validate_vc_issuer(&vc)?;
         validate_vc_id(&vc)?;
-        validate_vc_sub(&vc, holder_did)?;
         // TODO: trusted-issuer list once available
         validate_valid_from(&vc)?;
         validate_valid_until(&vc)?;
         VcStatusCheck::check(&vc).await?;
+        let checked = validate_vc_binding(vc, holder_did)?;
 
         info!("VC verification successful");
-        Ok(())
+        Ok(checked)
     }
 }
 

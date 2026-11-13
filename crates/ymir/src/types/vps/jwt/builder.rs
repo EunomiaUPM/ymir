@@ -91,6 +91,12 @@ impl<VP, AUD, NONCE> VpJwtClaimsBuilder<VP, AUD, NONCE> {
         self
     }
 
+    /// A presentation not answering a verifier's request, so without `aud` nor `nonce`: one sent
+    /// by plain POST to a compliance service.
+    pub fn unbound(self) -> VpJwtClaimsBuilder<VP, Present, Present> {
+        self.state()
+    }
+
     fn state<V, A, N>(self) -> VpJwtClaimsBuilder<V, A, N> {
         VpJwtClaimsBuilder {
             w3c_data_model_version: self.w3c_data_model_version,

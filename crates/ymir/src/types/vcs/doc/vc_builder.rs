@@ -178,6 +178,16 @@ impl<ID, ISS, CS> VcDocumentBuilder<ID, ISS, CS> {
 
 impl VcDocumentBuilder<Present, Present, Present> {
     pub fn build(self) -> VcDocument {
+        let mut credential_subject = self.credential_subject.unwrap();
+        // A Gaia-X subject described by value carries its type (ICAM 25.11 §5.3.3).
+        if self.context.iter().any(|c| c == GAIA_X_CONTEXT)
+            && let (Some(subject), Some(vc_type)) =
+                (credential_subject.as_object_mut(), self.r#type.last())
+            && !subject.contains_key("type")
+            && !subject.contains_key("@type")
+        {
+            subject.insert("type".to_string(), Value::String(vc_type.clone()));
+        }
         VcDocument {
             context: self.context,
             id: self.id.unwrap(),
@@ -186,7 +196,7 @@ impl VcDocumentBuilder<Present, Present, Present> {
             name: self.name,
             description: self.description,
             issuer: self.issuer.unwrap(),
-            credential_subject: self.credential_subject.unwrap(),
+            credential_subject,
             valid_from: self.valid_from,
             valid_until: self.valid_until,
             credential_status: self.credential_status,

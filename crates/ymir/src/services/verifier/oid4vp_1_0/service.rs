@@ -35,8 +35,8 @@ use crate::errors::{BadFormat, Errors, Outcome};
 use crate::http::routes::{base, fill, verifier};
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::services::verifier::validators::{
-    validate_nonce, validate_valid_from, validate_valid_until, validate_vc_id, validate_vc_issuer,
-    validate_vc_sub, validate_vp_holder,
+    PresentedVc, check_bindings, validate_nonce, validate_valid_from, validate_valid_until,
+    validate_vc_binding, validate_vc_id, validate_vc_issuer, validate_vp_holder,
 };
 use crate::types::dids::Did;
 use crate::types::jwt::{Jwt, JwtClaims, JwtHeaderTrait};
@@ -262,15 +262,18 @@ impl VerifierService {
         check_only_requested(&query, &presentations)?;
 
         let mut vps: Vec<Verified<Jwt<VpPayload>>> = Vec::new();
+        let mut presented: Vec<PresentedVc> = Vec::new();
         for credential in &query.credentials {
             for presentation in answers_to(credential, &presentations)? {
                 let vp = self
-                    .verify_presentation(model, &client_id, credential, presentation)
+                    .verify_presentation(model, &client_id, credential, presentation, &mut presented)
                     .await?;
                 check_same_holder(vps.first(), &vp)?;
                 vps.push(vp);
             }
         }
+        // Across presentations: with DCQL each credential query has its own.
+        check_bindings(&presented)?;
 
         let first = vps
             .into_iter()
@@ -288,6 +291,7 @@ impl VerifierService {
         client_id: &str,
         credential: &CredentialQuery,
         presentation: &str,
+        presented: &mut Vec<PresentedVc>,
     ) -> Outcome<Verified<Jwt<VpPayload>>> {
         let vp = Jwt::<VpPayload>::parse(presentation)?;
         let vp = self.verify_vp(model, client_id, vp).await?;
@@ -295,8 +299,9 @@ impl VerifierService {
 
         let mut answers = false;
         for vc in vp.claims().vp_doc().credential_jwts()? {
-            let types = self.verify_vc(&vc, &holder).await?;
-            answers |= credential.matches_types(&types);
+            let checked = self.verify_vc(&vc, &holder).await?;
+            answers |= credential.matches_types(&checked.types());
+            presented.push(checked);
             model.vcs.push(vc);
         }
         if !answers {
@@ -324,8 +329,8 @@ impl VerifierService {
         Ok(jwt_v)
     }
 
-    /// One credential of a presentation. Returns its types, to match against the query.
-    async fn verify_vc(&self, vc_token: &str, holder_did: &Did) -> Outcome<Vec<String>> {
+    /// One credential of a presentation, and how it is tied to the holder.
+    async fn verify_vc(&self, vc_token: &str, holder_did: &Did) -> Outcome<PresentedVc> {
         info!("Verifying vc");
 
         let vc = Jwt::<VcPayload>::parse(vc_token)?;
@@ -333,14 +338,14 @@ impl VerifierService {
 
         validate_vc_issuer(&vc)?;
         validate_vc_id(&vc)?;
-        validate_vc_sub(&vc, holder_did)?;
         // TODO: trusted-issuer list once available (DCQL trusted_authorities)
         validate_valid_from(&vc)?;
         validate_valid_until(&vc)?;
         VcStatusCheck::check(&vc).await?;
+        let checked = validate_vc_binding(vc, holder_did)?;
 
         info!("VC verification successful");
-        Ok(vc.claims().vc_doc().r#type.as_slice().to_vec())
+        Ok(checked)
     }
 }
 

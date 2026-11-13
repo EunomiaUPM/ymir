@@ -127,7 +127,7 @@ pub trait WalletModuleTrait: HasWallet + Send + Sync + 'static {
 
     /// Processes an inbound OpenID4VP verifiable presentation request challenge to submit an evaluation response.
     async fn process_oidc4vp(&self, payload: OidcUri) -> Outcome<()> {
-        self.wallet().process_oid4vp(&payload.uri).await
+        self.wallet().process_oid4vp(&payload.uri).await.map(|_| ())
     }
 
     // ===== AUDITING & INVENTORY ==================================================================

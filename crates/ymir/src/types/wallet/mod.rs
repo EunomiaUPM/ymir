@@ -17,6 +17,7 @@
 
 use serde::{Deserialize, Serialize};
 
+mod compliance_request;
 mod did_search;
 mod identity;
 mod key_ref;
@@ -24,6 +25,7 @@ mod oidc_uri;
 mod wallet_info;
 pub mod waltid;
 
+pub use compliance_request::ComplianceRequest;
 pub use did_search::DidSearch;
 pub use identity::Identity;
 pub use key_ref::KeyRef;

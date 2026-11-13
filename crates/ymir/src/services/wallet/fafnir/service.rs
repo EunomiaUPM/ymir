@@ -30,7 +30,7 @@ use crate::types::dids::{Did, DidBuilder, DidDocument, DidService};
 use crate::types::http::HttpBody;
 use crate::types::secrets::{PemHelper, StringHelper};
 use crate::types::verification::{PresentationRequest, UNTRUSTED_REQUEST};
-use crate::types::wallet::{DidSearch, Identity, KeyRef, OidcUri, WalletInfo};
+use crate::types::wallet::{ComplianceRequest, DidSearch, Identity, KeyRef, OidcUri, WalletInfo};
 use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers};
 
 use async_trait::async_trait;
@@ -378,7 +378,7 @@ impl WalletTrait for FafnirService {
         Self::check_or_fail(res, &url, "POST").await
     }
 
-    async fn process_oid4vp(&self, uri: &str) -> Outcome<()> {
+    async fn process_oid4vp(&self, uri: &str) -> Outcome<Option<String>> {
         info!("FafnirService: process_oid4vp({})", uri);
         let url = format!("{}/oid4vp", self.config.get_wallet_api_url(HostType::Http));
         let res = http_client()
@@ -391,7 +391,7 @@ impl WalletTrait for FafnirService {
             )
             .await?;
 
-        Self::check_or_fail(res, &url, "POST").await
+        Self::redirect_or_fail(res, &url, "POST").await
     }
 
     async fn resolve_oid4vp(&self, uri: &str) -> Outcome<PresentationRequest> {
@@ -407,14 +407,26 @@ impl WalletTrait for FafnirService {
         Err(Errors::wallet(&url, "POST", Some(status), "unexpected http status", None))
     }
 
-    async fn present_oid4vp(&self, uri: &str) -> Outcome<()> {
+    async fn present_oid4vp(&self, uri: &str) -> Outcome<Option<String>> {
         let (res, url) = self.post_uri("vp/present", uri).await?;
-        Self::check_or_fail(res, &url, "POST").await
+        Self::redirect_or_fail(res, &url, "POST").await
     }
 
     async fn refuse_oid4vp(&self, uri: &str) -> Outcome<()> {
         let (res, url) = self.post_uri("vp/refuse", uri).await?;
         Self::check_or_fail(res, &url, "POST").await
+    }
+
+    async fn request_compliance(&self, request: &ComplianceRequest) -> Outcome<vc::Model> {
+        info!("FafnirService: request_compliance({})", request.url);
+        let url = format!("{}/compliance/request", self.config.get_wallet_api_url(HostType::Http));
+        let res = http_client()
+            .post(&url, Some(json_headers()), HttpBody::json(request)?)
+            .await?;
+        if !res.status().is_success() {
+            return Err(Self::wallet_error(res, &url, "POST").await);
+        }
+        res.parse_json().await
     }
 }
 
@@ -445,18 +457,33 @@ impl FafnirService {
         }
     }
 
+    /// The `redirect_uri` the wallet passes on (a JSON string), or none; on a non-2xx answer,
+    /// the error of [`Self::wallet_error`].
+    async fn redirect_or_fail(res: Response, url: &str, method: &str) -> Outcome<Option<String>> {
+        if !res.status().is_success() {
+            return Err(Self::wallet_error(res, url, method).await);
+        }
+        let body = res.parse_text().await.unwrap_or_default();
+        Ok(serde_json::from_str::<String>(&body).ok())
+    }
+
     /// Passes 2xx; otherwise a wallet error carrying the wallet's `details`, if it sent any.
     async fn check_or_fail(res: Response, url: &str, method: &str) -> Outcome<()> {
-        let status = res.status();
-        if status.is_success() {
+        if res.status().is_success() {
             return Ok(());
         }
+        Err(Self::wallet_error(res, url, method).await)
+    }
+
+    /// The error of a non-2xx answer, carrying the wallet's `details`, if it sent any.
+    async fn wallet_error(res: Response, url: &str, method: &str) -> Errors {
+        let status = res.status();
         let body = res.parse_text().await.unwrap_or_default();
         let reason = serde_json::from_str::<ErrorInfo>(&body)
             .ok()
             .and_then(|info| info.details)
             .unwrap_or_else(|| "unexpected http status".to_string());
-        Err(Errors::wallet(url, method, Some(status), reason, None))
+        Errors::wallet(url, method, Some(status), reason, None)
     }
 
     async fn fetch<T: DeserializeOwned>(

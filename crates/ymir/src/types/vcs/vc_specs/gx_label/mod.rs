@@ -16,6 +16,11 @@
  */
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+use crate::errors::Outcome;
+use crate::types::crypto::{Canon, HashAlg};
+use crate::types::jwt::Jwt;
 
 /// Subject of a `gx:LabelCredential`, or of a `gx:ParticipantComplianceCredential` without a level.
 #[derive(Debug, Serialize, Deserialize)]
@@ -35,8 +40,27 @@ pub struct GxLabelCredSubject {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CompliantCredential {
+    /// The `id` of the checked credential.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[serde(rename = "gx:credentialType")]
     pub credential_type: String,
     #[serde(rename = "digestSRI")]
     pub digest_sri: String,
+}
+
+impl CompliantCredential {
+    /// Gaia-X `digestSRI` of a credential JWT: sha256, in hex, of its canonical payload.
+    pub fn digest_of(jwt: &str) -> Outcome<String> {
+        // The whole payload, untyped, so the digest covers every claim.
+        let jwt: Jwt<Value> = Jwt::parse(jwt)?;
+        let payload = serde_json::to_value(jwt.unverified_claims())?;
+        let alg = HashAlg::Sha256;
+        let hex: String = Canon::new(&payload)?
+            .digest(alg)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        Ok(format!("{}-{}", alg.label(), hex))
+    }
 }
