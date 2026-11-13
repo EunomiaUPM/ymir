@@ -27,4 +27,8 @@ pub enum VerificationStatus {
     Verified,
     #[sea_orm(string_value = "Failed")]
     Failed,
+    #[sea_orm(string_value = "Refused")]
+    Refused,
+    #[sea_orm(string_value = "Expired")]
+    Expired,
 }

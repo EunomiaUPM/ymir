@@ -49,11 +49,20 @@ impl VcPayload {
             VcPayload::V2(doc) => doc,
         }
     }
+    pub fn vc_doc_mut(&mut self) -> &mut VcDocument {
+        match self {
+            VcPayload::V1(v1) => &mut v1.vc,
+            VcPayload::V2(doc) => doc,
+        }
+    }
 }
 
 impl JwtClaims<VcPayload> {
     pub fn vc_doc(&self) -> &VcDocument {
         self.body().vc_doc()
+    }
+    pub fn vc_doc_mut(&mut self) -> &mut VcDocument {
+        self.body_mut().vc_doc_mut()
     }
 }
 

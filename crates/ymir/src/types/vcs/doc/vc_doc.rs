@@ -43,7 +43,7 @@ pub struct VcDocument {
     #[serde(rename = "validUntil", skip_serializing_if = "Option::is_none")]
     pub valid_until: Option<DateTime<Utc>>,
     #[serde(rename = "credentialStatus", skip_serializing_if = "Option::is_none")]
-    pub credential_status: Option<VcStatus>,
+    pub credential_status: Option<OneOrMany<VcStatus>>,
     #[serde(rename = "credentialSchema", skip_serializing_if = "Option::is_none")]
     pub credential_schema: Option<Vec<VcSchema>>,
     #[serde(rename = "refreshService", skip_serializing_if = "Option::is_none")]

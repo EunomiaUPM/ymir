@@ -99,6 +99,10 @@ impl<T> JwtClaims<T> {
         &self.body
     }
 
+    pub fn body_mut(&mut self) -> &mut T {
+        &mut self.body
+    }
+
     pub fn with_iss(mut self, iss: impl Into<String>) -> Self {
         self.iss = Some(iss.into());
         self

@@ -84,12 +84,13 @@ impl GrantResponse {
         model: &resource_req::Model,
         expires_in: u64,
         manage: TokenManagement,
+        r#continue: Option<Continuation>,
     ) -> Self {
         let access_token = AccessToken::new(token, model.clone())
             .with_expires_in(expires_in)
             .with_manage(manage);
         GrantResponse::Approved(ApprovedResponse {
-            r#continue: None,
+            r#continue,
             kind: GrantResponseKind::AccessToken { access_token },
             subject: None,
             instance_id: None,
@@ -129,7 +130,7 @@ impl GrantResponse {
                 finish: Some(model.as_nonce.clone()),
                 expires_in: None,
             },
-            instance_id: Some(model.id.clone()),
+            instance_id: Some(model.grant_id.clone()),
         })
     }
 
@@ -140,7 +141,7 @@ impl GrantResponse {
                 wait: None,
                 access_token: BoundToken::new(model.continuation_token.clone()),
             },
-            instance_id: Some(model.id.clone()),
+            instance_id: Some(model.grant_id.clone()),
         })
     }
     //

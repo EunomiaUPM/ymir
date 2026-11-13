@@ -17,26 +17,17 @@
 
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::CommonHostsConfig;
-use crate::types::vcs::VcType;
 
 pub struct VerifierConfig {
     hosts: CommonHostsConfig,
     api_path: String,
-    requested_vcs: Vec<VcType>,
 }
 
 impl VerifierConfig {
-    pub fn new(hosts: CommonHostsConfig, api_path: String, requested_vcs: Vec<VcType>) -> Self {
-        Self {
-            hosts,
-            api_path,
-            requested_vcs,
-        }
+    pub fn new(hosts: CommonHostsConfig, api_path: String) -> Self {
+        Self { hosts, api_path }
     }
 
-    pub fn get_requested_vcs(&self) -> &[VcType] {
-        &self.requested_vcs
-    }
     pub fn get_api_path(&self) -> &str {
         &self.api_path
     }

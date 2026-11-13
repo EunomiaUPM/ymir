@@ -20,6 +20,7 @@ pub mod dcql;
 mod direct_post_response;
 mod draft20_request;
 mod presentation_request;
+mod rejection;
 pub mod input_descriptor;
 pub mod request_object;
 mod status;
@@ -33,7 +34,8 @@ pub use dcql::{CredentialQuery, CredentialQueryMeta, CredentialSetQuery, DcqlQue
 pub use direct_post_response::DirectPostResponse;
 pub use draft20_request::{DefinitionSource, Draft20Request};
 pub use request_object::{RequestObjectPayload, RequestUriPost};
-pub use presentation_request::{PresentationRequest, Requested};
+pub use presentation_request::{PresentationRequest, Requested, UNTRUSTED_REQUEST, VerifierProof};
+pub use rejection::Rejection;
 pub use status::VerificationStatus;
 pub use verify_payload::VerifyPayload;
 pub use vp_doc::VpDocument;

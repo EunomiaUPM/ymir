@@ -30,7 +30,8 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sent_verifications")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: String, // REQUEST
+    pub id: String, // RANDOM
+    pub grant_id: String,                // REQUEST
     pub uri: String,                     // REQUEST
     pub scheme: String,                  // REQUEST
     pub response_type: String,           // REQUEST
@@ -43,11 +44,13 @@ pub struct Model {
     pub status: VerificationStatus,      // DEFAULT
     pub created_at: DateTime<Utc>,       // DEFAULT
     pub ended_at: Option<DateTime<Utc>>, // RESPONSE
+    /// Why the presentation failed, as the wallet reported it.
+    pub reason: Option<String>, // RESPONSE
 }
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub id: String,               // REQUEST
+    pub grant_id: String,         // REQUEST
     pub uri: String,              // REQUEST
     pub scheme: String,           // REQUEST
     pub response_type: String,    // REQUEST
@@ -63,9 +66,9 @@ impl Plan {
     /// The request at `uri`, whatever its version: draft 20, 1.0 by value, or 1.0 by reference,
     /// which carries only `client_id` and `request_uri` (the rest is in the Request Object, kept
     /// empty here; `pd_uri` holds the `request_uri`).
-    pub fn from_uri(id: &str, uri: &str) -> Outcome<Plan> {
+    pub fn from_uri(grant_id: &str, uri: &str) -> Outcome<Plan> {
         let base = |client_id: String| Plan {
-            id: id.to_string(),
+            grant_id: grant_id.to_string(),
             uri: uri.to_string(),
             scheme: "openid4vp".to_string(),
             response_type: String::new(),
@@ -125,7 +128,8 @@ fn client_id_prefix(client_id: &str) -> String {
 impl IntoOverwriteActive<ActiveModel> for Plan {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
-            id: ActiveValue::Set(self.id),
+            id: ActiveValue::Set(uuid::Uuid::new_v4().to_string()),
+            grant_id: ActiveValue::Set(self.grant_id),
             uri: ActiveValue::Set(self.uri),
             scheme: ActiveValue::Set(self.scheme),
             response_type: ActiveValue::Set(self.response_type),
@@ -138,6 +142,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             status: ActiveValue::Set(VerificationStatus::Pending),
             created_at: ActiveValue::Set(Utc::now()),
             ended_at: ActiveValue::Set(None),
+            reason: ActiveValue::Set(None),
         }
     }
 }
@@ -146,6 +151,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
             id: ActiveValue::Set(self.id),
+            grant_id: ActiveValue::Set(self.grant_id),
             uri: ActiveValue::Set(self.uri),
             scheme: ActiveValue::Set(self.scheme),
             response_type: ActiveValue::Set(self.response_type),
@@ -158,6 +164,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             status: ActiveValue::Set(self.status),
             created_at: ActiveValue::Set(self.created_at),
             ended_at: ActiveValue::Set(self.ended_at),
+            reason: ActiveValue::Set(self.reason),
         }
     }
 }

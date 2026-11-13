@@ -21,7 +21,7 @@ use super::{AccessTokenFlag, ResourceAccess};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccessTokenRequest {
-    pub access: ResourceAccess,
+    pub access: Vec<ResourceAccess>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -18,6 +18,7 @@
 use crate::data::entities::wallet::{did, key, vc};
 use crate::errors::Outcome;
 use crate::types::dids::{Did, DidDocument};
+use crate::types::verification::PresentationRequest;
 use crate::types::wallet::{DidSearch, Identity, WalletInfo};
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -117,4 +118,13 @@ pub trait WalletTrait: Send + Sync + 'static {
 
     /// Processes an OID4VP presentation flow from a URI.
     async fn process_oid4vp(&self, uri: &str) -> Outcome<()>;
+
+    /// Resolves an OID4VP request without answering it; a security error if it is not authentic.
+    async fn resolve_oid4vp(&self, uri: &str) -> Outcome<PresentationRequest>;
+
+    /// Presents to the OID4VP request at `uri`.
+    async fn present_oid4vp(&self, uri: &str) -> Outcome<()>;
+
+    /// Tells the verifier of the OID4VP request at `uri` that the wallet will not present.
+    async fn refuse_oid4vp(&self, uri: &str) -> Outcome<()>;
 }

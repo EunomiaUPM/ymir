@@ -15,16 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use sea_orm::FromJsonQueryResult;
 use serde::{Deserialize, Serialize};
 
 use super::AccessType;
-use crate::types::gnap::grant_request::interact::InteractAction;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, FromJsonQueryResult)]
 pub struct ResourceAccess {
     pub r#type: AccessType,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub actions: Option<Vec<InteractAction>>,
+    pub actions: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub locations: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -33,4 +33,37 @@ pub struct ResourceAccess {
     pub identifier: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub privileges: Option<Vec<String>>,
+}
+
+impl ResourceAccess {
+    fn new(r#type: AccessType, locations: Option<Vec<String>>, identifier: Option<String>) -> Self {
+        Self {
+            r#type,
+            actions: None,
+            locations,
+            datatypes: None,
+            identifier,
+            privileges: None,
+        }
+    }
+
+    pub fn catalog(location: impl Into<String>) -> Self {
+        Self::new(AccessType::Catalog, Some(vec![location.into()]), None)
+    }
+
+    pub fn dataset(identifier: impl Into<String>) -> Self {
+        Self::new(AccessType::Dataset, None, Some(identifier.into()))
+    }
+
+    pub fn datasets_of(location: impl Into<String>) -> Self {
+        Self::new(AccessType::Dataset, Some(vec![location.into()]), None)
+    }
+
+    pub fn callback(location: impl Into<String>) -> Self {
+        Self::new(AccessType::Callback, Some(vec![location.into()]), None)
+    }
+
+    pub fn offer(location: impl Into<String>) -> Self {
+        Self::new(AccessType::Offer, Some(vec![location.into()]), None)
+    }
 }

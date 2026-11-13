@@ -16,7 +16,6 @@
  */
 
 use crate::data::entities::sent::interaction::{Model, Plan};
-#[cfg(feature = "mock")]
 use crate::errors::Outcome;
 use crate::services::repo::traits::CrudRepoTrait;
 use async_trait::async_trait;
@@ -27,7 +26,10 @@ use async_trait::async_trait;
 /// interactive authentication hooks (such as redirect URIs or user codes) demanded by
 /// external Authorization Servers to complete a dynamic grant approval loop.
 #[async_trait]
-pub trait SentInteractionRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {}
+pub trait SentInteractionRepoTrait: CrudRepoTrait<Model, Plan> + Send + Sync + 'static {
+    /// The latest interaction of the grant.
+    async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<Model>;
+}
 
 #[cfg(feature = "mock")]
 mockall::mock! {
@@ -43,5 +45,7 @@ mockall::mock! {
     }
 
     #[async_trait]
-    impl SentInteractionRepoTrait for SentInteractionRepoTrait {}
+    impl SentInteractionRepoTrait for SentInteractionRepoTrait {
+        async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<Model>;
+    }
 }

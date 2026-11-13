@@ -33,7 +33,7 @@ pub struct VcDocumentBuilder<ID, ISS, CS> {
     pub credential_subject: Option<Value>,
     pub valid_from: Option<DateTime<Utc>>,
     pub valid_until: Option<DateTime<Utc>>,
-    pub credential_status: Option<VcStatus>,
+    pub credential_status: Option<OneOrMany<VcStatus>>,
     pub credential_schema: Option<Vec<VcSchema>>,
     pub refresh_service: Option<VcRefreshService>,
     pub terms_of_use: Option<Value>,
@@ -146,7 +146,7 @@ impl<ID, ISS, CS> VcDocumentBuilder<ID, ISS, CS> {
         self
     }
 
-    pub fn credential_status(mut self, credential_status: VcStatus) -> Self {
+    pub fn credential_status(mut self, credential_status: OneOrMany<VcStatus>) -> Self {
         self.credential_status = Some(credential_status);
         self
     }

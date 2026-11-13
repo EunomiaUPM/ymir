@@ -16,7 +16,7 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 
 use crate::data::entities::received::interaction;
 use crate::data::entities::received::interaction::Model;
@@ -47,8 +47,16 @@ impl BasicPostgresRepo for RecvInteractionPostgresRepo {
 #[async_trait]
 impl RecvInteractionRepoTrait for RecvInteractionPostgresRepo {
     async fn get_by_continuation_id(&self, continuation_id: &str) -> Outcome<Model> {
-        let query = interaction::Entity::find().filter(interaction::Column::ContinuationId.eq(continuation_id));
-
+        let query = interaction::Entity::find()
+            .filter(interaction::Column::ContinuationId.eq(continuation_id))
+            .order_by_desc(interaction::Column::CreatedAt);
         self.basic_filter(query, "continuation_id", continuation_id).await
+    }
+
+    async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<interaction::Model> {
+        let query = interaction::Entity::find()
+            .filter(interaction::Column::GrantId.eq(grant_id))
+            .order_by_desc(interaction::Column::CreatedAt);
+        self.basic_filter(query, "grant_id", grant_id).await
     }
 }

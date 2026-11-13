@@ -25,6 +25,6 @@ mod vc_doc;
 pub use evidence::VcEvidence;
 pub use refresh_service::VcRefreshService;
 pub use schema::*;
-pub use status::VcStatus;
+pub use status::*;
 pub use vc_builder::VcDocumentBuilder;
 pub use vc_doc::VcDocument;

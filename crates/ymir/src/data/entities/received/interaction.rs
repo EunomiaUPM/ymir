@@ -19,6 +19,7 @@ use crate::services::repo::postgres::IntoOverwriteActive;
 use crate::types::gnap::grant_request::interact::{FinishMethod, HashMethod, InteractStart};
 use crate::types::keys::DbKeySource;
 use base64::Engine;
+use chrono::{DateTime, Utc};
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use rand::Rng;
 use rand::distributions::Alphanumeric;
@@ -31,7 +32,8 @@ use sha2::{Digest, Sha256, Sha384, Sha512};
 #[sea_orm(table_name = "recv_interactions")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub id: String, // RESPONSE
+    pub id: String, // RANDOM
+    pub grant_id: String, // REQUEST
     #[sea_orm(column_type = "JsonBinary")]
     pub start: Vec<InteractStart>, // RESPONSE
     pub method: FinishMethod,       // RESPONSE
@@ -47,11 +49,12 @@ pub struct Model {
     pub as_nonce: String,           // RANDOM
     pub interact_ref: String,       // RANDOM
     pub hash: String,               // RANDOM
+    pub created_at: DateTime<Utc>,  // DEFAULT
 }
 
 #[derive(Clone, Debug)]
 pub struct Plan {
-    pub id: String,                      // REQUEST
+    pub grant_id: String,                // REQUEST
     pub start: Vec<InteractStart>,       // REQUEST
     pub method: FinishMethod,            // REQUEST
     pub callback_uri: String,            // REQUEST
@@ -61,6 +64,8 @@ pub struct Plan {
     pub hints: Option<String>,           // REQUEST
     pub grant_endpoint: String,          // REQUEST
     pub continuation_endpoint: String,       // RESPONSE
+    /// Kept when the grant already has one, so its continuation URI does not change.
+    pub continuation_id: Option<String>,     // RESPONSE
     pub continuation_token: String,          // RESPONSE
     pub continuation_wait: Option<i64>,      // RESPONSE
 }
@@ -77,11 +82,13 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             .take(16)
             .map(char::from)
             .collect();
-        let continuation_id: String = rand::thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(12)
-            .map(char::from)
-            .collect();
+        let continuation_id: String = self.continuation_id.unwrap_or_else(|| {
+            rand::thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(12)
+                .map(char::from)
+                .collect()
+        });
 
         let hash_method = self.hash_method.unwrap_or(HashMethod::Sha256);
 
@@ -114,7 +121,8 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
         let hash = URL_SAFE_NO_PAD.encode(hash_result);
 
         ActiveModel {
-            id: ActiveValue::Set(self.id),
+            id: ActiveValue::Set(uuid::Uuid::new_v4().to_string()),
+            grant_id: ActiveValue::Set(self.grant_id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
             callback_uri: ActiveValue::Set(self.callback_uri),
@@ -129,6 +137,7 @@ impl IntoOverwriteActive<ActiveModel> for Plan {
             as_nonce: ActiveValue::Set(as_nonce),
             interact_ref: ActiveValue::Set(interact_ref),
             hash: ActiveValue::Set(hash),
+            created_at: ActiveValue::Set(Utc::now()),
         }
     }
 }
@@ -137,6 +146,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
             id: ActiveValue::Set(self.id),
+            grant_id: ActiveValue::Set(self.grant_id),
             start: ActiveValue::Set(self.start),
             method: ActiveValue::Set(self.method),
             callback_uri: ActiveValue::Set(self.callback_uri),
@@ -151,6 +161,7 @@ impl IntoOverwriteActive<ActiveModel> for Model {
             as_nonce: ActiveValue::Set(self.as_nonce),
             interact_ref: ActiveValue::Set(self.interact_ref),
             hash: ActiveValue::Set(self.hash),
+            created_at: ActiveValue::Set(self.created_at),
         }
     }
 }

@@ -22,13 +22,14 @@ use super::config::FafnirConfig;
 use crate::config::traits::{DidConfigTrait, WalletConfigTrait};
 use crate::config::types::{DidConfig, HostType};
 use crate::data::entities::wallet::{did, key, vc};
-use crate::errors::{BadFormat, Errors, Outcome};
+use crate::errors::{BadFormat, ErrorInfo, Errors, Outcome};
 use crate::services::client::ClientTrait;
 use crate::services::vault::{VaultService, VaultTrait};
 use crate::services::wallet::WalletTrait;
 use crate::types::dids::{Did, DidBuilder, DidDocument, DidService};
 use crate::types::http::HttpBody;
 use crate::types::secrets::PemHelper;
+use crate::types::verification::{PresentationRequest, UNTRUSTED_REQUEST};
 use crate::types::wallet::{DidSearch, Identity, KeyRef, OidcUri, WalletInfo};
 use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers};
 
@@ -363,7 +364,7 @@ impl WalletTrait for FafnirService {
             )
             .await?;
 
-        Self::check_or_fail(res, &url, "POST")
+        Self::check_or_fail(res, &url, "POST").await
     }
 
     async fn process_oid4vp(&self, uri: &str) -> Outcome<()> {
@@ -379,12 +380,42 @@ impl WalletTrait for FafnirService {
             )
             .await?;
 
-        Self::check_or_fail(res, &url, "POST")
+        Self::check_or_fail(res, &url, "POST").await
+    }
+
+    async fn resolve_oid4vp(&self, uri: &str) -> Outcome<PresentationRequest> {
+        let (res, url) = self.post_uri("vp/resolve_request", uri).await?;
+        if res.status().is_success() {
+            return res.parse_json().await;
+        }
+        let status = res.status();
+        let info: Option<ErrorInfo> = serde_json::from_str(&res.parse_text().await?).ok();
+        if info.is_some_and(|i| i.reasons.iter().any(|r| r.code == UNTRUSTED_REQUEST)) {
+            return Err(Errors::security("The OID4VP request is not authentic", None));
+        }
+        Err(Errors::wallet(&url, "POST", Some(status), "unexpected http status", None))
+    }
+
+    async fn present_oid4vp(&self, uri: &str) -> Outcome<()> {
+        let (res, url) = self.post_uri("vp/present", uri).await?;
+        Self::check_or_fail(res, &url, "POST").await
+    }
+
+    async fn refuse_oid4vp(&self, uri: &str) -> Outcome<()> {
+        let (res, url) = self.post_uri("vp/refuse", uri).await?;
+        Self::check_or_fail(res, &url, "POST").await
     }
 }
 
 // ===== INTERNAL HELPERS ==========================================================================
 impl FafnirService {
+    async fn post_uri(&self, path: &str, uri: &str) -> Outcome<(Response, String)> {
+        let url = format!("{}/{}", self.config.get_wallet_api_url(HostType::Http), path);
+        let body = HttpBody::json(&OidcUri { uri: uri.to_string() })?;
+        let res = http_client().post(&url, Some(json_headers()), body).await?;
+        Ok((res, url))
+    }
+
     async fn parse_res_or_fail<T: DeserializeOwned>(
         res: Response,
         url: &str,
@@ -403,18 +434,18 @@ impl FafnirService {
         }
     }
 
-    fn check_or_fail(res: Response, url: &str, method: &str) -> Outcome<()> {
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            Err(Errors::wallet(
-                url,
-                method,
-                Some(res.status()),
-                "unexpected http status",
-                None,
-            ))
+    /// Passes 2xx; otherwise a wallet error carrying the wallet's `details`, if it sent any.
+    async fn check_or_fail(res: Response, url: &str, method: &str) -> Outcome<()> {
+        let status = res.status();
+        if status.is_success() {
+            return Ok(());
         }
+        let body = res.parse_text().await.unwrap_or_default();
+        let reason = serde_json::from_str::<ErrorInfo>(&body)
+            .ok()
+            .and_then(|info| info.details)
+            .unwrap_or_else(|| "unexpected http status".to_string());
+        Err(Errors::wallet(url, method, Some(status), reason, None))
     }
 
     async fn fetch<T: DeserializeOwned>(
@@ -442,7 +473,7 @@ impl FafnirService {
         let res = http_client()
             .delete(&url, Some(json_headers()), HttpBody::None)
             .await?;
-        Self::check_or_fail(res, &url, "DELETE")
+        Self::check_or_fail(res, &url, "DELETE").await
     }
 
     /// Returns the wallet internal id corresponding to the search.

@@ -16,11 +16,14 @@
  */
 
 use async_trait::async_trait;
-use sea_orm::DatabaseConnection;
+use chrono::{DateTime, Utc};
+use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 
 use crate::data::entities::sent::verification;
+use crate::errors::{Errors, Outcome};
 use crate::services::repo::postgres::BasicPostgresRepo;
 use crate::services::repo::traits::sent::SentVerificationRepoTrait;
+use crate::types::verification::VerificationStatus;
 
 pub struct SentVerificationPostgresRepo {
     db: DatabaseConnection,
@@ -43,4 +46,40 @@ impl BasicPostgresRepo for SentVerificationPostgresRepo {
 }
 
 #[async_trait]
-impl SentVerificationRepoTrait for SentVerificationPostgresRepo {}
+impl SentVerificationRepoTrait for SentVerificationPostgresRepo {
+    async fn get_latest_by_grant(&self, grant_id: &str) -> Outcome<verification::Model> {
+        let query = verification::Entity::find()
+            .filter(verification::Column::GrantId.eq(grant_id))
+            .order_by_desc(verification::Column::CreatedAt);
+        self.basic_filter(query, "grant_id", grant_id).await
+    }
+
+    async fn get_all_by_grant(&self, grant_id: &str) -> Outcome<Vec<verification::Model>> {
+        verification::Entity::find()
+            .filter(verification::Column::GrantId.eq(grant_id))
+            .order_by_asc(verification::Column::CreatedAt)
+            .all(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to get the verifications of a grant", Some(Box::new(e))))
+    }
+
+    async fn expire_stale_pending(
+        &self,
+        created_before: DateTime<Utc>,
+        now: DateTime<Utc>,
+    ) -> Outcome<u64> {
+        let changes = verification::ActiveModel {
+            status: ActiveValue::Set(VerificationStatus::Expired),
+            ended_at: ActiveValue::Set(Some(now)),
+            ..Default::default()
+        };
+        let result = verification::Entity::update_many()
+            .set(changes)
+            .filter(verification::Column::Status.eq(VerificationStatus::Pending))
+            .filter(verification::Column::CreatedAt.lt(created_before))
+            .exec(self.db())
+            .await
+            .map_err(|e| Errors::db("Unable to expire stale verifications", Some(Box::new(e))))?;
+        Ok(result.rows_affected)
+    }
+}

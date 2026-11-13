@@ -27,7 +27,7 @@ use urlencoding::encode;
 
 use super::super::VerifierTrait;
 use super::VerifierConfig;
-use crate::capabilities::{Signer, Verifier};
+use crate::capabilities::{Signer, VcStatusCheck, Verifier};
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::received::verification::{Model, Plan};
@@ -42,11 +42,12 @@ use crate::types::dids::Did;
 use crate::types::jwt::{Jwt, JwtClaims, JwtHeaderTrait};
 use crate::types::keys::{Alg, PrivateKey, SigningCtx};
 use crate::types::secrets::PemHelper;
-use crate::types::vcs::{VPDef, VcFormat, VcPayload};
+use crate::types::vcs::{VPDef, VcFormat, VcPayload, VcType};
 use crate::types::verification::request_object::SELF_ISSUED_AUDIENCE;
 use crate::types::verification::{CredentialQuery, DECENTRALIZED_IDENTIFIER_PREFIX, DIRECT_POST, DcqlQuery, REDIRECT_URI_PREFIX, RequestObjectPayload, RequestPassing, VerificationStatus};
 use crate::types::vps::VpPayload;
 use crate::types::wallet::Identity;
+use crate::types::verification::Rejection;
 use crate::utils::Verified;
 
 /// How long a served Request Object stays valid.
@@ -86,11 +87,10 @@ impl VerifierService {
 impl VerifierTrait for VerifierService {
     /// The plan's audience is the response URI without the state, which [`Plan`]'s conversion
     /// appends: once stored, `audience` is the verification's response URI.
-    fn build_vp_plan(&self, id: &str) -> Outcome<Plan> {
+    fn build_vp_plan(&self, grant_id: &str, vcs: &[VcType]) -> Outcome<Plan> {
         info!("Managing OpenID4VP 1.0");
 
-        let requested_vcs = self.config.get_requested_vcs();
-        if requested_vcs.is_empty() {
+        if vcs.is_empty() {
             return Err(Errors::unauthorized(
                 "Unable to verify following OpenID4VP 1.0: no credentials requested",
                 None,
@@ -98,9 +98,9 @@ impl VerifierTrait for VerifierService {
         }
 
         Ok(Plan {
-            id: id.to_string(),
+            grant_id: grant_id.to_string(),
             audience: format!("{}{}", self.verifier_url(), base(verifier::VERIFY)),
-            vc_type: requested_vcs.to_vec(),
+            vc_type: vcs.to_vec(),
         })
     }
 
@@ -337,6 +337,7 @@ impl VerifierService {
         // TODO: trusted-issuer list once available (DCQL trusted_authorities)
         validate_valid_from(&vc)?;
         validate_valid_until(&vc)?;
+        VcStatusCheck::check(&vc).await?;
 
         info!("VC verification successful");
         Ok(vc.claims().vc_doc().r#type.as_slice().to_vec())
@@ -372,13 +373,7 @@ fn parse_vp_token(vp_token: &str) -> Outcome<HashMap<String, Vec<String>>> {
 }
 
 fn no_matching_credential(credential: &CredentialQuery) -> Errors {
-    Errors::security(
-        format!(
-            "presentation for '{}' holds no credential of the requested type",
-            credential.id
-        ),
-        None,
-    )
+    Rejection::CredentialMissing.error(format!("credential query '{}'", credential.id))
 }
 
 /// Rejects a `vp_token` that answers a query nobody asked for.
@@ -405,10 +400,7 @@ fn answers_to<'a>(
         .get(&credential.id)
         .filter(|vps| !vps.is_empty())
         .ok_or_else(|| {
-            Errors::security(
-                format!("vp_token lacks credential query '{}'", credential.id),
-                None,
-            )
+            Rejection::CredentialMissing.error(format!("credential query '{}'", credential.id))
         })?;
     if !credential.multiple && vps.len() > 1 {
         return Err(Errors::security(

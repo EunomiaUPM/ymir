@@ -16,8 +16,7 @@
  */
 
 use crate::services::repo::postgres::IntoOverwriteActive;
-use crate::types::gnap::grant_request::access::{AccessTokenFlag, AccessType};
-use crate::types::gnap::grant_request::interact::InteractAction;
+use crate::types::gnap::grant_request::access::{AccessTokenFlag, ResourceAccess};
 use sea_orm::ActiveValue;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -27,13 +26,10 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String, // REQUEST
-    pub r#type: AccessType, // REQUEST
     #[sea_orm(column_type = "JsonBinary")]
-    pub actions: Vec<InteractAction>, // REQUEST
-    pub locations: Option<Vec<String>>, // REQUEST
-    pub datatypes: Option<Vec<String>>, // REQUEST
-    pub identifier: Option<String>, // REQUEST
-    pub privileges: Option<Vec<String>>, // REQUEST
+    pub access: Vec<ResourceAccess>, // REQUEST
+    #[sea_orm(column_type = "JsonBinary")]
+    pub granted: Option<Vec<ResourceAccess>>, // RESPONSE
     pub label: Option<String>, // REQUEST
     #[sea_orm(column_type = "JsonBinary")]
     pub flags: Option<Vec<AccessTokenFlag>>, // REQUEST
@@ -43,12 +39,8 @@ impl IntoOverwriteActive<ActiveModel> for Model {
     fn into_active(self) -> ActiveModel {
         ActiveModel {
             id: ActiveValue::Set(self.id),
-            r#type: ActiveValue::Set(self.r#type),
-            actions: ActiveValue::Set(self.actions),
-            locations: ActiveValue::Set(self.locations),
-            datatypes: ActiveValue::Set(self.datatypes),
-            identifier: ActiveValue::Set(self.identifier),
-            privileges: ActiveValue::Set(self.privileges),
+            access: ActiveValue::Set(self.access),
+            granted: ActiveValue::Set(self.granted),
             label: ActiveValue::Set(self.label),
             flags: ActiveValue::Set(self.flags),
         }

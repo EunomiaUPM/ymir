@@ -18,6 +18,7 @@
 pub mod access_token;
 mod callback;
 mod continue_request;
+mod modify_request;
 pub mod grant_request;
 pub mod grant_response;
 mod status;
@@ -25,10 +26,12 @@ mod vc_decision_approval;
 
 pub use callback::{ApprovedCallbackBody, CallbackBody, RejectedCallbackBody};
 pub use continue_request::ContinueRequest;
+pub use modify_request::ModifyRequest;
 pub use status::GrantStatus;
 pub use vc_decision_approval::VcDecisionApproval;
 
 pub enum InteractionFinishResponse {
     Success(Option<String>),
-    Failure(Option<String>),
+    /// Where to send the user, if anywhere, and what the holder may be told.
+    Failure(Option<String>, Option<String>),
 }

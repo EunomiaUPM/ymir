@@ -29,6 +29,7 @@ use crate::services::repo::traits::received::RecvGrantRepoTrait;
 use crate::types::gnap::GrantStatus;
 use crate::types::gnap::grant_request::GrantKind;
 use crate::types::listing::{GrantSort, ListPage, Listed, RecvGrantListFilter};
+use crate::types::oauth::SYSTEM_USER_ID;
 
 pub struct RecvGrantPostgresRepo {
     db: DatabaseConnection,
@@ -58,12 +59,30 @@ impl RecvGrantRepoTrait for RecvGrantPostgresRepo {
         page: &ListPage<GrantSort>,
     ) -> Outcome<Listed<grant::Model>> {
         let mut select = grant::Entity::find().filter(grant::Column::Kind.eq(filter.kind.clone()));
-        // Grants assigned to the caller's role or to a role below it, and any public one.
+        // Grants assigned to the caller's role or to a role below it, any public one, and those
+        // granting a dataset the caller sees (its own, of a role below, or not private).
+        let role = filter.role.as_str().to_string();
+        let grants_seen_dataset = Expr::cust_with_values(
+            r#""recv_grants"."id" IN (
+                SELECT rr.id FROM resources_reqs rr
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(rr.granted, '[]'::jsonb)) AS g(item)
+                JOIN registered_datasets d ON d.id = g.item ->> 'identifier'
+                WHERE d.owner_visibility <> 'Private' OR d.owner_user_id = $1
+                    OR starts_with(d.owner_role, $2)
+                    OR (d.owner_user_id = $3 AND d.owner_role = $4))"#,
+            [
+                filter.user_id.clone(),
+                format!("{role}/"),
+                SYSTEM_USER_ID.to_string(),
+                role,
+            ],
+        );
         select = select.filter(
             Condition::any()
                 .add(grant::Column::Role.eq(filter.role.clone()))
                 .add(grant::Column::Role.like(KeysetPager::below(&filter.role)))
-                .add(grant::Column::Visibility.eq(Visibility::Public)),
+                .add(grant::Column::Visibility.eq(Visibility::Public))
+                .add(grants_seen_dataset),
         );
         if let Some(nick) = &filter.nick_contains {
             select = select.filter(
