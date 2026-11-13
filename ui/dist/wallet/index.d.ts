@@ -87,4 +87,5 @@ declare function WalletOidc4vpView(): react_jsx_runtime.JSX.Element;
 
 declare function WalletOidc4vciView(): react_jsx_runtime.JSX.Element;
 
-export { WALLET_KEYS_QUERY_KEY, WalletCredentialsView, type WalletCredentialsViewProps, type WalletDidModel, WalletDidView, type WalletInfoData, type WalletInfoResponse, WalletInfoView, type WalletKeyItem, type WalletKeyRef, WalletKeysView, WalletLayout, type WalletLayoutProps, WalletOidc4vciView, WalletOidc4vpView, type WalletVcRecord };
+export { WALLET_KEYS_QUERY_KEY, WalletCredentialsView, WalletDidView, WalletInfoView, WalletKeysView, WalletLayout, WalletOidc4vciView, WalletOidc4vpView };
+export type { WalletCredentialsViewProps, WalletDidModel, WalletInfoData, WalletInfoResponse, WalletKeyItem, WalletKeyRef, WalletLayoutProps, WalletVcRecord };

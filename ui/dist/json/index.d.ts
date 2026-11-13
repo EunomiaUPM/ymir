@@ -60,4 +60,5 @@ interface MonacoJsonProps {
     maxHeight: number;
 }
 
-export { JsonTable, type JsonTableProps, JsonViewer, type JsonViewerProps, type MonacoJsonProps };
+export { JsonTable, JsonViewer };
+export type { JsonTableProps, JsonViewerProps, MonacoJsonProps };
