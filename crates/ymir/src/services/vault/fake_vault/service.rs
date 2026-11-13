@@ -19,14 +19,14 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use sea_orm::{Database, DatabaseConnection};
+use sea_orm::DatabaseConnection;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use crate::config::traits::DatabaseConfigTrait;
 use crate::errors::{Errors, Outcome};
-use crate::services::vault::VaultTrait;
+use crate::services::vault::{DbPoolConnector, VaultTrait};
 use crate::types::secrets::{DbSecrets, PemHelper, StringHelper};
 use crate::utils::{expect_from_env, read, read_json, write_json};
 
@@ -94,9 +94,7 @@ impl VaultTrait for FakeVaultService {
         let path = self.path.join(&self.db_path);
 
         let db_secrets: DbSecrets = read_json(path)?;
-        Database::connect(config.get_full_db_url(&db_secrets))
-            .await
-            .map_err(|e| Errors::db("Error connecting to database", Some(Box::new(e))))
+        DbPoolConnector::connect(config.get_full_db_url(&db_secrets)).await
     }
 }
 

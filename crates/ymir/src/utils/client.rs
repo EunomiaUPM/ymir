@@ -26,8 +26,8 @@ use crate::services::client::ClientService;
 /// retry when idempotent, at most 16 in-flight calls per host and a breaker per host.
 static CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| {
     ClientService::builder()
-        .concurrency(32)
-        .per_host_concurrency(16)
+        .concurrency(128)
+        .per_host_concurrency(64)
         .deadline(Duration::from_secs(10))
         .max_retries(1)
         .circuit_breaker(5, Duration::from_secs(30))
@@ -37,7 +37,7 @@ static CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| {
 /// Pool for proxies and long-lived streams: no overall deadline, tuned keep-alive.
 static STREAM_CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| {
     ClientService::builder()
-        .concurrency(32)
+        .concurrency(128)
         .timeout(None)
         .connect_timeout(Duration::from_secs(10))
         .pool_idle_timeout(Duration::from_secs(90))

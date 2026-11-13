@@ -18,6 +18,10 @@
 //! HTTP and gRPC servers as background workers; sockets are bound before spawning.
 
 use std::net::SocketAddr;
+#[cfg(feature = "grpc")]
+use std::pin::Pin;
+#[cfg(feature = "grpc")]
+use std::task::{Context, Poll};
 use std::time::Duration;
 
 use crate::errors::{Errors, Outcome};
@@ -26,11 +30,14 @@ use crate::services::vault::global::VaultService;
 use crate::types::secrets::StringHelper;
 use crate::utils::expect_from_env;
 use axum::Router;
+use axum::serve::ListenerExt;
 use axum_server::tls_rustls::RustlsConfig;
 use tokio::net::TcpListener;
+#[cfg(feature = "grpc")]
+use tokio::net::TcpStream;
 use tokio_util::sync::CancellationToken;
 #[cfg(feature = "grpc")]
-use tonic::codegen::tokio_stream::wrappers::TcpListenerStream;
+use tonic::codegen::tokio_stream::Stream;
 #[cfg(feature = "grpc")]
 use tonic::service::Routes;
 #[cfg(feature = "grpc")]
@@ -125,10 +132,34 @@ impl BackgroundWorker for HttpServer {
         if let Some(tls) = self.tls.take() {
             return self.serve_tls(tls, token).await;
         }
-        axum::serve(self.listener, self.router)
+        let listener = self.listener.tap_io(|tcp_stream| {
+            let _ = tcp_stream.set_nodelay(true);
+        });
+        axum::serve(listener, self.router)
             .with_graceful_shutdown(token.cancelled_owned())
             .await
             .map_err(|e| Errors::crazy("HTTP server crashed", Some(Box::new(e))))
+    }
+}
+
+#[cfg(feature = "grpc")]
+struct NoDelayTcpStream {
+    listener: TcpListener,
+}
+
+#[cfg(feature = "grpc")]
+impl Stream for NoDelayTcpStream {
+    type Item = std::io::Result<TcpStream>;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match self.listener.poll_accept(cx) {
+            Poll::Ready(Ok((stream, _))) => {
+                let _ = stream.set_nodelay(true);
+                Poll::Ready(Some(Ok(stream)))
+            }
+            Poll::Ready(Err(e)) => Poll::Ready(Some(Err(e))),
+            Poll::Pending => Poll::Pending,
+        }
     }
 }
 
@@ -173,11 +204,15 @@ impl BackgroundWorker for GrpcServer {
             .build_v1()
             .map_err(|e| Errors::crazy("Error building gRPC reflection", Some(Box::new(e))))?;
         Server::builder()
+            .tcp_nodelay(true)
+            .tcp_keepalive(Some(Duration::from_secs(60)))
             .layer(HttpTracing::grpc_layer())
             .add_routes(self.routes)
             .add_service(reflection)
             .serve_with_incoming_shutdown(
-                TcpListenerStream::new(self.listener),
+                NoDelayTcpStream {
+                    listener: self.listener,
+                },
                 token.cancelled_owned(),
             )
             .await

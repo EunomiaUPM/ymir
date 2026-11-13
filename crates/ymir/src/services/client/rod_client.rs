@@ -30,7 +30,7 @@ use opentelemetry::KeyValue;
 use reqwest::{Client, Method, RequestBuilder, Response, StatusCode, Url};
 use tokio::sync::Semaphore;
 use tracing::field::Empty;
-use tracing::{Instrument, info};
+use tracing::{Instrument, debug};
 
 /// Tuning knobs of a [`ClientService`]; build one with [`ClientService::builder`].
 #[derive(Clone, Debug)]
@@ -63,8 +63,8 @@ impl Default for ClientConfig {
             },
             circuit_breaker: None,
             accept_invalid_certs: false,
-            pool_idle_timeout: None,
-            tcp_keepalive: None,
+            pool_idle_timeout: Some(Duration::from_secs(90)),
+            tcp_keepalive: Some(Duration::from_secs(60)),
         }
     }
 }
@@ -139,6 +139,7 @@ impl ClientConfig {
     pub fn build(self) -> ClientService {
         let mut builder = Client::builder()
             .pool_max_idle_per_host(self.concurrency)
+            .tcp_nodelay(true)
             .danger_accept_invalid_certs(self.accept_invalid_certs);
         if let Some(timeout) = self.timeout {
             builder = builder.timeout(timeout);
@@ -162,6 +163,31 @@ impl ClientConfig {
             backoff: self.backoff,
             deadline: self.deadline,
         }
+    }
+}
+
+/// URL metadata extracted once per request for spans and host guards.
+struct ParsedTarget {
+    host: String,
+    port: Option<u16>,
+    authority: String,
+    url_without_query: String,
+}
+
+impl ParsedTarget {
+    fn parse(url: &str) -> Option<Self> {
+        let mut parsed = Url::parse(url).ok()?;
+        let scheme = parsed.scheme().to_string();
+        let host = parsed.host_str().unwrap_or_default().to_string();
+        let port = parsed.port_or_known_default();
+        let authority = format!("{scheme}://{host}:{}", port.unwrap_or_default());
+        parsed.set_query(None);
+        Some(Self {
+            host,
+            port,
+            authority,
+            url_without_query: parsed.to_string(),
+        })
     }
 }
 
@@ -230,14 +256,19 @@ impl ClientService {
         headers: Option<HeaderMap>,
         body: HttpBody,
     ) -> Outcome<Response> {
-        let span = Self::client_span(&method, url);
+        let target = ParsedTarget::parse(url);
+        let span = Self::client_span(&method, target.as_ref());
+        let authority = target
+            .as_ref()
+            .map(|t| t.authority.clone())
+            .unwrap_or_else(|| url.to_string());
         let started = Instant::now();
         let mut attributes = vec![
             KeyValue::new("http.request.method", method.to_string()),
-            KeyValue::new("server.address", Self::authority(url)),
+            KeyValue::new("server.address", authority.clone()),
         ];
         let outcome = self
-            .execute_with_retries(method, url, headers, body)
+            .execute_with_retries(method, url, &authority, headers, body)
             .instrument(span)
             .await;
         attributes.push(match &outcome {
@@ -254,18 +285,11 @@ impl ClientService {
     }
 
     /// `url.full` drops the query string: it may carry tokens.
-    fn client_span(method: &Method, url: &str) -> tracing::Span {
-        let parsed = Url::parse(url).ok();
-        let address = parsed
-            .as_ref()
-            .and_then(|u| u.host_str().map(str::to_owned))
-            .unwrap_or_default();
-        let port = parsed.as_ref().and_then(Url::port_or_known_default);
-        let full = parsed
-            .map(|mut u| {
-                u.set_query(None);
-                u.to_string()
-            })
+    fn client_span(method: &Method, target: Option<&ParsedTarget>) -> tracing::Span {
+        let address = target.map(|t| t.host.as_str()).unwrap_or_default();
+        let port = target.and_then(|t| t.port);
+        let full = target
+            .map(|t| t.url_without_query.as_str())
             .unwrap_or_default();
         tracing::info_span!(
             "http.client",
@@ -282,28 +306,16 @@ impl ClientService {
         )
     }
 
-    /// Breakers and bulkheads are per `scheme://host:port`.
-    fn authority(url: &str) -> String {
-        match Url::parse(url) {
-            Ok(u) => format!(
-                "{}://{}:{}",
-                u.scheme(),
-                u.host_str().unwrap_or_default(),
-                u.port_or_known_default().unwrap_or_default()
-            ),
-            Err(_) => url.to_string(),
-        }
-    }
-
     async fn execute_with_retries(
         &self,
         method: Method,
         url: &str,
+        authority: &str,
         headers: Option<HeaderMap>,
         body: HttpBody,
     ) -> Outcome<Response> {
         let started = Instant::now();
-        let guard = self.hosts.guard(&Self::authority(url));
+        let guard = self.hosts.guard(authority);
         let mut headers = headers.unwrap_or_default();
         TraceContext::inject(&mut headers);
         let span = tracing::Span::current();
@@ -447,7 +459,7 @@ impl ClientService {
         headers: HeaderMap,
         body: HttpBody,
     ) -> Result<Response, AttemptError> {
-        info!("Sending {} to {}", method, url);
+        debug!("Sending {} to {}", method, url);
         let req = self.client.request(method.clone(), url).headers(headers);
         let req = self.apply_body(req, body)?;
 
@@ -561,10 +573,11 @@ impl ClientTrait for ClientService {
         body: StreamBody,
         timeout: Option<Duration>,
     ) -> Outcome<Response> {
-        let span = Self::client_span(&method, url);
+        let target = ParsedTarget::parse(url);
+        let span = Self::client_span(&method, target.as_ref());
         async {
             let _permit = self.permit(&method, url).await?;
-            info!("Streaming {} to {}", method, url);
+            debug!("Streaming {} to {}", method, url);
             let mut headers = headers.unwrap_or_default();
             TraceContext::inject(&mut headers);
             let mut req = self
