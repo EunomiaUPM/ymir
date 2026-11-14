@@ -3,6 +3,7 @@ use std::str::FromStr;
 use chrono::Utc;
 use serde_json::Value;
 use tracing::info;
+use crate::capabilities::{VcStatusCheck, Verifier};
 use crate::data::entities::received::verification::Model;
 use crate::errors::{BadFormat, Errors, Outcome};
 use crate::types::dids::Did;
@@ -27,7 +28,7 @@ pub(in crate::services::verifier) fn validate_nonce(jwt: &Verified<Jwt<VpPayload
     Ok(())
 }
 
-pub(in crate::services::verifier) fn validate_vp_holder(jwt: &Verified<Jwt<VpPayload>>) -> Outcome<()> {
+pub fn validate_vp_holder(jwt: &Verified<Jwt<VpPayload>>) -> Outcome<()> {
     info!("Validating VP subject");
     let holder = jwt.kid()?.did().id();
     let claims = jwt.claims();
@@ -103,7 +104,7 @@ pub(in crate::services::verifier) fn validate_vc_sub(jwt: &Verified<Jwt<VcPayloa
 }
 
 /// How a credential is tied to whoever presents it.
-pub(in crate::services::verifier) enum Binding {
+pub enum Binding {
     /// Its subject is the holder.
     Subject,
     /// The holder issued it: the described participant is the issuing one (CD 4.0.0 PA1.1).
@@ -113,7 +114,7 @@ pub(in crate::services::verifier) enum Binding {
 }
 
 /// A verified credential of a presentation, and how it is tied to the holder.
-pub(in crate::services::verifier) struct PresentedVc {
+pub struct PresentedVc {
     pub vc: Verified<Jwt<VcPayload>>,
     pub binding: Binding,
 }
@@ -142,6 +143,22 @@ const LINKED_TYPES: [VcType; 8] = [
     VcType::GxLabel,
     VcType::ParticipantCompliance,
 ];
+
+/// One credential of a presentation: signature, issuer, id, dates, whose it is and its status.
+pub async fn verify_vc(vc_token: &str, holder_did: &Did) -> Outcome<PresentedVc> {
+    info!("Verifying vc");
+    let vc = Jwt::<VcPayload>::parse(vc_token)?;
+    let vc = Verifier::verify_enveloped(vc, None).await?;
+    validate_vc_issuer(&vc)?;
+    validate_vc_id(&vc)?;
+    // TODO: trusted-issuer list once available (DCQL trusted_authorities)
+    validate_valid_from(&vc)?;
+    validate_valid_until(&vc)?;
+    let checked = validate_vc_binding(vc, holder_did)?;
+    VcStatusCheck::check(&checked.vc).await?;
+    info!("VC verification successful");
+    Ok(checked)
+}
 
 /// Whose the credential is: its subject is the holder, the holder issued it, or it is a
 /// registration number or label whose own subject a legal person has to link (`check_bindings`).
@@ -174,7 +191,7 @@ pub(in crate::services::verifier) fn validate_vc_binding(jwt: Verified<Jwt<VcPay
 
 /// Every linked credential, tied to the holder by one of the holder's legal persons: a number by
 /// its `gx:registrationNumber`, a label by the digest of the legal person it lists.
-pub(in crate::services::verifier) fn check_bindings(vcs: &[PresentedVc]) -> Outcome<()> {
+pub fn check_bindings(vcs: &[PresentedVc]) -> Outcome<()> {
     let persons: Vec<&PresentedVc> = vcs
         .iter()
         .filter(|p| !matches!(p.binding, Binding::Linked(_)) && p.is(&[VcType::LegalPerson]))
@@ -182,6 +199,7 @@ pub(in crate::services::verifier) fn check_bindings(vcs: &[PresentedVc]) -> Outc
     for vc in vcs {
         let Binding::Linked(subject) = &vc.binding else { continue };
         let tied = if vc.is(&[VcType::GxLabel, VcType::ParticipantCompliance]) {
+            // TODO: the LegalPerson has to come in the presentation; it is not fetched from an https id (plan row 44).
             let digests = listed_digests(vc);
             persons.iter().any(|lp| {
                 CompliantCredential::digest_of(lp.vc.as_str()).is_ok_and(|d| digests.contains(&d))

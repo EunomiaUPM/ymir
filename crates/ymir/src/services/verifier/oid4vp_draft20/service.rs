@@ -22,16 +22,15 @@ use urlencoding::encode;
 
 use super::super::VerifierTrait;
 use super::VerifierConfig;
-use crate::capabilities::{VcStatusCheck, Verifier};
+use crate::capabilities::Verifier;
 use crate::config::traits::HostsConfigTrait;
 use crate::config::types::HostType;
 use crate::data::entities::received::verification::{Model, Plan};
 use crate::errors::{Errors, Outcome};
 use crate::http::routes::{base, fill, verifier};
-use crate::services::verifier::validators::{PresentedVc, check_bindings, validate_nonce, validate_valid_from, validate_valid_until, validate_vc_binding, validate_vc_id, validate_vc_issuer, validate_vp_holder, validate_vp_id};
+use crate::services::verifier::validators::{PresentedVc, check_bindings, validate_nonce, validate_vp_holder, validate_vp_id};
 use crate::types::dids::Did;
 use crate::types::jwt::{Jwt, JwtHeaderTrait};
-use crate::types::vcs::{VcPayload};
 use crate::types::vps::{VpPayload};
 use crate::types::vcs::{VPDef, VcType, W3cDataModelVersion};
 use crate::types::verification::VerificationStatus;
@@ -165,21 +164,7 @@ impl VerifierService {
     }
 
     async fn verify_vc(&self, vc_token: &str, holder_did: &Did) -> Outcome<PresentedVc> {
-        info!("Verifying vc");
-
-        let vc = Jwt::<VcPayload>::parse(vc_token)?;
-        let vc = Verifier::verify_enveloped(vc, None).await?;
-
-        validate_vc_issuer(&vc)?;
-        validate_vc_id(&vc)?;
-        // TODO: trusted-issuer list once available
-        validate_valid_from(&vc)?;
-        validate_valid_until(&vc)?;
-        VcStatusCheck::check(&vc).await?;
-        let checked = validate_vc_binding(vc, holder_did)?;
-
-        info!("VC verification successful");
-        Ok(checked)
+        crate::services::verifier::validators::verify_vc(vc_token, holder_did).await
     }
 }
 
