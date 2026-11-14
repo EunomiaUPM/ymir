@@ -22,6 +22,7 @@ use crate::types::keys::{Alg, Crv, Kty};
 use crate::types::secrets::PemHelper;
 use crate::utils::{decode_url_safe_no_pad, encode_url_safe_no_pad};
 use ed25519_dalek::{Signature as Ed25519Signature, VerifyingKey as Ed25519VerifyingKey};
+use p256::ecdsa::{Signature as P256Signature, VerifyingKey as P256VerifyingKey};
 use rsa::pkcs1v15::{Signature as PkcsSignature, VerifyingKey as PkcsVerifyingKey};
 use rsa::pkcs8::DecodePublicKey;
 use rsa::pkcs8::AssociatedOid;
@@ -38,6 +39,8 @@ use x509_parser::prelude::*;
 pub enum PublicKey {
     Rsa { vk: RsaPublicKey },
     Ed25519 { vk: Ed25519VerifyingKey },
+    /// EC P-256, for ES256.
+    P256 { vk: P256VerifyingKey },
 }
 
 impl PublicKey {
@@ -47,6 +50,9 @@ impl PublicKey {
         }
         if let Ok(vk) = parse_ed25519_pem(pem) {
             return Ok(PublicKey::Ed25519 { vk });
+        }
+        if let Ok(vk) = P256VerifyingKey::from_public_key_pem(pem) {
+            return Ok(PublicKey::P256 { vk });
         }
 
         Err(Errors::format(
@@ -61,6 +67,9 @@ impl PublicKey {
         }
         if let Ok(vk) = parse_ed25519_der(der) {
             return Ok(PublicKey::Ed25519 { vk });
+        }
+        if let Ok(vk) = P256VerifyingKey::from_public_key_der(der) {
+            return Ok(PublicKey::P256 { vk });
         }
 
         Err(Errors::format(
@@ -77,6 +86,10 @@ impl PublicKey {
             }),
             (Kty::Okp, Some(Crv::Ed25519)) => Ok(PublicKey::Ed25519 {
                 vk: parse_ed25519_pem(pem)?,
+            }),
+            (Kty::Ec, Some(Crv::P256)) => Ok(PublicKey::P256 {
+                vk: P256VerifyingKey::from_public_key_pem(pem)
+                    .map_err(|e| Errors::parse("Invalid P-256 PKCS#8 PEM", Some(Box::new(e))))?,
             }),
             _ => Err(Errors::not_impl(
                 format!("Unsupported key/alg combination: kty={kty}, crv={crv:?}"),
@@ -132,6 +145,11 @@ impl PublicKey {
                 Ok(PublicKey::Ed25519 { vk })
             }
 
+            (Kty::Ec, Some(Crv::P256)) => {
+                let vk = p256_public_key_from_jwk(jwk)?;
+                Ok(PublicKey::P256 { vk })
+            }
+
             _ => Err(Errors::not_impl(
                 format!("Unsupported key/alg combination: kty={kty}, crv={crv:?}"),
                 None,
@@ -164,12 +182,28 @@ impl PublicKey {
                 pk.verify_strict(data, &signature)
                     .map_err(|e| Errors::forbidden("Invalid Signature", Some(Box::new(e))))
             }
+            PublicKey::P256 { vk } => {
+                if *alg != Alg::Es256 {
+                    return Err(Errors::not_impl(format!("Unsupported alg  {}", alg), None));
+                }
+                // JWS carries r || s (RFC 7518 §3.4), not DER.
+                let signature = P256Signature::from_slice(sig).map_err(|e| {
+                    Errors::format(
+                        BadFormat::Received,
+                        "invalid ES256 signature encoding",
+                        Some(Box::new(e)),
+                    )
+                })?;
+                vk.verify(data, &signature)
+                    .map_err(|e| Errors::forbidden("Invalid Signature", Some(Box::new(e))))
+            }
         }
     }
     pub fn kty(&self) -> Kty {
         match self {
             Self::Rsa { .. } => Kty::Rsa,
             Self::Ed25519 { .. } => Kty::Okp,
+            Self::P256 { .. } => Kty::Ec,
         }
     }
 
@@ -177,6 +211,7 @@ impl PublicKey {
         match self {
             Self::Rsa { .. } => None,
             Self::Ed25519 { .. } => Some(Crv::Ed25519),
+            Self::P256 { .. } => Some(Crv::P256),
         }
     }
     pub fn jwk_thumbprint(&self) -> Outcome<String> {
@@ -201,6 +236,15 @@ impl PublicKey {
                     "kty": "OKP",
                     "crv": "Ed25519",
                     "x": encode_url_safe_no_pad(vk.to_bytes()),
+                })
+            }
+            PublicKey::P256 { vk } => {
+                let point = vk.to_encoded_point(false);
+                json!({
+                    "kty": "EC",
+                    "crv": "P-256",
+                    "x": encode_url_safe_no_pad(point.x().map(|x| x.to_vec()).unwrap_or_default()),
+                    "y": encode_url_safe_no_pad(point.y().map(|y| y.to_vec()).unwrap_or_default()),
                 })
             }
         }
@@ -294,6 +338,32 @@ pub fn rsa_public_key_from_jwk(jwk: &Value) -> Outcome<RsaPublicKey> {
             "Invalid RSA public key components",
             Some(Box::new(err)),
         )
+    })
+}
+
+/// P-256 key from the `x` and `y` coordinates of an EC JWK.
+pub fn p256_public_key_from_jwk(jwk: &Value) -> Outcome<P256VerifyingKey> {
+    let coordinate = |name: &str| -> Outcome<[u8; 32]> {
+        let b64 = jwk.get(name).and_then(|v| v.as_str()).ok_or_else(|| {
+            Errors::format(BadFormat::Received, format!("EC JWK missing '{name}'"), None)
+        })?;
+        let bytes = decode_url_safe_no_pad(b64)?;
+        bytes.as_slice().try_into().map_err(|_| {
+            Errors::format(
+                BadFormat::Received,
+                format!("P-256 coordinate '{name}' must be 32 bytes, got {}", bytes.len()),
+                None,
+            )
+        })
+    };
+    let (x, y) = (coordinate("x")?, coordinate("y")?);
+    let point = p256::EncodedPoint::from_affine_coordinates(
+        &p256::FieldBytes::from(x),
+        &p256::FieldBytes::from(y),
+        false,
+    );
+    P256VerifyingKey::from_encoded_point(&point).map_err(|err| {
+        Errors::format(BadFormat::Received, "Invalid P-256 public key", Some(Box::new(err)))
     })
 }
 

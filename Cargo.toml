@@ -25,6 +25,7 @@ opentelemetry = "0.33"
 tracing-opentelemetry = "0.34"
 ed25519-dalek = { version = "2", features = ["rand_core", "pkcs8"] }
 rsa = "0.9.10"
+p256 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 sha2 = { version = "0.10", features = ["oid"] }
 rand = "0.8.5"
 pkcs8 = "0.11.0"

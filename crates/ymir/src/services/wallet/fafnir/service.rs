@@ -31,7 +31,7 @@ use crate::types::http::HttpBody;
 use crate::types::secrets::{PemHelper, StringHelper};
 use crate::types::verification::{PresentationRequest, UNTRUSTED_REQUEST};
 use crate::types::wallet::{ComplianceRequest, DidSearch, Identity, KeyRef, OidcUri, WalletInfo};
-use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers};
+use crate::utils::{ResponseExt, expect_from_env, http_client, json_headers, protocol_client};
 
 use async_trait::async_trait;
 use reqwest::Response;
@@ -365,7 +365,7 @@ impl WalletTrait for FafnirService {
     async fn process_oid4vci(&self, uri: &str) -> Outcome<()> {
         info!("FafnirService: process_oid4vci({})", uri);
         let url = format!("{}/oid4vci", self.config.get_wallet_api_url(HostType::Http));
-        let res = http_client()
+        let res = protocol_client()
             .post(
                 &url,
                 Some(json_headers()),
@@ -381,7 +381,7 @@ impl WalletTrait for FafnirService {
     async fn process_oid4vp(&self, uri: &str) -> Outcome<Option<String>> {
         info!("FafnirService: process_oid4vp({})", uri);
         let url = format!("{}/oid4vp", self.config.get_wallet_api_url(HostType::Http));
-        let res = http_client()
+        let res = protocol_client()
             .post(
                 &url,
                 Some(json_headers()),
@@ -420,7 +420,7 @@ impl WalletTrait for FafnirService {
     async fn request_compliance(&self, request: &ComplianceRequest) -> Outcome<vc::Model> {
         info!("FafnirService: request_compliance({})", request.url);
         let url = format!("{}/compliance/request", self.config.get_wallet_api_url(HostType::Http));
-        let res = http_client()
+        let res = protocol_client()
             .post(&url, Some(json_headers()), HttpBody::json(request)?)
             .await?;
         if !res.status().is_success() {
@@ -435,7 +435,7 @@ impl FafnirService {
     async fn post_uri(&self, path: &str, uri: &str) -> Outcome<(Response, String)> {
         let url = format!("{}/{}", self.config.get_wallet_api_url(HostType::Http), path);
         let body = HttpBody::json(&OidcUri { uri: uri.to_string() })?;
-        let res = http_client().post(&url, Some(json_headers()), body).await?;
+        let res = protocol_client().post(&url, Some(json_headers()), body).await?;
         Ok((res, url))
     }
 

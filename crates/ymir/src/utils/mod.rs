@@ -25,7 +25,7 @@ mod token;
 mod values;
 mod verified;
 
-pub use client::{http_client, stream_client};
+pub use client::{http_client, protocol_client, stream_client};
 pub use http::*;
 pub use ids::*;
 pub use one_or_many::OneOrMany;

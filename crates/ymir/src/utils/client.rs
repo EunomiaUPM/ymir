@@ -34,6 +34,18 @@ static CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| {
         .build()
 });
 
+/// Pool for protocol calls that wait on another party (a wallet presenting to a verifier, a
+/// compliance service checking DIDs, chains and shapes): 90 s per call, no retries.
+static PROTOCOL_CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| {
+    ClientService::builder()
+        .concurrency(32)
+        .per_host_concurrency(16)
+        .timeout(Some(Duration::from_secs(90)))
+        .deadline(Duration::from_secs(90))
+        .max_retries(0)
+        .build()
+});
+
 /// Pool for proxies and long-lived streams: no overall deadline, tuned keep-alive.
 static STREAM_CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| {
     ClientService::builder()
@@ -50,6 +62,11 @@ static STREAM_CLIENT_SERVICE: LazyLock<ClientService> = LazyLock::new(|| {
 /// Yields a static reference to the shared global [`ClientService`] management infrastructure.
 pub fn http_client() -> &'static ClientService {
     &CLIENT_SERVICE
+}
+
+/// Shared [`ClientService`] for protocol calls that wait on another party (90 s).
+pub fn protocol_client() -> &'static ClientService {
+    &PROTOCOL_CLIENT_SERVICE
 }
 
 /// Shared [`ClientService`] for proxied and streamed traffic; pair it with `ClientTrait::stream`.
